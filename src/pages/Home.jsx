@@ -165,7 +165,7 @@ export default function Home() {
                 style={{ border: "1px solid rgba(201,160,99,0.15)", background: "#fff" }}
               >
                 {/* Panel header */}
-                <div className="flex items-center justify-between px-6 py-4" style={{ background: "#0D1628", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                <div className="flex items-center justify-between px-4 py-2" style={{ background: "#0D1628", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
                   <div>
                     <p className="text-[14px] font-semibold text-white">{currentCalc.label}</p>
                     <p className="text-[12px] font-light" style={{ color: "#94A3B8" }}>{currentCalc.sub}</p>
