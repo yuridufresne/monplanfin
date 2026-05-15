@@ -1,0 +1,61 @@
+{
+  "name": "BudgetEntry",
+  "type": "object",
+  "properties": {
+    "category": {
+      "type": "string",
+      "enum": [
+        "logement",
+        "transport",
+        "alimentation",
+        "services_publics",
+        "assurances",
+        "sante",
+        "loisirs",
+        "vetements",
+        "education",
+        "epargne",
+        "dettes",
+        "divers"
+      ],
+      "description": "Cat\u00e9gorie de la d\u00e9pense"
+    },
+    "label": {
+      "type": "string",
+      "description": "Description de l'entr\u00e9e"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Montant mensuel"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "revenu",
+        "depense"
+      ],
+      "description": "Type: revenu ou d\u00e9pense"
+    },
+    "frequency": {
+      "type": "string",
+      "enum": [
+        "mensuel",
+        "bimensuel",
+        "hebdomadaire",
+        "annuel"
+      ],
+      "default": "mensuel"
+    },
+    "is_fixed": {
+      "type": "boolean",
+      "default": true,
+      "description": "D\u00e9pense fixe ou variable"
+    }
+  },
+  "required": [
+    "category",
+    "label",
+    "amount",
+    "type"
+  ]
+}

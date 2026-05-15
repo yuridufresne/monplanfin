@@ -1,0 +1,70 @@
+{
+  "name": "Investment",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nom du placement"
+    },
+    "ticker": {
+      "type": "string",
+      "description": "Symbole boursier"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "actions",
+        "obligations",
+        "fonds_communs",
+        "fnb",
+        "celi",
+        "reer",
+        "reee",
+        "compte_epargne",
+        "crypto",
+        "immobilier",
+        "autre"
+      ],
+      "description": "Type de placement"
+    },
+    "account_type": {
+      "type": "string",
+      "enum": [
+        "celi",
+        "reer",
+        "reee",
+        "non_enregistre",
+        "autre"
+      ],
+      "description": "Type de compte"
+    },
+    "quantity": {
+      "type": "number",
+      "description": "Nombre de parts"
+    },
+    "purchase_price": {
+      "type": "number",
+      "description": "Prix d'achat par part"
+    },
+    "current_price": {
+      "type": "number",
+      "description": "Prix actuel par part"
+    },
+    "current_value": {
+      "type": "number",
+      "description": "Valeur actuelle totale"
+    },
+    "annual_return_pct": {
+      "type": "number",
+      "description": "Rendement annuel en %"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name",
+    "type",
+    "current_value"
+  ]
+}

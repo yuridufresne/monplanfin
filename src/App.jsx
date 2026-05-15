@@ -5,7 +5,13 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
-// Add page imports here
+import AppLayout from '@/components/layout/AppLayout';
+import Home from '@/pages/Home';
+import Calculators from '@/pages/Calculators';
+import Dashboard from '@/pages/Dashboard';
+import Budget from '@/pages/Budget';
+import Investments from '@/pages/Investments';
+import FinancialPlan from '@/pages/FinancialPlan';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -33,8 +39,15 @@ const AuthenticatedApp = () => {
   // Render the main app
   return (
     <Routes>
-      {/* Add your page Route elements here */}
-      <Route path="*" element={<PageNotFound />} />
+      <Route element={<AppLayout />}>
+        <Route path="/" element={<Home />} />
+        <Route path="/calculatrices" element={<Calculators />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/budget" element={<Budget />} />
+        <Route path="/placements" element={<Investments />} />
+        <Route path="/plan" element={<FinancialPlan />} />
+        <Route path="*" element={<PageNotFound />} />
+      </Route>
     </Routes>
   );
 };

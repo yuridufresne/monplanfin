@@ -1,0 +1,49 @@
+{
+  "name": "FinancialGoal",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Titre de l'objectif"
+    },
+    "target_amount": {
+      "type": "number",
+      "description": "Montant cible"
+    },
+    "current_amount": {
+      "type": "number",
+      "description": "Montant accumul\u00e9",
+      "default": 0
+    },
+    "target_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date cible"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "retraite",
+        "maison",
+        "voyage",
+        "education",
+        "fond_urgence",
+        "voiture",
+        "autre"
+      ]
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "haute",
+        "moyenne",
+        "basse"
+      ],
+      "default": "moyenne"
+    }
+  },
+  "required": [
+    "title",
+    "target_amount"
+  ]
+}

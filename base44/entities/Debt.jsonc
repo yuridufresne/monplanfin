@@ -1,0 +1,49 @@
+{
+  "name": "Debt",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nom de la dette"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "hypotheque",
+        "pret_auto",
+        "carte_credit",
+        "marge_credit",
+        "pret_etudiant",
+        "pret_personnel",
+        "autre"
+      ],
+      "description": "Type de dette"
+    },
+    "balance": {
+      "type": "number",
+      "description": "Solde restant"
+    },
+    "interest_rate": {
+      "type": "number",
+      "description": "Taux d'int\u00e9r\u00eat annuel en %"
+    },
+    "minimum_payment": {
+      "type": "number",
+      "description": "Paiement minimum mensuel"
+    },
+    "monthly_payment": {
+      "type": "number",
+      "description": "Paiement mensuel actuel"
+    },
+    "original_amount": {
+      "type": "number",
+      "description": "Montant original de la dette"
+    }
+  },
+  "required": [
+    "name",
+    "type",
+    "balance",
+    "interest_rate"
+  ]
+}
