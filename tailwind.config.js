@@ -6,6 +6,7 @@ module.exports = {
     extend: {
       fontFamily: {
         sans: ['var(--font-sans)'],
+        urbanist: ['var(--font-urbanist)'],
         mono: ['var(--font-mono)'],
         financial: ['var(--font-mono)'],
       },
