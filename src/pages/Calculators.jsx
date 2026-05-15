@@ -1,30 +1,67 @@
 import React, { useState } from "react";
-import { motion } from "framer-motion";
-import PeriodicInvestmentCalc from "@/components/calculators/PeriodicInvestmentCalc";
-import MortgageCalc from "@/components/calculators/MortgageCalc";
-import DebtCalc from "@/components/calculators/DebtCalc";
-import RetirementCalc from "@/components/calculators/RetirementCalc";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowUpRight } from "lucide-react";
 
 const tabs = [
   {
-    value: "placement",
-    label: "Placement périodique",
-    sub: "Croissance de l'épargne",
+    value: "epargne",
+    label: "Épargne",
+    sub: "Accumulation de l'épargne",
+    url: "https://calculatrices-financieres.ca/#/epargne",
   },
   {
-    value: "hypotheque",
-    label: "Capacité hypothécaire",
-    sub: "Règles ABD / ATD",
+    value: "emprunt",
+    label: "Emprunt",
+    sub: "Facteurs d'un emprunt",
+    url: "https://calculatrices-financieres.ca/#/emprunt",
   },
   {
-    value: "dettes",
-    label: "Gestion des dettes",
-    sub: "Stratégie avalanche",
+    value: "revenus",
+    label: "Revenus de placement",
+    sub: "Revenus selon différents facteurs",
+    url: "https://calculatrices-financieres.ca/#/revenus",
   },
   {
-    value: "retraite",
-    label: "Planification retraite",
-    sub: "Projection à long terme",
+    value: "report",
+    label: "Report d'investissement",
+    sub: "Impact d'un report",
+    url: "https://calculatrices-financieres.ca/#/report-investissement",
+  },
+  {
+    value: "impot",
+    label: "Taux d'imposition",
+    sub: "Taux applicables",
+    url: "https://calculatrices-financieres.ca/#/taux-impot",
+  },
+  {
+    value: "inflation",
+    label: "Inflation",
+    sub: "Pouvoir d'achat futur",
+    url: "https://calculatrices-financieres.ca/#/inflation-inverse",
+  },
+  {
+    value: "pret-reer",
+    label: "Prêt REER",
+    sub: "Pertinence d'un prêt REER",
+    url: "https://calculatrices-financieres.ca/#/pret-reer",
+  },
+  {
+    value: "epargne-reer",
+    label: "Économie REER",
+    sub: "Économie d'impôt REER",
+    url: "https://calculatrices-financieres.ca/#/epargne-reer",
+  },
+  {
+    value: "retraite-inflation",
+    label: "Budget retraite",
+    sub: "Effet de l'inflation",
+    url: "https://calculatrices-financieres.ca/#/effet-inflation",
+  },
+  {
+    value: "vie-humaine",
+    label: "Valeur de vie humaine",
+    sub: "Valeur économique actuelle",
+    url: "https://calculatrices-financieres.ca/#/vie-humaine",
   },
 ];
 
@@ -35,15 +72,16 @@ const fadeUp = (delay = 0) => ({
 });
 
 export default function Calculators() {
-  const [active, setActive] = useState("placement");
+  const [active, setActive] = useState("epargne");
+  const current = tabs.find((t) => t.value === active);
 
   return (
-    <div className="bg-surface min-h-screen">
-      <div className="max-w-5xl mx-auto px-6 lg:px-10 py-14 md:py-20">
+    <div className="bg-slate-50 min-h-screen">
+      <div className="max-w-6xl mx-auto px-6 lg:px-10 py-14 md:py-20">
 
         {/* Header */}
-        <motion.div {...fadeUp(0)} className="mb-14">
-          <div className="inline-flex items-center gap-2.5 mb-8">
+        <motion.div {...fadeUp(0)} className="mb-12">
+          <div className="inline-flex items-center gap-2.5 mb-6">
             <span className="w-5 h-[1.5px] bg-accent" />
             <span className="text-[11px] font-bold tracking-[0.14em] uppercase text-muted-foreground/60">
               Outils gratuits
@@ -53,27 +91,27 @@ export default function Calculators() {
             Calculatrices financières
           </h1>
           <p className="text-[16px] text-muted-foreground leading-relaxed max-w-xl font-light">
-            Modélisez vos scénarios financiers avec précision. Tous les outils sont gratuits et fonctionnent directement dans votre navigateur.
+            10 outils de précision pour modéliser vos scénarios financiers — épargne, fiscalité, retraite et plus.
           </p>
         </motion.div>
 
-        {/* Tab selector */}
-        <motion.div {...fadeUp(0.08)} className="mb-10">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        {/* Tab grid */}
+        <motion.div {...fadeUp(0.06)} className="mb-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
             {tabs.map((tab) => (
               <button
                 key={tab.value}
                 onClick={() => setActive(tab.value)}
-                className={`group text-left px-5 py-4 rounded-xl border transition-all duration-200 ${
+                className={`group text-left px-4 py-3.5 rounded-xl border transition-all duration-200 ${
                   active === tab.value
                     ? "bg-primary border-primary text-white shadow-float"
-                    : "bg-card border-border/60 text-foreground hover:border-primary/30 hover:bg-muted/40 shadow-float-sm"
+                    : "bg-white border-slate-200 text-foreground hover:border-primary/30 hover:shadow-md shadow-sm"
                 }`}
               >
-                <p className={`text-[13px] font-semibold leading-snug mb-0.5 ${active === tab.value ? "text-white" : "text-foreground"}`}>
+                <p className={`text-[12.5px] font-semibold leading-snug ${active === tab.value ? "text-white" : "text-foreground"}`}>
                   {tab.label}
                 </p>
-                <p className={`text-[11px] font-light ${active === tab.value ? "text-white/60" : "text-muted-foreground"}`}>
+                <p className={`text-[11px] font-light mt-0.5 ${active === tab.value ? "text-white/60" : "text-muted-foreground"}`}>
                   {tab.sub}
                 </p>
               </button>
@@ -81,18 +119,51 @@ export default function Calculators() {
           </div>
         </motion.div>
 
-        {/* Calculator panel */}
-        <motion.div
-          key={active}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-        >
-          {active === "placement" && <PeriodicInvestmentCalc />}
-          {active === "hypotheque" && <MortgageCalc />}
-          {active === "dettes" && <DebtCalc />}
-          {active === "retraite" && <RetirementCalc />}
-        </motion.div>
+        {/* iFrame panel */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={active}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden">
+              {/* Card header */}
+              <div className="flex items-center justify-between px-7 py-5 border-b border-slate-100">
+                <div>
+                  <h2 className="text-[15px] font-semibold text-foreground tracking-tight">
+                    {current.label}
+                  </h2>
+                  <p className="text-[12.5px] text-muted-foreground font-light mt-0.5">
+                    {current.sub}
+                  </p>
+                </div>
+                <a
+                  href={current.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground hover:text-primary transition-colors"
+                >
+                  Ouvrir dans un nouvel onglet
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                </a>
+              </div>
+
+              {/* iFrame */}
+              <iframe
+                src={current.url}
+                title={current.label}
+                width="100%"
+                height="800"
+                frameBorder="0"
+                scrolling="yes"
+                className="block w-full"
+                style={{ minHeight: 800 }}
+              />
+            </div>
+          </motion.div>
+        </AnimatePresence>
 
       </div>
     </div>
