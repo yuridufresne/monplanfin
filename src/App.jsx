@@ -13,14 +13,17 @@ import Budget from '@/pages/Budget';
 import Investments from '@/pages/Investments';
 import FinancialPlan from '@/pages/FinancialPlan';
 
+const PUBLIC_PATHS = ['/', '/calculatrices'];
+
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+  const isPublicPath = PUBLIC_PATHS.includes(window.location.pathname);
 
-  // Show loading spinner while checking app public settings or auth
-  if (isLoadingPublicSettings || isLoadingAuth) {
+  // Show loading spinner only for private routes
+  if ((isLoadingPublicSettings || isLoadingAuth) && !isPublicPath) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
+      <div className="fixed inset-0 flex items-center justify-center" style={{ background: "#050810" }}>
+        <div className="w-8 h-8 border-4 border-white/10 border-t-[#C9A063] rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -29,8 +32,8 @@ const AuthenticatedApp = () => {
   if (authError) {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
-    } else if (authError.type === 'auth_required') {
-      // Redirect to login automatically
+    } else if (authError.type === 'auth_required' && !isPublicPath) {
+      // Only redirect to login for private routes
       navigateToLogin();
       return null;
     }
@@ -40,8 +43,10 @@ const AuthenticatedApp = () => {
   return (
     <Routes>
       <Route element={<AppLayout />}>
+        {/* Public routes — always accessible */}
         <Route path="/" element={<Home />} />
         <Route path="/calculatrices" element={<Calculators />} />
+        {/* Private routes */}
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/budget" element={<Budget />} />
         <Route path="/placements" element={<Investments />} />
