@@ -70,22 +70,22 @@ export default function Home() {
             </motion.p>
 
             <motion.div {...fadeUp(0.22)} className="flex flex-col sm:flex-row gap-4">
-              <a
-                href="#calculatrices"
+              <button
+                onClick={() => setSoftWallOpen(true)}
                 className="inline-flex items-center justify-center gap-2.5 px-8 py-4 text-[14px] font-semibold rounded-xl transition-all duration-200"
                 style={{ background: "#C9A063", color: "#050810" }}
+              >
+                Créer mon espace gratuit
+                <Lock className="w-3.5 h-3.5" />
+              </button>
+              <a
+                href="#calculatrices"
+                className="inline-flex items-center justify-center gap-2.5 px-8 py-4 text-[14px] font-medium rounded-xl transition-all duration-200"
+                style={{ border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.7)", background: "rgba(255,255,255,0.03)" }}
               >
                 Essayer les calculatrices
                 <ArrowRight className="w-4 h-4" />
               </a>
-              <button
-                onClick={() => setSoftWallOpen(true)}
-                className="inline-flex items-center justify-center gap-2.5 px-8 py-4 text-[14px] font-medium rounded-xl transition-all duration-200"
-                style={{ border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.7)", background: "rgba(255,255,255,0.03)" }}
-              >
-                <Lock className="w-3.5 h-3.5" />
-                Créer mon espace gratuit
-              </button>
             </motion.div>
 
             <motion.div {...fadeUp(0.28)} className="mt-12 max-w-sm space-y-2">
