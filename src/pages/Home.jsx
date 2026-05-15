@@ -240,7 +240,19 @@ export default function Home() {
               Créer mon espace gratuitement
               <ArrowRight className="w-4 h-4" />
             </button>
-            <p className="text-[12px] mt-4 font-light" style={{ color: "rgba(148,163,184,0.5)" }}>
+            <div className="mt-8 max-w-sm mx-auto space-y-2">
+              <p className="text-[12px] font-semibold mb-3" style={{ color: "#C9A063" }}>Vous accédrez à :</p>
+              <ul className="text-left space-y-2 text-[13px] font-light" style={{ color: "#94A3B8" }}>
+                <li className="flex items-start gap-2.5"><span style={{ color: "#C9A063" }}>•</span> Conseiller AI 24h/24</li>
+                <li className="flex items-start gap-2.5"><span style={{ color: "#C9A063" }}>•</span> Analyse de besoin financier</li>
+                <li className="flex items-start gap-2.5"><span style={{ color: "#C9A063" }}>•</span> Chat avec un agent avec permis AMF</li>
+                <li className="flex items-start gap-2.5"><span style={{ color: "#C9A063" }}>•</span> Aide à l'élimination de dettes</li>
+                <li className="flex items-start gap-2.5"><span style={{ color: "#C9A063" }}>•</span> Aide à la création de richesse</li>
+                <li className="flex items-start gap-2.5"><span style={{ color: "#C9A063" }}>•</span> Aide à la gestion budgétaire</li>
+                <li className="flex items-start gap-2.5"><span style={{ color: "#C9A063" }}>•</span> Aide au rétablissement du crédit</li>
+              </ul>
+            </div>
+            <p className="text-[12px] mt-8 font-light" style={{ color: "rgba(148,163,184,0.5)" }}>
               Gratuit · Aucune carte requise · Données privées
             </p>
           </motion.div>
