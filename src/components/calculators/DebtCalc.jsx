@@ -87,17 +87,16 @@ export default function DebtCalc() {
     : 0;
 
   return (
-    <Card className="border-0 shadow-lg">
-      <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <CreditCard className="w-5 h-5 text-primary" />
+    <Card className="border border-border/50 shadow-float bg-card">
+      <CardHeader className="pb-2 px-8 pt-8">
+        <CardTitle className="text-[17px] font-semibold text-foreground tracking-tight">
           Gestion des dettes
         </CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Stratégie avalanche — Payez vos dettes plus rapidement avec des paiements supplémentaires.
+        <p className="text-[13.5px] text-muted-foreground font-light leading-relaxed mt-1">
+          Stratégie avalanche — Remboursez vos dettes par ordre de taux décroissant pour minimiser les intérêts.
         </p>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-8 px-8 pb-8">
         {/* Debt inputs */}
         <div className="space-y-3">
           {debts.map((debt, idx) => (
@@ -165,18 +164,18 @@ export default function DebtCalc() {
         </div>
 
         {/* Results */}
-        <div className="grid grid-cols-3 gap-3">
-          <div className="bg-destructive/5 rounded-xl p-3 text-center">
-            <p className="text-xs text-muted-foreground mb-1">Dette totale</p>
-            <p className="text-lg font-bold text-destructive">{formatCurrency(totalDebt)}</p>
+        <div className="grid grid-cols-3 gap-3 border-y border-border/50 py-6">
+          <div className="text-center">
+            <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase mb-2">Dette totale</p>
+            <p className="text-[1.4rem] font-financial font-bold text-destructive tracking-tight">{formatCurrency(totalDebt)}</p>
           </div>
-          <div className="bg-primary/5 rounded-xl p-3 text-center">
-            <p className="text-xs text-muted-foreground mb-1">Libre en</p>
-            <p className="text-lg font-bold text-primary">{results.months} mois</p>
+          <div className="text-center border-x border-border/40">
+            <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase mb-2">Libre en</p>
+            <p className="text-[1.4rem] font-financial font-bold text-primary tracking-tight">{results.months} mois</p>
           </div>
-          <div className="bg-accent/10 rounded-xl p-3 text-center">
-            <p className="text-xs text-muted-foreground mb-1">Intérêts payés</p>
-            <p className="text-lg font-bold">{formatCurrency(results.totalInterest)}</p>
+          <div className="text-center">
+            <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase mb-2">Intérêts payés</p>
+            <p className="text-[1.4rem] font-financial font-bold text-foreground tracking-tight">{formatCurrency(results.totalInterest)}</p>
           </div>
         </div>
 

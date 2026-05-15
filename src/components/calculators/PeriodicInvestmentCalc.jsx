@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { TrendingUp, DollarSign, Calendar, Percent } from "lucide-react";
+import { DollarSign, Calendar, Percent } from "lucide-react";
 
 function formatCurrency(val) {
   return new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(val);
@@ -36,17 +36,16 @@ export default function PeriodicInvestmentCalc() {
   const finalValue = data[data.length - 1];
 
   return (
-    <Card className="border-0 shadow-lg">
-      <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <TrendingUp className="w-5 h-5 text-primary" />
+    <Card className="border border-border/50 shadow-float bg-card">
+      <CardHeader className="pb-2 px-8 pt-8">
+        <CardTitle className="text-[17px] font-semibold text-foreground tracking-tight">
           Placement périodique
         </CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Visualisez la croissance de votre épargne avec des contributions régulières.
+        <p className="text-[13.5px] text-muted-foreground font-light leading-relaxed mt-1">
+          Visualisez la croissance de votre épargne avec des contributions régulières et les intérêts composés.
         </p>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-8 px-8 pb-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label className="text-xs font-medium flex items-center gap-1.5">
@@ -99,18 +98,18 @@ export default function PeriodicInvestmentCalc() {
         </div>
 
         {/* Results */}
-        <div className="grid grid-cols-3 gap-3">
-          <div className="bg-primary/5 rounded-xl p-3 text-center">
-            <p className="text-xs text-muted-foreground mb-1">Valeur totale</p>
-            <p className="text-lg font-bold text-primary">{formatCurrency(finalValue["Valeur totale"])}</p>
+        <div className="grid grid-cols-3 gap-3 border-y border-border/50 py-6">
+          <div className="text-center">
+            <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase mb-2">Valeur totale</p>
+            <p className="text-[1.4rem] font-financial font-bold text-primary tracking-tight">{formatCurrency(finalValue["Valeur totale"])}</p>
           </div>
-          <div className="bg-accent/10 rounded-xl p-3 text-center">
-            <p className="text-xs text-muted-foreground mb-1">Contributions</p>
-            <p className="text-lg font-bold">{formatCurrency(finalValue["Contributions"])}</p>
+          <div className="text-center border-x border-border/40">
+            <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase mb-2">Contributions</p>
+            <p className="text-[1.4rem] font-financial font-bold text-foreground tracking-tight">{formatCurrency(finalValue["Contributions"])}</p>
           </div>
-          <div className="bg-green-50 rounded-xl p-3 text-center">
-            <p className="text-xs text-muted-foreground mb-1">Intérêts gagnés</p>
-            <p className="text-lg font-bold text-green-600">{formatCurrency(finalValue["Intérêts"])}</p>
+          <div className="text-center">
+            <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase mb-2">Intérêts</p>
+            <p className="text-[1.4rem] font-financial font-bold text-success tracking-tight">{formatCurrency(finalValue["Intérêts"])}</p>
           </div>
         </div>
 

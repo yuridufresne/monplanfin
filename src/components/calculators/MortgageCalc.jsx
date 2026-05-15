@@ -57,17 +57,16 @@ export default function MortgageCalc() {
   const COLORS = ["hsl(217, 71%, 25%)", "hsl(43, 96%, 56%)", "hsl(162, 63%, 41%)"];
 
   return (
-    <Card className="border-0 shadow-lg">
-      <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Home className="w-5 h-5 text-primary" />
+    <Card className="border border-border/50 shadow-float bg-card">
+      <CardHeader className="pb-2 px-8 pt-8">
+        <CardTitle className="text-[17px] font-semibold text-foreground tracking-tight">
           Capacité hypothécaire
         </CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Combien de maison pouvez-vous vous permettre selon les règles ABD/ATD?
+        <p className="text-[13.5px] text-muted-foreground font-light leading-relaxed mt-1">
+          Calculez le prix d'achat maximum selon les ratios ABD et ATD en vigueur au Canada.
         </p>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-8 px-8 pb-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label className="text-xs font-medium flex items-center gap-1.5">
@@ -131,11 +130,18 @@ export default function MortgageCalc() {
         </div>
 
         {/* Results */}
-        <div className="bg-primary/5 rounded-2xl p-6 text-center">
-          <p className="text-sm text-muted-foreground mb-1">Prix maximum d'achat estimé</p>
-          <p className="text-3xl font-bold text-primary font-serif">{formatCurrency(results.maxPrice)}</p>
-          <p className="text-sm text-muted-foreground mt-2">
-            Paiement mensuel: <span className="font-semibold text-foreground">{formatCurrency(results.monthlyPayment)}/mois</span>
+        <div className="border-y border-border/50 py-6 text-center">
+          <p className="text-[11px] font-medium tracking-wider uppercase text-muted-foreground mb-3">
+            Prix maximum d'achat estimé
+          </p>
+          <p className="text-[2.5rem] font-financial font-bold text-primary tracking-tight leading-none mb-2">
+            {formatCurrency(results.maxPrice)}
+          </p>
+          <p className="text-[13px] text-muted-foreground font-light">
+            Paiement mensuel estimé :{" "}
+            <span className="font-financial font-semibold text-foreground">
+              {formatCurrency(results.monthlyPayment)} / mois
+            </span>
           </p>
         </div>
 

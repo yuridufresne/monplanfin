@@ -1,52 +1,69 @@
 import React from "react";
 import { Link } from "react-router-dom";
 
+const links = {
+  "Outils gratuits": [
+    { label: "Calculatrices financières", path: "/calculatrices" },
+  ],
+  "Espace membre": [
+    { label: "Tableau de bord", path: "/dashboard" },
+    { label: "Budget interactif", path: "/budget" },
+    { label: "Suivi des placements", path: "/placements" },
+    { label: "Plan financier", path: "/plan" },
+  ],
+};
+
 export default function Footer() {
   return (
-    <footer className="bg-primary text-primary-foreground">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div>
-            <div className="flex items-center gap-2.5 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center">
-                <span className="text-accent-foreground font-bold text-xs">MP</span>
+    <footer className="bg-primary text-white">
+      <div className="max-w-7xl mx-auto px-6 lg:px-10">
+        {/* Main footer */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 py-16 md:py-20">
+          {/* Brand */}
+          <div className="md:col-span-2">
+            <div className="flex items-center gap-2.5 mb-6">
+              <div className="w-7 h-7 rounded-md bg-white/10 flex items-center justify-center">
+                <span className="text-white font-bold text-[10px] tracking-tight">MP</span>
               </div>
-              <span className="font-serif text-lg font-semibold">MonPlanFin</span>
+              <span className="text-[15px] font-semibold tracking-tight">MonPlanFin</span>
             </div>
-            <p className="text-primary-foreground/70 text-sm leading-relaxed">
-              Votre guide financier personnel pour prendre le contrôle de vos finances au Québec.
+            <p className="text-[13.5px] text-white/50 leading-relaxed max-w-xs font-light">
+              Votre guide de planification financière personnelle, conçu pour les réalités fiscales et patrimoniales du Québec.
             </p>
-          </div>
-          <div>
-            <h4 className="font-semibold mb-4 text-sm uppercase tracking-wider text-primary-foreground/60">
-              Outils gratuits
-            </h4>
-            <div className="space-y-2.5">
-              <Link to="/calculatrices" className="block text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors">
-                Calculatrices financières
-              </Link>
+            <div className="mt-8">
+              <div className="w-5 h-[1.5px] bg-accent" />
             </div>
           </div>
-          <div>
-            <h4 className="font-semibold mb-4 text-sm uppercase tracking-wider text-primary-foreground/60">
-              Espace membre
-            </h4>
-            <div className="space-y-2.5">
-              <Link to="/budget" className="block text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors">
-                Budget interactif
-              </Link>
-              <Link to="/placements" className="block text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors">
-                Suivi des placements
-              </Link>
-              <Link to="/plan" className="block text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors">
-                Plan financier
-              </Link>
+
+          {/* Links */}
+          {Object.entries(links).map(([section, items]) => (
+            <div key={section}>
+              <p className="text-[10.5px] font-bold tracking-[0.14em] uppercase text-white/35 mb-5">
+                {section}
+              </p>
+              <ul className="space-y-3">
+                {items.map((item) => (
+                  <li key={item.path}>
+                    <Link
+                      to={item.path}
+                      className="text-[13.5px] text-white/55 hover:text-white transition-colors duration-150 font-light"
+                    >
+                      {item.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </div>
-          </div>
+          ))}
         </div>
-        <div className="border-t border-primary-foreground/10 mt-10 pt-6">
-          <p className="text-xs text-primary-foreground/50 text-center">
-            © {new Date().getFullYear()} MonPlanFin.com — Tous droits réservés. Ce site ne constitue pas un conseil financier professionnel.
+
+        {/* Bottom bar */}
+        <div className="border-t border-white/10 py-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-[11.5px] text-white/30 font-light">
+            © {new Date().getFullYear()} MonPlanFin.com — Tous droits réservés.
+          </p>
+          <p className="text-[11.5px] text-white/25 font-light">
+            Ce site ne constitue pas un conseil financier professionnel.
           </p>
         </div>
       </div>

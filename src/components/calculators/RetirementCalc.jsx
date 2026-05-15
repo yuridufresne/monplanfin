@@ -44,17 +44,16 @@ export default function RetirementCalc() {
   const runsOutAge = data.find((d) => d.âge > retireAge && d.Épargne <= 0);
 
   return (
-    <Card className="border-0 shadow-lg">
-      <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Sunset className="w-5 h-5 text-primary" />
+    <Card className="border border-border/50 shadow-float bg-card">
+      <CardHeader className="pb-2 px-8 pt-8">
+        <CardTitle className="text-[17px] font-semibold text-foreground tracking-tight">
           Planification retraite
         </CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Estimez combien vous aurez à la retraite et combien de temps votre épargne durera.
+        <p className="text-[13.5px] text-muted-foreground font-light leading-relaxed mt-1">
+          Projetez votre capital à la retraite et estimez la longévité de votre épargne selon vos dépenses prévues.
         </p>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-8 px-8 pb-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label className="text-xs font-medium">Âge actuel: {currentAge} ans</Label>
@@ -90,15 +89,21 @@ export default function RetirementCalc() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-primary/5 rounded-xl p-4 text-center">
-            <p className="text-xs text-muted-foreground mb-1">À la retraite ({retireAge} ans)</p>
-            <p className="text-xl font-bold text-primary">{formatCurrency(atRetirement?.Épargne || 0)}</p>
+        <div className="grid grid-cols-2 gap-6 border-y border-border/50 py-6">
+          <div className="text-center">
+            <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase mb-2">
+              Capital à {retireAge} ans
+            </p>
+            <p className="text-[1.6rem] font-financial font-bold text-primary tracking-tight">
+              {formatCurrency(atRetirement?.Épargne || 0)}
+            </p>
           </div>
-          <div className={`rounded-xl p-4 text-center ${runsOutAge ? "bg-destructive/5" : "bg-green-50"}`}>
-            <p className="text-xs text-muted-foreground mb-1">Durée de l'épargne</p>
-            <p className={`text-xl font-bold ${runsOutAge ? "text-destructive" : "text-green-600"}`}>
-              {runsOutAge ? `Jusqu'à ${runsOutAge.âge} ans` : "90+ ans ✓"}
+          <div className="text-center border-l border-border/40">
+            <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase mb-2">
+              Durée de l'épargne
+            </p>
+            <p className={`text-[1.6rem] font-financial font-bold tracking-tight ${runsOutAge ? "text-destructive" : "text-success"}`}>
+              {runsOutAge ? `Épuisée à ${runsOutAge.âge} ans` : "90+ ans ✓"}
             </p>
           </div>
         </div>
