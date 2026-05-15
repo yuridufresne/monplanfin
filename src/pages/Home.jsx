@@ -194,7 +194,7 @@ export default function Home() {
                   src={currentCalc.url}
                   title={currentCalc.label}
                   width="100%"
-                  height="780"
+                  height="600"
                   frameBorder="0"
                   scrolling="yes"
                   className="block w-full"
