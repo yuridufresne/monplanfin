@@ -194,10 +194,10 @@ export default function Home() {
                   src={currentCalc.url}
                   title={currentCalc.label}
                   width="100%"
-                  height="600"
                   frameBorder="0"
-                  scrolling="yes"
+                  scrolling="no"
                   className="block w-full"
+                  style={{ height: "1400px" }}
                 />
               </div>
             </motion.div>

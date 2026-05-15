@@ -155,11 +155,10 @@ export default function Calculators() {
                 src={current.url}
                 title={current.label}
                 width="100%"
-                height="800"
                 frameBorder="0"
-                scrolling="yes"
+                scrolling="no"
                 className="block w-full"
-                style={{ minHeight: 800 }}
+                style={{ height: "1400px" }}
               />
             </div>
           </motion.div>
