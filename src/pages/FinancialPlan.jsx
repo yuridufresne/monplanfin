@@ -1,33 +1,59 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
-import {
-  Target, Plus, Pencil, Trash2, TrendingUp,
-  CreditCard, DollarSign, Shield, AlertTriangle
-} from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { Target, Plus, Pencil, Trash2, TrendingUp, CreditCard, Shield, Wallet } from "lucide-react";
 
-function formatCurrency(val) {
-  return new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(val || 0);
-}
+const fmt = (v) => new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v || 0);
 
 const GOAL_CATEGORIES = {
   retraite: "Retraite", maison: "Maison", voyage: "Voyage",
   education: "Éducation", fond_urgence: "Fonds d'urgence", voiture: "Voiture", autre: "Autre",
 };
-
 const DEBT_LABELS = {
   hypotheque: "Hypothèque", pret_auto: "Prêt auto", carte_credit: "Carte de crédit",
   marge_credit: "Marge de crédit", pret_etudiant: "Prêt étudiant",
   pret_personnel: "Prêt personnel", autre: "Autre",
+};
+
+/* ── Liquid Glass primitives ── */
+const glass = {
+  card: {
+    background: "rgba(255,255,255,0.07)",
+    backdropFilter: "blur(28px) saturate(180%)",
+    WebkitBackdropFilter: "blur(28px) saturate(180%)",
+    border: "1px solid rgba(255,255,255,0.13)",
+    boxShadow: "0 8px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.12)",
+  },
+  cardAccent: (color) => ({
+    background: `linear-gradient(135deg, ${color}18 0%, rgba(255,255,255,0.04) 100%)`,
+    backdropFilter: "blur(28px) saturate(180%)",
+    WebkitBackdropFilter: "blur(28px) saturate(180%)",
+    border: `1px solid ${color}28`,
+    boxShadow: `0 8px 32px rgba(0,0,0,0.35), inset 0 1px 0 ${color}20`,
+  }),
+  pill: (color) => ({
+    background: `${color}18`,
+    border: `1px solid ${color}30`,
+    color,
+  }),
+  btn: {
+    background: "rgba(255,255,255,0.1)",
+    backdropFilter: "blur(16px)",
+    WebkitBackdropFilter: "blur(16px)",
+    border: "1px solid rgba(255,255,255,0.18)",
+    color: "#fff",
+  },
+  btnAccent: {
+    background: "linear-gradient(135deg, #C9A063 0%, #e6c07a 100%)",
+    boxShadow: "0 4px 16px rgba(201,160,99,0.35)",
+    color: "#050810",
+    border: "none",
+  },
 };
 
 export default function FinancialPlan() {
@@ -53,204 +79,251 @@ export default function FinancialPlan() {
   const totalAssets = investments.reduce((s, i) => s + (i.current_value || 0), 0);
   const totalDebt = debts.reduce((s, d) => s + (d.balance || 0), 0);
   const netWorth = totalAssets - totalDebt;
-  const totalRevenue = budgetEntries.filter((e) => e.type === "revenu").reduce((s, e) => s + (e.amount || 0), 0);
-  const totalExpenses = budgetEntries.filter((e) => e.type === "depense").reduce((s, e) => s + (e.amount || 0), 0);
 
-  const netWorthData = [
-    { name: "Actifs", value: totalAssets, fill: "#2e8b6e" },
-    { name: "Dettes", value: totalDebt, fill: "#d94f6b" },
-    { name: "Valeur nette", value: Math.max(0, netWorth), fill: "#1e3a5f" },
+  const chartData = [
+    { name: "Actifs", value: totalAssets, color: "#5BC4A0" },
+    { name: "Dettes", value: totalDebt, color: "#f87171" },
+    { name: "Valeur nette", value: Math.max(0, netWorth), color: "#C9A063" },
   ];
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
-      <div className="mb-8">
-        <h1 className="text-2xl md:text-3xl font-serif font-bold">Mon plan financier</h1>
-        <p className="text-muted-foreground mt-1">Vue complète de votre situation financière</p>
-      </div>
+    <div style={{ background: "linear-gradient(135deg, #050810 0%, #0c1428 50%, #050810 100%)", minHeight: "100vh", position: "relative", overflow: "hidden" }}>
+      {/* Ambient orbs */}
+      <div style={{ position: "absolute", top: "-10%", right: "-5%", width: 600, height: 600, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(201,160,99,0.12) 0%, transparent 70%)", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", bottom: "10%", left: "-10%", width: 500, height: 500, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(91,196,160,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
 
-      {/* Net Worth Overview */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        <Card className="border-0 shadow-md bg-green-50">
-          <CardContent className="p-5 text-center">
-            <TrendingUp className="w-6 h-6 text-green-600 mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground">Actifs totaux</p>
-            <p className="text-2xl font-bold text-green-700">{formatCurrency(totalAssets)}</p>
-          </CardContent>
-        </Card>
-        <Card className="border-0 shadow-md bg-red-50">
-          <CardContent className="p-5 text-center">
-            <CreditCard className="w-6 h-6 text-red-600 mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground">Dettes totales</p>
-            <p className="text-2xl font-bold text-red-700">{formatCurrency(totalDebt)}</p>
-          </CardContent>
-        </Card>
-        <Card className={`border-0 shadow-md ${netWorth >= 0 ? "bg-primary/5" : "bg-red-50"}`}>
-          <CardContent className="p-5 text-center">
-            <Shield className="w-6 h-6 text-primary mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground">Valeur nette</p>
-            <p className={`text-2xl font-bold ${netWorth >= 0 ? "text-primary" : "text-red-700"}`}>{formatCurrency(netWorth)}</p>
-          </CardContent>
-        </Card>
-      </div>
+      <div className="relative max-w-6xl mx-auto px-6 lg:px-10 py-14 md:py-20">
 
-      {/* Chart */}
-      <Card className="mb-8">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg">Aperçu de la valeur nette</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-48">
+        {/* Header */}
+        <div className="mb-12">
+          <div className="inline-flex items-center gap-2.5 mb-4">
+            <div style={{ width: 20, height: 1.5, background: "#C9A063" }} />
+            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(201,160,99,0.65)" }}>
+              Plan financier
+            </span>
+          </div>
+          <h1 style={{ fontFamily: "var(--font-urbanist)", fontSize: "clamp(2rem,5vw,3rem)", fontWeight: 800, color: "#fff", letterSpacing: "-0.03em", lineHeight: 1.1 }}>
+            Votre patrimoine,<br />
+            <span style={{ color: "#C9A063" }}>en un coup d'œil.</span>
+          </h1>
+        </div>
+
+        {/* KPI strip */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+          {[
+            { label: "Actifs totaux", value: fmt(totalAssets), color: "#5BC4A0", icon: TrendingUp },
+            { label: "Dettes totales", value: fmt(totalDebt), color: "#f87171", icon: CreditCard },
+            { label: "Valeur nette", value: fmt(netWorth), color: netWorth >= 0 ? "#C9A063" : "#f87171", icon: Shield },
+          ].map((k) => (
+            <div key={k.label} style={{ ...glass.cardAccent(k.color), borderRadius: 20, padding: "1.5rem", position: "relative", overflow: "hidden" }}>
+              <div style={{ position: "absolute", top: -20, right: -20, width: 80, height: 80, borderRadius: "50%", background: `radial-gradient(ellipse, ${k.color}22 0%, transparent 70%)` }} />
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                <div style={{ width: 34, height: 34, borderRadius: 10, background: `${k.color}18`, border: `1px solid ${k.color}30`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <k.icon style={{ width: 16, height: 16, color: k.color }} />
+                </div>
+                <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", fontWeight: 500 }}>{k.label}</p>
+              </div>
+              <p style={{ fontFamily: "var(--font-mono)", fontSize: "1.75rem", fontWeight: 700, color: k.color, letterSpacing: "-0.02em", lineHeight: 1 }}>{k.value}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Chart */}
+        <div style={{ ...glass.card, borderRadius: 24, padding: "1.75rem", marginBottom: "2rem" }}>
+          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.35)", marginBottom: 20 }}>Aperçu patrimonial</p>
+          <div style={{ height: 160 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={netWorthData} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis type="number" tickFormatter={(v) => formatCurrency(v)} tick={{ fontSize: 11 }} />
-                <YAxis type="category" dataKey="name" tick={{ fontSize: 12 }} width={100} />
-                <Tooltip formatter={(val) => formatCurrency(val)} />
-                <Bar dataKey="value" radius={[0, 6, 6, 0]}>
-                  {netWorthData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
+              <BarChart data={chartData} layout="vertical" margin={{ left: 0, right: 16 }}>
+                <XAxis type="number" tickFormatter={fmt} tick={{ fontSize: 10, fill: "rgba(255,255,255,0.3)" }} axisLine={false} tickLine={false} />
+                <YAxis type="category" dataKey="name" tick={{ fontSize: 12, fill: "rgba(255,255,255,0.55)", fontWeight: 600 }} width={90} axisLine={false} tickLine={false} />
+                <Tooltip
+                  formatter={(v) => fmt(v)}
+                  contentStyle={{ background: "rgba(10,15,30,0.85)", backdropFilter: "blur(16px)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, color: "#fff", fontSize: 12 }}
+                  cursor={{ fill: "rgba(255,255,255,0.03)" }}
+                />
+                <Bar dataKey="value" radius={[0, 8, 8, 0]} barSize={26}>
+                  {chartData.map((e, i) => <Cell key={i} fill={e.color} />)}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Goals */}
-        <Card>
-          <CardHeader className="pb-3 flex flex-row items-center justify-between">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Target className="w-5 h-5 text-primary" /> Objectifs financiers
-            </CardTitle>
-            <Button size="sm" onClick={() => setShowGoalForm(true)}>
-              <Plus className="w-4 h-4 mr-1" /> Ajouter
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        {/* Goals + Debts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+          {/* Goals */}
+          <GlassPanel
+            title="Objectifs financiers"
+            icon={<Target style={{ width: 16, height: 16, color: "#C9A063" }} />}
+            onAdd={() => setShowGoalForm(true)}
+          >
             {goals.length === 0 ? (
-              <p className="text-muted-foreground text-sm text-center py-6">Définissez vos objectifs financiers</p>
-            ) : (
-              goals.map((goal) => {
-                const progress = goal.target_amount > 0 ? Math.min(100, ((goal.current_amount || 0) / goal.target_amount) * 100) : 0;
-                return (
-                  <div key={goal.id} className="p-3 rounded-xl hover:bg-muted/50 transition-colors group">
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-sm">{goal.title}</span>
-                        <Badge variant="secondary" className="text-xs">{GOAL_CATEGORIES[goal.category] || goal.category}</Badge>
-                      </div>
-                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditGoal(goal)}>
-                          <Pencil className="w-3 h-3" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => goalDelete.mutate(goal.id)}>
-                          <Trash2 className="w-3 h-3" />
-                        </Button>
-                      </div>
+              <EmptyState text="Aucun objectif défini" />
+            ) : goals.map((goal) => {
+              const pct = goal.target_amount > 0 ? Math.min(100, ((goal.current_amount || 0) / goal.target_amount) * 100) : 0;
+              return (
+                <div key={goal.id} style={{ padding: "12px 14px", borderRadius: 14, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", marginBottom: 8, position: "relative" }}
+                  className="group">
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>{goal.title}</span>
+                      <span style={{ ...glass.pill("#C9A063"), fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20 }}>
+                        {GOAL_CATEGORIES[goal.category] || goal.category}
+                      </span>
                     </div>
-                    <Progress value={progress} className="h-2 mb-1" />
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>{formatCurrency(goal.current_amount)} / {formatCurrency(goal.target_amount)}</span>
-                      <span>{Math.round(progress)}%</span>
+                    <div style={{ display: "flex", gap: 4, opacity: 0 }} className="group-hover:opacity-100 transition-opacity">
+                      <ActionBtn onClick={() => setEditGoal(goal)}><Pencil style={{ width: 12, height: 12 }} /></ActionBtn>
+                      <ActionBtn onClick={() => goalDelete.mutate(goal.id)} danger><Trash2 style={{ width: 12, height: 12 }} /></ActionBtn>
                     </div>
                   </div>
-                );
-              })
-            )}
-          </CardContent>
-        </Card>
+                  {/* Progress bar */}
+                  <div style={{ height: 5, borderRadius: 99, background: "rgba(255,255,255,0.07)", overflow: "hidden", marginBottom: 6 }}>
+                    <div style={{ height: "100%", width: `${pct}%`, borderRadius: 99, background: "linear-gradient(90deg, #C9A063, #e6c07a)", transition: "width 0.6s ease" }} />
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "rgba(255,255,255,0.4)" }}>
+                    <span>{fmt(goal.current_amount)} / {fmt(goal.target_amount)}</span>
+                    <span style={{ color: "#C9A063", fontWeight: 700 }}>{Math.round(pct)}%</span>
+                  </div>
+                </div>
+              );
+            })}
+          </GlassPanel>
 
-        {/* Debts */}
-        <Card>
-          <CardHeader className="pb-3 flex flex-row items-center justify-between">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <CreditCard className="w-5 h-5 text-red-600" /> Dettes
-            </CardTitle>
-            <Button size="sm" onClick={() => setShowDebtForm(true)}>
-              <Plus className="w-4 h-4 mr-1" /> Ajouter
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-3">
+          {/* Debts */}
+          <GlassPanel
+            title="Dettes"
+            icon={<CreditCard style={{ width: 16, height: 16, color: "#f87171" }} />}
+            onAdd={() => setShowDebtForm(true)}
+          >
             {debts.length === 0 ? (
-              <p className="text-muted-foreground text-sm text-center py-6">Aucune dette enregistrée</p>
-            ) : (
-              debts.map((debt) => (
-                <div key={debt.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-muted/50 transition-colors group">
+              <EmptyState text="Aucune dette enregistrée" />
+            ) : debts.map((debt) => (
+              <div key={debt.id} style={{ padding: "12px 14px", borderRadius: 14, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", marginBottom: 8 }}
+                className="group">
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <div>
-                    <p className="text-sm font-medium">{debt.name}</p>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <Badge variant="secondary" className="text-xs">{DEBT_LABELS[debt.type] || debt.type}</Badge>
-                      <span className="text-xs text-muted-foreground">{debt.interest_rate}%</span>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 4 }}>{debt.name}</p>
+                    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                      <span style={{ ...glass.pill("#f87171"), fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20 }}>
+                        {DEBT_LABELS[debt.type] || debt.type}
+                      </span>
+                      <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{debt.interest_rate}%</span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="text-right">
-                      <p className="text-sm font-semibold text-red-600">{formatCurrency(debt.balance)}</p>
-                      {debt.monthly_payment && <p className="text-xs text-muted-foreground">{formatCurrency(debt.monthly_payment)}/mois</p>}
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ textAlign: "right" }}>
+                      <p style={{ fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 700, color: "#f87171" }}>{fmt(debt.balance)}</p>
+                      {debt.monthly_payment > 0 && <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>{fmt(debt.monthly_payment)}/mois</p>}
                     </div>
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditDebt(debt)}>
-                        <Pencil className="w-3 h-3" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => debtDelete.mutate(debt.id)}>
-                        <Trash2 className="w-3 h-3" />
-                      </Button>
+                    <div style={{ display: "flex", gap: 4, opacity: 0 }} className="group-hover:opacity-100 transition-opacity">
+                      <ActionBtn onClick={() => setEditDebt(debt)}><Pencil style={{ width: 12, height: 12 }} /></ActionBtn>
+                      <ActionBtn onClick={() => debtDelete.mutate(debt.id)} danger><Trash2 style={{ width: 12, height: 12 }} /></ActionBtn>
                     </div>
                   </div>
                 </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
+              </div>
+            ))}
+          </GlassPanel>
+        </div>
       </div>
 
-      {/* Goal Form */}
-      <GoalFormDialog
-        open={showGoalForm || !!editGoal}
-        onClose={() => { setShowGoalForm(false); setEditGoal(null); }}
-        onSave={(data) => editGoal ? goalUpdate.mutate({ id: editGoal.id, data }) : goalCreate.mutate(data)}
-        goal={editGoal}
-      />
-
-      {/* Debt Form */}
-      <DebtFormDialog
-        open={showDebtForm || !!editDebt}
-        onClose={() => { setShowDebtForm(false); setEditDebt(null); }}
-        onSave={(data) => editDebt ? debtUpdate.mutate({ id: editDebt.id, data }) : debtCreate.mutate(data)}
-        debt={editDebt}
-      />
+      {/* Dialogs */}
+      <GoalFormDialog open={showGoalForm || !!editGoal} onClose={() => { setShowGoalForm(false); setEditGoal(null); }}
+        onSave={(d) => editGoal ? goalUpdate.mutate({ id: editGoal.id, data: d }) : goalCreate.mutate(d)} goal={editGoal} />
+      <DebtFormDialog open={showDebtForm || !!editDebt} onClose={() => { setShowDebtForm(false); setEditDebt(null); }}
+        onSave={(d) => editDebt ? debtUpdate.mutate({ id: editDebt.id, data: d }) : debtCreate.mutate(d)} debt={editDebt} />
     </div>
   );
 }
 
+function GlassPanel({ title, icon, onAdd, children }) {
+  return (
+    <div style={{ ...glass.card, borderRadius: 24, padding: "1.5rem" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {icon}
+          <p style={{ fontSize: 14, fontWeight: 700, color: "#fff", letterSpacing: "-0.01em" }}>{title}</p>
+        </div>
+        <button onClick={onAdd} style={{ ...glass.btnAccent, display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+          <Plus style={{ width: 13, height: 13 }} /> Ajouter
+        </button>
+      </div>
+      <div>{children}</div>
+    </div>
+  );
+}
+
+function ActionBtn({ onClick, danger, children }) {
+  return (
+    <button onClick={onClick} style={{
+      width: 28, height: 28, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+      background: danger ? "rgba(248,113,113,0.1)" : "rgba(255,255,255,0.07)",
+      border: `1px solid ${danger ? "rgba(248,113,113,0.2)" : "rgba(255,255,255,0.1)"}`,
+      color: danger ? "#f87171" : "rgba(255,255,255,0.6)",
+    }}>{children}</button>
+  );
+}
+
+function EmptyState({ text }) {
+  return <p style={{ fontSize: 13, color: "rgba(255,255,255,0.3)", textAlign: "center", padding: "2.5rem 0" }}>{text}</p>;
+}
+
+/* ── Glass Dialog fields ── */
+function GlassInput({ label, ...props }) {
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.45)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</label>
+      <input {...props} style={{
+        width: "100%", padding: "10px 14px", borderRadius: 12, fontSize: 13, color: "#fff", outline: "none",
+        background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)",
+        backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
+        fontFamily: props.type === "number" ? "var(--font-mono)" : undefined,
+      }} />
+    </div>
+  );
+}
+
+function GlassSelect({ label, value, onChange, options }) {
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.45)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</label>
+      <select value={value} onChange={(e) => onChange(e.target.value)} style={{
+        width: "100%", padding: "10px 14px", borderRadius: 12, fontSize: 13, color: "#fff", outline: "none",
+        background: "rgba(30,40,60,0.9)", border: "1px solid rgba(255,255,255,0.12)", cursor: "pointer",
+      }}>
+        {options.map(([k, v]) => <option key={k} value={k} style={{ background: "#0D1628" }}>{v}</option>)}
+      </select>
+    </div>
+  );
+}
+
+const dialogOverlay = {
+  background: "rgba(5,8,16,0.75)",
+  backdropFilter: "blur(16px)",
+  WebkitBackdropFilter: "blur(16px)",
+};
+
 function GoalFormDialog({ open, onClose, onSave, goal }) {
   const [form, setForm] = useState(goal || { title: "", target_amount: 0, current_amount: 0, category: "autre", priority: "moyenne", target_date: "" });
-  React.useEffect(() => { if (goal) setForm(goal); else setForm({ title: "", target_amount: 0, current_amount: 0, category: "autre", priority: "moyenne", target_date: "" }); }, [goal, open]);
+  React.useEffect(() => { setForm(goal || { title: "", target_amount: 0, current_amount: 0, category: "autre", priority: "moyenne", target_date: "" }); }, [goal, open]);
+  const f = (k) => (v) => setForm(p => ({ ...p, [k]: v }));
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader><DialogTitle>{goal ? "Modifier l'objectif" : "Nouvel objectif"}</DialogTitle></DialogHeader>
-        <form onSubmit={(e) => { e.preventDefault(); onSave(form); }} className="space-y-4">
-          <div className="space-y-2"><Label>Titre</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required /></div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2"><Label>Montant cible ($)</Label><Input type="number" value={form.target_amount} onChange={(e) => setForm({ ...form, target_amount: +e.target.value })} className="font-mono" /></div>
-            <div className="space-y-2"><Label>Montant actuel ($)</Label><Input type="number" value={form.current_amount} onChange={(e) => setForm({ ...form, current_amount: +e.target.value })} className="font-mono" /></div>
+      <DialogContent className="sm:max-w-md" style={{ background: "rgba(10,15,30,0.92)", backdropFilter: "blur(32px)", WebkitBackdropFilter: "blur(32px)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 24, color: "#fff" }}>
+        <DialogHeader><DialogTitle style={{ color: "#fff", fontFamily: "var(--font-urbanist)", fontSize: 18 }}>{goal ? "Modifier l'objectif" : "Nouvel objectif"}</DialogTitle></DialogHeader>
+        <form onSubmit={(e) => { e.preventDefault(); onSave(form); }} style={{ marginTop: 8 }}>
+          <GlassInput label="Titre" value={form.title} onChange={(e) => f("title")(e.target.value)} required />
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <GlassInput label="Montant cible ($)" type="number" value={form.target_amount} onChange={(e) => f("target_amount")(+e.target.value)} />
+            <GlassInput label="Montant actuel ($)" type="number" value={form.current_amount} onChange={(e) => f("current_amount")(+e.target.value)} />
           </div>
-          <div className="space-y-2">
-            <Label>Catégorie</Label>
-            <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {Object.entries(GOAL_CATEGORIES).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2"><Label>Date cible</Label><Input type="date" value={form.target_date} onChange={(e) => setForm({ ...form, target_date: e.target.value })} /></div>
-          <div className="flex gap-3 pt-2">
-            <Button type="button" variant="outline" onClick={onClose} className="flex-1">Annuler</Button>
-            <Button type="submit" className="flex-1">{goal ? "Modifier" : "Ajouter"}</Button>
+          <GlassSelect label="Catégorie" value={form.category} onChange={f("category")} options={Object.entries(GOAL_CATEGORIES)} />
+          <GlassInput label="Date cible" type="date" value={form.target_date} onChange={(e) => f("target_date")(e.target.value)} />
+          <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
+            <button type="button" onClick={onClose} style={{ flex: 1, padding: "11px 0", borderRadius: 12, fontSize: 13, fontWeight: 600, cursor: "pointer", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.7)" }}>Annuler</button>
+            <button type="submit" style={{ flex: 1, padding: "11px 0", borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: "pointer", background: "linear-gradient(135deg, #C9A063, #e6c07a)", color: "#050810", border: "none", boxShadow: "0 4px 16px rgba(201,160,99,0.3)" }}>{goal ? "Modifier" : "Ajouter"}</button>
           </div>
         </form>
       </DialogContent>
@@ -260,32 +333,25 @@ function GoalFormDialog({ open, onClose, onSave, goal }) {
 
 function DebtFormDialog({ open, onClose, onSave, debt }) {
   const [form, setForm] = useState(debt || { name: "", type: "carte_credit", balance: 0, interest_rate: 0, minimum_payment: 0, monthly_payment: 0, original_amount: 0 });
-  React.useEffect(() => { if (debt) setForm(debt); else setForm({ name: "", type: "carte_credit", balance: 0, interest_rate: 0, minimum_payment: 0, monthly_payment: 0, original_amount: 0 }); }, [debt, open]);
+  React.useEffect(() => { setForm(debt || { name: "", type: "carte_credit", balance: 0, interest_rate: 0, minimum_payment: 0, monthly_payment: 0, original_amount: 0 }); }, [debt, open]);
+  const f = (k) => (v) => setForm(p => ({ ...p, [k]: v }));
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader><DialogTitle>{debt ? "Modifier la dette" : "Nouvelle dette"}</DialogTitle></DialogHeader>
-        <form onSubmit={(e) => { e.preventDefault(); onSave(form); }} className="space-y-4">
-          <div className="space-y-2"><Label>Nom</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></div>
-          <div className="space-y-2">
-            <Label>Type</Label>
-            <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {Object.entries(DEBT_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
-              </SelectContent>
-            </Select>
+      <DialogContent className="sm:max-w-md" style={{ background: "rgba(10,15,30,0.92)", backdropFilter: "blur(32px)", WebkitBackdropFilter: "blur(32px)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 24, color: "#fff" }}>
+        <DialogHeader><DialogTitle style={{ color: "#fff", fontFamily: "var(--font-urbanist)", fontSize: 18 }}>{debt ? "Modifier la dette" : "Nouvelle dette"}</DialogTitle></DialogHeader>
+        <form onSubmit={(e) => { e.preventDefault(); onSave(form); }} style={{ marginTop: 8 }}>
+          <GlassInput label="Nom" value={form.name} onChange={(e) => f("name")(e.target.value)} required />
+          <GlassSelect label="Type" value={form.type} onChange={f("type")} options={Object.entries(DEBT_LABELS)} />
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <GlassInput label="Solde ($)" type="number" value={form.balance} onChange={(e) => f("balance")(+e.target.value)} />
+            <GlassInput label="Taux (%)" type="number" value={form.interest_rate} onChange={(e) => f("interest_rate")(+e.target.value)} step="0.1" />
+            <GlassInput label="Paiement min ($)" type="number" value={form.minimum_payment} onChange={(e) => f("minimum_payment")(+e.target.value)} />
+            <GlassInput label="Paiement mensuel ($)" type="number" value={form.monthly_payment} onChange={(e) => f("monthly_payment")(+e.target.value)} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2"><Label>Solde ($)</Label><Input type="number" value={form.balance} onChange={(e) => setForm({ ...form, balance: +e.target.value })} className="font-mono" /></div>
-            <div className="space-y-2"><Label>Taux (%)</Label><Input type="number" value={form.interest_rate} onChange={(e) => setForm({ ...form, interest_rate: +e.target.value })} className="font-mono" step="0.1" /></div>
-            <div className="space-y-2"><Label>Paiement min.</Label><Input type="number" value={form.minimum_payment} onChange={(e) => setForm({ ...form, minimum_payment: +e.target.value })} className="font-mono" /></div>
-            <div className="space-y-2"><Label>Paiement mensuel</Label><Input type="number" value={form.monthly_payment} onChange={(e) => setForm({ ...form, monthly_payment: +e.target.value })} className="font-mono" /></div>
-          </div>
-          <div className="flex gap-3 pt-2">
-            <Button type="button" variant="outline" onClick={onClose} className="flex-1">Annuler</Button>
-            <Button type="submit" className="flex-1">{debt ? "Modifier" : "Ajouter"}</Button>
+          <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
+            <button type="button" onClick={onClose} style={{ flex: 1, padding: "11px 0", borderRadius: 12, fontSize: 13, fontWeight: 600, cursor: "pointer", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.7)" }}>Annuler</button>
+            <button type="submit" style={{ flex: 1, padding: "11px 0", borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: "pointer", background: "linear-gradient(135deg, #C9A063, #e6c07a)", color: "#050810", border: "none", boxShadow: "0 4px 16px rgba(201,160,99,0.3)" }}>{debt ? "Modifier" : "Ajouter"}</button>
           </div>
         </form>
       </DialogContent>
