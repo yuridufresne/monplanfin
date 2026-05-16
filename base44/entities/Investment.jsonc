@@ -2,30 +2,25 @@
   "name": "Investment",
   "type": "object",
   "properties": {
-    "name": {
+    "asset_name": {
       "type": "string",
-      "description": "Nom du placement"
+      "description": "Nom complet de l'actif"
     },
-    "ticker": {
+    "symbol": {
       "type": "string",
-      "description": "Symbole boursier"
+      "description": "Symbole boursier (ticker)"
     },
-    "type": {
+    "asset_type": {
       "type": "string",
       "enum": [
-        "actions",
-        "obligations",
-        "fonds_communs",
+        "action",
         "fnb",
-        "celi",
-        "reer",
-        "reee",
-        "compte_epargne",
+        "fond_mutuel",
         "crypto",
-        "immobilier",
+        "obligations",
         "autre"
       ],
-      "description": "Type de placement"
+      "description": "Type d'actif"
     },
     "account_type": {
       "type": "string",
@@ -40,31 +35,46 @@
     },
     "quantity": {
       "type": "number",
-      "description": "Nombre de parts"
+      "description": "Nombre de parts d\u00e9tenues"
+    },
+    "purchase_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date d'achat (ISO)"
     },
     "purchase_price": {
       "type": "number",
-      "description": "Prix d'achat par part"
+      "description": "Prix d'achat par part ($)"
     },
     "current_price": {
       "type": "number",
-      "description": "Prix actuel par part"
+      "description": "Prix actuel par part ($)"
     },
     "current_value": {
       "type": "number",
-      "description": "Valeur actuelle totale"
+      "description": "Valeur actuelle totale ($)"
+    },
+    "last_updated": {
+      "type": "string",
+      "description": "Derni\u00e8re mise \u00e0 jour des prix (timestamp ISO)"
     },
     "annual_return_pct": {
       "type": "number",
       "description": "Rendement annuel en %"
     },
+    "ai_metadata": {
+      "type": "string",
+      "description": "R\u00e9sum\u00e9 contextuel pour l'IA (type d'actif, contexte macro, volatilit\u00e9...)"
+    },
     "notes": {
-      "type": "string"
+      "type": "string",
+      "description": "Notes personnelles"
     }
   },
   "required": [
-    "name",
-    "type",
-    "current_value"
+    "asset_name",
+    "asset_type",
+    "quantity",
+    "purchase_price"
   ]
 }
