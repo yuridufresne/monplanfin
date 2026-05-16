@@ -190,15 +190,18 @@ export default function Home() {
                     </a>
                   </div>
                 </div>
-                <iframe
-                  src={currentCalc.url}
-                  title={currentCalc.label}
-                  width="100%"
-                  frameBorder="0"
-                  scrolling="no"
-                  className="block w-full"
-                  style={{ height: "2200px" }}
-                />
+                {/* Clip wrapper — hides Equisoft footer */}
+                <div style={{ height: "2050px", overflow: "hidden" }}>
+                  <iframe
+                    src={currentCalc.url}
+                    title={currentCalc.label}
+                    width="100%"
+                    frameBorder="0"
+                    scrolling="no"
+                    className="block w-full"
+                    style={{ height: "2200px" }}
+                  />
+                </div>
               </div>
             </motion.div>
           </AnimatePresence>
