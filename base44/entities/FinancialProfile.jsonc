@@ -1,0 +1,31 @@
+{
+  "name": "FinancialProfile",
+  "type": "object",
+  "properties": {
+    "section": {
+      "type": "string",
+      "enum": [
+        "profil_personnel",
+        "retraite",
+        "dettes",
+        "assurance",
+        "etudes",
+        "objectifs",
+        "fonds_urgence",
+        "revenu"
+      ],
+      "description": "Section du questionnaire ABF"
+    },
+    "data": {
+      "type": "object",
+      "description": "Donn\u00e9es JSON de la section"
+    },
+    "completed": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "section"
+  ]
+}

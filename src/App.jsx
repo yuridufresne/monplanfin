@@ -12,6 +12,7 @@ import Dashboard from '@/pages/Dashboard';
 import Budget from '@/pages/Budget';
 import Investments from '@/pages/Investments';
 import FinancialPlan from '@/pages/FinancialPlan';
+import FinancialAnalysis from '@/pages/FinancialAnalysis';
 
 const PUBLIC_PATHS = ['/', '/calculatrices'];
 
@@ -51,6 +52,7 @@ const AuthenticatedApp = () => {
         <Route path="/budget" element={<Budget />} />
         <Route path="/placements" element={<Investments />} />
         <Route path="/plan" element={<FinancialPlan />} />
+        <Route path="/analyse" element={<FinancialAnalysis />} />
         <Route path="*" element={<PageNotFound />} />
       </Route>
     </Routes>
