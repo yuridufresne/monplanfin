@@ -459,8 +459,17 @@ function StepAssurance({ data, setData }) {
 
 function StepEtudes({ data, setData }) {
   const f = (k) => (v) => setData(p => ({ ...p, [k]: v }));
+
+  const enfants = data.enfants || [];
+  const updateEnfant = (i, k, v) => setData(p => ({ ...p, enfants: enfants.map((e, idx) => idx === i ? { ...e, [k]: v } : e) }));
+  const addEnfant = () => setData(p => ({ ...p, enfants: [...enfants, { prenom: "", date_naissance: "", reee_solde: "", reee_cotisation_mensuelle: "", age_debut_etudes: "18", type_reee: "individuel" }] }));
+  const removeEnfant = (i) => setData(p => ({ ...p, enfants: enfants.filter((_, idx) => idx !== i) }));
+
+  const totalReee = enfants.reduce((s, e) => s + (parseFloat(e.reee_solde) || 0), 0);
+  const totalCotisations = enfants.reduce((s, e) => s + (parseFloat(e.reee_cotisation_mensuelle) || 0), 0);
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <Field label="Jugez-vous important d'épargner pour les études de vos enfants ?">
         <RadioGroup value={data.importance_etudes} onChange={f("importance_etudes")} options={[
           { value: "non", label: "Pas important" },
@@ -468,17 +477,119 @@ function StepEtudes({ data, setData }) {
           { value: "tres", label: "Très important" },
         ]} />
       </Field>
-      <Field label="Épargnez-vous actuellement pour les études ?">
-        <RadioGroup value={data.epargne_etudes} onChange={f("epargne_etudes")} options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]} />
-      </Field>
-      {data.epargne_etudes === "oui" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Field label="Épargnes actuelles REEE ($)"><Input value={data.epargnes_reee} onChange={f("epargnes_reee")} type="number" /></Field>
-          <Field label="Cotisation mensuelle ($)"><Input value={data.cotisation_reee} onChange={f("cotisation_reee")} type="number" /></Field>
+
+      {/* Info box */}
+      <div className="rounded-xl p-4 text-[12px] leading-relaxed" style={{ background: "rgba(201,160,99,0.06)", border: "1px solid rgba(201,160,99,0.15)", color: "#94A3B8" }}>
+        <p className="font-semibold mb-1" style={{ color: "#C9A063" }}>💡 REEE — Subventions gouvernementales</p>
+        <p>• <strong style={{ color: "#fff" }}>SCEE fédérale :</strong> 20% des cotisations, max 500$/an par enfant (plafond à vie : 7 200$)</p>
+        <p>• <strong style={{ color: "#fff" }}>IQEE provincial (Québec) :</strong> 10% supplémentaire (+ bonification revenu faible)</p>
+        <p>• Cotisation annuelle max pour SCEE : 2 500$/enfant</p>
+      </div>
+
+      {/* Enfants */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-[14px] font-semibold text-white">Enfants</p>
+          <button onClick={addEnfant} className="text-[12px] font-semibold px-3 py-1.5 rounded-lg"
+            style={{ background: "rgba(201,160,99,0.1)", color: "#C9A063", border: "1px solid rgba(201,160,99,0.2)" }}>
+            + Ajouter un enfant
+          </button>
+        </div>
+
+        {enfants.length === 0 && (
+          <button onClick={addEnfant} className="w-full py-3 rounded-xl text-[13px] font-medium"
+            style={{ border: "1px dashed rgba(201,160,99,0.3)", color: "#C9A063" }}>
+            + Ajouter mon premier enfant
+          </button>
+        )}
+
+        <div className="space-y-4">
+          {enfants.map((e, i) => (
+            <div key={i} className="rounded-xl p-5 relative" style={{ background: "rgba(201,160,99,0.04)", border: "1px solid rgba(201,160,99,0.15)" }}>
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-[12px] font-bold tracking-wider uppercase" style={{ color: "rgba(201,160,99,0.6)" }}>Enfant {i + 1}</p>
+                <button onClick={() => removeEnfant(i)} className="text-[11px] px-2 py-1 rounded" style={{ color: "rgba(248,113,113,0.7)" }}>✕ Retirer</button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Field label="Prénom">
+                  <Input value={e.prenom} onChange={v => updateEnfant(i, "prenom", v)} placeholder="ex: Emma" />
+                </Field>
+                <Field label="Date de naissance">
+                  <Input type="date" value={e.date_naissance} onChange={v => updateEnfant(i, "date_naissance", v)} />
+                </Field>
+                <Field label="Type de REEE">
+                  <RadioGroup value={e.type_reee} onChange={v => updateEnfant(i, "type_reee", v)} options={[
+                    { value: "individuel", label: "Individuel" },
+                    { value: "familial", label: "Familial" },
+                  ]} />
+                </Field>
+                <Field label="Âge prévu début des études">
+                  <Input type="number" value={e.age_debut_etudes} onChange={v => updateEnfant(i, "age_debut_etudes", v)} placeholder="18" />
+                </Field>
+                <Field label="Solde REEE actuel ($)">
+                  <Input type="number" value={e.reee_solde} onChange={v => updateEnfant(i, "reee_solde", v)} placeholder="0" />
+                </Field>
+                <Field label="Cotisation mensuelle ($)" hint="Idéal : 208$/mois = 2 500$/an pour la SCEE max">
+                  <Input type="number" value={e.reee_cotisation_mensuelle} onChange={v => updateEnfant(i, "reee_cotisation_mensuelle", v)} placeholder="208" />
+                </Field>
+                <Field label="Institution financière">
+                  <Input value={e.institution} onChange={v => updateEnfant(i, "institution", v)} placeholder="ex: Desjardins, Fidelity..." />
+                </Field>
+                <Field label="Bénéficiaire du régime déjà ouvert ?">
+                  <RadioGroup value={e.regime_ouvert} onChange={v => updateEnfant(i, "regime_ouvert", v)} options={[
+                    { value: "oui", label: "Oui" },
+                    { value: "non", label: "Non" },
+                  ]} />
+                </Field>
+              </div>
+
+              {/* Mini calc */}
+              {e.date_naissance && e.reee_cotisation_mensuelle && (
+                (() => {
+                  const ageActuel = Math.floor((new Date() - new Date(e.date_naissance)) / (365.25 * 24 * 3600 * 1000));
+                  const annesRestantes = Math.max(0, (parseInt(e.age_debut_etudes) || 18) - ageActuel);
+                  const totalCot = (parseFloat(e.reee_cotisation_mensuelle) || 0) * 12 * annesRestantes;
+                  const subventions = Math.min(totalCot * 0.30, 7200 + 3600); // SCEE + IQEE approx
+                  return (
+                    <div className="mt-4 grid grid-cols-3 gap-3">
+                      {[
+                        { label: "Âge actuel", val: `${ageActuel} ans` },
+                        { label: "Années restantes", val: `${annesRestantes} ans` },
+                        { label: "Subventions estimées", val: new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(subventions) },
+                      ].map(item => (
+                        <div key={item.label} className="rounded-lg px-3 py-2 text-center" style={{ background: "rgba(201,160,99,0.07)" }}>
+                          <p className="text-[10px] mb-1" style={{ color: "#94A3B8" }}>{item.label}</p>
+                          <p className="font-financial text-[13px] font-bold" style={{ color: "#C9A063" }}>{item.val}</p>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Total */}
+      {enfants.length > 0 && (
+        <div className="rounded-xl px-5 py-4 grid grid-cols-2 gap-4"
+          style={{ background: "rgba(201,160,99,0.07)", border: "1px solid rgba(201,160,99,0.2)" }}>
+          <div>
+            <p className="text-[11px] mb-1" style={{ color: "#94A3B8" }}>Total REEE épargné</p>
+            <p className="font-financial text-[1.3rem] font-bold" style={{ color: "#C9A063" }}>
+              {new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(totalReee)}
+            </p>
+          </div>
+          <div>
+            <p className="text-[11px] mb-1" style={{ color: "#94A3B8" }}>Cotisations mensuelles totales</p>
+            <p className="font-financial text-[1.3rem] font-bold" style={{ color: "#C9A063" }}>
+              {new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(totalCotisations)}/mois
+            </p>
+          </div>
         </div>
       )}
-      <Field label="Nom de l'enfant (1er)"><Input value={data.enfant1_nom} onChange={f("enfant1_nom")} /></Field>
-      <Field label="Âge de début des études prévu (1er enfant)"><Input value={data.enfant1_age_debut} onChange={f("enfant1_age_debut")} type="number" placeholder="18" /></Field>
     </div>
   );
 }
