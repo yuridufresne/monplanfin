@@ -128,7 +128,7 @@ export default function Calculators() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
           >
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden mb-16">
               {/* Card header */}
               <div className="flex items-center justify-between px-7 py-5 border-b border-slate-100">
                 <div>
@@ -158,7 +158,7 @@ export default function Calculators() {
                 frameBorder="0"
                 scrolling="no"
                 className="block w-full"
-                style={{ height: "1400px" }}
+                style={{ height: "1600px" }}
               />
             </div>
           </motion.div>

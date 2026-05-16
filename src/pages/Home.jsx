@@ -161,7 +161,7 @@ export default function Home() {
               transition={{ duration: 0.25 }}
             >
               <div
-                className="rounded-2xl overflow-hidden"
+                className="rounded-2xl overflow-hidden mb-16"
                 style={{ border: "1px solid rgba(201,160,99,0.15)", background: "#fff" }}
               >
                 {/* Panel header */}
@@ -197,7 +197,7 @@ export default function Home() {
                   frameBorder="0"
                   scrolling="no"
                   className="block w-full"
-                  style={{ height: "1400px" }}
+                  style={{ height: "1600px" }}
                 />
               </div>
             </motion.div>
