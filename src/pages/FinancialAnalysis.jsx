@@ -258,35 +258,160 @@ function StepRetraite({ data, setData }) {
 
 function StepDettes({ data, setData }) {
   const f = (k) => (v) => setData(p => ({ ...p, [k]: v }));
-  const [dettes, setDettes] = useState(data.dettes || [{ type: "", solde: "", taux: "", paiement_min: "" }]);
 
-  const updateDette = (i, k, v) => {
-    const newD = dettes.map((d, idx) => idx === i ? { ...d, [k]: v } : d);
-    setDettes(newD);
-    setData(p => ({ ...p, dettes: newD }));
-  };
-  const addDette = () => { const d = [...dettes, { type: "", solde: "", taux: "", paiement_min: "" }]; setDettes(d); setData(p => ({ ...p, dettes: d })); };
+  const hypotheques = data.hypotheques || [];
+  const dettes = data.dettes || [];
+
+  const updateHypo = (i, k, v) => setData(p => ({ ...p, hypotheques: hypotheques.map((h, idx) => idx === i ? { ...h, [k]: v } : h) }));
+  const addHypo = () => setData(p => ({ ...p, hypotheques: [...hypotheques, { adresse: "", prix_achat: "", annee_achat: "", solde: "", taux: "", type_taux: "fixe", terme_restant: "", amortissement_initial: "", amortissement_restant: "", paiement_mensuel: "", mise_de_fonds_pct: "", usage: "principale" }] }));
+  const removeHypo = (i) => setData(p => ({ ...p, hypotheques: hypotheques.filter((_, idx) => idx !== i) }));
+
+  const updateDette = (i, k, v) => setData(p => ({ ...p, dettes: dettes.map((d, idx) => idx === i ? { ...d, [k]: v } : d) }));
+  const addDette = () => setData(p => ({ ...p, dettes: [...dettes, { type: "", solde: "", taux: "", paiement_min: "" }] }));
+  const removeDette = (i) => setData(p => ({ ...p, dettes: dettes.filter((_, idx) => idx !== i) }));
+
+  const totalDettes = dettes.reduce((s, d) => s + (parseFloat(d.solde) || 0), 0)
+    + hypotheques.reduce((s, h) => s + (parseFloat(h.solde) || 0), 0);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-7">
+
+      {/* ── CRÉDIT ── */}
       <Field label="Connaissez-vous votre cote de crédit ?">
         <RadioGroup value={data.connait_cote} onChange={f("connait_cote")} options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]} />
       </Field>
-      <Field label="Avez-vous des dettes actuellement ?">
-        <RadioGroup value={data.a_dettes} onChange={f("a_dettes")} options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]} />
-      </Field>
-      {data.a_dettes === "oui" && (
-        <div className="space-y-3">
-          <p className="text-[13px] font-semibold text-white">Détail des dettes</p>
-          {dettes.map((d, i) => (
-            <div key={i} className="grid grid-cols-2 md:grid-cols-4 gap-3 p-4 rounded-xl" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
-              <Field label="Type (ex: carte crédit)"><Input value={d.type} onChange={v => updateDette(i, "type", v)} /></Field>
-              <Field label="Solde ($)"><Input value={d.solde} onChange={v => updateDette(i, "solde", v)} type="number" /></Field>
-              <Field label="Taux (%)"><Input value={d.taux} onChange={v => updateDette(i, "taux", v)} type="number" /></Field>
-              <Field label="Paiement min ($)"><Input value={d.paiement_min} onChange={v => updateDette(i, "paiement_min", v)} type="number" /></Field>
-            </div>
-          ))}
-          <button onClick={addDette} className="text-[13px] font-medium mt-1" style={{ color: "#C9A063" }}>+ Ajouter une dette</button>
+
+      {/* ── HYPOTHÈQUES ── */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <p className="text-[14px] font-semibold text-white">Hypothèque(s)</p>
+            <p className="text-[12px] mt-0.5" style={{ color: "#94A3B8" }}>Résidence principale, chalet, immeuble locatif…</p>
+          </div>
+          <button onClick={addHypo} className="text-[12px] font-semibold px-3 py-1.5 rounded-lg"
+            style={{ background: "rgba(201,160,99,0.1)", color: "#C9A063", border: "1px solid rgba(201,160,99,0.2)" }}>
+            + Ajouter une hypothèque
+          </button>
+        </div>
+
+        <Field label="Détenez-vous au moins une hypothèque ?">
+          <RadioGroup value={data.a_hypotheque} onChange={f("a_hypotheque")} options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]} />
+        </Field>
+
+        {data.a_hypotheque === "oui" && (
+          <div className="space-y-4 mt-4">
+            {hypotheques.length === 0 && (
+              <button onClick={addHypo} className="w-full py-3 rounded-xl text-[13px] font-medium transition-all"
+                style={{ border: "1px dashed rgba(201,160,99,0.3)", color: "#C9A063" }}>
+                + Ajouter ma première hypothèque
+              </button>
+            )}
+            {hypotheques.map((h, i) => (
+              <div key={i} className="rounded-xl p-5 relative" style={{ background: "rgba(201,160,99,0.04)", border: "1px solid rgba(201,160,99,0.15)" }}>
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-[12px] font-bold tracking-wider uppercase" style={{ color: "rgba(201,160,99,0.6)" }}>Hypothèque {i + 1}</p>
+                  <button onClick={() => removeHypo(i)} className="text-[11px] px-2 py-1 rounded" style={{ color: "rgba(248,113,113,0.7)" }}>✕ Retirer</button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Field label="Usage de la propriété">
+                    <RadioGroup value={h.usage} onChange={v => updateHypo(i, "usage", v)} options={[
+                      { value: "principale", label: "Résidence principale" },
+                      { value: "locatif", label: "Locatif" },
+                      { value: "secondaire", label: "Résidence secondaire" },
+                    ]} />
+                  </Field>
+                  <Field label="Adresse / Description">
+                    <Input value={h.adresse} onChange={v => updateHypo(i, "adresse", v)} placeholder="ex: 123 rue des Érables, Montréal" />
+                  </Field>
+                  <Field label="Prix d'achat ($)">
+                    <Input type="number" value={h.prix_achat} onChange={v => updateHypo(i, "prix_achat", v)} placeholder="350 000" />
+                  </Field>
+                  <Field label="Année d'achat">
+                    <Input type="number" value={h.annee_achat} onChange={v => updateHypo(i, "annee_achat", v)} placeholder="2019" />
+                  </Field>
+                  <Field label="Mise de fonds (%)">
+                    <Input type="number" value={h.mise_de_fonds_pct} onChange={v => updateHypo(i, "mise_de_fonds_pct", v)} placeholder="20" />
+                  </Field>
+                  <Field label="Solde hypothécaire actuel ($)">
+                    <Input type="number" value={h.solde} onChange={v => updateHypo(i, "solde", v)} placeholder="280 000" />
+                  </Field>
+                  <Field label="Taux d'intérêt actuel (%)">
+                    <Input type="number" value={h.taux} onChange={v => updateHypo(i, "taux", v)} placeholder="5.25" />
+                  </Field>
+                  <Field label="Type de taux">
+                    <RadioGroup value={h.type_taux} onChange={v => updateHypo(i, "type_taux", v)} options={[
+                      { value: "fixe", label: "Fixe" },
+                      { value: "variable", label: "Variable" },
+                    ]} />
+                  </Field>
+                  <Field label="Terme restant (mois)" hint="Avant renouvellement">
+                    <Input type="number" value={h.terme_restant} onChange={v => updateHypo(i, "terme_restant", v)} placeholder="36" />
+                  </Field>
+                  <Field label="Amortissement initial (ans)">
+                    <Input type="number" value={h.amortissement_initial} onChange={v => updateHypo(i, "amortissement_initial", v)} placeholder="25" />
+                  </Field>
+                  <Field label="Amortissement restant (ans)">
+                    <Input type="number" value={h.amortissement_restant} onChange={v => updateHypo(i, "amortissement_restant", v)} placeholder="21" />
+                  </Field>
+                  <Field label="Paiement mensuel ($)">
+                    <Input type="number" value={h.paiement_mensuel} onChange={v => updateHypo(i, "paiement_mensuel", v)} placeholder="1 850" />
+                  </Field>
+                </div>
+
+                {/* Equity calc */}
+                {h.prix_achat && h.solde && (
+                  <div className="mt-4 rounded-lg px-4 py-2.5 flex items-center justify-between"
+                    style={{ background: "rgba(201,160,99,0.06)", border: "1px solid rgba(201,160,99,0.12)" }}>
+                    <span className="text-[12px]" style={{ color: "#94A3B8" }}>Équité estimée</span>
+                    <span className="font-financial text-[14px] font-bold" style={{ color: "#C9A063" }}>
+                      {new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format((parseFloat(h.prix_achat) || 0) - (parseFloat(h.solde) || 0))}
+                    </span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── AUTRES DETTES ── */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-[14px] font-semibold text-white">Autres dettes</p>
+          <button onClick={addDette} className="text-[12px] font-semibold px-3 py-1.5 rounded-lg"
+            style={{ background: "rgba(201,160,99,0.1)", color: "#C9A063", border: "1px solid rgba(201,160,99,0.2)" }}>
+            + Ajouter
+          </button>
+        </div>
+        <Field label="Avez-vous d'autres dettes (cartes, auto, marges...) ?">
+          <RadioGroup value={data.a_dettes} onChange={f("a_dettes")} options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]} />
+        </Field>
+        {data.a_dettes === "oui" && (
+          <div className="space-y-3 mt-3">
+            {dettes.map((d, i) => (
+              <div key={i} className="rounded-xl p-4 relative" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                <button onClick={() => removeDette(i)} className="absolute top-3 right-3 text-[11px]" style={{ color: "rgba(248,113,113,0.7)" }}>✕</button>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <Field label="Type (ex: carte crédit)"><Input value={d.type} onChange={v => updateDette(i, "type", v)} placeholder="Carte crédit" /></Field>
+                  <Field label="Solde ($)"><Input value={d.solde} onChange={v => updateDette(i, "solde", v)} type="number" /></Field>
+                  <Field label="Taux (%)"><Input value={d.taux} onChange={v => updateDette(i, "taux", v)} type="number" /></Field>
+                  <Field label="Paiement min ($)"><Input value={d.paiement_min} onChange={v => updateDette(i, "paiement_min", v)} type="number" /></Field>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* TOTAL */}
+      {totalDettes > 0 && (
+        <div className="rounded-xl px-5 py-4 flex items-center justify-between"
+          style={{ background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.15)" }}>
+          <p className="text-[13px] font-semibold" style={{ color: "#fca5a5" }}>Total des passifs (hypothèques + dettes)</p>
+          <p className="font-financial text-[1.4rem] font-bold" style={{ color: "#f87171" }}>
+            {new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(totalDettes)}
+          </p>
         </div>
       )}
     </div>
