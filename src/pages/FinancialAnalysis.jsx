@@ -76,20 +76,147 @@ function StepProfilPersonnel({ data, setData }) {
 
 function StepRevenu({ data, setData }) {
   const f = (k) => (v) => setData(p => ({ ...p, [k]: v }));
+
+  const emplois = data.emplois || [{ employeur: "", poste: "", revenu_brut: "", impot_mensuel: "", type: "salarie" }];
+  const sidehustles = data.sidehustles || [];
+
+  const updateEmploi = (i, k, v) => {
+    const n = emplois.map((e, idx) => idx === i ? { ...e, [k]: v } : e);
+    setData(p => ({ ...p, emplois: n }));
+  };
+  const addEmploi = () => setData(p => ({ ...p, emplois: [...emplois, { employeur: "", poste: "", revenu_brut: "", impot_mensuel: "", type: "salarie" }] }));
+  const removeEmploi = (i) => setData(p => ({ ...p, emplois: emplois.filter((_, idx) => idx !== i) }));
+
+  const updateSide = (i, k, v) => {
+    const n = sidehustles.map((e, idx) => idx === i ? { ...e, [k]: v } : e);
+    setData(p => ({ ...p, sidehustles: n }));
+  };
+  const addSide = () => setData(p => ({ ...p, sidehustles: [...sidehustles, { nom: "", revenu_mensuel_moyen: "", type: "uber", declaration: "oui" }] }));
+  const removeSide = (i) => setData(p => ({ ...p, sidehustles: sidehustles.filter((_, idx) => idx !== i) }));
+
+  const totalBrut = emplois.reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0), 0)
+    + sidehustles.reduce((s, e) => s + (parseFloat(e.revenu_mensuel_moyen) || 0) * 12, 0);
+
+  const SIDE_TYPES = [
+    { value: "uber", label: "Uber / Lyft" },
+    { value: "doordash", label: "DoorDash / Uber Eats" },
+    { value: "airbnb", label: "Airbnb" },
+    { value: "freelance", label: "Freelance" },
+    { value: "vente_en_ligne", label: "Vente en ligne" },
+    { value: "investissement", label: "Revenus de placements" },
+    { value: "autre", label: "Autre" },
+  ];
+
   return (
-    <div className="space-y-6">
-      <div className="rounded-xl p-4" style={{ background: "rgba(201,160,99,0.06)", border: "1px solid rgba(201,160,99,0.15)" }}>
-        <p className="text-[13px] font-semibold mb-4" style={{ color: "#C9A063" }}>Client principal</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Field label="Employeur"><Input value={data.employeur} onChange={f("employeur")} /></Field>
-          <Field label="Poste"><Input value={data.poste} onChange={f("poste")} /></Field>
-          <Field label="Revenu brut annuel ($)"><Input value={data.revenu_brut} onChange={f("revenu_brut")} type="number" /></Field>
-          <Field label="Impôt mensuel ($)"><Input value={data.impot_mensuel} onChange={f("impot_mensuel")} type="number" /></Field>
-          <Field label="Travailleur autonome ?">
-            <RadioGroup value={data.travailleur_autonome} onChange={f("travailleur_autonome")} options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]} />
-          </Field>
+    <div className="space-y-7">
+
+      {/* EMPLOIS */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-[14px] font-semibold text-white">Emplois salariés / contrats</p>
+          <button onClick={addEmploi} className="text-[12px] font-semibold px-3 py-1.5 rounded-lg transition-all"
+            style={{ background: "rgba(201,160,99,0.1)", color: "#C9A063", border: "1px solid rgba(201,160,99,0.2)" }}>
+            + Ajouter un emploi
+          </button>
+        </div>
+        <div className="space-y-3">
+          {emplois.map((e, i) => (
+            <div key={i} className="rounded-xl p-4 relative" style={{ background: "rgba(201,160,99,0.05)", border: "1px solid rgba(201,160,99,0.12)" }}>
+              {emplois.length > 1 && (
+                <button onClick={() => removeEmploi(i)} className="absolute top-3 right-3 text-[11px]" style={{ color: "rgba(248,113,113,0.7)" }}>✕ Retirer</button>
+              )}
+              <p className="text-[11px] font-bold tracking-wider uppercase mb-3" style={{ color: "rgba(201,160,99,0.5)" }}>Emploi {i + 1}</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <Field label="Type d'emploi">
+                  <RadioGroup value={e.type} onChange={v => updateEmploi(i, "type", v)} options={[
+                    { value: "salarie", label: "Salarié" },
+                    { value: "contrat", label: "Contrat" },
+                    { value: "autonome", label: "Travailleur autonome" },
+                  ]} />
+                </Field>
+                <Field label="Employeur / Client"><Input value={e.employeur} onChange={v => updateEmploi(i, "employeur", v)} /></Field>
+                <Field label="Poste occupé"><Input value={e.poste} onChange={v => updateEmploi(i, "poste", v)} /></Field>
+                <Field label="Revenu brut annuel ($)"><Input value={e.revenu_brut} onChange={v => updateEmploi(i, "revenu_brut", v)} type="number" /></Field>
+                <Field label="Impôt retenu / mois ($)" hint="Pour vérifier si retenue à la source adéquate">
+                  <Input value={e.impot_mensuel} onChange={v => updateEmploi(i, "impot_mensuel", v)} type="number" />
+                </Field>
+                {e.type === "autonome" && (
+                  <Field label="TPS/TVQ inscrit ?" hint="Obligatoire si revenus > 30 000$/an">
+                    <RadioGroup value={e.tps_tvq} onChange={v => updateEmploi(i, "tps_tvq", v)} options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]} />
+                  </Field>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
+
+      {/* SIDE HUSTLES */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <p className="text-[14px] font-semibold text-white">Revenus supplémentaires <span className="ml-1 text-[11px] px-2 py-0.5 rounded-full" style={{ background: "rgba(201,160,99,0.12)", color: "#C9A063" }}>Impact fiscal important</span></p>
+            <p className="text-[12px] mt-0.5" style={{ color: "#94A3B8" }}>Uber, Airbnb, freelance, vente en ligne…</p>
+          </div>
+          <button onClick={addSide} className="text-[12px] font-semibold px-3 py-1.5 rounded-lg transition-all"
+            style={{ background: "rgba(201,160,99,0.1)", color: "#C9A063", border: "1px solid rgba(201,160,99,0.2)" }}>
+            + Ajouter
+          </button>
+        </div>
+
+        {sidehustles.length === 0 && (
+          <div className="rounded-xl px-4 py-3 text-[12px]" style={{ background: "rgba(255,255,255,0.02)", border: "1px dashed rgba(255,255,255,0.08)", color: "#94A3B8" }}>
+            Aucun revenu supplémentaire. Cliquez sur "+ Ajouter" si applicable.
+          </div>
+        )}
+
+        <div className="space-y-3">
+          {sidehustles.map((s, i) => (
+            <div key={i} className="rounded-xl p-4 relative" style={{ background: "rgba(245,158,11,0.04)", border: "1px solid rgba(245,158,11,0.15)" }}>
+              <button onClick={() => removeSide(i)} className="absolute top-3 right-3 text-[11px]" style={{ color: "rgba(248,113,113,0.7)" }}>✕ Retirer</button>
+              <p className="text-[11px] font-bold tracking-wider uppercase mb-3" style={{ color: "rgba(245,158,11,0.6)" }}>Side hustle {i + 1}</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <Field label="Type d'activité">
+                  <RadioGroup value={s.type} onChange={v => updateSide(i, "type", v)} options={SIDE_TYPES} />
+                </Field>
+                <Field label="Description / Plateforme"><Input value={s.nom} onChange={v => updateSide(i, "nom", v)} placeholder="ex: Uber driver, boutique Etsy..." /></Field>
+                <Field label="Revenu mensuel moyen ($)" hint="Estimation des 3 derniers mois">
+                  <Input value={s.revenu_mensuel_moyen} onChange={v => updateSide(i, "revenu_mensuel_moyen", v)} type="number" />
+                </Field>
+                <Field label="Déclaré au fisc ?">
+                  <RadioGroup value={s.declaration} onChange={v => updateSide(i, "declaration", v)} options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }, { value: "incertain", label: "Incertain" }]} />
+                </Field>
+                <Field label="Dépenses déductibles estimées / an ($)" hint="Kms, équipement, % logement…">
+                  <Input value={s.depenses_deductibles} onChange={v => updateSide(i, "depenses_deductibles", v)} type="number" />
+                </Field>
+                {(s.type === "uber" || s.type === "doordash") && (
+                  <Field label="Inscrit TPS/TVQ ?" hint="Uber drivers sont obligés peu importe les revenus">
+                    <RadioGroup value={s.tps_tvq} onChange={v => updateSide(i, "tps_tvq", v)} options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]} />
+                  </Field>
+                )}
+              </div>
+              {s.declaration === "non" && (
+                <div className="mt-3 rounded-lg px-3 py-2 text-[12px]" style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", color: "#fca5a5" }}>
+                  ⚠️ Tous les revenus de plateformes (Uber, Airbnb...) doivent être déclarés au Canada. L'ARC reçoit des données directement des plateformes.
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* TOTAL SUMMARY */}
+      {totalBrut > 0 && (
+        <div className="rounded-xl px-5 py-4 flex items-center justify-between"
+          style={{ background: "rgba(201,160,99,0.07)", border: "1px solid rgba(201,160,99,0.2)" }}>
+          <p className="text-[13px] font-semibold" style={{ color: "#C9A063" }}>Revenu brut annuel total estimé</p>
+          <p className="font-financial text-[1.4rem] font-bold" style={{ color: "#C9A063" }}>
+            {new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(totalBrut)}
+          </p>
+        </div>
+      )}
+
+      {/* RETOUR D'IMPÔT */}
       <Field label="Recevez-vous habituellement un retour d'impôt ?">
         <RadioGroup value={data.retour_impot} onChange={f("retour_impot")} options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]} />
       </Field>
