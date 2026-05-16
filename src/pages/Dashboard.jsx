@@ -5,30 +5,21 @@ import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { ArrowRight, ArrowUpRight, TrendingUp, TrendingDown } from "lucide-react";
 
-function formatCurrency(val) {
-  return new Intl.NumberFormat("fr-CA", {
-    style: "currency",
-    currency: "CAD",
-    maximumFractionDigits: 0,
-  }).format(val || 0);
-}
-
-function formatPct(val) {
-  return `${val >= 0 ? "+" : ""}${val.toFixed(1)} %`;
-}
-
+const fmt = (v) => new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v || 0);
+const fmtPct = (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)} %`;
 const fadeUp = (delay = 0) => ({
-  initial: { opacity: 0, y: 18 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.5, delay, ease: [0.22, 1, 0.36, 1] },
+  initial: { opacity: 0, y: 18 }, animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.55, delay, ease: [0.22, 1, 0.36, 1] },
 });
+
+const glass = {
+  card: { background: "rgba(255,255,255,0.06)", backdropFilter: "blur(24px) saturate(160%)", WebkitBackdropFilter: "blur(24px) saturate(160%)", border: "1px solid rgba(255,255,255,0.11)", boxShadow: "0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)" },
+  hero: { background: "linear-gradient(135deg, rgba(201,160,99,0.1) 0%, rgba(255,255,255,0.04) 100%)", backdropFilter: "blur(32px) saturate(180%)", WebkitBackdropFilter: "blur(32px) saturate(180%)", border: "1px solid rgba(201,160,99,0.2)", boxShadow: "0 16px 48px rgba(0,0,0,0.4), inset 0 1px 0 rgba(201,160,99,0.15)" },
+};
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    base44.auth.me().then(setUser);
-  }, []);
+  useEffect(() => { base44.auth.me().then(setUser); }, []);
 
   const { data: budgetEntries = [] } = useQuery({ queryKey: ["budgetEntries"], queryFn: () => base44.entities.BudgetEntry.list() });
   const { data: investments = [] } = useQuery({ queryKey: ["investments"], queryFn: () => base44.entities.Investment.list() });
@@ -39,68 +30,71 @@ export default function Dashboard() {
   const totalExpenses = budgetEntries.filter(e => e.type === "depense").reduce((s, e) => s + (e.amount || 0), 0);
   const balance = totalRevenue - totalExpenses;
   const savingsRate = totalRevenue > 0 ? (balance / totalRevenue) * 100 : 0;
-
   const totalAssets = investments.reduce((s, i) => s + (i.current_value || 0), 0);
   const totalCost = investments.reduce((s, i) => s + (i.quantity || 0) * (i.purchase_price || 0), 0);
   const investmentGain = totalAssets - totalCost;
   const investmentGainPct = totalCost > 0 ? (investmentGain / totalCost) * 100 : 0;
-
   const totalDebt = debts.reduce((s, d) => s + (d.balance || 0), 0);
   const netWorth = totalAssets - totalDebt;
   const highRateDebt = debts.filter(d => d.interest_rate > 15);
-
   const isEmpty = budgetEntries.length === 0 && investments.length === 0 && debts.length === 0;
 
   return (
-    <div style={{ background: "#050810", minHeight: "100vh" }}>
-      <div className="max-w-7xl mx-auto px-6 lg:px-10 py-14 md:py-20">
+    <div style={{ background: "linear-gradient(135deg, #050810 0%, #080d1a 60%, #050810 100%)", minHeight: "100vh", position: "relative", overflow: "hidden" }}>
+      {/* Ambient orbs */}
+      <div style={{ position: "absolute", top: "-15%", right: "-8%", width: 700, height: 700, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(201,160,99,0.1) 0%, transparent 70%)", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", bottom: "5%", left: "-12%", width: 600, height: 600, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(107,142,214,0.07) 0%, transparent 70%)", pointerEvents: "none" }} />
 
-        {/* ── HEADER ───────────────────────────────────── */}
+      <div className="relative max-w-7xl mx-auto px-6 lg:px-10 py-14 md:py-20">
+
+        {/* Header */}
         <motion.div {...fadeUp(0)} className="mb-14">
-          <p className="text-[11px] font-semibold tracking-[0.14em] uppercase mb-3" style={{ color: "rgba(201,160,99,0.6)" }}>
-            Tableau de bord
-          </p>
-          <h1 className="font-urbanist text-[2.25rem] md:text-[2.75rem] font-bold text-white tracking-tight">
+          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(201,160,99,0.6)", marginBottom: 10 }}>Tableau de bord</p>
+          <h1 style={{ fontFamily: "var(--font-urbanist)", fontSize: "clamp(2rem,4vw,2.75rem)", fontWeight: 800, color: "#fff", letterSpacing: "-0.03em", lineHeight: 1.1 }}>
             {user?.full_name ? `Bonjour, ${user.full_name.split(" ")[0]}.` : "Bonjour."}
           </h1>
-          <p className="text-[15px] font-light mt-2" style={{ color: "#94A3B8" }}>
-            Voici un aperçu complet de votre situation financière.
-          </p>
+          <p style={{ fontSize: 15, fontWeight: 300, marginTop: 8, color: "#94A3B8" }}>Voici un aperçu complet de votre situation financière.</p>
         </motion.div>
 
-        {/* ── NET WORTH HERO ────────────────────────────── */}
+        {/* Net Worth Hero */}
         <motion.div {...fadeUp(0.06)} className="mb-8">
-          <div
-            className="rounded-2xl p-8 md:p-10 relative overflow-hidden"
-            style={{
-              background: "linear-gradient(135deg, #0D1628 0%, #0A0F1E 100%)",
-              border: "1px solid rgba(201,160,99,0.15)",
-            }}
-          >
-            {/* Champagne top bar */}
-            <div className="absolute top-0 left-0 right-0 h-[1px]" style={{ background: "linear-gradient(90deg, transparent, #C9A063, transparent)" }} />
-            <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full pointer-events-none" style={{ background: "radial-gradient(circle, rgba(201,160,99,0.06) 0%, transparent 70%)" }} />
-
-            <div className="relative grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-0 md:divide-x divide-white/5">
-              <div className="md:pr-10">
-                <p className="text-[11px] font-semibold tracking-[0.12em] uppercase mb-3" style={{ color: "rgba(148,163,184,0.5)" }}>Valeur nette</p>
-                <p className="font-financial text-[2.5rem] md:text-[3rem] font-bold text-white leading-none mb-2">{formatCurrency(netWorth)}</p>
-                <p className="text-[13px] font-light" style={{ color: "rgba(148,163,184,0.5)" }}>Actifs − Passifs</p>
-              </div>
-              <div className="md:px-10">
-                <p className="text-[11px] font-semibold tracking-[0.12em] uppercase mb-3" style={{ color: "rgba(148,163,184,0.5)" }}>Portefeuille</p>
-                <p className="font-financial text-[2rem] font-bold text-white leading-none mb-2">{formatCurrency(totalAssets)}</p>
-                <div className="flex items-center gap-1.5">
-                  {investmentGain >= 0 ? <TrendingUp className="w-3.5 h-3.5" style={{ color: "#C9A063" }} /> : <TrendingDown className="w-3.5 h-3.5 text-red-400" />}
-                  <span className="text-[13px] font-medium" style={{ color: investmentGain >= 0 ? "#C9A063" : "#f87171" }}>
-                    {formatCurrency(investmentGain)} ({formatPct(investmentGainPct)})
-                  </span>
+          <div style={{ ...glass.hero, borderRadius: 24, padding: "clamp(1.5rem,4vw,2.5rem)", position: "relative", overflow: "hidden" }}>
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: "linear-gradient(90deg, transparent, #C9A063, transparent)" }} />
+            <div style={{ position: "absolute", top: -60, right: -60, width: 240, height: 240, borderRadius: "50%", background: "radial-gradient(circle, rgba(201,160,99,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
+            <div className="relative grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-0" style={{ borderBottom: "none" }}>
+              {[
+                { label: "Valeur nette", val: fmt(netWorth), sub: "Actifs − Passifs", color: "#fff" },
+                { label: "Portefeuille", val: fmt(totalAssets), sub: `${investmentGain >= 0 ? "+" : ""}${fmt(investmentGain)} (${fmtPct(investmentGainPct)})`, color: investmentGain >= 0 ? "#C9A063" : "#f87171", subColor: investmentGain >= 0 ? "#C9A063" : "#f87171" },
+                { label: "Taux d'épargne", val: `${savingsRate.toFixed(1)} %`, sub: `${fmt(balance)} / mois`, color: "#fff" },
+              ].map((item, i) => (
+                <div key={item.label} style={{ padding: i === 1 ? "0 2.5rem" : i === 2 ? "0 0 0 2.5rem" : "0 2.5rem 0 0", borderLeft: i > 0 ? "1px solid rgba(255,255,255,0.07)" : "none" }} className={i > 0 ? "hidden md:block" : ""}>
+                  <div className={i > 0 ? "hidden md:block" : ""} style={i > 0 ? {} : {}}>
+                    {i === 0 && <>
+                      <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(148,163,184,0.5)", marginBottom: 10 }}>{item.label}</p>
+                      <p style={{ fontFamily: "var(--font-mono)", fontSize: "clamp(2rem,4vw,3rem)", fontWeight: 700, color: item.color, letterSpacing: "-0.02em", lineHeight: 1, marginBottom: 6 }}>{item.val}</p>
+                      <p style={{ fontSize: 13, fontWeight: 300, color: "rgba(148,163,184,0.5)" }}>{item.sub}</p>
+                    </>}
+                    {i > 0 && <>
+                      <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(148,163,184,0.5)", marginBottom: 10 }}>{item.label}</p>
+                      <p style={{ fontFamily: "var(--font-mono)", fontSize: "2rem", fontWeight: 700, color: item.color, letterSpacing: "-0.02em", lineHeight: 1, marginBottom: 6 }}>{item.val}</p>
+                      <p style={{ fontSize: 13, fontWeight: 300, color: item.subColor || "rgba(148,163,184,0.5)" }}>{item.sub}</p>
+                    </>}
+                  </div>
                 </div>
-              </div>
-              <div className="md:pl-10">
-                <p className="text-[11px] font-semibold tracking-[0.12em] uppercase mb-3" style={{ color: "rgba(148,163,184,0.5)" }}>Taux d'épargne</p>
-                <p className="font-financial text-[2rem] font-bold text-white leading-none mb-2">{savingsRate.toFixed(1)} %</p>
-                <p className="text-[13px] font-light" style={{ color: "rgba(148,163,184,0.5)" }}>{formatCurrency(balance)} / mois</p>
+              ))}
+              {/* Mobile: show all 3 stacked */}
+              <div className="md:hidden space-y-6">
+                {[
+                  { label: "Valeur nette", val: fmt(netWorth), sub: "Actifs − Passifs" },
+                  { label: "Portefeuille", val: fmt(totalAssets), sub: `${investmentGain >= 0 ? "+" : ""}${fmt(investmentGain)}` },
+                  { label: "Taux d'épargne", val: `${savingsRate.toFixed(1)} %`, sub: `${fmt(balance)} / mois` },
+                ].map(item => (
+                  <div key={item.label}>
+                    <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(148,163,184,0.5)", marginBottom: 6 }}>{item.label}</p>
+                    <p style={{ fontFamily: "var(--font-mono)", fontSize: "1.75rem", fontWeight: 700, color: "#fff", lineHeight: 1, marginBottom: 4 }}>{item.val}</p>
+                    <p style={{ fontSize: 12, color: "rgba(148,163,184,0.5)" }}>{item.sub}</p>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -108,105 +102,78 @@ export default function Dashboard() {
 
         {isEmpty ? (
           <motion.div {...fadeUp(0.12)}>
-            <div
-              className="rounded-2xl p-16 text-center"
-              style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)" }}
-            >
-              <div className="w-12 h-[1px] mx-auto mb-8" style={{ background: "#C9A063" }} />
-              <h3 className="font-urbanist text-[22px] font-semibold text-white mb-3 tracking-tight">
-                Commencez votre plan financier
-              </h3>
-              <p className="text-[14px] font-light mb-10 max-w-sm mx-auto leading-relaxed" style={{ color: "#94A3B8" }}>
-                Ajoutez vos revenus, placements et dettes pour obtenir une synthèse complète de votre patrimoine.
-              </p>
+            <div style={{ ...glass.card, borderRadius: 24, padding: "4rem 2rem", textAlign: "center" }}>
+              <div style={{ width: 48, height: 1.5, background: "#C9A063", margin: "0 auto 2rem" }} />
+              <h3 style={{ fontFamily: "var(--font-urbanist)", fontSize: 22, fontWeight: 700, color: "#fff", marginBottom: 12 }}>Commencez votre plan financier</h3>
+              <p style={{ fontSize: 14, fontWeight: 300, color: "#94A3B8", maxWidth: 380, margin: "0 auto 2.5rem", lineHeight: 1.7 }}>Ajoutez vos revenus, placements et dettes pour obtenir une synthèse complète de votre patrimoine.</p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <Link
-                  to="/budget"
-                  className="inline-flex items-center justify-center gap-2 px-7 py-3 text-[13.5px] font-semibold rounded-xl transition-colors"
-                  style={{ background: "#C9A063", color: "#050810" }}
-                >
-                  Créer mon budget <ArrowRight className="w-4 h-4" />
-                </Link>
-                <Link
-                  to="/placements"
-                  className="inline-flex items-center justify-center gap-2 px-7 py-3 text-[13.5px] font-medium rounded-xl transition-colors"
-                  style={{ border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.7)" }}
-                >
-                  Ajouter des placements
-                </Link>
+                <Link to="/budget" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 28px", borderRadius: 14, background: "linear-gradient(135deg, #C9A063, #e6c07a)", color: "#050810", fontSize: 13.5, fontWeight: 700, textDecoration: "none", boxShadow: "0 4px 16px rgba(201,160,99,0.3)" }}>Créer mon budget <ArrowRight style={{ width: 16, height: 16 }} /></Link>
+                <Link to="/placements" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 28px", borderRadius: 14, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.7)", fontSize: 13.5, fontWeight: 500, textDecoration: "none", backdropFilter: "blur(8px)" }}>Ajouter des placements</Link>
               </div>
             </div>
           </motion.div>
         ) : (
           <>
-            {/* ── KPI CARDS ─────────────────────────────────── */}
+            {/* KPI Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
               {[
-                { label: "Revenus mensuels", value: formatCurrency(totalRevenue), sub: `${budgetEntries.filter(e => e.type === "revenu").length} source(s)`, link: "/budget" },
-                { label: "Dépenses mensuelles", value: formatCurrency(totalExpenses), sub: `${budgetEntries.filter(e => e.type === "depense").length} poste(s)`, link: "/budget" },
-                { label: "Total des dettes", value: formatCurrency(totalDebt), sub: `${debts.length} obligation(s)`, isNegative: totalDebt > 0, link: "/plan" },
-                { label: "Placements", value: formatCurrency(totalAssets), sub: `${investments.length} position(s)`, link: "/placements" },
+                { label: "Revenus mensuels", value: fmt(totalRevenue), sub: `${budgetEntries.filter(e => e.type === "revenu").length} source(s)`, link: "/budget", color: "#5BC4A0" },
+                { label: "Dépenses mensuelles", value: fmt(totalExpenses), sub: `${budgetEntries.filter(e => e.type === "depense").length} poste(s)`, link: "/budget", color: "#f87171" },
+                { label: "Total des dettes", value: fmt(totalDebt), sub: `${debts.length} obligation(s)`, link: "/plan", color: totalDebt > 0 ? "#f87171" : "#5BC4A0" },
+                { label: "Placements", value: fmt(totalAssets), sub: `${investments.length} position(s)`, link: "/placements", color: "#DEFF9A" },
               ].map((card, i) => (
                 <motion.div key={card.label} {...fadeUp(0.12 + i * 0.06)}>
-                  <Link to={card.link} className="group block h-full">
-                    <div
-                      className="rounded-xl p-6 h-full transition-all duration-300 hover:-translate-y-0.5"
-                      style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}
-                    >
-                      <div className="flex items-start justify-between mb-4">
-                        <p className="text-[11.5px] font-medium tracking-wide" style={{ color: "#94A3B8" }}>{card.label}</p>
-                        <ArrowUpRight className="w-3.5 h-3.5 opacity-20 group-hover:opacity-60 transition-opacity" style={{ color: "#C9A063" }} />
+                  <Link to={card.link} style={{ textDecoration: "none" }}>
+                    <div style={{ ...glass.card, borderRadius: 20, padding: "1.4rem", position: "relative", overflow: "hidden", transition: "transform 0.2s ease, box-shadow 0.2s ease" }}
+                      onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 16px 48px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.14)"; }}
+                      onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = glass.card.boxShadow; }}>
+                      <div style={{ position: "absolute", top: -16, right: -16, width: 60, height: 60, borderRadius: "50%", background: `radial-gradient(ellipse, ${card.color}20 0%, transparent 70%)` }} />
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 14 }}>
+                        <p style={{ fontSize: 11.5, fontWeight: 500, color: "#94A3B8" }}>{card.label}</p>
+                        <ArrowUpRight style={{ width: 13, height: 13, color: card.color, opacity: 0.5 }} />
                       </div>
-                      <p className="font-financial text-[1.6rem] font-bold leading-none mb-2" style={{ color: card.isNegative ? "#f87171" : "#F8FAFC" }}>
-                        {card.value}
-                      </p>
-                      <p className="text-[12px] font-light" style={{ color: "rgba(148,163,184,0.6)" }}>{card.sub}</p>
+                      <p style={{ fontFamily: "var(--font-mono)", fontSize: "1.5rem", fontWeight: 700, color: card.color, lineHeight: 1, marginBottom: 6 }}>{card.value}</p>
+                      <p style={{ fontSize: 11.5, fontWeight: 300, color: "rgba(148,163,184,0.55)" }}>{card.sub}</p>
                     </div>
                   </Link>
                 </motion.div>
               ))}
             </div>
 
-            {/* ── LOWER GRID ────────────────────────────────── */}
+            {/* Lower grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
               {/* Goals */}
               <motion.div {...fadeUp(0.3)}>
-                <div className="rounded-2xl overflow-hidden h-full" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)" }}>
-                  <div className="px-8 py-6 flex items-center justify-between" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                <div style={{ ...glass.card, borderRadius: 24, overflow: "hidden", height: "100%" }}>
+                  <div style={{ padding: "1.5rem 2rem", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     <div>
-                      <p className="text-[11px] font-bold tracking-[0.12em] uppercase mb-1" style={{ color: "rgba(201,160,99,0.5)" }}>Objectifs financiers</p>
-                      <h3 className="font-urbanist text-[17px] font-semibold text-white tracking-tight">Progression</h3>
+                      <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(201,160,99,0.5)", marginBottom: 4 }}>Objectifs financiers</p>
+                      <h3 style={{ fontFamily: "var(--font-urbanist)", fontSize: 17, fontWeight: 700, color: "#fff" }}>Progression</h3>
                     </div>
-                    <Link to="/plan" className="text-[12px] font-medium flex items-center gap-1 transition-colors" style={{ color: "#C9A063" }}>
-                      Gérer <ArrowRight className="w-3 h-3" />
-                    </Link>
+                    <Link to="/plan" style={{ fontSize: 12, fontWeight: 600, color: "#C9A063", display: "flex", alignItems: "center", gap: 4, textDecoration: "none" }}>Gérer <ArrowRight style={{ width: 12, height: 12 }} /></Link>
                   </div>
-                  <div className="p-8">
+                  <div style={{ padding: "1.75rem 2rem" }}>
                     {goals.length === 0 ? (
-                      <div className="text-center py-8">
-                        <p className="text-[13px] font-light mb-4" style={{ color: "#94A3B8" }}>Aucun objectif défini</p>
-                        <Link to="/plan" className="text-[13px] font-medium" style={{ color: "#C9A063" }}>Définir un objectif →</Link>
+                      <div style={{ textAlign: "center", padding: "2rem 0" }}>
+                        <p style={{ fontSize: 13, fontWeight: 300, color: "#94A3B8", marginBottom: 12 }}>Aucun objectif défini</p>
+                        <Link to="/plan" style={{ fontSize: 13, fontWeight: 600, color: "#C9A063", textDecoration: "none" }}>Définir un objectif →</Link>
                       </div>
                     ) : (
-                      <div className="space-y-7">
-                        {goals.slice(0, 4).map((goal) => {
+                      <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+                        {goals.slice(0, 4).map(goal => {
                           const progress = goal.target_amount > 0 ? Math.min(100, ((goal.current_amount || 0) / goal.target_amount) * 100) : 0;
                           return (
                             <div key={goal.id}>
-                              <div className="flex justify-between items-baseline mb-2.5">
-                                <span className="text-[13.5px] font-medium text-white">{goal.title}</span>
-                                <span className="font-financial text-[12px] tabular-nums" style={{ color: "#94A3B8" }}>{Math.round(progress)} %</span>
+                              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
+                                <span style={{ fontSize: 13.5, fontWeight: 600, color: "#fff" }}>{goal.title}</span>
+                                <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "#C9A063", fontWeight: 700 }}>{Math.round(progress)}%</span>
                               </div>
-                              <div className="relative h-1 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.07)" }}>
-                                <div
-                                  className="absolute inset-y-0 left-0 rounded-full transition-all duration-700"
-                                  style={{ width: `${progress}%`, background: "linear-gradient(90deg, #C9A063, #a87c3e)" }}
-                                />
+                              <div style={{ height: 5, borderRadius: 99, background: "rgba(255,255,255,0.07)", overflow: "hidden", marginBottom: 6 }}>
+                                <div style={{ height: "100%", width: `${progress}%`, borderRadius: 99, background: "linear-gradient(90deg, #C9A063, #e6c07a)", transition: "width 0.7s ease", boxShadow: "0 0 8px rgba(201,160,99,0.4)" }} />
                               </div>
-                              <div className="flex justify-between mt-1.5">
-                                <span className="font-financial text-[11px] tabular-nums" style={{ color: "rgba(148,163,184,0.5)" }}>{formatCurrency(goal.current_amount)}</span>
-                                <span className="font-financial text-[11px] tabular-nums" style={{ color: "rgba(148,163,184,0.5)" }}>{formatCurrency(goal.target_amount)}</span>
+                              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "rgba(148,163,184,0.5)" }}>{fmt(goal.current_amount)}</span>
+                                <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "rgba(148,163,184,0.5)" }}>{fmt(goal.target_amount)}</span>
                               </div>
                             </div>
                           );
@@ -219,16 +186,16 @@ export default function Dashboard() {
 
               {/* Insights */}
               <motion.div {...fadeUp(0.36)}>
-                <div className="rounded-2xl overflow-hidden h-full" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)" }}>
-                  <div className="px-8 py-6" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                    <p className="text-[11px] font-bold tracking-[0.12em] uppercase mb-1" style={{ color: "rgba(201,160,99,0.5)" }}>Analyse</p>
-                    <h3 className="font-urbanist text-[17px] font-semibold text-white tracking-tight">Observations financières</h3>
+                <div style={{ ...glass.card, borderRadius: 24, overflow: "hidden", height: "100%" }}>
+                  <div style={{ padding: "1.5rem 2rem", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                    <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(201,160,99,0.5)", marginBottom: 4 }}>Analyse</p>
+                    <h3 style={{ fontFamily: "var(--font-urbanist)", fontSize: 17, fontWeight: 700, color: "#fff" }}>Observations financières</h3>
                   </div>
-                  <div className="p-8 space-y-4">
-                    <InsightRow status={balance >= 0 ? "good" : "warn"} label={balance >= 0 ? "Bilan mensuel positif" : "Bilan mensuel déficitaire"} detail={balance >= 0 ? `Vous épargnez ${formatCurrency(balance)} par mois (${savingsRate.toFixed(1)} % du revenu).` : `Vos dépenses dépassent vos revenus de ${formatCurrency(Math.abs(balance))}.`} />
-                    <InsightRow status={highRateDebt.length > 0 ? "warn" : "good"} label={highRateDebt.length > 0 ? `${highRateDebt.length} dette(s) à taux élevé` : "Aucune dette à taux critique"} detail={highRateDebt.length > 0 ? "Taux supérieur à 15 %. Priorisez le remboursement accéléré." : "Vos taux d'intérêt sont sous contrôle."} />
-                    <InsightRow status={investmentGain >= 0 ? "good" : "warn"} label={investmentGain >= 0 ? "Portefeuille en hausse" : "Portefeuille en perte latente"} detail={`${formatCurrency(investmentGain)} (${formatPct(investmentGainPct)}) par rapport au coût d'acquisition.`} />
-                    <InsightRow status={savingsRate >= 20 ? "good" : savingsRate >= 10 ? "neutral" : "warn"} label={savingsRate >= 20 ? "Taux d'épargne excellent" : savingsRate >= 10 ? "Taux d'épargne acceptable" : "Taux d'épargne faible"} detail={`${savingsRate.toFixed(1)} % du revenu. L'objectif recommandé est 20 %+.`} />
+                  <div style={{ padding: "0.5rem 2rem" }}>
+                    <InsightRow status={balance >= 0 ? "good" : "warn"} label={balance >= 0 ? "Bilan mensuel positif" : "Bilan mensuel déficitaire"} detail={balance >= 0 ? `Vous épargnez ${fmt(balance)} par mois (${savingsRate.toFixed(1)}% du revenu).` : `Vos dépenses dépassent vos revenus de ${fmt(Math.abs(balance))}.`} />
+                    <InsightRow status={highRateDebt.length > 0 ? "warn" : "good"} label={highRateDebt.length > 0 ? `${highRateDebt.length} dette(s) à taux élevé` : "Aucune dette à taux critique"} detail={highRateDebt.length > 0 ? "Taux > 15%. Priorisez le remboursement accéléré." : "Vos taux d'intérêt sont sous contrôle."} />
+                    <InsightRow status={investmentGain >= 0 ? "good" : "warn"} label={investmentGain >= 0 ? "Portefeuille en hausse" : "Portefeuille en perte latente"} detail={`${fmt(investmentGain)} (${fmtPct(investmentGainPct)}) vs coût d'acquisition.`} />
+                    <InsightRow status={savingsRate >= 20 ? "good" : savingsRate >= 10 ? "neutral" : "warn"} label={savingsRate >= 20 ? "Taux d'épargne excellent" : savingsRate >= 10 ? "Taux d'épargne acceptable" : "Taux d'épargne faible"} detail={`${savingsRate.toFixed(1)}% du revenu. Objectif recommandé : 20%+.`} />
                   </div>
                 </div>
               </motion.div>
@@ -242,19 +209,19 @@ export default function Dashboard() {
 
 function InsightRow({ status, label, detail }) {
   const colors = {
-    good: { dot: "#C9A063", bg: "rgba(201,160,99,0.08)" },
-    warn: { dot: "#f59e0b", bg: "rgba(245,158,11,0.08)" },
-    neutral: { dot: "#94A3B8", bg: "rgba(148,163,184,0.08)" },
+    good: { dot: "#5BC4A0", bg: "rgba(91,196,160,0.1)" },
+    warn: { dot: "#f59e0b", bg: "rgba(245,158,11,0.1)" },
+    neutral: { dot: "#94A3B8", bg: "rgba(148,163,184,0.1)" },
   };
   const c = colors[status];
   return (
-    <div className="flex items-start gap-4 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-      <div className="mt-0.5 w-5 h-5 rounded-full flex items-center justify-center shrink-0" style={{ background: c.bg }}>
-        <span className="w-1.5 h-1.5 rounded-full" style={{ background: c.dot }} />
+    <div style={{ display: "flex", alignItems: "flex-start", gap: 14, padding: "1rem 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+      <div style={{ width: 22, height: 22, borderRadius: "50%", background: c.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1, boxShadow: `0 0 8px ${c.dot}30` }}>
+        <span style={{ width: 7, height: 7, borderRadius: "50%", background: c.dot, display: "block" }} />
       </div>
       <div>
-        <p className="text-[13.5px] font-semibold text-white mb-0.5">{label}</p>
-        <p className="text-[12.5px] font-light leading-relaxed" style={{ color: "#94A3B8" }}>{detail}</p>
+        <p style={{ fontSize: 13.5, fontWeight: 600, color: "#fff", marginBottom: 3 }}>{label}</p>
+        <p style={{ fontSize: 12.5, fontWeight: 300, color: "#94A3B8", lineHeight: 1.6 }}>{detail}</p>
       </div>
     </div>
   );

@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, RefreshCw, TrendingUp, TrendingDown, Edit2, Trash2 } from "lucide-react";
+import { Plus, RefreshCw, Edit2, Trash2 } from "lucide-react";
 import InvestmentForm from "@/components/investments/InvestmentForm";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 
@@ -10,12 +10,13 @@ const ACCOUNT_LABELS = { celi: "CELI", reer: "REER", reee: "REEE", non_enregistr
 const TYPE_LABELS = { action: "Action", fnb: "FNB", fond_mutuel: "Fond mutuel", crypto: "Crypto", obligations: "Obligations", autre: "Autre" };
 const PIE_COLORS = ["#DEFF9A","#6B8ED6","#5BC4A0","#C9A063","#A87DD3","#E07B6B","#6BBCE0"];
 
-function fmt(v) {
-  return new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v || 0);
-}
-function fmtPct(v) {
-  return `${v >= 0 ? "+" : ""}${v.toFixed(2)}%`;
-}
+const fmt = (v) => new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v || 0);
+const fmtPct = (v) => `${v >= 0 ? "+" : ""}${v.toFixed(2)}%`;
+
+const glass = {
+  card: { background: "rgba(255,255,255,0.06)", backdropFilter: "blur(24px) saturate(160%)", WebkitBackdropFilter: "blur(24px) saturate(160%)", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)" },
+  tableHeader: { background: "rgba(222,255,154,0.04)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderBottom: "1px solid rgba(255,255,255,0.06)" },
+};
 
 export default function Investments() {
   const [showForm, setShowForm] = useState(false);
@@ -23,119 +24,76 @@ export default function Investments() {
   const [refreshing, setRefreshing] = useState(false);
   const qc = useQueryClient();
 
-  const { data: investments = [] } = useQuery({
-    queryKey: ["investments"],
-    queryFn: () => base44.entities.Investment.list(),
-  });
+  const { data: investments = [] } = useQuery({ queryKey: ["investments"], queryFn: () => base44.entities.Investment.list() });
+  const deleteMutation = useMutation({ mutationFn: (id) => base44.entities.Investment.delete(id), onSuccess: () => qc.invalidateQueries({ queryKey: ["investments"] }) });
 
-  const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Investment.delete(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["investments"] }),
-  });
-
-  // Refresh all prices via backend
   const handleRefresh = async () => {
     const withSymbols = investments.filter(i => i.symbol);
     if (!withSymbols.length) return;
     setRefreshing(true);
     try {
-      const res = await base44.functions.invoke("getStockPrice", {
-        symbols: withSymbols.map(i => ({ id: i.id, symbol: i.symbol }))
-      });
+      const res = await base44.functions.invoke("getStockPrice", { symbols: withSymbols.map(i => ({ id: i.id, symbol: i.symbol })) });
       const results = res.data?.results || [];
-      await Promise.all(
-        results.filter(r => r.price != null).map(r =>
-          base44.entities.Investment.update(r.id, {
-            current_price: r.price,
-            current_value: r.price * (withSymbols.find(i => i.id === r.id)?.quantity || 1),
-            last_updated: new Date().toISOString(),
-          })
-        )
-      );
+      await Promise.all(results.filter(r => r.price != null).map(r =>
+        base44.entities.Investment.update(r.id, { current_price: r.price, current_value: r.price * (withSymbols.find(i => i.id === r.id)?.quantity || 1), last_updated: new Date().toISOString() })
+      ));
       qc.invalidateQueries({ queryKey: ["investments"] });
-    } finally {
-      setRefreshing(false);
-    }
+    } finally { setRefreshing(false); }
   };
 
-  // Summary stats
-  const totalCost = useMemo(() =>
-    investments.reduce((s, i) => s + (i.quantity || 0) * (i.purchase_price || 0), 0), [investments]);
-  const totalValue = useMemo(() =>
-    investments.reduce((s, i) => {
-      const val = i.current_price ? (i.current_price * (i.quantity || 0)) : (i.current_value || 0);
-      return s + val;
-    }, 0), [investments]);
+  const totalCost = useMemo(() => investments.reduce((s, i) => s + (i.quantity || 0) * (i.purchase_price || 0), 0), [investments]);
+  const totalValue = useMemo(() => investments.reduce((s, i) => { const v = i.current_price ? i.current_price * (i.quantity || 0) : (i.current_value || 0); return s + v; }, 0), [investments]);
   const gain = totalValue - totalCost;
   const gainPct = totalCost > 0 ? (gain / totalCost) * 100 : 0;
-
-  const lastUpdated = investments.reduce((latest, i) => {
-    if (!i.last_updated) return latest;
-    return !latest || i.last_updated > latest ? i.last_updated : latest;
-  }, null);
-
-  const byType = useMemo(() => {
-    const acc = {};
-    investments.forEach(i => {
-      const v = i.current_price ? i.current_price * (i.quantity || 0) : (i.current_value || 0);
-      acc[i.asset_type || "autre"] = (acc[i.asset_type || "autre"] || 0) + v;
-    });
-    return Object.entries(acc).map(([name, value]) => ({ name: TYPE_LABELS[name] || name, value: Math.round(value) }));
-  }, [investments]);
+  const lastUpdated = investments.reduce((latest, i) => (!i.last_updated ? latest : (!latest || i.last_updated > latest ? i.last_updated : latest)), null);
+  const byType = useMemo(() => { const acc = {}; investments.forEach(i => { const v = i.current_price ? i.current_price * (i.quantity || 0) : (i.current_value || 0); acc[i.asset_type || "autre"] = (acc[i.asset_type || "autre"] || 0) + v; }); return Object.entries(acc).map(([name, value]) => ({ name: TYPE_LABELS[name] || name, value: Math.round(value) })); }, [investments]);
 
   return (
-    <div style={{ background: "#050810", minHeight: "100vh" }}>
-      <div className="max-w-7xl mx-auto px-6 lg:px-10 py-14 md:py-20">
+    <div style={{ background: "linear-gradient(135deg, #050810 0%, #080d1a 60%, #050810 100%)", minHeight: "100vh", position: "relative", overflow: "hidden" }}>
+      <div style={{ position: "absolute", top: "-10%", right: "-5%", width: 700, height: 700, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(222,255,154,0.07) 0%, transparent 70%)", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", bottom: "0%", left: "-10%", width: 500, height: 500, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(107,142,214,0.06) 0%, transparent 70%)", pointerEvents: "none" }} />
+
+      <div className="relative max-w-7xl mx-auto px-6 lg:px-10 py-14 md:py-20">
 
         {/* Header */}
-        <div className="flex items-end justify-between mb-10">
+        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 36, flexWrap: "wrap", gap: 16 }}>
           <div>
-            <p className="text-[11px] font-semibold tracking-[0.14em] uppercase mb-2" style={{ color: "rgba(201,160,99,0.6)" }}>Portefeuille</p>
-            <h1 className="font-urbanist text-[2.25rem] font-bold text-white tracking-tight">Mes Placements</h1>
-            {lastUpdated && (
-              <p className="text-[12px] mt-1" style={{ color: "rgba(148,163,184,0.45)" }}>
-                Mis à jour : {new Date(lastUpdated).toLocaleString("fr-CA", { dateStyle: "short", timeStyle: "short" })}
-              </p>
-            )}
+            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(222,255,154,0.5)", marginBottom: 8 }}>Portefeuille</p>
+            <h1 style={{ fontFamily: "var(--font-urbanist)", fontSize: "clamp(1.75rem,4vw,2.25rem)", fontWeight: 800, color: "#fff", letterSpacing: "-0.03em" }}>Mes Placements</h1>
+            {lastUpdated && <p style={{ fontSize: 12, marginTop: 4, color: "rgba(148,163,184,0.45)" }}>Mis à jour : {new Date(lastUpdated).toLocaleString("fr-CA", { dateStyle: "short", timeStyle: "short" })}</p>}
           </div>
-          <div className="flex gap-3">
-            <button onClick={handleRefresh} disabled={refreshing || !investments.some(i => i.symbol)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-semibold transition-all disabled:opacity-40"
-              style={{ border: "1px solid rgba(222,255,154,0.25)", color: "#DEFF9A", background: "rgba(222,255,154,0.06)" }}>
-              <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
+          <div style={{ display: "flex", gap: 10 }}>
+            <button onClick={handleRefresh} disabled={refreshing || !investments.some(i => i.symbol)} style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 18px", borderRadius: 14, fontSize: 13, fontWeight: 600, cursor: "pointer", background: "rgba(222,255,154,0.07)", backdropFilter: "blur(16px)", border: "1px solid rgba(222,255,154,0.18)", color: "#DEFF9A", opacity: (refreshing || !investments.some(i => i.symbol)) ? 0.4 : 1 }}>
+              <RefreshCw style={{ width: 15, height: 15 }} className={refreshing ? "animate-spin" : ""} />
               {refreshing ? "Actualisation…" : "Actualiser les prix"}
             </button>
-            <button onClick={() => { setEditing(null); setShowForm(true); }}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-semibold"
-              style={{ background: "#DEFF9A", color: "#050810" }}>
-              <Plus className="w-4 h-4" /> Ajouter
+            <button onClick={() => { setEditing(null); setShowForm(true); }} style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 20px", borderRadius: 14, fontSize: 13, fontWeight: 700, cursor: "pointer", background: "linear-gradient(135deg, #DEFF9A, #c8f060)", color: "#050810", border: "none", boxShadow: "0 4px 16px rgba(222,255,154,0.25)" }}>
+              <Plus style={{ width: 15, height: 15 }} /> Ajouter
             </button>
           </div>
         </div>
 
         {/* KPI strip */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4" style={{ marginBottom: 28 }}>
           {[
             { label: "Valeur du portefeuille", value: fmt(totalValue), color: "#DEFF9A" },
             { label: "Coût total d'acquisition", value: fmt(totalCost), color: "rgba(255,255,255,0.7)" },
             { label: "Gain / Perte ($)", value: fmt(gain), color: gain >= 0 ? "#DEFF9A" : "#f87171" },
             { label: "Rendement total", value: fmtPct(gainPct), color: gain >= 0 ? "#DEFF9A" : "#f87171" },
           ].map(k => (
-            <div key={k.label} className="rounded-2xl px-5 py-4" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
-              <p className="text-[11.5px] font-medium mb-2" style={{ color: "#94A3B8" }}>{k.label}</p>
-              <p className="font-financial text-[1.5rem] font-bold leading-none" style={{ color: k.color }}>{k.value}</p>
+            <div key={k.label} style={{ ...glass.card, borderRadius: 18, padding: "1.1rem 1.3rem" }}>
+              <p style={{ fontSize: 11.5, fontWeight: 500, color: "#94A3B8", marginBottom: 8 }}>{k.label}</p>
+              <p style={{ fontFamily: "var(--font-mono)", fontSize: "1.4rem", fontWeight: 700, color: k.color, lineHeight: 1 }}>{k.value}</p>
             </div>
           ))}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-
           {/* Table */}
           <div className="lg:col-span-3">
-            <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
+            <div style={{ ...glass.card, borderRadius: 24, overflow: "hidden", padding: 0 }}>
               {/* Table header */}
-              <div className="grid grid-cols-12 px-5 py-3 text-[11px] font-semibold tracking-wide uppercase"
-                style={{ background: "rgba(222,255,154,0.04)", borderBottom: "1px solid rgba(255,255,255,0.06)", color: "rgba(148,163,184,0.6)" }}>
+              <div className="grid grid-cols-12 px-5 py-3 text-[11px] font-semibold tracking-wide uppercase" style={{ ...glass.tableHeader, color: "rgba(148,163,184,0.6)" }}>
                 <div className="col-span-4">Actif</div>
                 <div className="col-span-2 text-right">Qté / Prix achat</div>
                 <div className="col-span-2 text-right">Prix actuel</div>
@@ -145,93 +103,66 @@ export default function Investments() {
 
               <AnimatePresence>
                 {investments.length === 0 ? (
-                  <div className="text-center py-16" style={{ color: "#94A3B8" }}>
-                    <p className="text-[14px]">Aucun placement. Cliquez sur "Ajouter" pour commencer.</p>
+                  <div style={{ textAlign: "center", padding: "4rem 0", color: "#94A3B8" }}>
+                    <p style={{ fontSize: 14 }}>Aucun placement. Cliquez sur "Ajouter" pour commencer.</p>
                   </div>
-                ) : (
-                  investments.map((inv, idx) => {
-                    const costPerShare = inv.purchase_price || 0;
-                    const currentPerShare = inv.current_price || costPerShare;
-                    const qty = inv.quantity || 0;
-                    const cost = costPerShare * qty;
-                    const value = currentPerShare * qty;
-                    const g = value - cost;
-                    const gPct = cost > 0 ? (g / cost) * 100 : 0;
-                    return (
-                      <motion.div key={inv.id}
-                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                        className="grid grid-cols-12 px-5 py-4 items-center group transition-colors hover:bg-white/[0.02]"
-                        style={{ borderBottom: idx < investments.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
-                        {/* Name + badge */}
-                        <div className="col-span-4 flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-xl flex items-center justify-center font-mono text-[10px] font-bold shrink-0"
-                            style={{ background: "rgba(222,255,154,0.08)", color: "#DEFF9A", border: "1px solid rgba(222,255,154,0.15)" }}>
-                            {(inv.symbol || inv.asset_name)?.substring(0, 4).toUpperCase()}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-[13.5px] font-semibold text-white truncate">{inv.asset_name}</p>
-                            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                              {inv.symbol && <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded" style={{ background: "rgba(222,255,154,0.06)", color: "#DEFF9A" }}>{inv.symbol}</span>}
-                              <span className="text-[10px]" style={{ color: "#94A3B8" }}>{ACCOUNT_LABELS[inv.account_type] || ""}</span>
-                              {inv.purchase_date && <span className="text-[10px]" style={{ color: "rgba(148,163,184,0.45)" }}>{inv.purchase_date}</span>}
-                            </div>
+                ) : investments.map((inv, idx) => {
+                  const costPerShare = inv.purchase_price || 0;
+                  const currentPerShare = inv.current_price || costPerShare;
+                  const qty = inv.quantity || 0;
+                  const cost = costPerShare * qty;
+                  const value = currentPerShare * qty;
+                  const g = value - cost;
+                  const gPct = cost > 0 ? (g / cost) * 100 : 0;
+                  return (
+                    <motion.div key={inv.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                      className="grid grid-cols-12 px-5 py-4 items-center group"
+                      style={{ borderBottom: idx < investments.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none", transition: "background 0.15s" }}
+                      onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.02)"}
+                      onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                      <div className="col-span-4" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        <div style={{ width: 36, height: 36, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, flexShrink: 0, background: "rgba(222,255,154,0.08)", color: "#DEFF9A", border: "1px solid rgba(222,255,154,0.15)" }}>
+                          {(inv.symbol || inv.asset_name)?.substring(0, 4).toUpperCase()}
+                        </div>
+                        <div style={{ minWidth: 0 }}>
+                          <p style={{ fontSize: 13.5, fontWeight: 600, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{inv.asset_name}</p>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2, flexWrap: "wrap" }}>
+                            {inv.symbol && <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", fontWeight: 700, padding: "2px 6px", borderRadius: 6, background: "rgba(222,255,154,0.06)", color: "#DEFF9A" }}>{inv.symbol}</span>}
+                            <span style={{ fontSize: 10, color: "#94A3B8" }}>{ACCOUNT_LABELS[inv.account_type] || ""}</span>
                           </div>
                         </div>
-
-                        {/* Qty / buy price */}
-                        <div className="col-span-2 text-right">
-                          <p className="font-financial text-[13px] text-white">{qty}</p>
-                          <p className="font-financial text-[11px]" style={{ color: "#94A3B8" }}>{fmt(costPerShare)}</p>
+                      </div>
+                      <div className="col-span-2" style={{ textAlign: "right" }}>
+                        <p style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "#fff" }}>{qty}</p>
+                        <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#94A3B8" }}>{fmt(costPerShare)}</p>
+                      </div>
+                      <div className="col-span-2" style={{ textAlign: "right" }}>
+                        <p style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: inv.current_price ? "#DEFF9A" : "rgba(148,163,184,0.4)" }}>{inv.current_price ? fmt(inv.current_price) : "—"}</p>
+                      </div>
+                      <div className="col-span-2" style={{ textAlign: "right" }}>
+                        <p style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 600, color: "#fff" }}>{fmt(value)}</p>
+                      </div>
+                      <div className="col-span-2" style={{ textAlign: "right", display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8 }}>
+                        <div>
+                          <p style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 600, color: g >= 0 ? "#DEFF9A" : "#f87171" }}>{g >= 0 ? "+" : ""}{fmt(g)}</p>
+                          <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: g >= 0 ? "rgba(222,255,154,0.55)" : "rgba(248,113,113,0.55)" }}>{fmtPct(gPct)}</p>
                         </div>
-
-                        {/* Current price */}
-                        <div className="col-span-2 text-right">
-                          <p className="font-financial text-[13px]" style={{ color: inv.current_price ? "#DEFF9A" : "rgba(148,163,184,0.4)" }}>
-                            {inv.current_price ? fmt(inv.current_price) : "—"}
-                          </p>
+                        <div style={{ display: "flex", gap: 4, opacity: 0, transition: "opacity 0.2s", flexShrink: 0 }} className="group-hover:opacity-100">
+                          <button onClick={() => { setEditing(inv); setShowForm(true); }} style={{ width: 28, height: 28, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", background: "rgba(222,255,154,0.08)", border: "1px solid rgba(222,255,154,0.15)", color: "#DEFF9A" }}><Edit2 style={{ width: 12, height: 12 }} /></button>
+                          <button onClick={() => deleteMutation.mutate(inv.id)} style={{ width: 28, height: 28, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.15)", color: "#f87171" }}><Trash2 style={{ width: 12, height: 12 }} /></button>
                         </div>
-
-                        {/* Value */}
-                        <div className="col-span-2 text-right">
-                          <p className="font-financial text-[13px] font-semibold text-white">{fmt(value)}</p>
-                        </div>
-
-                        {/* G/P */}
-                        <div className="col-span-2 text-right flex items-center justify-end gap-2">
-                          <div>
-                            <p className="font-financial text-[13px] font-semibold" style={{ color: g >= 0 ? "#DEFF9A" : "#f87171" }}>
-                              {g >= 0 ? "+" : ""}{fmt(g)}
-                            </p>
-                            <p className="font-financial text-[11px]" style={{ color: g >= 0 ? "rgba(222,255,154,0.6)" : "rgba(248,113,113,0.6)" }}>
-                              {fmtPct(gPct)}
-                            </p>
-                          </div>
-                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                            <button onClick={() => { setEditing(inv); setShowForm(true); }}
-                              className="w-7 h-7 rounded-lg flex items-center justify-center"
-                              style={{ background: "rgba(222,255,154,0.08)", color: "#DEFF9A" }}>
-                              <Edit2 className="w-3 h-3" />
-                            </button>
-                            <button onClick={() => deleteMutation.mutate(inv.id)}
-                              className="w-7 h-7 rounded-lg flex items-center justify-center"
-                              style={{ background: "rgba(239,68,68,0.08)", color: "#f87171" }}>
-                              <Trash2 className="w-3 h-3" />
-                            </button>
-                          </div>
-                        </div>
-                      </motion.div>
-                    );
-                  })
-                )}
+                      </div>
+                    </motion.div>
+                  );
+                })}
               </AnimatePresence>
             </div>
           </div>
 
-          {/* Sidebar: pie + AI context */}
-          <div className="space-y-5">
-            {/* Pie */}
-            <div className="rounded-2xl p-5" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)" }}>
-              <p className="text-[11px] font-semibold tracking-wide uppercase mb-4" style={{ color: "rgba(222,255,154,0.5)" }}>Répartition</p>
+          {/* Sidebar */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div style={{ ...glass.card, borderRadius: 22, padding: "1.3rem" }}>
+              <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(222,255,154,0.5)", marginBottom: 16 }}>Répartition</p>
               {byType.length > 0 ? (
                 <>
                   <ResponsiveContainer width="100%" height={160}>
@@ -239,35 +170,32 @@ export default function Investments() {
                       <Pie data={byType} cx="50%" cy="50%" innerRadius={42} outerRadius={68} dataKey="value">
                         {byType.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                       </Pie>
-                      <Tooltip formatter={(v) => fmt(v)} contentStyle={{ background: "#0D1628", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#fff", fontSize: 12 }} />
+                      <Tooltip formatter={(v) => fmt(v)} contentStyle={{ background: "rgba(10,15,30,0.9)", backdropFilter: "blur(16px)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#fff", fontSize: 12 }} />
                     </PieChart>
                   </ResponsiveContainer>
-                  <div className="space-y-1.5 mt-3">
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
                     {byType.map((d, i) => (
-                      <div key={d.name} className="flex items-center justify-between text-[11.5px]">
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-1.5 h-1.5 rounded-full" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
+                      <div key={d.name} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 11.5 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <div style={{ width: 7, height: 7, borderRadius: "50%", background: PIE_COLORS[i % PIE_COLORS.length] }} />
                           <span style={{ color: "#94A3B8" }}>{d.name}</span>
                         </div>
-                        <span className="font-financial" style={{ color: "#fff" }}>{fmt(d.value)}</span>
+                        <span style={{ fontFamily: "var(--font-mono)", color: "#fff", fontWeight: 600 }}>{fmt(d.value)}</span>
                       </div>
                     ))}
                   </div>
                 </>
-              ) : (
-                <p className="text-[12px] text-center py-6" style={{ color: "#94A3B8" }}>—</p>
-              )}
+              ) : <p style={{ fontSize: 12, textAlign: "center", padding: "1.5rem 0", color: "#94A3B8" }}>—</p>}
             </div>
 
-            {/* AI metadata summary */}
             {investments.some(i => i.ai_metadata) && (
-              <div className="rounded-2xl p-5" style={{ background: "rgba(222,255,154,0.03)", border: "1px solid rgba(222,255,154,0.12)" }}>
-                <p className="text-[11px] font-semibold tracking-wide uppercase mb-3" style={{ color: "rgba(222,255,154,0.5)" }}>Contexte IA</p>
-                <div className="space-y-3">
+              <div style={{ borderRadius: 22, padding: "1.3rem", background: "rgba(222,255,154,0.04)", border: "1px solid rgba(222,255,154,0.12)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)" }}>
+                <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(222,255,154,0.5)", marginBottom: 12 }}>Contexte IA</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   {investments.filter(i => i.ai_metadata).map(i => (
-                    <div key={i.id} className="text-[11.5px]" style={{ color: "#94A3B8" }}>
-                      <span className="font-semibold" style={{ color: "#DEFF9A" }}>{i.symbol || i.asset_name}</span>
-                      <span className="ml-1">— {i.ai_metadata}</span>
+                    <div key={i.id} style={{ fontSize: 11.5, color: "#94A3B8" }}>
+                      <span style={{ fontWeight: 600, color: "#DEFF9A" }}>{i.symbol || i.asset_name}</span>
+                      <span style={{ marginLeft: 4 }}>— {i.ai_metadata}</span>
                     </div>
                   ))}
                 </div>
@@ -278,13 +206,7 @@ export default function Investments() {
       </div>
 
       <AnimatePresence>
-        {showForm && (
-          <InvestmentForm
-            investment={editing}
-            onClose={() => { setShowForm(false); setEditing(null); }}
-            onSaved={() => { qc.invalidateQueries({ queryKey: ["investments"] }); setShowForm(false); setEditing(null); }}
-          />
-        )}
+        {showForm && <InvestmentForm investment={editing} onClose={() => { setShowForm(false); setEditing(null); }} onSaved={() => { qc.invalidateQueries({ queryKey: ["investments"] }); setShowForm(false); setEditing(null); }} />}
       </AnimatePresence>
     </div>
   );
