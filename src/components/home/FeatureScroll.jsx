@@ -61,13 +61,14 @@ export default function FeatureScroll({ onCTA }) {
               onClick={onCTA}
               className="cursor-pointer group"
               style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "20px 0",
-                borderBottom: "1px solid rgba(255,255,255,0.07)",
-                transition: "all 0.2s",
-              }}
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "20px 0",
+                  borderBottom: "1px solid rgba(255,255,255,0.07)",
+                  transition: "all 0.2s",
+                  gap: 24,
+                }}
             >
               {/* Big label */}
               <motion.h3
@@ -79,7 +80,7 @@ export default function FeatureScroll({ onCTA }) {
                   fontSize: "clamp(1.6rem, 4vw, 3rem)",
                   letterSpacing: "-0.035em",
                   lineHeight: 1.1,
-                  flex: 1,
+                  textAlign: "center",
                 }}
               >
                 {f.label}
