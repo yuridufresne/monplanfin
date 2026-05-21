@@ -49,26 +49,6 @@ export default function Home() {
 
         {/* Hero text — centered like Wealthsimple */}
         <div className="relative flex flex-col items-center justify-center text-center" style={{ minHeight: "100vh", paddingTop: 80, paddingBottom: 60, paddingLeft: 24, paddingRight: 24 }}>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-            style={{ marginBottom: 28 }}
-          >
-            <span style={{
-              display: "inline-flex", alignItems: "center", gap: 8,
-              padding: "7px 16px", borderRadius: 50, fontSize: 11, fontWeight: 600,
-              letterSpacing: "0.1em", textTransform: "uppercase",
-              background: "rgba(201,160,99,0.1)",
-              backdropFilter: "blur(12px)",
-              border: "1px solid rgba(201,160,99,0.2)",
-              color: "rgba(201,160,99,0.85)",
-            }}>
-              <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#C9A063", display: "inline-block" }} />
-              Planification financière — Québec
-            </span>
-          </motion.div>
-
           <motion.h1
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
