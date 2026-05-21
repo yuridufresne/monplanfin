@@ -69,7 +69,9 @@ export default function Budget() {
   // Revenus calculés depuis l'ABF uniquement
   const totalRev = useMemo(() => {
     const revenuProfile = profiles.find(p => p.section === "revenu");
-    const data = revenuProfile?.data || {};
+    const raw = revenuProfile?.data || {};
+    // Gérer la structure potentiellement imbriquée (data.data)
+    const data = raw.data || raw;
     const emplois = data.emplois || [];
     const sides = data.sidehustles || [];
     const totalEmplois = emplois.reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0) / 12, 0);
@@ -167,17 +169,22 @@ export default function Budget() {
                       </div>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      {entry.source === "abf" && (
+                        <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 6, background: "rgba(107,140,214,0.15)", border: "1px solid rgba(107,140,214,0.3)", color: "#6B8ED6", letterSpacing: "0.05em" }}>ABF</span>
+                      )}
                       <p style={{ fontFamily: "var(--font-mono)", fontSize: 15, fontWeight: 700, color: entry.type === "revenu" ? "#5BC4A0" : "#f87171" }}>
                         {fmt(toMonthly(entry.amount, entry.frequency))}
                       </p>
-                      <div style={{ display: "flex", gap: 4, opacity: 0, transition: "opacity 0.2s" }} className="group-hover:opacity-100">
-                        <button onClick={() => { setEditing(entry); setShowForm(true); }} style={{ width: 28, height: 28, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", background: "rgba(201,160,99,0.1)", border: "1px solid rgba(201,160,99,0.2)", color: "#C9A063" }}>
-                          <Edit2 style={{ width: 12, height: 12 }} />
-                        </button>
-                        <button onClick={() => deleteMutation.mutate(entry.id)} style={{ width: 28, height: 28, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.2)", color: "#f87171" }}>
-                          <Trash2 style={{ width: 12, height: 12 }} />
-                        </button>
-                      </div>
+                      {entry.source !== "abf" && (
+                        <div style={{ display: "flex", gap: 4, opacity: 0, transition: "opacity 0.2s" }} className="group-hover:opacity-100">
+                          <button onClick={() => { setEditing(entry); setShowForm(true); }} style={{ width: 28, height: 28, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", background: "rgba(201,160,99,0.1)", border: "1px solid rgba(201,160,99,0.2)", color: "#C9A063" }}>
+                            <Edit2 style={{ width: 12, height: 12 }} />
+                          </button>
+                          <button onClick={() => deleteMutation.mutate(entry.id)} style={{ width: 28, height: 28, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.2)", color: "#f87171" }}>
+                            <Trash2 style={{ width: 12, height: 12 }} />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </motion.div>
                 ))}

@@ -16,6 +16,31 @@ export async function syncABFToEntities() {
 
   // ── 1. REVENUS : les revenus sont gérés uniquement dans l'ABF, pas dans BudgetEntry ──
 
+  // ── 1b. IMPÔTS (ABF revenu → BudgetEntry dépense, non modifiable) ────────
+  const revenuData = bySection["revenu"];
+  if (revenuData) {
+    // Gérer la structure imbriquée potentielle
+    const revData = revenuData.data || revenuData;
+    const emplois = revData.emplois || [];
+    let totalImpotMensuel = 0;
+    for (const e of emplois) {
+      const impot = parseFloat(e.impot_mensuel) || 0;
+      totalImpotMensuel += impot;
+    }
+    if (totalImpotMensuel > 0) {
+      const label = "Impôts (retenues à la source)";
+      const existing = await base44.entities.BudgetEntry.filter({ label });
+      if (existing.length === 0) {
+        await base44.entities.BudgetEntry.create({
+          category: "divers", label, amount: totalImpotMensuel,
+          type: "depense", frequency: "mensuel", is_fixed: true, source: "abf",
+        });
+      } else {
+        await base44.entities.BudgetEntry.update(existing[0].id, { amount: totalImpotMensuel, source: "abf" });
+      }
+    }
+  }
+
   // ── 2. DETTES (ABF dettes → Debt) ─────────────────────────────────────────
   const dettesData = bySection["dettes"];
   if (dettesData) {

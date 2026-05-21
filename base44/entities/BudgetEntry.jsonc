@@ -50,6 +50,16 @@
       "type": "boolean",
       "default": true,
       "description": "D\u00e9pense fixe ou variable"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "manuel",
+        "abf",
+        "banque"
+      ],
+      "default": "manuel",
+      "description": "Origine de l'entr\u00e9e"
     }
   },
   "required": [
