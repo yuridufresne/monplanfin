@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, X, ChevronDown, ChevronRight } from "lucide-react";
@@ -178,6 +178,35 @@ export default function BudgetGrid({ onClose, onSaved }) {
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
   const [openSections, setOpenSections] = useState({ 0: true });
+
+  // Pré-remplir la section Revenus depuis l'ABF
+  useEffect(() => {
+    base44.entities.FinancialProfile.list().then(profiles => {
+      const bySection = {};
+      profiles.forEach(p => { bySection[p.section] = p.data || {}; });
+      const revenuData = bySection["revenu"];
+      if (!revenuData) return;
+
+      const prefill = {};
+      const emplois = revenuData.emplois || [];
+      const sides = revenuData.sidehustles || [];
+
+      // Sommer tous les salaires → "Salaire principal (net)"
+      // L'ABF stocke revenu_brut annuel
+      const totalSalaire = emplois.reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0), 0);
+      if (totalSalaire > 0) prefill["Salaire principal (net)"] = (totalSalaire / 12).toFixed(0);
+
+      // Sides → "2e emploi / freelance / travailleur autonome"
+      const totalSides = sides.reduce((s, sh) => s + (parseFloat(sh.revenu_mensuel_moyen) || 0), 0);
+      if (totalSides > 0) prefill["2e emploi / freelance / travailleur autonome"] = totalSides.toFixed(0);
+
+      if (Object.keys(prefill).length > 0) {
+        setValues(prev => ({ ...prev, ...prefill }));
+        // Ouvrir la section Revenus (index 9)
+        setOpenSections(prev => ({ ...prev, 9: true }));
+      }
+    });
+  }, []);
 
   const toggleSection = (i) => setOpenSections(p => ({ ...p, [i]: !p[i] }));
   const set = (key, val) => setValues(p => ({ ...p, [key]: val }));
