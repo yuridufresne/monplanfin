@@ -65,16 +65,25 @@ export default function Home() {
 
         {/* Hero text — centered like Wealthsimple */}
         <div className="relative flex flex-col items-center justify-center text-center" style={{ minHeight: "auto", paddingTop: 120, paddingBottom: 80, paddingLeft: 24, paddingRight: 24 }}>
-          <motion.h1
+          <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="font-urbanist font-black text-white"
-            style={{ fontSize: "clamp(2.5rem, 6vw, 5rem)", lineHeight: 1.05, letterSpacing: "-0.04em", maxWidth: 680, marginBottom: 24 }}
+            style={{ marginBottom: 24 }}
           >
-            Créer ton plan financier,{" "}
-            <span style={{ color: "#C9A063" }}>propulsé par IA.</span>
-          </motion.h1>
+            <h1
+              className="font-urbanist font-black text-white"
+              style={{ fontSize: "clamp(2.5rem, 6vw, 5rem)", lineHeight: 1.05, letterSpacing: "-0.04em" }}
+            >
+              MonPlanFin
+            </h1>
+            <h2
+              className="font-urbanist font-black"
+              style={{ fontSize: "clamp(1.4rem, 3.5vw, 2.8rem)", lineHeight: 1.1, letterSpacing: "-0.03em", color: "#C9A063", marginTop: 8 }}
+            >
+              Pour votre liberté financière.
+            </h2>
+          </motion.div>
 
           <motion.p
             initial={{ opacity: 0, y: 16 }}
