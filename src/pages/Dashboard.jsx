@@ -7,6 +7,7 @@ import { ArrowRight, Plus, Pencil } from "lucide-react";
 import { syncABFToEntities } from "@/hooks/useABFSync";
 import EditDebtModal from "@/components/dashboard/EditDebtModal";
 import EditGoalModal from "@/components/dashboard/EditGoalModal";
+import ResetDataModal from "@/components/dashboard/ResetDataModal";
 
 const fmt = (v) => new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v || 0);
 const fmtPct = (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)} %`;
@@ -23,8 +24,9 @@ const glass = {
 export default function Dashboard() {
   const [user, setUser] = useState(null);
   const [synced, setSynced] = useState(false);
-  const [editDebt, setEditDebt] = useState(null);   // null | debt object | "new"
-  const [editGoal, setEditGoal] = useState(null);   // null | goal object | "new"
+  const [editDebt, setEditDebt] = useState(null);
+  const [editGoal, setEditGoal] = useState(null);
+  const [showReset, setShowReset] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(setUser);
@@ -73,6 +75,7 @@ export default function Dashboard() {
           onClose={() => setEditGoal(null)}
         />
       )}
+      {showReset && <ResetDataModal onClose={() => setShowReset(false)} />}
 
       <div className="relative max-w-7xl mx-auto px-6 lg:px-10 py-14 md:py-20">
 
@@ -82,12 +85,20 @@ export default function Dashboard() {
           <h1 style={{ fontFamily: "var(--font-urbanist)", fontSize: "clamp(2rem,4vw,2.75rem)", fontWeight: 800, color: "#fff", letterSpacing: "-0.03em", lineHeight: 1.1 }}>
             {user?.full_name ? `Bonjour, ${user.full_name.split(" ")[0]}.` : "Bonjour."}
           </h1>
-          <p style={{ fontSize: 15, fontWeight: 300, marginTop: 8, color: "#94A3B8" }}>
-            Voici votre synthèse financière.{" "}
-            <Link to="/analyse" style={{ color: "#C9A063", fontWeight: 500, textDecoration: "none" }}>
-              Modifier l'ABF →
-            </Link>
-          </p>
+          <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 8, flexWrap: "wrap" }}>
+            <p style={{ fontSize: 15, fontWeight: 300, color: "#94A3B8" }}>
+              Voici votre synthèse financière.{" "}
+              <Link to="/analyse" style={{ color: "#C9A063", fontWeight: 500, textDecoration: "none" }}>
+                Modifier l'ABF →
+              </Link>
+            </p>
+            <button
+              onClick={() => setShowReset(true)}
+              style={{ fontSize: 12, fontWeight: 600, color: "rgba(248,113,113,0.7)", background: "rgba(248,113,113,0.07)", border: "1px solid rgba(248,113,113,0.15)", padding: "5px 12px", borderRadius: 9, cursor: "pointer" }}
+            >
+              Réinitialiser
+            </button>
+          </div>
         </motion.div>
 
         {/* Hero Grid — 4 KPIs */}
