@@ -139,18 +139,18 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-6 lg:px-10">
 
           <motion.div {...fadeUp(0)} className="text-center mb-8">
-            <h3
-              className="font-urbanist font-black"
-              style={{ fontSize: "clamp(1.2rem, 3vw, 2rem)", letterSpacing: "-0.03em", lineHeight: 1.2, color: "#C9A063", marginBottom: 8 }}
-            >
-              Pour ...
-            </h3>
             <h2
               className="font-urbanist font-black text-white"
-              style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)", letterSpacing: "-0.04em", lineHeight: 1.1, marginBottom: 16 }}
+              style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)", letterSpacing: "-0.04em", lineHeight: 1.1, marginBottom: 8 }}
             >
               MonPlanFin
             </h2>
+            <h3
+              className="font-urbanist font-black"
+              style={{ fontSize: "clamp(1.2rem, 3vw, 2rem)", letterSpacing: "-0.03em", lineHeight: 1.2, color: "#C9A063", marginBottom: 16 }}
+            >
+              Pour ...
+            </h3>
             <p style={{ fontSize: 16, fontWeight: 300, color: "rgba(148,163,184,0.75)", maxWidth: 440, margin: "0 auto", lineHeight: 1.7 }}>
               Six domaines d'intervention pour bâtir votre liberté financière.
             </p>
