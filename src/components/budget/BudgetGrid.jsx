@@ -196,34 +196,50 @@ export default function BudgetGrid({ onClose, onSaved }) {
   const qc = useQueryClient();
   const [values, setValues] = useState({});
   const [freqs, setFreqs] = useState({});
+  const [existingEntries, setExistingEntries] = useState([]); // entrées déjà en BD
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
   const [openSections, setOpenSections] = useState({ 0: true });
 
-  // Pré-remplir la section Revenus depuis l'ABF
+  // Pré-remplir depuis les BudgetEntries existantes (priorité) puis l'ABF
   useEffect(() => {
-    base44.entities.FinancialProfile.list().then(profiles => {
-      const bySection = {};
-      profiles.forEach(p => { bySection[p.section] = p.data || {}; });
-      const revenuData = bySection["revenu"];
-      if (!revenuData) return;
+    Promise.all([
+      base44.entities.BudgetEntry.list(),
+      base44.entities.FinancialProfile.list(),
+    ]).then(([existing, profiles]) => {
+      setExistingEntries(existing);
 
       const prefill = {};
-      const emplois = revenuData.emplois || [];
-      const sides = revenuData.sidehustles || [];
+      const prefillFreqs = {};
 
-      // Sommer tous les salaires → "Salaire principal (net)"
-      // L'ABF stocke revenu_brut annuel
-      const totalSalaire = emplois.reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0), 0);
-      if (totalSalaire > 0) prefill["Salaire principal (net)"] = (totalSalaire / 12).toFixed(0);
+      // 1. Pré-remplir depuis les entrées existantes en BD
+      const allLabels = SECTIONS.flatMap(s => s.rows).map(r => r.label);
+      existing.forEach(e => {
+        if (allLabels.includes(e.label)) {
+          prefill[e.label] = String(e.amount || "");
+          if (e.frequency === "annuel") prefillFreqs[e.label] = "annuel";
+        }
+      });
 
-      // Sides → "2e emploi / freelance / travailleur autonome"
-      const totalSides = sides.reduce((s, sh) => s + (parseFloat(sh.revenu_mensuel_moyen) || 0), 0);
-      if (totalSides > 0) prefill["2e emploi / freelance / travailleur autonome"] = totalSides.toFixed(0);
+      // 2. Si pas encore de revenus en BD → pré-remplir depuis l'ABF
+      const hasRevenuInBD = existing.some(e => e.type === "revenu");
+      if (!hasRevenuInBD) {
+        const bySection = {};
+        profiles.forEach(p => { bySection[p.section] = p.data || {}; });
+        const revenuData = bySection["revenu"];
+        if (revenuData) {
+          const emplois = revenuData.emplois || [];
+          const sides = revenuData.sidehustles || [];
+          const totalSalaire = emplois.reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0), 0);
+          if (totalSalaire > 0) prefill["Salaire principal (net)"] = (totalSalaire / 12).toFixed(0);
+          const totalSides = sides.reduce((s, sh) => s + (parseFloat(sh.revenu_mensuel_moyen) || 0), 0);
+          if (totalSides > 0) prefill["2e emploi / freelance / travailleur autonome"] = totalSides.toFixed(0);
+        }
+      }
 
+      setValues(prev => ({ ...prev, ...prefill }));
+      setFreqs(prev => ({ ...prev, ...prefillFreqs }));
       if (Object.keys(prefill).length > 0) {
-        setValues(prev => ({ ...prev, ...prefill }));
-        // Ouvrir la section Revenus (index 9)
         setOpenSections(prev => ({ ...prev, 9: true }));
       }
     });
@@ -244,6 +260,7 @@ export default function BudgetGrid({ onClose, onSaved }) {
 
   const handleSave = async () => {
     setSaving(true);
+
     const entries = allRows
       .filter(r => parseFloat(values[r.label]) > 0)
       .map(r => ({
@@ -255,15 +272,26 @@ export default function BudgetGrid({ onClose, onSaved }) {
         is_fixed: true,
       }));
 
-    if (entries.length > 0) {
-      await base44.entities.BudgetEntry.bulkCreate(entries);
-      qc.invalidateQueries({ queryKey: ["budgetEntries"] });
-      // Sync revenus → ABF
-      const revenusEntries = entries.filter(e => e.type === "revenu");
-      if (revenusEntries.length > 0) {
-        await syncBudgetRevenuToABF(revenusEntries);
-      }
+    // Upsert : update si le label existe déjà, sinon create
+    const existingByLabel = {};
+    existingEntries.forEach(e => { existingByLabel[e.label] = e; });
+
+    const toCreate = entries.filter(e => !existingByLabel[e.label]);
+    const toUpdate = entries.filter(e => existingByLabel[e.label]);
+
+    await Promise.all([
+      ...toCreate.length > 0 ? [base44.entities.BudgetEntry.bulkCreate(toCreate)] : [],
+      ...toUpdate.map(e => base44.entities.BudgetEntry.update(existingByLabel[e.label].id, { amount: e.amount, frequency: e.frequency })),
+    ]);
+
+    qc.invalidateQueries({ queryKey: ["budgetEntries"] });
+
+    // Sync revenus → ABF
+    const revenusEntries = entries.filter(e => e.type === "revenu");
+    if (revenusEntries.length > 0) {
+      await syncBudgetRevenuToABF(revenusEntries);
     }
+
     setSaving(false);
     setDone(true);
     setTimeout(() => { onSaved?.(); onClose(); }, 1200);

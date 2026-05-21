@@ -46,7 +46,13 @@ export default function Budget() {
     if (editing) {
       await base44.entities.BudgetEntry.update(editing.id, form);
     } else {
-      await base44.entities.BudgetEntry.create(form);
+      // Vérifier si une entrée avec ce label existe déjà pour éviter les doublons
+      const existing = entries.find(e => e.label === form.label && e.type === form.type);
+      if (existing) {
+        await base44.entities.BudgetEntry.update(existing.id, form);
+      } else {
+        await base44.entities.BudgetEntry.create(form);
+      }
     }
     qc.invalidateQueries({ queryKey: ["budgetEntries"] });
     setShowForm(false);
