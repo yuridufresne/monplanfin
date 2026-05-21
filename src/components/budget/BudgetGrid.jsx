@@ -84,7 +84,7 @@ const SECTIONS = [
     rows: [
       { label: "Sorties (cinéma, musées, concerts…)",   category: "loisirs",          type: "depense" },
       { label: "Vacances et voyages (billets, hôtels)", category: "loisirs",          type: "depense" },
-      { label: "Dépenses personnelles (SAQ, tabac…)",   category: "loisirs",          type: "depense" },
+      { label: "Dépenses personnelles (SAQ, SQDC, tabac…)",   category: "loisirs",          type: "depense" },
     ],
   },
   {
