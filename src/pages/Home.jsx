@@ -65,25 +65,16 @@ export default function Home() {
 
         {/* Hero text — centered like Wealthsimple */}
         <div className="relative flex flex-col items-center justify-center text-center" style={{ minHeight: "auto", paddingTop: 120, paddingBottom: 80, paddingLeft: 24, paddingRight: 24 }}>
-          <motion.div
+          <motion.h1
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            style={{ marginBottom: 24 }}
+            className="font-urbanist font-black text-white"
+            style={{ fontSize: "clamp(2.5rem, 6vw, 5rem)", lineHeight: 1.05, letterSpacing: "-0.04em", maxWidth: 680, marginBottom: 24 }}
           >
-            <h1
-              className="font-urbanist font-black text-white"
-              style={{ fontSize: "clamp(2.5rem, 6vw, 5rem)", lineHeight: 1.05, letterSpacing: "-0.04em" }}
-            >
-              MonPlanFin
-            </h1>
-            <h2
-              className="font-urbanist font-black"
-              style={{ fontSize: "clamp(1.4rem, 3.5vw, 2.8rem)", lineHeight: 1.1, letterSpacing: "-0.03em", color: "#C9A063", marginTop: 8 }}
-            >
-              Pour votre liberté financière.
-            </h2>
-          </motion.div>
+            Créer ton plan financier,{" "}
+            <span style={{ color: "#C9A063" }}>propulsé par IA.</span>
+          </motion.h1>
 
           <motion.p
             initial={{ opacity: 0, y: 16 }}
@@ -150,11 +141,16 @@ export default function Home() {
           <motion.div {...fadeUp(0)} className="text-center mb-16">
             <h2
               className="font-urbanist font-black text-white"
-              style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)", letterSpacing: "-0.04em", lineHeight: 1.1, marginBottom: 16 }}
+              style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)", letterSpacing: "-0.04em", lineHeight: 1.1, marginBottom: 8 }}
             >
-              Plan pour{" "}
-              <span style={{ color: "#C9A063" }}>...</span>
+              MonPlanFin
             </h2>
+            <h3
+              className="font-urbanist font-black"
+              style={{ fontSize: "clamp(1.2rem, 3vw, 2rem)", letterSpacing: "-0.03em", lineHeight: 1.2, color: "#C9A063", marginBottom: 16 }}
+            >
+              Pour ...
+            </h3>
             <p style={{ fontSize: 16, fontWeight: 300, color: "rgba(148,163,184,0.75)", maxWidth: 440, margin: "0 auto", lineHeight: 1.7 }}>
               Six domaines d'intervention pour bâtir votre liberté financière.
             </p>
