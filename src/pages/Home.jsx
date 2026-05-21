@@ -179,7 +179,7 @@ export default function Home() {
                   }}
                   whileHover={{ background: "rgba(255,255,255,0.04)" }}
                 >
-                  <div style={{ width: 52, height: 52, borderRadius: 14, overflow: "hidden", marginBottom: 18, flexShrink: 0 }}>
+                  <div style={{ width: 52, height: 52, borderRadius: 14, overflow: "hidden", marginBottom: 18, flexShrink: 0, background: "#0D1628" }}>
                     <img src={p.img} alt={p.label} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   </div>
                   <h3 className="font-urbanist font-bold text-white tracking-tight" style={{ fontSize: 17, marginBottom: 10 }}>
