@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 const features = [
   {
@@ -33,7 +33,7 @@ export default function FeatureScroll({ onCTA }) {
 
   return (
     <section style={{ background: "#050810", borderTop: "1px solid rgba(255,255,255,0.07)" }}>
-      <div className="max-w-4xl mx-auto px-6 lg:px-10 py-8">
+      <div className="max-w-6xl mx-auto px-6 lg:px-10 py-8">
 
         {/* Header */}
         <motion.div
@@ -62,24 +62,58 @@ export default function FeatureScroll({ onCTA }) {
               onClick={onCTA}
               className="cursor-pointer"
               style={{
-                padding: "22px 0",
+                position: "relative",
+                display: "grid",
+                gridTemplateColumns: "1fr auto 1fr",
+                alignItems: "center",
+                padding: "28px 0",
                 borderBottom: "1px solid rgba(255,255,255,0.07)",
-                textAlign: "center",
               }}
             >
+              {/* Description à gauche — visible au hover */}
+              <div className="hidden md:flex justify-end pr-10">
+                <AnimatePresence>
+                  {hovered === i && (
+                    <motion.p
+                      key="desc"
+                      initial={{ opacity: 0, x: 10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 10 }}
+                      transition={{ duration: 0.22 }}
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 300,
+                        color: "rgba(148,163,184,0.75)",
+                        maxWidth: 220,
+                        lineHeight: 1.65,
+                        textAlign: "right",
+                      }}
+                    >
+                      {f.desc}
+                    </motion.p>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Titre centré */}
               <motion.h3
-                animate={{ color: hovered === i ? "#C9A063" : "rgba(255,255,255,0.85)" }}
+                animate={{ color: hovered === i ? "#C9A063" : "rgba(255,255,255,0.88)" }}
                 transition={{ duration: 0.2 }}
                 style={{
                   fontFamily: "var(--font-urbanist)",
                   fontWeight: 800,
-                  fontSize: "clamp(1.6rem, 4vw, 3rem)",
-                  letterSpacing: "-0.035em",
-                  lineHeight: 1.1,
+                  fontSize: "clamp(2rem, 5.5vw, 4.5rem)",
+                  letterSpacing: "-0.04em",
+                  lineHeight: 1.05,
+                  textAlign: "center",
+                  whiteSpace: "nowrap",
                 }}
               >
                 {f.label}
               </motion.h3>
+
+              {/* Colonne droite vide pour équilibrer la grille */}
+              <div />
             </motion.div>
           ))}
         </div>
