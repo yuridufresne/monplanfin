@@ -50,13 +50,11 @@ export default function Navbar() {
           {/* Logo */}
           <Link to="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
             <div style={{
-              width: 34, height: 34, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center",
-              background: "linear-gradient(135deg, rgba(201,160,99,0.9) 0%, rgba(201,160,99,0.7) 100%)",
-              backdropFilter: "blur(8px)",
-              border: "1px solid rgba(201,160,99,0.5)",
-              boxShadow: "0 4px 12px rgba(201,160,99,0.3), inset 0 1px 0 rgba(255,255,255,0.25)",
+              width: 40, height: 40, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center",
+              background: "rgba(201,160,99,0.12)",
+              border: "1px solid rgba(201,160,99,0.25)",
             }}>
-              <span style={{ fontFamily: "var(--font-urbanist)", fontWeight: 800, fontSize: 11, color: "#050810", letterSpacing: "-0.02em" }}>MP</span>
+              <span style={{ fontFamily: "var(--font-urbanist)", fontWeight: 800, fontSize: 12, color: "#C9A063", letterSpacing: "-0.02em" }}>MP</span>
             </div>
             <span style={{ fontFamily: "var(--font-urbanist)", fontSize: 15, fontWeight: 700, color: "#fff", letterSpacing: "-0.02em" }}>MonPlanFin</span>
           </Link>
