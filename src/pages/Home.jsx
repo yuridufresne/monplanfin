@@ -157,38 +157,42 @@ export default function Home() {
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            border: "1px solid rgba(255,255,255,0.1)",
+            borderRadius: 24,
+            overflow: "hidden",
+          }}>
             {pillars.map((p, i) => {
               const Icon = p.icon;
+              const col = i % 3;
+              const row = Math.floor(i / 3);
               return (
-                <motion.div key={p.label} {...fadeUp(i * 0.07)}>
-                  <div
-                    className="rounded-2xl p-7 h-full cursor-pointer group transition-all duration-300"
-                    style={{
-                      background: "rgba(255,255,255,0.03)",
-                      border: "1px solid rgba(255,255,255,0.07)",
-                      backdropFilter: "blur(20px)",
-                    }}
-                    onClick={() => setSoftWallOpen(true)}
-                    onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.055)"; e.currentTarget.style.borderColor = `${p.color}33`; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.03)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; }}
-                  >
-                    <div style={{
-                      width: 44, height: 44, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center",
-                      background: `${p.color}18`, border: `1px solid ${p.color}30`, marginBottom: 20,
-                    }}>
-                      <Icon style={{ width: 20, height: 20, color: p.color }} />
-                    </div>
-                    <h3
-                      className="font-urbanist font-bold text-white tracking-tight"
-                      style={{ fontSize: 18, marginBottom: 10, transition: "color 0.2s" }}
-                    >
-                      {p.label}
-                    </h3>
-                    <p style={{ fontSize: 13.5, fontWeight: 300, color: "rgba(148,163,184,0.7)", lineHeight: 1.7 }}>
-                      {p.desc}
-                    </p>
+                <motion.div key={p.label} {...fadeUp(i * 0.07)}
+                  onClick={() => setSoftWallOpen(true)}
+                  className="cursor-pointer group"
+                  style={{
+                    padding: "2rem 1.75rem",
+                    borderRight: col < 2 ? "1px solid rgba(255,255,255,0.1)" : "none",
+                    borderBottom: row < 1 ? "1px solid rgba(255,255,255,0.1)" : "none",
+                    background: "transparent",
+                    transition: "background 0.2s",
+                  }}
+                  whileHover={{ background: "rgba(255,255,255,0.04)" }}
+                >
+                  <div style={{
+                    width: 40, height: 40, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center",
+                    background: `${p.color}15`, border: `1px solid ${p.color}28`, marginBottom: 18,
+                  }}>
+                    <Icon style={{ width: 18, height: 18, color: p.color }} />
                   </div>
+                  <h3 className="font-urbanist font-bold text-white tracking-tight" style={{ fontSize: 17, marginBottom: 10 }}>
+                    {p.label}
+                  </h3>
+                  <p style={{ fontSize: 13, fontWeight: 300, color: "rgba(148,163,184,0.65)", lineHeight: 1.7 }}>
+                    {p.desc}
+                  </p>
                 </motion.div>
               );
             })}
