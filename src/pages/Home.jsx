@@ -135,9 +135,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── FEATURE SCROLL ───────────────────────────────────── */}
-      <FeatureScroll onCTA={() => setSoftWallOpen(true)} />
-
       {/* ── PLAN POUR... ─────────────────────────────────────── */}
       <section id="plan" className="pt-0 pb-12 md:pt-0 md:pb-16" style={{ background: "linear-gradient(180deg, #050810 0%, #080d18 100%)" }}>
         <div className="max-w-6xl mx-auto px-6 lg:px-10">
@@ -212,6 +209,9 @@ export default function Home() {
           </motion.div>
         </div>
       </section>
+
+      {/* ── FEATURE SCROLL ───────────────────────────────────── */}
+      <FeatureScroll onCTA={() => setSoftWallOpen(true)} />
     </div>
   );
 }
