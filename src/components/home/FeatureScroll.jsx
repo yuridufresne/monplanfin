@@ -68,6 +68,7 @@ export default function FeatureScroll({ onCTA }) {
                 alignItems: "center",
                 padding: "28px 0",
                 borderBottom: "1px solid rgba(255,255,255,0.07)",
+                transition: "background 0.3s",
               }}
             >
               {/* Description à gauche — visible au hover */}
@@ -76,10 +77,10 @@ export default function FeatureScroll({ onCTA }) {
                   {hovered === i && (
                     <motion.p
                       key="desc"
-                      initial={{ opacity: 0, x: 10 }}
+                      initial={{ opacity: 0, x: 6 }}
                       animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 10 }}
-                      transition={{ duration: 0.22 }}
+                      exit={{ opacity: 0, x: 6 }}
+                      transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
                       style={{
                         fontSize: 13,
                         fontWeight: 300,
@@ -98,7 +99,7 @@ export default function FeatureScroll({ onCTA }) {
               {/* Titre centré */}
               <motion.h3
                 animate={{ color: hovered === i ? "#C9A063" : "rgba(255,255,255,0.88)" }}
-                transition={{ duration: 0.2 }}
+                transition={{ duration: 0.25, ease: "easeOut" }}
                 style={{
                   fontFamily: "var(--font-urbanist)",
                   fontWeight: 800,
