@@ -33,16 +33,17 @@ export default function FeatureScroll({ onCTA }) {
 
   return (
     <section style={{ background: "#050810", borderTop: "1px solid rgba(255,255,255,0.07)" }}>
-      <div className="max-w-6xl mx-auto px-6 lg:px-10 py-8">
+      <div className="max-w-4xl mx-auto px-6 lg:px-10 py-8">
+
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-6"
+          style={{ textAlign: "center", marginBottom: 8 }}
         >
-          <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", color: "#C9A063", textTransform: "uppercase", marginBottom: 8 }}>
+          <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", color: "#C9A063", textTransform: "uppercase" }}>
             Ce que vous obtenez
           </p>
         </motion.div>
@@ -59,18 +60,13 @@ export default function FeatureScroll({ onCTA }) {
               onMouseEnter={() => setHovered(i)}
               onMouseLeave={() => setHovered(null)}
               onClick={onCTA}
-              className="cursor-pointer group"
+              className="cursor-pointer"
               style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  padding: "20px 0",
-                  borderBottom: "1px solid rgba(255,255,255,0.07)",
-                  transition: "all 0.2s",
-                  gap: 24,
-                }}
+                padding: "22px 0",
+                borderBottom: "1px solid rgba(255,255,255,0.07)",
+                textAlign: "center",
+              }}
             >
-              {/* Big label */}
               <motion.h3
                 animate={{ color: hovered === i ? "#C9A063" : "rgba(255,255,255,0.85)" }}
                 transition={{ duration: 0.2 }}
@@ -80,39 +76,10 @@ export default function FeatureScroll({ onCTA }) {
                   fontSize: "clamp(1.6rem, 4vw, 3rem)",
                   letterSpacing: "-0.035em",
                   lineHeight: 1.1,
-                  textAlign: "center",
                 }}
               >
                 {f.label}
               </motion.h3>
-
-              {/* Desc — visible on hover */}
-              <motion.p
-                animate={{ opacity: hovered === i ? 1 : 0, x: hovered === i ? 0 : 12 }}
-                transition={{ duration: 0.25 }}
-                style={{
-                  fontSize: 13,
-                  fontWeight: 300,
-                  color: "rgba(148,163,184,0.8)",
-                  maxWidth: 260,
-                  lineHeight: 1.65,
-                  textAlign: "right",
-                  flexShrink: 0,
-                  marginLeft: 24,
-                }}
-                className="hidden md:block"
-              >
-                {f.desc}
-              </motion.p>
-
-              {/* Arrow */}
-              <motion.span
-                animate={{ opacity: hovered === i ? 1 : 0.2, x: hovered === i ? 0 : -6 }}
-                transition={{ duration: 0.2 }}
-                style={{ marginLeft: 20, fontSize: 20, color: "#C9A063", flexShrink: 0 }}
-              >
-                →
-              </motion.span>
             </motion.div>
           ))}
         </div>
