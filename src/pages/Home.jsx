@@ -60,13 +60,13 @@ export default function Home() {
               {...fadeUp(0.08)}
               className="font-urbanist font-black text-[3rem] md:text-[5rem] leading-[1.0] tracking-[-0.04em] text-white mb-8"
             >
-              Votre patrimoine,
+              Créer ton plan financier,
               <br />
-              <span style={{ color: "#C9A063" }}>piloté avec précision.</span>
+              <span style={{ color: "#C9A063" }}>propulsé par IA, assisté par des conseillers.</span>
             </motion.h1>
 
             <motion.p {...fadeUp(0.16)} className="text-[17px] md:text-[18px] leading-[1.8] mb-12 max-w-xl font-light" style={{ color: "#94A3B8" }}>
-              Calculatrices de précision, budget interactif et suivi de portefeuille — tous les outils d'un planificateur financier, accessibles gratuitement.
+              Intelligence artificielle combinée à l'expertise de conseillers en sécurité financière — tous les outils pour maîtriser votre patrimoine, accessibles gratuitement.
             </motion.p>
 
             <motion.div {...fadeUp(0.22)} className="flex flex-col sm:flex-row gap-4">
