@@ -1,22 +1,46 @@
 import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
-import { ArrowRight, ArrowUpRight, Lock } from "lucide-react";
+import { ArrowRight, Shield, TrendingUp, Landmark, PiggyBank, Sparkles, BarChart3 } from "lucide-react";
 import SoftWall from "@/components/SoftWall";
 
-const calcTabs = [
-  { value: "epargne", label: "Épargne", sub: "Accumulation", url: "https://calculatrices-financieres.ca/#/epargne?palette=gold&hideHelp&hideSettings&shade=light" },
-  { value: "emprunt", label: "Emprunt", sub: "Facteurs", url: "https://calculatrices-financieres.ca/#/emprunt?palette=gold&hideHelp&hideSettings&shade=light" },
-  { value: "revenus", label: "Placements", sub: "Revenus", url: "https://calculatrices-financieres.ca/#/revenus?palette=gold&hideHelp&hideSettings&shade=light" },
-  { value: "impot", label: "Fiscalité", sub: "Taux d'imposition", url: "https://calculatrices-financieres.ca/#/taux-impot?palette=gold&hideHelp&hideSettings&shade=light" },
-  { value: "retraite-inflation", label: "Retraite", sub: "Budget retraite", url: "https://calculatrices-financieres.ca/#/effet-inflation?palette=gold&hideHelp&hideSettings&shade=light" },
-  { value: "pret-reer", label: "Prêt REER", sub: "Pertinence", url: "https://calculatrices-financieres.ca/#/pret-reer?palette=gold&hideHelp&hideSettings&shade=light" },
-];
-
-const privateFeatures = [
-  { label: "Budget interactif", desc: "Catégorisez revenus & dépenses, visualisez votre flux mensuel.", link: "/budget" },
-  { label: "Suivi des placements", desc: "CELI, REER, non enregistré — consolidez votre portefeuille.", link: "/placements" },
-  { label: "Plan financier", desc: "Valeur nette, objectifs et dettes dans un tableau institutionnel.", link: "/plan" },
+const pillars = [
+  {
+    icon: Landmark,
+    label: "Fiscalité",
+    desc: "Optimisez votre situation fiscale au Québec — REER, CELI, fractionnement de revenus et stratégies d'impôt.",
+    color: "#6B8ED6",
+  },
+  {
+    icon: TrendingUp,
+    label: "Désendettement",
+    desc: "Stratégies pour éliminer vos dettes efficacement — méthode avalanche, consolidation, rétablissement du crédit.",
+    color: "#5BC4A0",
+  },
+  {
+    icon: Shield,
+    label: "Protection",
+    desc: "Assurance vie, invalidité, maladies graves — analysez vos besoins réels avec un conseiller certifié AMF.",
+    color: "#C9A063",
+  },
+  {
+    icon: PiggyBank,
+    label: "Épargne et investissement",
+    desc: "Construisez votre patrimoine avec une stratégie de placement adaptée à votre profil et votre horizon.",
+    color: "#A87DD3",
+  },
+  {
+    icon: Sparkles,
+    label: "Création de richesse",
+    desc: "Accélérez votre liberté financière — immobilier, portefeuille de dividendes, revenu passif, retraite anticipée.",
+    color: "#DEFF9A",
+  },
+  {
+    icon: BarChart3,
+    label: "Optimisation financière",
+    desc: "Analyse globale de votre situation : flux de trésorerie, valeur nette, objectifs et projections sur mesure.",
+    color: "#E07B6B",
+  },
 ];
 
 const fadeUp = (delay = 0) => ({
@@ -27,9 +51,7 @@ const fadeUp = (delay = 0) => ({
 });
 
 export default function Home() {
-  const [activeCalc, setActiveCalc] = useState("epargne");
   const [softWallOpen, setSoftWallOpen] = useState(false);
-  const currentCalc = calcTabs.find(t => t.value === activeCalc);
 
   return (
     <div style={{ background: "#050810" }}>
@@ -90,7 +112,7 @@ export default function Home() {
               Commencer gratuitement
             </button>
             <a
-              href="#calculatrices"
+              href="#plan"
               style={{
                 padding: "14px 28px", borderRadius: 50, fontSize: 14.5, fontWeight: 500, cursor: "pointer",
                 background: "rgba(255,255,255,0.07)",
@@ -103,7 +125,7 @@ export default function Home() {
               onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.11)"; e.currentTarget.style.color = "#fff"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.07)"; e.currentTarget.style.color = "rgba(255,255,255,0.75)"; }}
             >
-              Essayer les calculatrices
+              Voir les domaines
             </a>
           </motion.div>
 
@@ -118,171 +140,70 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── CALCULATRICES (PUBLIC) ─────────────────────────────── */}
-      <section id="calculatrices" className="py-20 md:py-28" style={{ background: "#050810" }}>
+      {/* ── PLAN POUR... ─────────────────────────────────────── */}
+      <section id="plan" className="py-24 md:py-32" style={{ background: "linear-gradient(180deg, #050810 0%, #080d18 100%)" }}>
         <div className="max-w-6xl mx-auto px-6 lg:px-10">
-          <motion.div {...fadeUp(0)} className="mb-12">
-            <div className="inline-flex items-center gap-2.5 mb-5">
-              <div className="w-5 h-[1px]" style={{ background: "#C9A063" }} />
-              <span className="text-[11px] font-semibold tracking-[0.14em] uppercase" style={{ color: "rgba(201,160,99,0.7)" }}>
-                Outils gratuits · Accès immédiat
-              </span>
-            </div>
-            <h2 className="font-urbanist text-[2rem] md:text-[2.75rem] font-bold text-white mb-4 tracking-tight">
-              Calculatrices financières
-            </h2>
-            <p className="text-[15px] font-light max-w-lg leading-relaxed" style={{ color: "#94A3B8" }}>
-              10 outils de précision pour modéliser vos scénarios — aucune inscription requise.
-            </p>
-          </motion.div>
 
-          {/* Tab grid */}
-          <motion.div {...fadeUp(0.08)} className="mb-5">
-            <div className="flex flex-wrap gap-2">
-              {calcTabs.map((tab) => (
-                <button
-                  key={tab.value}
-                  onClick={() => setActiveCalc(tab.value)}
-                  className="px-4 py-2.5 rounded-xl text-left transition-all duration-200"
-                  style={
-                    activeCalc === tab.value
-                      ? { background: "#C9A063", color: "#050810", border: "1px solid #C9A063" }
-                      : { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.7)" }
-                  }
-                >
-                  <p className="text-[12.5px] font-semibold">{tab.label}</p>
-                  <p className="text-[11px] font-light opacity-60">{tab.sub}</p>
-                </button>
-              ))}
-              <a
-                href="/calculatrices"
-                className="px-4 py-2.5 rounded-xl text-left transition-all duration-200 flex items-center gap-1.5"
-                style={{ border: "1px solid rgba(201,160,99,0.2)", color: "#C9A063", background: "transparent" }}
-              >
-                <span className="text-[12.5px] font-semibold">Voir tout</span>
-                <ArrowUpRight className="w-3 h-3" />
-              </a>
-            </div>
-          </motion.div>
-
-          {/* iFrame */}
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeCalc}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.25 }}
-            >
-              <div
-                className="rounded-2xl overflow-hidden mb-16"
-                style={{ border: "1px solid rgba(201,160,99,0.15)", background: "#fff" }}
-              >
-                {/* Panel header */}
-                <div className="flex items-center justify-between px-4 py-2" style={{ background: "#0D1628", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                  <div>
-                    <p className="text-[14px] font-semibold text-white">{currentCalc.label}</p>
-                    <p className="text-[12px] font-light" style={{ color: "#94A3B8" }}>{currentCalc.sub}</p>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <button
-                      onClick={() => setSoftWallOpen(true)}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[12px] font-semibold transition-all"
-                      style={{ background: "rgba(201,160,99,0.12)", color: "#C9A063", border: "1px solid rgba(201,160,99,0.2)" }}
-                    >
-                      <Lock className="w-3 h-3" />
-                      Sauvegarder les résultats
-                    </button>
-                    <a
-                      href={currentCalc.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[12px] transition-colors"
-                      style={{ color: "rgba(148,163,184,0.6)" }}
-                    >
-                      <ArrowUpRight className="w-4 h-4" />
-                    </a>
-                  </div>
-                </div>
-                {/* Clip wrapper — hides Equisoft footer */}
-                <div style={{ height: "2050px", overflow: "hidden" }}>
-                  <iframe
-                    src={currentCalc.url}
-                    title={currentCalc.label}
-                    width="100%"
-                    frameBorder="0"
-                    scrolling="no"
-                    className="block w-full"
-                    style={{ height: "2200px" }}
-                  />
-                </div>
-              </div>
-            </motion.div>
-          </AnimatePresence>
-        </div>
-      </section>
-
-      {/* ── UPGRADE SECTION (SOFT-WALL TEASER) ───────────────── */}
-      <section className="py-20 md:py-28" style={{ background: "linear-gradient(180deg, #050810 0%, #0A0F1E 100%)" }}>
-        <div className="max-w-7xl mx-auto px-6 lg:px-10">
           <motion.div {...fadeUp(0)} className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 mb-5 px-4 py-1.5 rounded-full" style={{ background: "rgba(201,160,99,0.08)", border: "1px solid rgba(201,160,99,0.15)" }}>
-              <Lock className="w-3 h-3" style={{ color: "#C9A063" }} />
-              <span className="text-[11px] font-semibold tracking-[0.12em] uppercase" style={{ color: "#C9A063" }}>Espace sécurisé</span>
-            </div>
-            <h2 className="font-urbanist text-[2rem] md:text-[3rem] font-bold text-white mb-5 tracking-tight">
-              Passez à l'expérience complète
+            <h2
+              className="font-urbanist font-black text-white"
+              style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)", letterSpacing: "-0.04em", lineHeight: 1.1, marginBottom: 16 }}
+            >
+              Plan pour{" "}
+              <span style={{ color: "#C9A063" }}>...</span>
             </h2>
-            <p className="text-[16px] font-light max-w-xl mx-auto leading-relaxed" style={{ color: "#94A3B8" }}>
-              Une fois connecté, accédez à votre tableau de bord personnalisé et à tous les outils de gestion financière.
+            <p style={{ fontSize: 16, fontWeight: 300, color: "rgba(148,163,184,0.75)", maxWidth: 440, margin: "0 auto", lineHeight: 1.7 }}>
+              Six domaines d'intervention pour bâtir votre liberté financière.
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12">
-            {privateFeatures.map((f, i) => (
-              <motion.div key={f.label} {...fadeUp(i * 0.08)}>
-                <div
-                  className="rounded-2xl p-7 h-full transition-all duration-300 cursor-pointer group"
-                  style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}
-                  onClick={() => setSoftWallOpen(true)}
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="w-2 h-2 rounded-full mt-1" style={{ background: "#C9A063" }} />
-                    <Lock className="w-3.5 h-3.5 opacity-30 group-hover:opacity-60 transition-opacity" style={{ color: "#C9A063" }} />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {pillars.map((p, i) => {
+              const Icon = p.icon;
+              return (
+                <motion.div key={p.label} {...fadeUp(i * 0.07)}>
+                  <div
+                    className="rounded-2xl p-7 h-full cursor-pointer group transition-all duration-300"
+                    style={{
+                      background: "rgba(255,255,255,0.03)",
+                      border: "1px solid rgba(255,255,255,0.07)",
+                      backdropFilter: "blur(20px)",
+                    }}
+                    onClick={() => setSoftWallOpen(true)}
+                    onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.055)"; e.currentTarget.style.borderColor = `${p.color}33`; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.03)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; }}
+                  >
+                    <div style={{
+                      width: 44, height: 44, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center",
+                      background: `${p.color}18`, border: `1px solid ${p.color}30`, marginBottom: 20,
+                    }}>
+                      <Icon style={{ width: 20, height: 20, color: p.color }} />
+                    </div>
+                    <h3
+                      className="font-urbanist font-bold text-white tracking-tight"
+                      style={{ fontSize: 18, marginBottom: 10, transition: "color 0.2s" }}
+                    >
+                      {p.label}
+                    </h3>
+                    <p style={{ fontSize: 13.5, fontWeight: 300, color: "rgba(148,163,184,0.7)", lineHeight: 1.7 }}>
+                      {p.desc}
+                    </p>
                   </div>
-                  <h3 className="font-urbanist text-[17px] font-semibold text-white mb-2 tracking-tight group-hover:text-[#C9A063] transition-colors">
-                    {f.label}
-                  </h3>
-                  <p className="text-[13.5px] font-light leading-relaxed" style={{ color: "#94A3B8" }}>
-                    {f.desc}
-                  </p>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              );
+            })}
           </div>
 
-          <motion.div {...fadeUp(0.24)} className="text-center">
+          <motion.div {...fadeUp(0.42)} className="text-center mt-16">
             <button
               onClick={() => setSoftWallOpen(true)}
-              className="inline-flex items-center gap-3 px-10 py-4 rounded-xl font-semibold text-[14px] transition-all duration-200 hover:scale-105"
-              style={{ background: "#C9A063", color: "#050810" }}
+              className="inline-flex items-center gap-3 font-semibold text-[14px] transition-all duration-200 hover:scale-105"
+              style={{ padding: "14px 36px", borderRadius: 50, background: "linear-gradient(135deg, #C9A063, #e6c07a)", color: "#050810", border: "none", boxShadow: "0 4px 20px rgba(201,160,99,0.35)" }}
             >
-              Créer mon espace gratuitement
+              Créer mon plan gratuitement
               <ArrowRight className="w-4 h-4" />
             </button>
-            <div className="mt-8 max-w-sm mx-auto space-y-2">
-              <p className="text-[12px] font-semibold mb-3" style={{ color: "#C9A063" }}>Vous accédrez à :</p>
-              <ul className="text-left space-y-2 text-[13px] font-light" style={{ color: "#94A3B8" }}>
-                <li className="flex items-start gap-2.5"><span style={{ color: "#C9A063" }}>•</span> Conseiller AI 24h/24</li>
-                <li className="flex items-start gap-2.5"><span style={{ color: "#C9A063" }}>•</span> Analyse de besoin financier</li>
-                <li className="flex items-start gap-2.5"><span style={{ color: "#C9A063" }}>•</span> Chat avec un agent avec permis AMF</li>
-                <li className="flex items-start gap-2.5"><span style={{ color: "#C9A063" }}>•</span> Aide à l'élimination de dettes</li>
-                <li className="flex items-start gap-2.5"><span style={{ color: "#C9A063" }}>•</span> Aide à la création de richesse</li>
-                <li className="flex items-start gap-2.5"><span style={{ color: "#C9A063" }}>•</span> Aide à la gestion budgétaire</li>
-                <li className="flex items-start gap-2.5"><span style={{ color: "#C9A063" }}>•</span> Aide au rétablissement du crédit</li>
-              </ul>
-            </div>
-            <p className="text-[12px] mt-8 font-light" style={{ color: "rgba(148,163,184,0.5)" }}>
+            <p style={{ marginTop: 16, fontSize: 12, fontWeight: 300, color: "rgba(148,163,184,0.4)" }}>
               Gratuit · Aucune carte requise · Données privées
             </p>
           </motion.div>
