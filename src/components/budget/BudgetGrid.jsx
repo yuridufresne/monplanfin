@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQueryClient } from "@tanstack/react-query";
+import { syncBudgetRevenuToABF } from "@/hooks/useABFSync";
 import { CheckCircle2, X, ChevronDown, ChevronRight } from "lucide-react";
 
 const SECTIONS = [
@@ -257,6 +258,11 @@ export default function BudgetGrid({ onClose, onSaved }) {
     if (entries.length > 0) {
       await base44.entities.BudgetEntry.bulkCreate(entries);
       qc.invalidateQueries({ queryKey: ["budgetEntries"] });
+      // Sync revenus → ABF
+      const revenusEntries = entries.filter(e => e.type === "revenu");
+      if (revenusEntries.length > 0) {
+        await syncBudgetRevenuToABF(revenusEntries);
+      }
     }
     setSaving(false);
     setDone(true);

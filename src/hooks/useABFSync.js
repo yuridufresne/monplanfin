@@ -3,6 +3,9 @@
  * Synchronise les données saisies dans l'ABF (FinancialProfile)
  * vers les entités opérationnelles : Debt, BudgetEntry, FinancialGoal.
  * Appelé une fois au chargement du Dashboard.
+ *
+ * syncBudgetRevenuToABF : sens inverse — met à jour l'ABF quand les revenus
+ * sont modifiés dans la grille budgétaire.
  */
 import { base44 } from "@/api/base44Client";
 
@@ -11,7 +14,7 @@ export async function syncABFToEntities() {
   const bySection = {};
   profiles.forEach(p => { bySection[p.section] = p.data || {}; });
 
-  // ── 1. REVENUS (ABF revenu → BudgetEntry) ─────────────────────────────────
+  // ── 1. REVENUS (ABF revenu → BudgetEntry, create or update) ──────────────
   const revenuData = bySection["revenu"];
   if (revenuData) {
     const emplois = revenuData.emplois || [];
@@ -22,12 +25,13 @@ export async function syncABFToEntities() {
       const montantMensuel = (parseFloat(e.revenu_brut) || 0) / 12;
       if (montantMensuel <= 0) continue;
       const label = e.employeur || e.poste || "Revenu emploi";
-      // Check if already exists
       const existing = await base44.entities.BudgetEntry.filter({ label, type: "revenu" });
       if (existing.length === 0) {
         await base44.entities.BudgetEntry.create({
           category: "divers", label, amount: montantMensuel, type: "revenu", frequency: "mensuel", is_fixed: true,
         });
+      } else {
+        await base44.entities.BudgetEntry.update(existing[0].id, { amount: montantMensuel });
       }
     }
 
@@ -41,6 +45,8 @@ export async function syncABFToEntities() {
         await base44.entities.BudgetEntry.create({
           category: "divers", label, amount: montant, type: "revenu", frequency: "mensuel", is_fixed: false,
         });
+      } else {
+        await base44.entities.BudgetEntry.update(existing[0].id, { amount: montant });
       }
     }
   }
@@ -117,5 +123,90 @@ export async function syncABFToEntities() {
         priority: "haute",
       });
     }
+  }
+}
+
+/**
+ * syncBudgetRevenuToABF
+ * Appelé après la sauvegarde de la grille budgétaire.
+ * Met à jour la section "revenu" de l'ABF avec les revenus saisis dans le budget.
+ * On fusionne par label pour éviter les doublons.
+ *
+ * @param {Array} revenusEntries - Tableau de BudgetEntry de type "revenu"
+ */
+export async function syncBudgetRevenuToABF(revenusEntries) {
+  if (!revenusEntries || revenusEntries.length === 0) return;
+
+  const profiles = await base44.entities.FinancialProfile.list();
+  const revenuProfile = profiles.find(p => p.section === "revenu");
+
+  const currentData = revenuProfile?.data || {};
+  const emploisActuels = currentData.emplois || [];
+  const sidesActuels = currentData.sidehustles || [];
+
+  // Labels ABF connus
+  const labelsEmplois = emploisActuels.map(e => e.employeur || e.poste || "Revenu emploi");
+  const labelsSides = sidesActuels.map(s => s.nom || `Side hustle (${s.type})`);
+  const labelsABF = new Set([...labelsEmplois, ...labelsSides]);
+
+  // Revenus du budget qui ne sont pas dans l'ABF → on les ajoute comme emploi
+  const nouveaux = revenusEntries.filter(e => !labelsABF.has(e.label));
+
+  if (nouveaux.length === 0) {
+    // Mettre à jour les montants existants dans l'ABF
+    const emploisMAJ = emploisActuels.map(e => {
+      const label = e.employeur || e.poste || "Revenu emploi";
+      const budgetEntry = revenusEntries.find(r => r.label === label);
+      if (budgetEntry) {
+        return { ...e, revenu_brut: String(Math.round(budgetEntry.amount * 12)) };
+      }
+      return e;
+    });
+    const sidesMAJ = sidesActuels.map(s => {
+      const label = s.nom || `Side hustle (${s.type})`;
+      const budgetEntry = revenusEntries.find(r => r.label === label);
+      if (budgetEntry) {
+        return { ...s, revenu_mensuel_moyen: String(Math.round(budgetEntry.amount)) };
+      }
+      return s;
+    });
+
+    const newData = { ...currentData, emplois: emploisMAJ, sidehustles: sidesMAJ };
+    if (revenuProfile) {
+      await base44.entities.FinancialProfile.update(revenuProfile.id, { data: newData });
+    } else {
+      await base44.entities.FinancialProfile.create({ section: "revenu", data: newData, completed: true });
+    }
+    return;
+  }
+
+  // Il y a des nouveaux revenus — les ajouter à l'ABF comme emplois
+  const emploisAjoutes = nouveaux.map(e => ({
+    employeur: e.label,
+    poste: "",
+    revenu_brut: String(Math.round(e.amount * 12)),
+    type_emploi: "temps_plein",
+  }));
+
+  // Et mettre à jour les existants
+  const emploisMAJ = emploisActuels.map(e => {
+    const label = e.employeur || e.poste || "Revenu emploi";
+    const budgetEntry = revenusEntries.find(r => r.label === label);
+    if (budgetEntry) {
+      return { ...e, revenu_brut: String(Math.round(budgetEntry.amount * 12)) };
+    }
+    return e;
+  });
+
+  const newData = {
+    ...currentData,
+    emplois: [...emploisMAJ, ...emploisAjoutes],
+    sidehustles: sidesActuels,
+  };
+
+  if (revenuProfile) {
+    await base44.entities.FinancialProfile.update(revenuProfile.id, { data: newData });
+  } else {
+    await base44.entities.FinancialProfile.create({ section: "revenu", data: newData, completed: true });
   }
 }

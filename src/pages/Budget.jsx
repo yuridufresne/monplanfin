@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Upload, Trash2, Edit2, TrendingUp, TrendingDown, DollarSign, LayoutGrid, FileText } from "lucide-react";
+import { syncBudgetRevenuToABF } from "@/hooks/useABFSync";
 import BudgetEntryForm from "@/components/budget/BudgetEntryForm";
 import BudgetImport from "@/components/budget/BudgetImport";
 import BudgetGrid from "@/components/budget/BudgetGrid";
@@ -40,6 +41,22 @@ export default function Budget() {
 
   const { data: entries = [] } = useQuery({ queryKey: ["budgetEntries"], queryFn: () => base44.entities.BudgetEntry.list() });
   const deleteMutation = useMutation({ mutationFn: (id) => base44.entities.BudgetEntry.delete(id), onSuccess: () => qc.invalidateQueries({ queryKey: ["budgetEntries"] }) });
+
+  const handleSaveEntry = async (form) => {
+    if (editing) {
+      await base44.entities.BudgetEntry.update(editing.id, form);
+    } else {
+      await base44.entities.BudgetEntry.create(form);
+    }
+    qc.invalidateQueries({ queryKey: ["budgetEntries"] });
+    setShowForm(false);
+    setEditing(null);
+    // Sync si c'est un revenu
+    if (form.type === "revenu") {
+      const allEntries = await base44.entities.BudgetEntry.filter({ type: "revenu" });
+      await syncBudgetRevenuToABF(allEntries);
+    }
+  };
 
   const revenus = entries.filter(e => e.type === "revenu");
   const depenses = entries.filter(e => e.type === "depense");
@@ -187,7 +204,7 @@ export default function Budget() {
       </div>
 
       <AnimatePresence>
-        {showForm && <BudgetEntryForm entry={editing} onClose={() => { setShowForm(false); setEditing(null); }} onSaved={() => { qc.invalidateQueries({ queryKey: ["budgetEntries"] }); setShowForm(false); setEditing(null); }} />}
+        {showForm && <BudgetEntryForm entry={editing} onClose={() => { setShowForm(false); setEditing(null); }} onSave={handleSaveEntry} />}
       </AnimatePresence>
       <AnimatePresence>
         {showImport && <BudgetImport onClose={() => setShowImport(false)} onSaved={() => { qc.invalidateQueries({ queryKey: ["budgetEntries"] }); setShowImport(false); }} />}
