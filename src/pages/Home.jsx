@@ -135,10 +135,10 @@ export default function Home() {
       </section>
 
       {/* ── PLAN POUR... ─────────────────────────────────────── */}
-      <section id="plan" className="pt-4 pb-12 md:pt-6 md:pb-16" style={{ background: "linear-gradient(180deg, #050810 0%, #080d18 100%)" }}>
+      <section id="plan" className="pt-0 pb-12 md:pt-0 md:pb-16" style={{ background: "linear-gradient(180deg, #050810 0%, #080d18 100%)" }}>
         <div className="max-w-6xl mx-auto px-6 lg:px-10">
 
-          <motion.div {...fadeUp(0)} className="text-center mb-16">
+          <motion.div {...fadeUp(0)} className="text-center mb-8">
             <h3
               className="font-urbanist font-black"
               style={{ fontSize: "clamp(1.2rem, 3vw, 2rem)", letterSpacing: "-0.03em", lineHeight: 1.2, color: "#C9A063", marginBottom: 8 }}
