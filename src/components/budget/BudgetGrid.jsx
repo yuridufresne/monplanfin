@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQueryClient } from "@tanstack/react-query";
-import { syncBudgetRevenuToABF } from "@/hooks/useABFSync";
 import { CheckCircle2, X, ChevronDown, ChevronRight } from "lucide-react";
 
 const SECTIONS = [
@@ -108,18 +107,6 @@ const SECTIONS = [
       { label: "CELI",                                  category: "epargne",          type: "depense" },
       { label: "REER",                                  category: "epargne",          type: "depense" },
       { label: "CELIAPP",                               category: "epargne",          type: "depense" },
-    ],
-  },
-  {
-    title: "Revenus",
-    color: "#5BC4A0",
-    rows: [
-      { label: "Salaire principal (net)",               category: "divers",           type: "revenu" },
-      { label: "2e emploi / freelance / travailleur autonome", category: "divers",   type: "revenu" },
-      { label: "Allocations familiales / aides gov.",   category: "divers",           type: "revenu" },
-      { label: "Revenus de placement (dividendes…)",    category: "divers",           type: "revenu" },
-      { label: "Loyer reçu (locatif)",                  category: "divers",           type: "revenu" },
-      { label: "Autres revenus",                        category: "divers",           type: "revenu" },
     ],
   },
 ];
@@ -255,7 +242,6 @@ export default function BudgetGrid({ onClose, onSaved }) {
     return freqs[r.label] === "annuel" ? v / 12 : v;
   };
   const totalDepenses = allRows.filter(r => r.type === "depense").reduce((s, r) => s + monthlyAmount(r), 0);
-  const totalRevenus = allRows.filter(r => r.type === "revenu").reduce((s, r) => s + monthlyAmount(r), 0);
   const fmt = (v) => new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v);
 
   const handleSave = async () => {
@@ -285,12 +271,6 @@ export default function BudgetGrid({ onClose, onSaved }) {
     ]);
 
     qc.invalidateQueries({ queryKey: ["budgetEntries"] });
-
-    // Sync revenus → ABF
-    const revenusEntries = entries.filter(e => e.type === "revenu");
-    if (revenusEntries.length > 0) {
-      await syncBudgetRevenuToABF(revenusEntries);
-    }
 
     setSaving(false);
     setDone(true);
@@ -324,16 +304,8 @@ export default function BudgetGrid({ onClose, onSaved }) {
           <div className="flex items-center justify-between">
             <div style={{ display: "flex", gap: 24 }}>
               <div>
-                <p style={{ fontSize: 11, color: "#94A3B8" }}>Revenus</p>
-                <p style={{ fontFamily: "var(--font-mono)", fontSize: 15, fontWeight: 700, color: "#5BC4A0" }}>{fmt(totalRevenus)}</p>
-              </div>
-              <div>
-                <p style={{ fontSize: 11, color: "#94A3B8" }}>Dépenses</p>
+                <p style={{ fontSize: 11, color: "#94A3B8" }}>Dépenses totales</p>
                 <p style={{ fontFamily: "var(--font-mono)", fontSize: 15, fontWeight: 700, color: "#f87171" }}>{fmt(totalDepenses)}</p>
-              </div>
-              <div>
-                <p style={{ fontSize: 11, color: "#94A3B8" }}>Solde</p>
-                <p style={{ fontFamily: "var(--font-mono)", fontSize: 15, fontWeight: 700, color: totalRevenus - totalDepenses >= 0 ? "#C9A063" : "#f87171" }}>{fmt(totalRevenus - totalDepenses)}</p>
               </div>
             </div>
             {done ? (
