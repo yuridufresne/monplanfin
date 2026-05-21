@@ -129,8 +129,12 @@ const inputStyle = {
   color: "#fff", outline: "none", textAlign: "right", fontFamily: "var(--font-mono)",
 };
 
-function Section({ section, values, onChange, open, onToggle }) {
-  const sectionTotal = section.rows.reduce((s, r) => s + (parseFloat(values[r.label]) || 0), 0);
+function Section({ section, values, freqs, onChange, onFreqToggle, open, onToggle }) {
+  // monthly equivalent for total
+  const sectionTotal = section.rows.reduce((s, r) => {
+    const v = parseFloat(values[r.label]) || 0;
+    return s + (freqs[r.label] === "annuel" ? v / 12 : v);
+  }, 0);
   const fmt = (v) => v > 0 ? new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v) : "";
 
   return (
@@ -144,28 +148,43 @@ function Section({ section, values, onChange, open, onToggle }) {
           <span style={{ fontFamily: "var(--font-urbanist)", fontSize: 13.5, fontWeight: 700, color: "#fff" }}>{section.title}</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          {sectionTotal > 0 && <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 700, color: section.color }}>{fmt(sectionTotal)}</span>}
+          {sectionTotal > 0 && <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 700, color: section.color }}>{fmt(sectionTotal)}<span style={{ fontSize: 10, fontWeight: 400, color: "#64748B" }}>/mois</span></span>}
           {open ? <ChevronDown className="w-4 h-4 text-white/40" /> : <ChevronRight className="w-4 h-4 text-white/40" />}
         </div>
       </button>
       {open && (
         <div style={{ padding: "8px 16px 12px" }}>
-          {section.rows.map(r => (
-            <div key={r.label} style={{ display: "flex", alignItems: "center", gap: 12, paddingTop: 8, paddingBottom: 8, borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-              <p style={{ flex: 1, fontSize: 13, color: "rgba(255,255,255,0.75)" }}>{r.label}</p>
-              <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
-                <span style={{ fontSize: 11, color: "#64748B" }}>$</span>
-                <input
-                  type="number"
-                  min="0"
-                  placeholder="0"
-                  value={values[r.label] || ""}
-                  onChange={e => onChange(r.label, e.target.value)}
-                  style={{ ...inputStyle, width: 110 }}
-                />
+          {section.rows.map(r => {
+            const isAnnuel = freqs[r.label] === "annuel";
+            return (
+              <div key={r.label} style={{ display: "flex", alignItems: "center", gap: 10, paddingTop: 8, paddingBottom: 8, borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                <p style={{ flex: 1, fontSize: 13, color: "rgba(255,255,255,0.75)" }}>{r.label}</p>
+                {/* Freq toggle */}
+                <button
+                  onClick={() => onFreqToggle(r.label)}
+                  style={{
+                    flexShrink: 0, fontSize: 10.5, fontWeight: 600, padding: "3px 8px", borderRadius: 6, cursor: "pointer", border: "1px solid",
+                    background: isAnnuel ? "rgba(201,160,99,0.15)" : "rgba(255,255,255,0.05)",
+                    borderColor: isAnnuel ? "rgba(201,160,99,0.4)" : "rgba(255,255,255,0.1)",
+                    color: isAnnuel ? "#C9A063" : "#64748B",
+                  }}
+                >
+                  {isAnnuel ? "annuel" : "mensuel"}
+                </button>
+                <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+                  <span style={{ fontSize: 11, color: "#64748B" }}>$</span>
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="0"
+                    value={values[r.label] || ""}
+                    onChange={e => onChange(r.label, e.target.value)}
+                    style={{ ...inputStyle, width: 100 }}
+                  />
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
@@ -175,6 +194,7 @@ function Section({ section, values, onChange, open, onToggle }) {
 export default function BudgetGrid({ onClose, onSaved }) {
   const qc = useQueryClient();
   const [values, setValues] = useState({});
+  const [freqs, setFreqs] = useState({});
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
   const [openSections, setOpenSections] = useState({ 0: true });
@@ -210,10 +230,15 @@ export default function BudgetGrid({ onClose, onSaved }) {
 
   const toggleSection = (i) => setOpenSections(p => ({ ...p, [i]: !p[i] }));
   const set = (key, val) => setValues(p => ({ ...p, [key]: val }));
+  const toggleFreq = (key) => setFreqs(p => ({ ...p, [key]: p[key] === "annuel" ? "mensuel" : "annuel" }));
 
   const allRows = SECTIONS.flatMap(s => s.rows);
-  const totalDepenses = allRows.filter(r => r.type === "depense").reduce((s, r) => s + (parseFloat(values[r.label]) || 0), 0);
-  const totalRevenus = allRows.filter(r => r.type === "revenu").reduce((s, r) => s + (parseFloat(values[r.label]) || 0), 0);
+  const monthlyAmount = (r) => {
+    const v = parseFloat(values[r.label]) || 0;
+    return freqs[r.label] === "annuel" ? v / 12 : v;
+  };
+  const totalDepenses = allRows.filter(r => r.type === "depense").reduce((s, r) => s + monthlyAmount(r), 0);
+  const totalRevenus = allRows.filter(r => r.type === "revenu").reduce((s, r) => s + monthlyAmount(r), 0);
   const fmt = (v) => new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v);
 
   const handleSave = async () => {
@@ -223,9 +248,9 @@ export default function BudgetGrid({ onClose, onSaved }) {
       .map(r => ({
         category: r.category,
         label: r.label,
-        amount: parseFloat(values[r.label]),
+        amount: monthlyAmount(r),
         type: r.type,
-        frequency: "mensuel",
+        frequency: freqs[r.label] === "annuel" ? "annuel" : "mensuel",
         is_fixed: true,
       }));
 
@@ -256,7 +281,7 @@ export default function BudgetGrid({ onClose, onSaved }) {
         {/* Sections */}
         <div className="overflow-y-auto flex-1 px-6 py-4">
           {SECTIONS.map((section, i) => (
-            <Section key={i} section={section} values={values} onChange={set} open={!!openSections[i]} onToggle={() => toggleSection(i)} />
+            <Section key={i} section={section} values={values} freqs={freqs} onChange={set} onFreqToggle={toggleFreq} open={!!openSections[i]} onToggle={() => toggleSection(i)} />
           ))}
         </div>
 
