@@ -197,6 +197,23 @@ export default function Home() {
 
       {/* ── FEATURE SCROLL ───────────────────────────────────── */}
       <FeatureScroll onCTA={() => setSoftWallOpen(true)} />
+
+      {/* ── CTA after feature scroll ─────────────────────────── */}
+      <section style={{ background: "#050810", paddingBottom: 80 }}>
+        <div className="text-center">
+          <button
+            onClick={() => setSoftWallOpen(true)}
+            className="inline-flex items-center gap-3 font-semibold text-[14px] transition-all duration-200 hover:scale-105"
+            style={{ padding: "14px 36px", borderRadius: 50, background: "linear-gradient(135deg, #C9A063, #e6c07a)", color: "#050810", border: "none", boxShadow: "0 4px 20px rgba(201,160,99,0.35)" }}
+          >
+            Créer mon plan gratuitement
+            <ArrowRight className="w-4 h-4" />
+          </button>
+          <p style={{ marginTop: 16, fontSize: 12, fontWeight: 300, color: "rgba(148,163,184,0.4)" }}>
+            Gratuit · Aucune carte requise · Données privées
+          </p>
+        </div>
+      </section>
     </div>
   );
 }
