@@ -1,45 +1,39 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
-import { ArrowRight, Shield, TrendingUp, Landmark, PiggyBank, Sparkles, BarChart3 } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import SoftWall from "@/components/SoftWall";
 
 const pillars = [
   {
-    icon: Landmark,
+    img: "https://media.base44.com/images/public/6a0796d6e5414141c147f69c/963dba272_generated_image.png",
     label: "Fiscalité",
     desc: "Optimisez votre situation fiscale au Québec — REER, CELI, fractionnement de revenus et stratégies d'impôt.",
-    color: "#6B8ED6",
   },
   {
-    icon: TrendingUp,
+    img: "https://media.base44.com/images/public/6a0796d6e5414141c147f69c/301b3c072_generated_image.png",
     label: "Désendettement",
     desc: "Stratégies pour éliminer vos dettes efficacement — méthode avalanche, consolidation, rétablissement du crédit.",
-    color: "#5BC4A0",
   },
   {
-    icon: Shield,
+    img: "https://media.base44.com/images/public/6a0796d6e5414141c147f69c/bcd33dc3f_generated_image.png",
     label: "Protection",
     desc: "Assurance vie, invalidité, maladies graves — analysez vos besoins réels avec un conseiller certifié AMF.",
-    color: "#C9A063",
   },
   {
-    icon: PiggyBank,
+    img: "https://media.base44.com/images/public/6a0796d6e5414141c147f69c/b4185aaba_generated_image.png",
     label: "Épargne et investissement",
     desc: "Construisez votre patrimoine avec une stratégie de placement adaptée à votre profil et votre horizon.",
-    color: "#A87DD3",
   },
   {
-    icon: Sparkles,
+    img: "https://media.base44.com/images/public/6a0796d6e5414141c147f69c/d5645cd39_generated_image.png",
     label: "Création de richesse",
     desc: "Accélérez votre liberté financière — immobilier, portefeuille de dividendes, revenu passif, retraite anticipée.",
-    color: "#DEFF9A",
   },
   {
-    icon: BarChart3,
+    img: "https://media.base44.com/images/public/6a0796d6e5414141c147f69c/bc458b42e_generated_image.png",
     label: "Optimisation financière",
     desc: "Analyse globale de votre situation : flux de trésorerie, valeur nette, objectifs et projections sur mesure.",
-    color: "#E07B6B",
   },
 ];
 
@@ -165,7 +159,6 @@ export default function Home() {
             overflow: "hidden",
           }}>
             {pillars.map((p, i) => {
-              const Icon = p.icon;
               const col = i % 3;
               const row = Math.floor(i / 3);
               return (
@@ -181,11 +174,8 @@ export default function Home() {
                   }}
                   whileHover={{ background: "rgba(255,255,255,0.04)" }}
                 >
-                  <div style={{
-                    width: 40, height: 40, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center",
-                    background: `${p.color}15`, border: `1px solid ${p.color}28`, marginBottom: 18,
-                  }}>
-                    <Icon style={{ width: 18, height: 18, color: p.color }} />
+                  <div style={{ width: 52, height: 52, borderRadius: 14, overflow: "hidden", marginBottom: 18, flexShrink: 0 }}>
+                    <img src={p.img} alt={p.label} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   </div>
                   <h3 className="font-urbanist font-bold text-white tracking-tight" style={{ fontSize: 17, marginBottom: 10 }}>
                     {p.label}
