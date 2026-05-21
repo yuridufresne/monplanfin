@@ -64,7 +64,7 @@ export default function Home() {
 
 
         {/* Hero text — centered like Wealthsimple */}
-        <div className="relative flex flex-col items-center justify-center text-center" style={{ minHeight: "100vh", paddingTop: 80, paddingBottom: 60, paddingLeft: 24, paddingRight: 24 }}>
+        <div className="relative flex flex-col items-center justify-center text-center" style={{ minHeight: "auto", paddingTop: 120, paddingBottom: 80, paddingLeft: 24, paddingRight: 24 }}>
           <motion.h1
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
