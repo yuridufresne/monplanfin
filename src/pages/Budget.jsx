@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Upload, Trash2, Edit2, TrendingUp, TrendingDown, DollarSign, LayoutGrid, FileText } from "lucide-react";
 import { syncBudgetRevenuToABF } from "@/hooks/useABFSync";
@@ -40,6 +41,7 @@ export default function Budget() {
   const qc = useQueryClient();
 
   const { data: entries = [] } = useQuery({ queryKey: ["budgetEntries"], queryFn: () => base44.entities.BudgetEntry.list() });
+  const { data: profiles = [] } = useQuery({ queryKey: ["financialProfiles"], queryFn: () => base44.entities.FinancialProfile.list() });
   const deleteMutation = useMutation({ mutationFn: (id) => base44.entities.BudgetEntry.delete(id), onSuccess: () => qc.invalidateQueries({ queryKey: ["budgetEntries"] }) });
 
   const handleSaveEntry = async (form) => {
@@ -64,9 +66,20 @@ export default function Budget() {
     }
   };
 
+  // Revenus calculés depuis l'ABF uniquement
+  const totalRev = useMemo(() => {
+    const revenuProfile = profiles.find(p => p.section === "revenu");
+    const data = revenuProfile?.data || {};
+    const emplois = data.emplois || [];
+    const sides = data.sidehustles || [];
+    const totalEmplois = emplois.reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0) / 12, 0);
+    const totalSides = sides.reduce((s, sh) => s + (parseFloat(sh.revenu_mensuel_moyen) || 0), 0);
+    return totalEmplois + totalSides;
+  }, [profiles]);
+
+  // Entrées budget = dépenses uniquement
   const revenus = entries.filter(e => e.type === "revenu");
   const depenses = entries.filter(e => e.type === "depense");
-  const totalRev = revenus.reduce((s, e) => s + toMonthly(e.amount, e.frequency), 0);
   const totalDep = depenses.reduce((s, e) => s + toMonthly(e.amount, e.frequency), 0);
   const balance = totalRev - totalDep;
 

@@ -14,42 +14,7 @@ export async function syncABFToEntities() {
   const bySection = {};
   profiles.forEach(p => { bySection[p.section] = p.data || {}; });
 
-  // ── 1. REVENUS (ABF revenu → BudgetEntry, create or update) ──────────────
-  const revenuData = bySection["revenu"];
-  if (revenuData) {
-    const emplois = revenuData.emplois || [];
-    const sides = revenuData.sidehustles || [];
-
-    for (const e of emplois) {
-      if (!e.employeur && !e.revenu_brut) continue;
-      const montantMensuel = (parseFloat(e.revenu_brut) || 0) / 12;
-      if (montantMensuel <= 0) continue;
-      const label = e.employeur || e.poste || "Revenu emploi";
-      const existing = await base44.entities.BudgetEntry.filter({ label, type: "revenu" });
-      if (existing.length === 0) {
-        await base44.entities.BudgetEntry.create({
-          category: "divers", label, amount: montantMensuel, type: "revenu", frequency: "mensuel", is_fixed: true,
-        });
-      } else {
-        await base44.entities.BudgetEntry.update(existing[0].id, { amount: montantMensuel });
-      }
-    }
-
-    for (const s of sides) {
-      if (!s.revenu_mensuel_moyen) continue;
-      const montant = parseFloat(s.revenu_mensuel_moyen) || 0;
-      if (montant <= 0) continue;
-      const label = s.nom || `Side hustle (${s.type})`;
-      const existing = await base44.entities.BudgetEntry.filter({ label, type: "revenu" });
-      if (existing.length === 0) {
-        await base44.entities.BudgetEntry.create({
-          category: "divers", label, amount: montant, type: "revenu", frequency: "mensuel", is_fixed: false,
-        });
-      } else {
-        await base44.entities.BudgetEntry.update(existing[0].id, { amount: montant });
-      }
-    }
-  }
+  // ── 1. REVENUS : les revenus sont gérés uniquement dans l'ABF, pas dans BudgetEntry ──
 
   // ── 2. DETTES (ABF dettes → Debt) ─────────────────────────────────────────
   const dettesData = bySection["dettes"];
