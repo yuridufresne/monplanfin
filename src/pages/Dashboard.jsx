@@ -3,7 +3,10 @@ import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { ArrowRight, ArrowUpRight, TrendingUp, TrendingDown } from "lucide-react";
+import { ArrowRight, Plus, Pencil } from "lucide-react";
+import { syncABFToEntities } from "@/hooks/useABFSync";
+import EditDebtModal from "@/components/dashboard/EditDebtModal";
+import EditGoalModal from "@/components/dashboard/EditGoalModal";
 
 const fmt = (v) => new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v || 0);
 const fmtPct = (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)} %`;
@@ -19,13 +22,22 @@ const glass = {
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
-  useEffect(() => { base44.auth.me().then(setUser); }, []);
+  const [synced, setSynced] = useState(false);
+  const [editDebt, setEditDebt] = useState(null);   // null | debt object | "new"
+  const [editGoal, setEditGoal] = useState(null);   // null | goal object | "new"
 
-  const { data: budgetEntries = [] } = useQuery({ queryKey: ["budgetEntries"], queryFn: () => base44.entities.BudgetEntry.list() });
-  const { data: investments = [] } = useQuery({ queryKey: ["investments"], queryFn: () => base44.entities.Investment.list() });
-  const { data: debts = [] } = useQuery({ queryKey: ["debts"], queryFn: () => base44.entities.Debt.list() });
-  const { data: goals = [] } = useQuery({ queryKey: ["goals"], queryFn: () => base44.entities.FinancialGoal.list() });
+  useEffect(() => {
+    base44.auth.me().then(setUser);
+    // Sync ABF → entités une seule fois au premier chargement
+    syncABFToEntities().then(() => setSynced(true));
+  }, []);
 
+  const { data: budgetEntries = [] } = useQuery({ queryKey: ["budgetEntries"], queryFn: () => base44.entities.BudgetEntry.list(), enabled: synced });
+  const { data: investments = [] } = useQuery({ queryKey: ["investments"], queryFn: () => base44.entities.Investment.list(), enabled: synced });
+  const { data: debts = [] } = useQuery({ queryKey: ["debts"], queryFn: () => base44.entities.Debt.list(), enabled: synced });
+  const { data: goals = [] } = useQuery({ queryKey: ["goals"], queryFn: () => base44.entities.FinancialGoal.list(), enabled: synced });
+
+  // ── Calculs ────────────────────────────────────────────────────────────────
   const totalRevenue = budgetEntries.filter(e => e.type === "revenu").reduce((s, e) => s + (e.amount || 0), 0);
   const totalExpenses = budgetEntries.filter(e => e.type === "depense").reduce((s, e) => s + (e.amount || 0), 0);
   const balance = totalRevenue - totalExpenses;
@@ -48,30 +60,49 @@ export default function Dashboard() {
       <div style={{ position: "absolute", top: "-15%", right: "-8%", width: 700, height: 700, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(201,160,99,0.1) 0%, transparent 70%)", pointerEvents: "none" }} />
       <div style={{ position: "absolute", bottom: "5%", left: "-12%", width: 600, height: 600, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(107,142,214,0.07) 0%, transparent 70%)", pointerEvents: "none" }} />
 
+      {/* Modals */}
+      {editDebt !== null && (
+        <EditDebtModal
+          debt={editDebt === "new" ? null : editDebt}
+          onClose={() => setEditDebt(null)}
+        />
+      )}
+      {editGoal !== null && (
+        <EditGoalModal
+          goal={editGoal === "new" ? null : editGoal}
+          onClose={() => setEditGoal(null)}
+        />
+      )}
+
       <div className="relative max-w-7xl mx-auto px-6 lg:px-10 py-14 md:py-20">
 
         {/* Header */}
-        <motion.div {...fadeUp(0)} className="mb-14">
+        <motion.div {...fadeUp(0)} className="mb-10">
           <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(201,160,99,0.6)", marginBottom: 10 }}>Tableau de bord</p>
           <h1 style={{ fontFamily: "var(--font-urbanist)", fontSize: "clamp(2rem,4vw,2.75rem)", fontWeight: 800, color: "#fff", letterSpacing: "-0.03em", lineHeight: 1.1 }}>
             {user?.full_name ? `Bonjour, ${user.full_name.split(" ")[0]}.` : "Bonjour."}
           </h1>
-          <p style={{ fontSize: 15, fontWeight: 300, marginTop: 8, color: "#94A3B8" }}>Voici un aperçu complet de votre situation financière.</p>
+          <p style={{ fontSize: 15, fontWeight: 300, marginTop: 8, color: "#94A3B8" }}>
+            Voici votre synthèse financière.{" "}
+            <Link to="/analyse" style={{ color: "#C9A063", fontWeight: 500, textDecoration: "none" }}>
+              Modifier l'ABF →
+            </Link>
+          </p>
         </motion.div>
 
-        {/* Hero Grid — 4 metrics */}
+        {/* Hero Grid — 4 KPIs */}
         <motion.div {...fadeUp(0.06)} className="mb-8">
           <div style={{ ...glass.hero, borderRadius: 24, padding: "clamp(1.5rem,4vw,2.5rem)", position: "relative", overflow: "hidden" }}>
             <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: "linear-gradient(90deg, transparent, #C9A063, transparent)" }} />
             <div style={{ position: "absolute", top: -60, right: -60, width: 240, height: 240, borderRadius: "50%", background: "radial-gradient(circle, rgba(201,160,99,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
             <div className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
               {[
-                { label: "NIF (Cible)", val: fmt(nifTarget), sub: "Montant pour la retraite", color: "#5BC4A0" },
+                { label: "NIF (Cible)", val: fmt(nifTarget), sub: "Dépenses annuelles × 25", color: "#5BC4A0" },
                 { label: "Valeur nette", val: fmt(netWorth), sub: "Actifs − Passifs", color: "#fff" },
-                { label: "Ratio d'endettement", val: `${debtRatio.toFixed(1)} %`, sub: `Passifs/Actifs`, color: debtRatio < 50 ? "#5BC4A0" : debtRatio < 80 ? "#f59e0b" : "#f87171" },
+                { label: "Ratio d'endettement", val: `${debtRatio.toFixed(1)} %`, sub: "Passifs / Actifs", color: debtRatio < 50 ? "#5BC4A0" : debtRatio < 80 ? "#f59e0b" : "#f87171" },
                 { label: "Revenu mensuel", val: fmt(totalRevenue), sub: `${budgetEntries.filter(e => e.type === "revenu").length} source(s)`, color: "#C9A063" },
-              ].map((item, i) => (
-                <div key={item.label} style={{ padding: "0" }}>
+              ].map((item) => (
+                <div key={item.label}>
                   <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(148,163,184,0.5)", marginBottom: 10 }}>{item.label}</p>
                   <p style={{ fontFamily: "var(--font-mono)", fontSize: "clamp(1.5rem,3vw,2rem)", fontWeight: 700, color: item.color, letterSpacing: "-0.02em", lineHeight: 1, marginBottom: 6 }}>{item.val}</p>
                   <p style={{ fontSize: 13, fontWeight: 300, color: "rgba(148,163,184,0.5)" }}>{item.sub}</p>
@@ -85,45 +116,73 @@ export default function Dashboard() {
           <motion.div {...fadeUp(0.12)}>
             <div style={{ ...glass.card, borderRadius: 24, padding: "4rem 2rem", textAlign: "center" }}>
               <div style={{ width: 48, height: 1.5, background: "#C9A063", margin: "0 auto 2rem" }} />
-              <h3 style={{ fontFamily: "var(--font-urbanist)", fontSize: 22, fontWeight: 700, color: "#fff", marginBottom: 12 }}>Commencez votre plan financier</h3>
-              <p style={{ fontSize: 14, fontWeight: 300, color: "#94A3B8", maxWidth: 380, margin: "0 auto 2.5rem", lineHeight: 1.7 }}>Ajoutez vos revenus, placements et dettes pour obtenir une synthèse complète de votre patrimoine.</p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <Link to="/budget" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 28px", borderRadius: 14, background: "linear-gradient(135deg, #C9A063, #e6c07a)", color: "#050810", fontSize: 13.5, fontWeight: 700, textDecoration: "none", boxShadow: "0 4px 16px rgba(201,160,99,0.3)" }}>Créer mon budget <ArrowRight style={{ width: 16, height: 16 }} /></Link>
-                <Link to="/placements" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 28px", borderRadius: 14, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.7)", fontSize: 13.5, fontWeight: 500, textDecoration: "none", backdropFilter: "blur(8px)" }}>Ajouter des placements</Link>
-              </div>
+              <h3 style={{ fontFamily: "var(--font-urbanist)", fontSize: 22, fontWeight: 700, color: "#fff", marginBottom: 12 }}>Complétez votre analyse financière</h3>
+              <p style={{ fontSize: 14, fontWeight: 300, color: "#94A3B8", maxWidth: 400, margin: "0 auto 2.5rem", lineHeight: 1.7 }}>
+                L'ABF est votre point de départ. Remplissez votre analyse de besoins financiers pour voir votre tableau de bord complet.
+              </p>
+              <Link to="/analyse" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 28px", borderRadius: 14, background: "linear-gradient(135deg, #C9A063, #e6c07a)", color: "#050810", fontSize: 13.5, fontWeight: 700, textDecoration: "none", boxShadow: "0 4px 16px rgba(201,160,99,0.3)" }}>
+                Commencer l'ABF <ArrowRight style={{ width: 16, height: 16 }} />
+              </Link>
             </div>
           </motion.div>
         ) : (
           <>
-            {/* KPI Cards */}
+            {/* Second row — 4 KPI cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
               {[
-                { label: "Revenus mensuels", value: fmt(totalRevenue), sub: `${budgetEntries.filter(e => e.type === "revenu").length} source(s)`, link: "/budget", color: "#5BC4A0" },
-                { label: "Dépenses mensuelles", value: fmt(totalExpenses), sub: `${budgetEntries.filter(e => e.type === "depense").length} poste(s)`, link: "/budget", color: "#f87171" },
-                { label: "Total des dettes", value: fmt(totalDebt), sub: `${debts.length} obligation(s)`, link: "/plan", color: totalDebt > 0 ? "#f87171" : "#5BC4A0" },
-                { label: "Placements", value: fmt(totalAssets), sub: `${investments.length} position(s)`, link: "/placements", color: "#DEFF9A" },
+                { label: "Revenus mensuels", value: fmt(totalRevenue), sub: `${budgetEntries.filter(e => e.type === "revenu").length} source(s)`, color: "#5BC4A0" },
+                { label: "Dépenses mensuelles", value: fmt(totalExpenses), sub: `${budgetEntries.filter(e => e.type === "depense").length} poste(s)`, color: "#f87171" },
+                { label: "Total des dettes", value: fmt(totalDebt), sub: `${debts.length} obligation(s)`, color: totalDebt > 0 ? "#f87171" : "#5BC4A0" },
+                { label: "Placements", value: fmt(totalAssets), sub: `${fmtPct(investmentGainPct)} vs coût`, color: "#DEFF9A" },
               ].map((card, i) => (
                 <motion.div key={card.label} {...fadeUp(0.12 + i * 0.06)}>
-                  <Link to={card.link} style={{ textDecoration: "none" }}>
-                    <div style={{ ...glass.card, borderRadius: 20, padding: "1.4rem", position: "relative", overflow: "hidden", transition: "transform 0.2s ease, box-shadow 0.2s ease" }}
-                      onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 16px 48px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.14)"; }}
-                      onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = glass.card.boxShadow; }}>
-                      <div style={{ position: "absolute", top: -16, right: -16, width: 60, height: 60, borderRadius: "50%", background: `radial-gradient(ellipse, ${card.color}20 0%, transparent 70%)` }} />
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 14 }}>
-                        <p style={{ fontSize: 11.5, fontWeight: 500, color: "#94A3B8" }}>{card.label}</p>
-                        <ArrowUpRight style={{ width: 13, height: 13, color: card.color, opacity: 0.5 }} />
-                      </div>
-                      <p style={{ fontFamily: "var(--font-mono)", fontSize: "1.5rem", fontWeight: 700, color: card.color, lineHeight: 1, marginBottom: 6 }}>{card.value}</p>
-                      <p style={{ fontSize: 11.5, fontWeight: 300, color: "rgba(148,163,184,0.55)" }}>{card.sub}</p>
-                    </div>
-                  </Link>
+                  <div style={{ ...glass.card, borderRadius: 20, padding: "1.4rem", position: "relative", overflow: "hidden" }}>
+                    <div style={{ position: "absolute", top: -16, right: -16, width: 60, height: 60, borderRadius: "50%", background: `radial-gradient(ellipse, ${card.color}20 0%, transparent 70%)` }} />
+                    <p style={{ fontSize: 11.5, fontWeight: 500, color: "#94A3B8", marginBottom: 14 }}>{card.label}</p>
+                    <p style={{ fontFamily: "var(--font-mono)", fontSize: "1.5rem", fontWeight: 700, color: card.color, lineHeight: 1, marginBottom: 6 }}>{card.value}</p>
+                    <p style={{ fontSize: 11.5, fontWeight: 300, color: "rgba(148,163,184,0.55)" }}>{card.sub}</p>
+                  </div>
                 </motion.div>
               ))}
             </div>
 
-            {/* Lower grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Goals */}
+            {/* Lower grid — Dettes + Objectifs */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+
+              {/* Dettes */}
+              <motion.div {...fadeUp(0.24)}>
+                <div style={{ ...glass.card, borderRadius: 24, overflow: "hidden", height: "100%" }}>
+                  <div style={{ padding: "1.5rem 2rem", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <div>
+                      <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(201,160,99,0.5)", marginBottom: 4 }}>Dettes</p>
+                      <h3 style={{ fontFamily: "var(--font-urbanist)", fontSize: 17, fontWeight: 700, color: "#fff" }}>Obligations financières</h3>
+                    </div>
+                    <button onClick={() => setEditDebt("new")} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 600, color: "#C9A063", background: "rgba(201,160,99,0.1)", border: "1px solid rgba(201,160,99,0.2)", padding: "6px 12px", borderRadius: 10 }}>
+                      <Plus style={{ width: 12, height: 12 }} /> Ajouter
+                    </button>
+                  </div>
+                  <div style={{ padding: "0.75rem 2rem" }}>
+                    {debts.length === 0 ? (
+                      <p style={{ fontSize: 13, color: "#94A3B8", padding: "1.5rem 0", textAlign: "center" }}>Aucune dette enregistrée</p>
+                    ) : debts.map(debt => (
+                      <div key={debt.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.85rem 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                        <div>
+                          <p style={{ fontSize: 13.5, fontWeight: 600, color: "#fff", marginBottom: 3 }}>{debt.name}</p>
+                          <p style={{ fontSize: 11.5, color: "#94A3B8" }}>{debt.interest_rate}% · {debt.type}</p>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <p style={{ fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 700, color: "#f87171" }}>{fmt(debt.balance)}</p>
+                          <button onClick={() => setEditDebt(debt)} style={{ padding: 6, borderRadius: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                            <Pencil style={{ width: 11, height: 11, color: "#94A3B8" }} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Objectifs financiers */}
               <motion.div {...fadeUp(0.3)}>
                 <div style={{ ...glass.card, borderRadius: 24, overflow: "hidden", height: "100%" }}>
                   <div style={{ padding: "1.5rem 2rem", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -131,25 +190,32 @@ export default function Dashboard() {
                       <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(201,160,99,0.5)", marginBottom: 4 }}>Objectifs financiers</p>
                       <h3 style={{ fontFamily: "var(--font-urbanist)", fontSize: 17, fontWeight: 700, color: "#fff" }}>Progression</h3>
                     </div>
-                    <Link to="/plan" style={{ fontSize: 12, fontWeight: 600, color: "#C9A063", display: "flex", alignItems: "center", gap: 4, textDecoration: "none" }}>Gérer <ArrowRight style={{ width: 12, height: 12 }} /></Link>
+                    <button onClick={() => setEditGoal("new")} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 600, color: "#C9A063", background: "rgba(201,160,99,0.1)", border: "1px solid rgba(201,160,99,0.2)", padding: "6px 12px", borderRadius: 10 }}>
+                      <Plus style={{ width: 12, height: 12 }} /> Ajouter
+                    </button>
                   </div>
                   <div style={{ padding: "1.75rem 2rem" }}>
                     {goals.length === 0 ? (
-                      <div style={{ textAlign: "center", padding: "2rem 0" }}>
-                        <p style={{ fontSize: 13, fontWeight: 300, color: "#94A3B8", marginBottom: 12 }}>Aucun objectif défini</p>
-                        <Link to="/plan" style={{ fontSize: 13, fontWeight: 600, color: "#C9A063", textDecoration: "none" }}>Définir un objectif →</Link>
+                      <div style={{ textAlign: "center", padding: "1rem 0" }}>
+                        <p style={{ fontSize: 13, fontWeight: 300, color: "#94A3B8", marginBottom: 10 }}>Aucun objectif défini</p>
+                        <p style={{ fontSize: 12, color: "rgba(148,163,184,0.5)" }}>Complétez la section "Objectifs" dans l'ABF ou ajoutez-en un ici.</p>
                       </div>
                     ) : (
-                      <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-                        {goals.slice(0, 4).map(goal => {
+                      <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                        {goals.slice(0, 5).map(goal => {
                           const progress = goal.target_amount > 0 ? Math.min(100, ((goal.current_amount || 0) / goal.target_amount) * 100) : 0;
                           return (
                             <div key={goal.id}>
-                              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
+                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                                 <span style={{ fontSize: 13.5, fontWeight: 600, color: "#fff" }}>{goal.title}</span>
-                                <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "#C9A063", fontWeight: 700 }}>{Math.round(progress)}%</span>
+                                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "#C9A063", fontWeight: 700 }}>{Math.round(progress)}%</span>
+                                  <button onClick={() => setEditGoal(goal)} style={{ padding: 5, borderRadius: 7, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                                    <Pencil style={{ width: 10, height: 10, color: "#94A3B8" }} />
+                                  </button>
+                                </div>
                               </div>
-                              <div style={{ height: 5, borderRadius: 99, background: "rgba(255,255,255,0.07)", overflow: "hidden", marginBottom: 6 }}>
+                              <div style={{ height: 5, borderRadius: 99, background: "rgba(255,255,255,0.07)", overflow: "hidden", marginBottom: 5 }}>
                                 <div style={{ height: "100%", width: `${progress}%`, borderRadius: 99, background: "linear-gradient(90deg, #C9A063, #e6c07a)", transition: "width 0.7s ease", boxShadow: "0 0 8px rgba(201,160,99,0.4)" }} />
                               </div>
                               <div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -164,23 +230,23 @@ export default function Dashboard() {
                   </div>
                 </div>
               </motion.div>
-
-              {/* Insights */}
-              <motion.div {...fadeUp(0.36)}>
-                <div style={{ ...glass.card, borderRadius: 24, overflow: "hidden", height: "100%" }}>
-                  <div style={{ padding: "1.5rem 2rem", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                    <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(201,160,99,0.5)", marginBottom: 4 }}>Analyse</p>
-                    <h3 style={{ fontFamily: "var(--font-urbanist)", fontSize: 17, fontWeight: 700, color: "#fff" }}>Observations financières</h3>
-                  </div>
-                  <div style={{ padding: "0.5rem 2rem" }}>
-                    <InsightRow status={balance >= 0 ? "good" : "warn"} label={balance >= 0 ? "Bilan mensuel positif" : "Bilan mensuel déficitaire"} detail={balance >= 0 ? `Vous épargnez ${fmt(balance)} par mois (${savingsRate.toFixed(1)}% du revenu).` : `Vos dépenses dépassent vos revenus de ${fmt(Math.abs(balance))}.`} />
-                    <InsightRow status={highRateDebt.length > 0 ? "warn" : "good"} label={highRateDebt.length > 0 ? `${highRateDebt.length} dette(s) à taux élevé` : "Aucune dette à taux critique"} detail={highRateDebt.length > 0 ? "Taux > 15%. Priorisez le remboursement accéléré." : "Vos taux d'intérêt sont sous contrôle."} />
-                    <InsightRow status={investmentGain >= 0 ? "good" : "warn"} label={investmentGain >= 0 ? "Portefeuille en hausse" : "Portefeuille en perte latente"} detail={`${fmt(investmentGain)} (${fmtPct(investmentGainPct)}) vs coût d'acquisition.`} />
-                    <InsightRow status={savingsRate >= 20 ? "good" : savingsRate >= 10 ? "neutral" : "warn"} label={savingsRate >= 20 ? "Taux d'épargne excellent" : savingsRate >= 10 ? "Taux d'épargne acceptable" : "Taux d'épargne faible"} detail={`${savingsRate.toFixed(1)}% du revenu. Objectif recommandé : 20%+.`} />
-                  </div>
-                </div>
-              </motion.div>
             </div>
+
+            {/* Observations financières */}
+            <motion.div {...fadeUp(0.36)}>
+              <div style={{ ...glass.card, borderRadius: 24, overflow: "hidden" }}>
+                <div style={{ padding: "1.5rem 2rem", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                  <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(201,160,99,0.5)", marginBottom: 4 }}>Analyse</p>
+                  <h3 style={{ fontFamily: "var(--font-urbanist)", fontSize: 17, fontWeight: 700, color: "#fff" }}>Observations financières</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2" style={{ padding: "0.5rem 2rem" }}>
+                  <InsightRow status={balance >= 0 ? "good" : "warn"} label={balance >= 0 ? "Bilan mensuel positif" : "Bilan mensuel déficitaire"} detail={balance >= 0 ? `Vous épargnez ${fmt(balance)} par mois (${savingsRate.toFixed(1)}% du revenu).` : `Vos dépenses dépassent vos revenus de ${fmt(Math.abs(balance))}.`} />
+                  <InsightRow status={highRateDebt.length > 0 ? "warn" : "good"} label={highRateDebt.length > 0 ? `${highRateDebt.length} dette(s) à taux élevé` : "Aucune dette à taux critique"} detail={highRateDebt.length > 0 ? "Taux > 15%. Priorisez le remboursement accéléré." : "Vos taux d'intérêt sont sous contrôle."} />
+                  <InsightRow status={investmentGain >= 0 ? "good" : "warn"} label={investmentGain >= 0 ? "Portefeuille en hausse" : "Portefeuille en perte latente"} detail={`${fmt(investmentGain)} (${fmtPct(investmentGainPct)}) vs coût d'acquisition.`} />
+                  <InsightRow status={savingsRate >= 20 ? "good" : savingsRate >= 10 ? "neutral" : "warn"} label={savingsRate >= 20 ? "Taux d'épargne excellent" : savingsRate >= 10 ? "Taux d'épargne acceptable" : "Taux d'épargne faible"} detail={`${savingsRate.toFixed(1)}% du revenu. Objectif recommandé : 20%+.`} />
+                </div>
+              </div>
+            </motion.div>
           </>
         )}
       </div>
