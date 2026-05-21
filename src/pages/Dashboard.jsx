@@ -36,6 +36,8 @@ export default function Dashboard() {
   const investmentGainPct = totalCost > 0 ? (investmentGain / totalCost) * 100 : 0;
   const totalDebt = debts.reduce((s, d) => s + (d.balance || 0), 0);
   const netWorth = totalAssets - totalDebt;
+  const debtRatio = totalAssets > 0 ? (totalDebt / totalAssets) * 100 : 0;
+  const nif = totalRevenue > 0 ? netWorth / (totalRevenue * 12) : 0;
   const highRateDebt = debts.filter(d => d.interest_rate > 15);
   const isEmpty = budgetEntries.length === 0 && investments.length === 0 && debts.length === 0;
 
@@ -56,46 +58,24 @@ export default function Dashboard() {
           <p style={{ fontSize: 15, fontWeight: 300, marginTop: 8, color: "#94A3B8" }}>Voici un aperçu complet de votre situation financière.</p>
         </motion.div>
 
-        {/* Net Worth Hero */}
+        {/* Hero Grid — 4 metrics */}
         <motion.div {...fadeUp(0.06)} className="mb-8">
           <div style={{ ...glass.hero, borderRadius: 24, padding: "clamp(1.5rem,4vw,2.5rem)", position: "relative", overflow: "hidden" }}>
             <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: "linear-gradient(90deg, transparent, #C9A063, transparent)" }} />
             <div style={{ position: "absolute", top: -60, right: -60, width: 240, height: 240, borderRadius: "50%", background: "radial-gradient(circle, rgba(201,160,99,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
-            <div className="relative grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-0" style={{ borderBottom: "none" }}>
+            <div className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
               {[
+                { label: "NIF (Années)", val: nif.toFixed(1), sub: "Indépendance financière", color: "#5BC4A0" },
                 { label: "Valeur nette", val: fmt(netWorth), sub: "Actifs − Passifs", color: "#fff" },
-                { label: "Portefeuille", val: fmt(totalAssets), sub: `${investmentGain >= 0 ? "+" : ""}${fmt(investmentGain)} (${fmtPct(investmentGainPct)})`, color: investmentGain >= 0 ? "#C9A063" : "#f87171", subColor: investmentGain >= 0 ? "#C9A063" : "#f87171" },
-                { label: "Taux d'épargne", val: `${savingsRate.toFixed(1)} %`, sub: `${fmt(balance)} / mois`, color: "#fff" },
+                { label: "Ratio d'endettement", val: `${debtRatio.toFixed(1)} %`, sub: `Passifs/Actifs`, color: debtRatio < 50 ? "#5BC4A0" : debtRatio < 80 ? "#f59e0b" : "#f87171" },
+                { label: "Revenu mensuel", val: fmt(totalRevenue), sub: `${budgetEntries.filter(e => e.type === "revenu").length} source(s)`, color: "#C9A063" },
               ].map((item, i) => (
-                <div key={item.label} style={{ padding: i === 1 ? "0 2.5rem" : i === 2 ? "0 0 0 2.5rem" : "0 2.5rem 0 0", borderLeft: i > 0 ? "1px solid rgba(255,255,255,0.07)" : "none" }} className={i > 0 ? "hidden md:block" : ""}>
-                  <div className={i > 0 ? "hidden md:block" : ""} style={i > 0 ? {} : {}}>
-                    {i === 0 && <>
-                      <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(148,163,184,0.5)", marginBottom: 10 }}>{item.label}</p>
-                      <p style={{ fontFamily: "var(--font-mono)", fontSize: "clamp(2rem,4vw,3rem)", fontWeight: 700, color: item.color, letterSpacing: "-0.02em", lineHeight: 1, marginBottom: 6 }}>{item.val}</p>
-                      <p style={{ fontSize: 13, fontWeight: 300, color: "rgba(148,163,184,0.5)" }}>{item.sub}</p>
-                    </>}
-                    {i > 0 && <>
-                      <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(148,163,184,0.5)", marginBottom: 10 }}>{item.label}</p>
-                      <p style={{ fontFamily: "var(--font-mono)", fontSize: "2rem", fontWeight: 700, color: item.color, letterSpacing: "-0.02em", lineHeight: 1, marginBottom: 6 }}>{item.val}</p>
-                      <p style={{ fontSize: 13, fontWeight: 300, color: item.subColor || "rgba(148,163,184,0.5)" }}>{item.sub}</p>
-                    </>}
-                  </div>
+                <div key={item.label} style={{ padding: "0" }}>
+                  <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(148,163,184,0.5)", marginBottom: 10 }}>{item.label}</p>
+                  <p style={{ fontFamily: "var(--font-mono)", fontSize: "clamp(1.5rem,3vw,2rem)", fontWeight: 700, color: item.color, letterSpacing: "-0.02em", lineHeight: 1, marginBottom: 6 }}>{item.val}</p>
+                  <p style={{ fontSize: 13, fontWeight: 300, color: "rgba(148,163,184,0.5)" }}>{item.sub}</p>
                 </div>
               ))}
-              {/* Mobile: show all 3 stacked */}
-              <div className="md:hidden space-y-6">
-                {[
-                  { label: "Valeur nette", val: fmt(netWorth), sub: "Actifs − Passifs" },
-                  { label: "Portefeuille", val: fmt(totalAssets), sub: `${investmentGain >= 0 ? "+" : ""}${fmt(investmentGain)}` },
-                  { label: "Taux d'épargne", val: `${savingsRate.toFixed(1)} %`, sub: `${fmt(balance)} / mois` },
-                ].map(item => (
-                  <div key={item.label}>
-                    <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(148,163,184,0.5)", marginBottom: 6 }}>{item.label}</p>
-                    <p style={{ fontFamily: "var(--font-mono)", fontSize: "1.75rem", fontWeight: 700, color: "#fff", lineHeight: 1, marginBottom: 4 }}>{item.val}</p>
-                    <p style={{ fontSize: 12, color: "rgba(148,163,184,0.5)" }}>{item.sub}</p>
-                  </div>
-                ))}
-              </div>
             </div>
           </div>
         </motion.div>
