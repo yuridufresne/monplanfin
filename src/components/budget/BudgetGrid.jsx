@@ -46,7 +46,7 @@ const SECTIONS = [
     color: "#E07B6B",
     rows: [
       { label: "Garderie / service de garde",           category: "education",        type: "depense" },
-      { label: "Fournitures scolaires et frais d'école",category: "education",        type: "depense" },
+      { label: "Fournitures scolaires et frais d'école (uniforme, parascolaire...)",category: "education",        type: "depense" },
       { label: "Activités sportives et cours",          category: "loisirs",          type: "depense" },
       { label: "Vêtements enfants",                     category: "vetements",        type: "depense" },
       { label: "Argent de poche / allocations",         category: "divers",           type: "depense" },
