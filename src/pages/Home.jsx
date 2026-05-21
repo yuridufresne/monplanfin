@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { ArrowRight } from "lucide-react";
 import SoftWall from "@/components/SoftWall";
+import FeatureScroll from "@/components/home/FeatureScroll";
 
 const pillars = [
   {
@@ -133,6 +134,9 @@ export default function Home() {
           </motion.p>
         </div>
       </section>
+
+      {/* ── FEATURE SCROLL ───────────────────────────────────── */}
+      <FeatureScroll onCTA={() => setSoftWallOpen(true)} />
 
       {/* ── PLAN POUR... ─────────────────────────────────────── */}
       <section id="plan" className="pt-0 pb-12 md:pt-0 md:pb-16" style={{ background: "linear-gradient(180deg, #050810 0%, #080d18 100%)" }}>
