@@ -135,7 +135,7 @@ export default function Home() {
       </section>
 
       {/* ── PLAN POUR... ─────────────────────────────────────── */}
-      <section id="plan" className="py-24 md:py-32" style={{ background: "linear-gradient(180deg, #050810 0%, #080d18 100%)" }}>
+      <section id="plan" className="py-12 md:py-16" style={{ background: "linear-gradient(180deg, #050810 0%, #080d18 100%)" }}>
         <div className="max-w-6xl mx-auto px-6 lg:px-10">
 
           <motion.div {...fadeUp(0)} className="text-center mb-16">
