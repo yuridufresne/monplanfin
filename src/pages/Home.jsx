@@ -106,22 +106,7 @@ export default function Home() {
             >
               Commencer gratuitement
             </button>
-            <a
-              href="#plan"
-              style={{
-                padding: "14px 28px", borderRadius: 50, fontSize: 14.5, fontWeight: 500, cursor: "pointer",
-                background: "rgba(255,255,255,0.07)",
-                backdropFilter: "blur(16px)",
-                WebkitBackdropFilter: "blur(16px)",
-                color: "rgba(255,255,255,0.75)", border: "1px solid rgba(255,255,255,0.13)",
-                textDecoration: "none",
-                transition: "background 0.2s, color 0.2s",
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.11)"; e.currentTarget.style.color = "#fff"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.07)"; e.currentTarget.style.color = "rgba(255,255,255,0.75)"; }}
-            >
-              Voir les domaines
-            </a>
+
           </motion.div>
 
           <motion.p
