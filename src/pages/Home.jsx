@@ -36,71 +36,189 @@ export default function Home() {
       <SoftWall isOpen={softWallOpen} onClose={() => setSoftWallOpen(false)} />
 
       {/* ── HERO ──────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden" style={{ background: "linear-gradient(180deg, #0A0F1E 0%, #050810 100%)" }}>
-        {/* Ambient glows */}
+      <section className="relative overflow-hidden" style={{ minHeight: "100vh", background: "linear-gradient(160deg, #0c1220 0%, #080d18 40%, #050810 100%)" }}>
+
+        {/* Atmospheric background */}
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute -top-40 right-0 w-[800px] h-[600px] rounded-full opacity-20"
-            style={{ background: "radial-gradient(ellipse, rgba(201,160,99,0.3) 0%, transparent 70%)" }} />
-          <div className="absolute top-1/2 -left-60 w-[600px] h-[600px] rounded-full opacity-10"
-            style={{ background: "radial-gradient(ellipse, rgba(99,140,201,0.4) 0%, transparent 70%)" }} />
+          <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse 80% 60% at 50% 20%, rgba(107,142,214,0.12) 0%, transparent 60%)" }} />
+          <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse 50% 40% at 75% 60%, rgba(201,160,99,0.08) 0%, transparent 60%)" }} />
+          <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse 40% 30% at 20% 70%, rgba(91,196,160,0.06) 0%, transparent 60%)" }} />
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-6 lg:px-10 pt-28 pb-20 md:pt-40 md:pb-28">
-          <div className="max-w-3xl">
-            <motion.div {...fadeUp(0)}>
-              <div className="inline-flex items-center gap-2.5 mb-10">
-                <div className="w-5 h-[1px]" style={{ background: "#C9A063" }} />
-                <span className="text-[11px] font-semibold tracking-[0.14em] uppercase" style={{ color: "rgba(201,160,99,0.7)" }}>
-                  Planification financière — Québec
-                </span>
-              </div>
-            </motion.div>
+        {/* Floating glass cards — scattered like Wealthsimple */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {/* Card 1 — top center-right */}
+          <motion.div
+            initial={{ opacity: 0, y: -20, rotate: -3 }}
+            animate={{ opacity: 1, y: 0, rotate: -3 }}
+            transition={{ duration: 1.2, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            style={{
+              position: "absolute", top: "12%", left: "58%",
+              width: 180, padding: "16px 20px", borderRadius: 20,
+              background: "rgba(255,255,255,0.07)",
+              backdropFilter: "blur(32px) saturate(180%)",
+              WebkitBackdropFilter: "blur(32px) saturate(180%)",
+              border: "1px solid rgba(255,255,255,0.14)",
+              boxShadow: "0 16px 48px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.15)",
+            }}>
+            <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(201,160,99,0.6)", marginBottom: 8 }}>Valeur nette</p>
+            <p style={{ fontFamily: "var(--font-mono)", fontSize: 22, fontWeight: 700, color: "#fff", letterSpacing: "-0.02em" }}>248 400 $</p>
+            <p style={{ fontSize: 11, color: "rgba(91,196,160,0.8)", marginTop: 4, fontWeight: 600 }}>↑ +12,4% cette année</p>
+          </motion.div>
 
-            <motion.h1
-              {...fadeUp(0.08)}
-              className="font-urbanist font-black text-[3rem] md:text-[5rem] leading-[1.0] tracking-[-0.04em] text-white mb-8"
+          {/* Card 2 — middle right */}
+          <motion.div
+            initial={{ opacity: 0, x: 30, rotate: 4 }}
+            animate={{ opacity: 1, x: 0, rotate: 4 }}
+            transition={{ duration: 1.2, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            style={{
+              position: "absolute", top: "32%", left: "68%",
+              width: 160, padding: "14px 18px", borderRadius: 18,
+              background: "rgba(222,255,154,0.07)",
+              backdropFilter: "blur(32px) saturate(180%)",
+              WebkitBackdropFilter: "blur(32px) saturate(180%)",
+              border: "1px solid rgba(222,255,154,0.18)",
+              boxShadow: "0 12px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(222,255,154,0.12)",
+            }}>
+            <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(222,255,154,0.55)", marginBottom: 8 }}>Portefeuille</p>
+            <p style={{ fontFamily: "var(--font-mono)", fontSize: 18, fontWeight: 700, color: "#DEFF9A", letterSpacing: "-0.02em" }}>182 300 $</p>
+            <div style={{ marginTop: 10, height: 28, display: "flex", alignItems: "flex-end", gap: 2 }}>
+              {[40,55,35,70,50,80,65,90,75,95].map((h,i) => (
+                <div key={i} style={{ flex:1, height:`${h}%`, borderRadius: 2, background: i >= 7 ? "rgba(222,255,154,0.7)" : "rgba(222,255,154,0.2)" }} />
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Card 3 — lower left */}
+          <motion.div
+            initial={{ opacity: 0, x: -20, rotate: -2 }}
+            animate={{ opacity: 1, x: 0, rotate: -2 }}
+            transition={{ duration: 1.2, delay: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            style={{
+              position: "absolute", top: "55%", left: "52%",
+              width: 170, padding: "14px 18px", borderRadius: 18,
+              background: "rgba(255,255,255,0.06)",
+              backdropFilter: "blur(32px) saturate(180%)",
+              WebkitBackdropFilter: "blur(32px) saturate(180%)",
+              border: "1px solid rgba(255,255,255,0.11)",
+              boxShadow: "0 12px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.12)",
+            }}>
+            <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(148,163,184,0.55)", marginBottom: 8 }}>Taux d'épargne</p>
+            <p style={{ fontFamily: "var(--font-mono)", fontSize: 22, fontWeight: 700, color: "#fff", letterSpacing: "-0.02em" }}>24,5 %</p>
+            <div style={{ marginTop: 10, height: 4, borderRadius: 99, background: "rgba(255,255,255,0.1)" }}>
+              <div style={{ width: "24.5%", height: "100%", borderRadius: 99, background: "linear-gradient(90deg, #C9A063, #e6c07a)" }} />
+            </div>
+            <p style={{ fontSize: 11, color: "rgba(201,160,99,0.6)", marginTop: 6 }}>Objectif : 20 %</p>
+          </motion.div>
+
+          {/* Card 4 — small pill top left area */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1.0, delay: 0.9, ease: [0.22, 1, 0.36, 1] }}
+            style={{
+              position: "absolute", top: "22%", left: "48%",
+              padding: "10px 16px", borderRadius: 50,
+              background: "rgba(91,196,160,0.1)",
+              backdropFilter: "blur(20px)",
+              WebkitBackdropFilter: "blur(20px)",
+              border: "1px solid rgba(91,196,160,0.25)",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
+              display: "flex", alignItems: "center", gap: 8,
+            }}>
+            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#5BC4A0", boxShadow: "0 0 8px #5BC4A0" }} />
+            <p style={{ fontSize: 11.5, fontWeight: 600, color: "#5BC4A0", whiteSpace: "nowrap" }}>Plan actif · Conseiller assigné</p>
+          </motion.div>
+        </div>
+
+        {/* Hero text — centered like Wealthsimple */}
+        <div className="relative flex flex-col items-center justify-center text-center" style={{ minHeight: "100vh", paddingTop: 80, paddingBottom: 60, paddingLeft: 24, paddingRight: 24 }}>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+            style={{ marginBottom: 28 }}
+          >
+            <span style={{
+              display: "inline-flex", alignItems: "center", gap: 8,
+              padding: "7px 16px", borderRadius: 50, fontSize: 11, fontWeight: 600,
+              letterSpacing: "0.1em", textTransform: "uppercase",
+              background: "rgba(201,160,99,0.1)",
+              backdropFilter: "blur(12px)",
+              border: "1px solid rgba(201,160,99,0.2)",
+              color: "rgba(201,160,99,0.85)",
+            }}>
+              <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#C9A063", display: "inline-block" }} />
+              Planification financière — Québec
+            </span>
+          </motion.div>
+
+          <motion.h1
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            className="font-urbanist font-black text-white"
+            style={{ fontSize: "clamp(2.5rem, 6vw, 5rem)", lineHeight: 1.05, letterSpacing: "-0.04em", maxWidth: 680, marginBottom: 24 }}
+          >
+            Créer ton plan financier,{" "}
+            <span style={{ color: "#C9A063" }}>propulsé par IA.</span>
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            style={{ fontSize: 17, fontWeight: 300, color: "rgba(148,163,184,0.85)", maxWidth: 480, lineHeight: 1.75, marginBottom: 44 }}
+          >
+            Assisté par des conseillers en sécurité financière — tous les outils pour maîtriser votre patrimoine.
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.48, ease: [0.22, 1, 0.36, 1] }}
+            style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}
+          >
+            <button
+              onClick={() => setSoftWallOpen(true)}
+              style={{
+                padding: "14px 32px", borderRadius: 50, fontSize: 14.5, fontWeight: 600, cursor: "pointer",
+                background: "linear-gradient(135deg, #C9A063, #e6c07a)",
+                color: "#050810", border: "none",
+                boxShadow: "0 4px 20px rgba(201,160,99,0.35)",
+                transition: "transform 0.2s, box-shadow 0.2s",
+              }}
+              onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.03)"; e.currentTarget.style.boxShadow = "0 8px 28px rgba(201,160,99,0.45)"; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(201,160,99,0.35)"; }}
             >
-              Créer ton plan financier,
-              <br />
-              <span style={{ color: "#C9A063" }}>propulsé par IA, assisté par des conseillers.</span>
-            </motion.h1>
+              Commencer gratuitement
+            </button>
+            <a
+              href="#calculatrices"
+              style={{
+                padding: "14px 28px", borderRadius: 50, fontSize: 14.5, fontWeight: 500, cursor: "pointer",
+                background: "rgba(255,255,255,0.07)",
+                backdropFilter: "blur(16px)",
+                WebkitBackdropFilter: "blur(16px)",
+                color: "rgba(255,255,255,0.75)", border: "1px solid rgba(255,255,255,0.13)",
+                textDecoration: "none",
+                transition: "background 0.2s, color 0.2s",
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.11)"; e.currentTarget.style.color = "#fff"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.07)"; e.currentTarget.style.color = "rgba(255,255,255,0.75)"; }}
+            >
+              Essayer les calculatrices
+            </a>
+          </motion.div>
 
-            <motion.p {...fadeUp(0.16)} className="text-[17px] md:text-[18px] leading-[1.8] mb-12 max-w-xl font-light" style={{ color: "#94A3B8" }}>
-              Intelligence artificielle combinée à l'expertise de conseillers en sécurité financière — tous les outils pour maîtriser votre patrimoine, accessibles gratuitement.
-            </motion.p>
-
-            <motion.div {...fadeUp(0.22)} className="flex flex-col sm:flex-row gap-4">
-              <button
-                onClick={() => setSoftWallOpen(true)}
-                className="inline-flex items-center justify-center gap-2.5 px-8 py-4 text-[14px] font-semibold rounded-xl transition-all duration-200"
-                style={{ background: "#C9A063", color: "#050810" }}
-              >
-                Créer mon espace gratuit
-                <Lock className="w-3.5 h-3.5" />
-              </button>
-              <a
-                href="#calculatrices"
-                className="inline-flex items-center justify-center gap-2.5 px-8 py-4 text-[14px] font-medium rounded-xl transition-all duration-200"
-                style={{ border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.7)", background: "rgba(255,255,255,0.03)" }}
-              >
-                Essayer les calculatrices
-                <ArrowRight className="w-4 h-4" />
-              </a>
-            </motion.div>
-
-            <motion.div {...fadeUp(0.28)} className="mt-12 max-w-sm space-y-2">
-              <p className="text-[12px] font-semibold" style={{ color: "#C9A063" }}>Vous accédrez à :</p>
-              <ul className="space-y-2 text-[13px] font-light" style={{ color: "#94A3B8" }}>
-                <li className="flex items-start gap-2.5"><span style={{ color: "#C9A063" }}>•</span> Conseiller AI 24h/24</li>
-                <li className="flex items-start gap-2.5"><span style={{ color: "#C9A063" }}>•</span> Analyse de besoin financier</li>
-                <li className="flex items-start gap-2.5"><span style={{ color: "#C9A063" }}>•</span> Chat avec un agent avec permis AMF</li>
-                <li className="flex items-start gap-2.5"><span style={{ color: "#C9A063" }}>•</span> Aide à l'élimination de dettes</li>
-                <li className="flex items-start gap-2.5"><span style={{ color: "#C9A063" }}>•</span> Aide à la création de richesse</li>
-                <li className="flex items-start gap-2.5"><span style={{ color: "#C9A063" }}>•</span> Aide à la gestion budgétaire</li>
-                <li className="flex items-start gap-2.5"><span style={{ color: "#C9A063" }}>•</span> Aide au rétablissement du crédit</li>
-              </ul>
-            </motion.div>
-          </div>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.7 }}
+            style={{ marginTop: 24, fontSize: 12, color: "rgba(148,163,184,0.4)", fontWeight: 300 }}
+          >
+            Gratuit · Aucune carte requise · Données privées
+          </motion.p>
         </div>
       </section>
 
