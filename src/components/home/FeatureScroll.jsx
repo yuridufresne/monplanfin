@@ -51,71 +51,73 @@ export default function FeatureScroll({ onCTA }) {
         {/* Feature rows */}
         <div>
           {features.map((f, i) => (
-            <motion.div
-              key={f.label}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.55, delay: i * 0.06, ease: [0.22, 1, 0.36, 1] }}
-              onMouseEnter={() => setHovered(i)}
-              onMouseLeave={() => setHovered(null)}
-              onClick={onCTA}
-              className="cursor-pointer"
-              style={{
-                position: "relative",
-                display: "grid",
-                gridTemplateColumns: "1fr auto 1fr",
-                alignItems: "center",
-                padding: "28px 0",
-                borderBottom: "1px solid rgba(255,255,255,0.07)",
-                transition: "background 0.3s",
-              }}
-            >
-              {/* Description à gauche — visible au hover */}
-              <div className="hidden md:flex justify-end pr-10">
-                <AnimatePresence>
-                  {hovered === i && (
-                    <motion.p
-                      key="desc"
-                      initial={{ opacity: 0, x: 6 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 6 }}
-                      transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-                      style={{
-                        fontSize: 13,
-                        fontWeight: 300,
-                        color: "rgba(148,163,184,0.75)",
-                        maxWidth: 220,
-                        lineHeight: 1.65,
-                        textAlign: "right",
-                      }}
-                    >
-                      {f.desc}
-                    </motion.p>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* Titre centré */}
-              <motion.h3
-                animate={{ color: hovered === i ? "#C9A063" : "rgba(255,255,255,0.88)" }}
-                transition={{ duration: 0.25, ease: "easeOut" }}
+            <div key={f.label}>
+              {/* Row */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.55, delay: i * 0.06, ease: [0.22, 1, 0.36, 1] }}
+                onMouseEnter={() => setHovered(i)}
+                onMouseLeave={() => setHovered(null)}
+                onClick={onCTA}
+                className="cursor-pointer"
                 style={{
-                  fontFamily: "var(--font-urbanist)",
-                  fontWeight: 800,
-                  fontSize: "clamp(2rem, 5.5vw, 4.5rem)",
-                  letterSpacing: "-0.04em",
-                  lineHeight: 1.05,
+                  padding: "24px 0",
                   textAlign: "center",
-                  whiteSpace: "nowrap",
                 }}
               >
-                {f.label}
-              </motion.h3>
+                <motion.h3
+                  animate={{
+                    color: hovered === i ? "#C9A063" : "rgba(255,255,255,0.88)",
+                    scale: hovered === i ? 1.015 : 1,
+                  }}
+                  transition={{ duration: 0.25, ease: "easeOut" }}
+                  style={{
+                    fontFamily: "var(--font-urbanist)",
+                    fontWeight: 800,
+                    fontSize: "clamp(2rem, 5.5vw, 4.5rem)",
+                    letterSpacing: "-0.04em",
+                    lineHeight: 1.05,
+                    display: "inline-block",
+                  }}
+                >
+                  {f.label}
+                </motion.h3>
+              </motion.div>
 
-              {/* Colonne droite vide pour équilibrer la grille */}
-              <div />
-            </motion.div>
+              {/* Description expandable entre les items */}
+              <AnimatePresence initial={false}>
+                {hovered === i && (
+                  <motion.div
+                    key={`desc-${i}`}
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+                    style={{ overflow: "hidden" }}
+                  >
+                    <p style={{
+                      textAlign: "center",
+                      fontSize: 14,
+                      fontWeight: 300,
+                      color: "rgba(148,163,184,0.7)",
+                      lineHeight: 1.7,
+                      paddingBottom: 20,
+                      maxWidth: 420,
+                      margin: "0 auto",
+                    }}>
+                      {f.desc}
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Divider */}
+              {i < features.length - 1 && (
+                <div style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }} />
+              )}
+            </div>
           ))}
         </div>
       </div>
