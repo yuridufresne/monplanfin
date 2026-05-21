@@ -26,7 +26,7 @@ const pillars = [
     desc: "Construisez votre patrimoine avec une stratégie de placement adaptée à votre profil et votre horizon.",
   },
   {
-    img: "https://media.base44.com/images/public/6a0796d6e5414141c147f69c/d5645cd39_generated_image.png",
+    img: "https://media.base44.com/images/public/6a0796d6e5414141c147f69c/5030a9c5f_generated_image.png",
     label: "Création de richesse",
     desc: "Accélérez votre liberté financière — immobilier, portefeuille de dividendes, revenu passif, retraite anticipée.",
   },
