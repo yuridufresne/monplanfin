@@ -52,7 +52,7 @@ export default function Home() {
       <SoftWall isOpen={softWallOpen} onClose={() => setSoftWallOpen(false)} />
 
       {/* ── HERO ──────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden" style={{ minHeight: "100vh", background: "linear-gradient(160deg, #0c1220 0%, #080d18 40%, #050810 100%)" }}>
+      <section className="relative overflow-hidden" style={{ minHeight: "auto", background: "linear-gradient(160deg, #0c1220 0%, #080d18 40%, #050810 100%)" }}>
 
         {/* Atmospheric background */}
         <div className="absolute inset-0 pointer-events-none">
@@ -64,7 +64,7 @@ export default function Home() {
 
 
         {/* Hero text — centered like Wealthsimple */}
-        <div className="relative flex flex-col items-center justify-center text-center" style={{ minHeight: "auto", paddingTop: 120, paddingBottom: 80, paddingLeft: 24, paddingRight: 24 }}>
+        <div className="relative flex flex-col items-center justify-center text-center" style={{ minHeight: "auto", paddingTop: 120, paddingBottom: 32, paddingLeft: 24, paddingRight: 24 }}>
           <motion.h1
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
