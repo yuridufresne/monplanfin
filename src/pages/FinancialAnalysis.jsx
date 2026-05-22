@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronRight, ChevronLeft, Check, User, TrendingDown, Shield, GraduationCap, Target, AlertTriangle, DollarSign, BarChart3, Wallet } from "lucide-react";
 import InfoTooltip from "@/components/ui/InfoTooltip";
+import StepBudget from "@/components/abf/StepBudget";
 
 const STEPS = [
   { key: "profil_personnel", label: "Profil", icon: User, title: "Renseignements personnels" },
@@ -927,110 +928,6 @@ function StepEtudes({ data, setData }) {
   );
 }
 
-// ── Budget mensuel ────────────────────────────────────────────────────────────
-const BUDGET_SECTIONS = [
-  { title: "Logement", color: "#6B8ED6", rows: [
-    { label: "Loyer / hypothèque", category: "logement" },
-    { label: "Électricité / chauffage", category: "services_publics" },
-    { label: "Internet / téléphone", category: "services_publics" },
-    { label: "Assurance habitation", category: "assurances" },
-    { label: "Entretien / réparations", category: "logement" },
-  ]},
-  { title: "Transport", color: "#E0B44B", rows: [
-    { label: "Paiement / location véhicule", category: "transport" },
-    { label: "Essence / recharge", category: "transport" },
-    { label: "Assurance auto", category: "assurances" },
-    { label: "Transport en commun", category: "transport" },
-  ]},
-  { title: "Alimentation", color: "#5BC4A0", rows: [
-    { label: "Épicerie", category: "alimentation" },
-    { label: "Restaurants / livraison", category: "alimentation" },
-  ]},
-  { title: "Santé & Bien-être", color: "#6BBCE0", rows: [
-    { label: "Assurance santé / médicaments", category: "sante" },
-    { label: "Dentiste / optométriste", category: "sante" },
-    { label: "Gym / activités physiques", category: "sante" },
-  ]},
-  { title: "Loisirs & Abonnements", color: "#A87DD3", rows: [
-    { label: "Streaming (Netflix, Spotify…)", category: "loisirs" },
-    { label: "Loisirs / sorties", category: "loisirs" },
-    { label: "Vacances (mensualité)", category: "loisirs" },
-  ]},
-  { title: "Enfants & Famille", color: "#E07B6B", rows: [
-    { label: "Garderie / école", category: "education" },
-    { label: "Activités / sports enfants", category: "loisirs" },
-    { label: "Vêtements enfants", category: "vetements" },
-  ]},
-  { title: "Épargne & Investissements", color: "#7DC46B", rows: [
-    { label: "Fonds d'urgence", category: "epargne" },
-    { label: "CELI", category: "epargne" },
-    { label: "REER", category: "epargne" },
-    { label: "REEE", category: "epargne" },
-  ]},
-  { title: "Dettes & Obligations", color: "#f87171", rows: [
-    { label: "Cartes de crédit / marges", category: "dettes" },
-    { label: "Prêt personnel / étudiant", category: "dettes" },
-    { label: "Pension alimentaire", category: "divers" },
-  ]},
-  { title: "Divers", color: "#B0B0B0", rows: [
-    { label: "Vêtements / soins personnels", category: "vetements" },
-    { label: "Dons / cadeaux", category: "divers" },
-    { label: "Autre", category: "divers" },
-  ]},
-];
-
-function StepBudget({ data, setData }) {
-  const values = data.postes || {};
-  const setValues = (k, v) => setData(p => ({ ...p, postes: { ...(p.postes || {}), [k]: v } }));
-
-  const totalDepenses = BUDGET_SECTIONS.flatMap(s => s.rows).reduce((sum, r) => sum + (parseFloat(values[r.label]) || 0), 0);
-  const fmt = (v) => new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v || 0);
-
-  return (
-    <div className="space-y-5">
-      <div className="rounded-xl p-4" style={{ background: "rgba(201,160,99,0.06)", border: "1px solid rgba(201,160,99,0.15)" }}>
-        <p className="text-[12px]" style={{ color: "#C9A063" }}>Entrez vos dépenses mensuelles estimées. Ces données alimenteront votre budget et tableau de bord.</p>
-      </div>
-
-      {BUDGET_SECTIONS.map((section, si) => (
-        <div key={si} className="rounded-xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
-          <div className="flex items-center gap-2 px-4 py-3" style={{ background: "rgba(255,255,255,0.03)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-            <div style={{ width: 8, height: 8, borderRadius: "50%", background: section.color, flexShrink: 0 }} />
-            <p className="text-[13px] font-bold text-white">{section.title}</p>
-          </div>
-          <div className="px-4 py-3 space-y-2">
-            {section.rows.map((row, ri) => (
-              <div key={ri} className="flex items-center justify-between gap-4">
-                <p className="text-[13px] flex-1" style={{ color: "rgba(255,255,255,0.7)" }}>{row.label}</p>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <span className="text-[11px]" style={{ color: "#64748B" }}>$</span>
-                  <input
-                    type="number"
-                    min="0"
-                    placeholder="0"
-                    value={values[row.label] || ""}
-                    onChange={e => setValues(row.label, e.target.value)}
-                    className="rounded-lg text-[13px] outline-none text-right"
-                    style={{ width: 90, padding: "6px 10px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff", fontFamily: "var(--font-mono)" }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      ))}
-
-      {totalDepenses > 0 && (
-        <div className="rounded-xl px-5 py-4 flex items-center justify-between"
-          style={{ background: "rgba(248,113,113,0.05)", border: "1px solid rgba(248,113,113,0.15)" }}>
-          <p className="text-[13px] font-semibold" style={{ color: "#fca5a5" }}>Total dépenses mensuelles estimées</p>
-          <p className="font-financial text-[1.4rem] font-bold" style={{ color: "#f87171" }}>{fmt(totalDepenses)}</p>
-        </div>
-      )}
-    </div>
-  );
-}
-
 function StepObjectifs({ data, setData }) {
   const f = (k) => (v) => setData(p => ({ ...p, [k]: v }));
   const [objectifs, setObjectifs] = useState(data.objectifs || [{ nom: "", montant: "", delai: "" }]);
@@ -1105,7 +1002,7 @@ const STEP_COMPONENTS = {
   dettes: StepDettes,
   assurance: StepAssurance,
   etudes: StepEtudes,
-  budget: StepBudget,
+  budget: () => <StepBudget />,
   objectifs: StepObjectifs,
   fonds_urgence: StepFondsUrgence,
 };
