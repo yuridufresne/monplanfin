@@ -6,7 +6,7 @@ import { ChevronRight, ChevronLeft, Check, User, TrendingDown, Shield, Graduatio
 const STEPS = [
   { key: "profil_personnel", label: "Profil", icon: User, title: "Renseignements personnels" },
   { key: "revenu", label: "Revenu", icon: DollarSign, title: "Revenus & emploi" },
-  { key: "retraite", label: "Retraite", icon: BarChart3, title: "Épargner pour la retraite" },
+  { key: "retraite", label: "Épargne", icon: BarChart3, title: "Épargne & Retraite" },
   { key: "dettes", label: "Dettes", icon: TrendingDown, title: "Règlement des dettes" },
   { key: "assurance", label: "Assurance", icon: Shield, title: "Assurance-vie & invalidité" },
   { key: "etudes", label: "Études", icon: GraduationCap, title: "Épargne-études" },
@@ -368,18 +368,83 @@ function PersonTabs({ activeTab, setActiveTab, nomPrincipal, nomConjoint }) {
   );
 }
 
-// ── Retraite ─────────────────────────────────────────────────────────────────
+// ── Retraite / Épargne ────────────────────────────────────────────────────────
+
+const COMPTES_TYPES = [
+  { key: "compte_non_enregistre", label: "Compte épargne (non enregistré)" },
+  { key: "celi", label: "CELI" },
+  { key: "celiapp", label: "CELIAPP" },
+  { key: "reer", label: "REER" },
+  { key: "reee", label: "REEE" },
+  { key: "crypto", label: "Crypto" },
+  { key: "ftq_csn", label: "FTQ / CSN" },
+];
+
+function CompteEpargneSection({ type, label, comptes, setComptes }) {
+  const addCompte = () => setComptes(prev => ({ ...prev, [type]: [...(prev[type] || []), { institution: "", solde: "", cotisation_mensuelle: "" }] }));
+  const removeCompte = (i) => setComptes(prev => ({ ...prev, [type]: (prev[type] || []).filter((_, idx) => idx !== i) }));
+  const updateCompte = (i, k, v) => setComptes(prev => ({
+    ...prev,
+    [type]: (prev[type] || []).map((c, idx) => idx === i ? { ...c, [k]: v } : c),
+  }));
+  const list = comptes[type] || [];
+
+  return (
+    <div className="rounded-xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
+      <div className="flex items-center justify-between px-4 py-3" style={{ background: "rgba(255,255,255,0.03)" }}>
+        <p className="text-[13px] font-semibold text-white">{label}</p>
+        <button onClick={addCompte} className="text-[11px] font-semibold px-3 py-1 rounded-lg"
+          style={{ background: "rgba(201,160,99,0.1)", color: "#C9A063", border: "1px solid rgba(201,160,99,0.2)" }}>
+          + Ajouter
+        </button>
+      </div>
+      {list.length > 0 && (
+        <div className="px-4 pb-3 space-y-3 pt-2">
+          {list.map((c, i) => (
+            <div key={i} className="rounded-lg p-3 relative" style={{ background: "rgba(201,160,99,0.03)", border: "1px solid rgba(201,160,99,0.1)" }}>
+              <button onClick={() => removeCompte(i)} className="absolute top-2 right-2 text-[10px]" style={{ color: "rgba(248,113,113,0.6)" }}>✕</button>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <Field label="Institution financière"><Input value={c.institution} onChange={v => updateCompte(i, "institution", v)} placeholder="ex: Desjardins, RBC..." /></Field>
+                <Field label="Solde actuel ($)"><Input value={c.solde} onChange={v => updateCompte(i, "solde", v)} type="number" placeholder="0" /></Field>
+                <Field label="Cotisation mensuelle ($)"><Input value={c.cotisation_mensuelle} onChange={v => updateCompte(i, "cotisation_mensuelle", v)} type="number" placeholder="0" /></Field>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function RetraitePanel({ data, setData }) {
   const f = (k) => (v) => setData(p => ({ ...p, [k]: v }));
+
+  const comptes = data.comptes || {};
+  const setComptes = (updater) => setData(p => ({
+    ...p,
+    comptes: typeof updater === "function" ? updater(p.comptes || {}) : updater,
+  }));
+
+  const fondPension = data.fond_pension || {};
+  const setFondPension = (k, v) => setData(p => ({ ...p, fond_pension: { ...(p.fond_pension || {}), [k]: v } }));
+
+  const totalSolde = COMPTES_TYPES.reduce((s, t) => {
+    return s + (comptes[t.key] || []).reduce((ss, c) => ss + (parseFloat(c.solde) || 0), 0);
+  }, 0) + (parseFloat(fondPension.solde) || 0);
+
+  const totalCotisations = COMPTES_TYPES.reduce((s, t) => {
+    return s + (comptes[t.key] || []).reduce((ss, c) => ss + (parseFloat(c.cotisation_mensuelle) || 0), 0);
+  }, 0) + (parseFloat(fondPension.cotisation_salariale) || 0) + (parseFloat(fondPension.cotisation_patronale) || 0);
+
+  const fmt = (v) => new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v || 0);
+
   return (
-    <div className="space-y-5">
-      <Field label="Quelle situation vous décrit le mieux ?">
-        <RadioGroup value={data.situation_retraite} onChange={f("situation_retraite")} options={[
-          { value: "epargne", label: "J'épargne pour la retraite" },
-          { value: "proche", label: "À 5 ans de la retraite" },
-          { value: "retraite", label: "Je suis à la retraite" },
-        ]} />
-      </Field>
+    <div className="space-y-6">
+      {/* Objectifs retraite */}
+      <div className="rounded-xl p-4" style={{ background: "rgba(201,160,99,0.06)", border: "1px solid rgba(201,160,99,0.15)" }}>
+        <p className="text-[12px]" style={{ color: "#C9A063" }}>Ces informations sont essentielles pour calculer votre <strong style={{ color: "#fff" }}>Numéro d'indépendance financière (NIF)</strong> — le capital requis pour ne plus avoir besoin de travailler.</p>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <Field label="Âge prévu de retraite"><Input value={data.age_retraite} onChange={f("age_retraite")} type="number" placeholder="65" /></Field>
         <Field label="Espérance de vie visée"><Input value={data.esperance_vie} onChange={f("esperance_vie")} type="number" placeholder="90" /></Field>
@@ -388,11 +453,74 @@ function RetraitePanel({ data, setData }) {
         <Field label="Prestations RRQ mensuelles estimées ($)"><Input value={data.rrq} onChange={f("rrq")} type="number" /></Field>
         <Field label="Prestations SV mensuelles estimées ($)"><Input value={data.sv} onChange={f("sv")} type="number" /></Field>
       </div>
+
       <Field label="Souhaitez-vous laisser un héritage ?">
         <RadioGroup value={data.heritage} onChange={f("heritage")} options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]} />
       </Field>
       {data.heritage === "oui" && (
         <Field label="Montant d'héritage visé ($)"><Input value={data.montant_heritage} onChange={f("montant_heritage")} type="number" /></Field>
+      )}
+
+      {/* Fonds de pension */}
+      <div>
+        <p className="text-[14px] font-semibold text-white mb-3">Fonds de pension (employeur)</p>
+        <Field label="Avez-vous un fonds de pension au travail ?">
+          <RadioGroup value={data.a_fond_pension} onChange={f("a_fond_pension")} options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]} />
+        </Field>
+        {data.a_fond_pension === "oui" && (
+          <div className="mt-4 rounded-xl p-4 space-y-4" style={{ background: "rgba(107,140,214,0.05)", border: "1px solid rgba(107,140,214,0.18)" }}>
+            <Field label="Type de régime">
+              <RadioGroup value={fondPension.type} onChange={v => setFondPension("type", v)} options={[
+                { value: "cotisation_determinee", label: "Cotisation déterminée" },
+                { value: "prestation_determinee", label: "Prestation déterminée" },
+              ]} />
+            </Field>
+            <Field label="Institution / Gestionnaire"><Input value={fondPension.institution} onChange={v => setFondPension("institution", v)} placeholder="ex: Sun Life, Manulife, CAAT..." /></Field>
+
+            {fondPension.type === "cotisation_determinee" && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <Field label="Solde actuel ($)"><Input value={fondPension.solde} onChange={v => setFondPension("solde", v)} type="number" /></Field>
+                <Field label="Cotisation salariale mensuelle ($)"><Input value={fondPension.cotisation_salariale} onChange={v => setFondPension("cotisation_salariale", v)} type="number" /></Field>
+                <Field label="Cotisation patronale mensuelle ($)"><Input value={fondPension.cotisation_patronale} onChange={v => setFondPension("cotisation_patronale", v)} type="number" /></Field>
+              </div>
+            )}
+
+            {fondPension.type === "prestation_determinee" && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <Field label="Prestation estimée à la retraite ($/mois)"><Input value={fondPension.prestation_mensuelle} onChange={v => setFondPension("prestation_mensuelle", v)} type="number" /></Field>
+                <Field label="Âge de retraite du régime"><Input value={fondPension.age_retraite_regime} onChange={v => setFondPension("age_retraite_regime", v)} type="number" placeholder="65" /></Field>
+                <Field label="Cotisation salariale mensuelle ($)"><Input value={fondPension.cotisation_salariale} onChange={v => setFondPension("cotisation_salariale", v)} type="number" /></Field>
+                <Field label="Cotisation patronale mensuelle ($)"><Input value={fondPension.cotisation_patronale} onChange={v => setFondPension("cotisation_patronale", v)} type="number" /></Field>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Comptes d'épargne */}
+      <div>
+        <p className="text-[14px] font-semibold text-white mb-1">Comptes d'épargne & placements</p>
+        <p className="text-[12px] mb-3" style={{ color: "#94A3B8" }}>Ajoutez un compte par ligne si vous en avez plusieurs du même type.</p>
+        <div className="space-y-2">
+          {COMPTES_TYPES.map(t => (
+            <CompteEpargneSection key={t.key} type={t.key} label={t.label} comptes={comptes} setComptes={setComptes} />
+          ))}
+        </div>
+      </div>
+
+      {/* Totaux */}
+      {(totalSolde > 0 || totalCotisations > 0) && (
+        <div className="rounded-xl px-5 py-4 grid grid-cols-2 gap-4"
+          style={{ background: "rgba(91,196,160,0.06)", border: "1px solid rgba(91,196,160,0.2)" }}>
+          <div>
+            <p className="text-[11px] mb-1" style={{ color: "#94A3B8" }}>Total épargne accumulée</p>
+            <p className="font-financial text-[1.4rem] font-bold" style={{ color: "#5BC4A0" }}>{fmt(totalSolde)}</p>
+          </div>
+          <div>
+            <p className="text-[11px] mb-1" style={{ color: "#94A3B8" }}>Cotisations mensuelles totales</p>
+            <p className="font-financial text-[1.4rem] font-bold" style={{ color: "#5BC4A0" }}>{fmt(totalCotisations)}/mois</p>
+          </div>
+        </div>
       )}
     </div>
   );
