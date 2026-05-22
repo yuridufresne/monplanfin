@@ -10,7 +10,6 @@ const publicLinks = [
 ];
 const privateLinks = [
   { label: "Tableau de bord", path: "/dashboard" },
-  { label: "Budget", path: "/budget" },
   { label: "Analyse ABF", path: "/analyse" },
   { label: "Placements", path: "/placements" },
   { label: "Plan financier", path: "/plan" },
