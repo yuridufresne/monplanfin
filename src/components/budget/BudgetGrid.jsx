@@ -287,14 +287,15 @@ export default function BudgetGrid({ onClose, onSaved }) {
     setSaving(true);
 
     const entries = allRows
-      .filter(r => parseFloat(values[r.label]) > 0 && !r.abfReadOnly)
+      .filter(r => parseFloat(values[r.label]) > 0)
       .map(r => ({
         category: r.category,
         label: r.label,
         amount: monthlyAmount(r),
         type: r.type,
-        frequency: freqs[r.label] === "annuel" ? "annuel" : "mensuel",
+        frequency: "mensuel",
         is_fixed: true,
+        ...(r.abfReadOnly ? { source: "abf" } : {}),
       }));
 
     // Upsert : update si le label existe déjà, sinon create
