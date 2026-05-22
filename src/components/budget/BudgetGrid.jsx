@@ -109,6 +109,14 @@ const SECTIONS = [
       { label: "CELIAPP",                               category: "epargne",          type: "depense" },
     ],
   },
+  {
+    title: "10. Impôts & Obligations légales",
+    color: "#f59e0b",
+    rows: [
+      { label: "Impôts (retenues à la source)",         category: "divers",           type: "depense", abfReadOnly: true },
+      { label: "Pension alimentaire",                   category: "divers",           type: "depense" },
+    ],
+  },
 ];
 
 const inputStyle = {
@@ -144,21 +152,25 @@ function Section({ section, values, freqs, onChange, onFreqToggle, open, onToggl
         <div style={{ padding: "8px 16px 12px" }}>
           {section.rows.map(r => {
             const isAnnuel = freqs[r.label] === "annuel";
+            const isReadOnly = !!r.abfReadOnly;
             return (
               <div key={r.label} style={{ display: "flex", alignItems: "center", gap: 10, paddingTop: 8, paddingBottom: 8, borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                <p style={{ flex: 1, fontSize: 13, color: "rgba(255,255,255,0.75)" }}>{r.label}</p>
-                {/* Freq toggle */}
-                <button
-                  onClick={() => onFreqToggle(r.label)}
-                  style={{
-                    flexShrink: 0, fontSize: 10.5, fontWeight: 600, padding: "3px 8px", borderRadius: 6, cursor: "pointer", border: "1px solid",
-                    background: isAnnuel ? "rgba(201,160,99,0.15)" : "rgba(255,255,255,0.05)",
-                    borderColor: isAnnuel ? "rgba(201,160,99,0.4)" : "rgba(255,255,255,0.1)",
-                    color: isAnnuel ? "#C9A063" : "#64748B",
-                  }}
-                >
-                  {isAnnuel ? "annuel" : "mensuel"}
-                </button>
+                <p style={{ flex: 1, fontSize: 13, color: isReadOnly ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.75)" }}>{r.label}</p>
+                {isReadOnly ? (
+                  <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 6, background: "rgba(107,140,214,0.15)", border: "1px solid rgba(107,140,214,0.3)", color: "#6B8ED6", flexShrink: 0 }}>ABF</span>
+                ) : (
+                  <button
+                    onClick={() => onFreqToggle(r.label)}
+                    style={{
+                      flexShrink: 0, fontSize: 10.5, fontWeight: 600, padding: "3px 8px", borderRadius: 6, cursor: "pointer", border: "1px solid",
+                      background: isAnnuel ? "rgba(201,160,99,0.15)" : "rgba(255,255,255,0.05)",
+                      borderColor: isAnnuel ? "rgba(201,160,99,0.4)" : "rgba(255,255,255,0.1)",
+                      color: isAnnuel ? "#C9A063" : "#64748B",
+                    }}
+                  >
+                    {isAnnuel ? "annuel" : "mensuel"}
+                  </button>
+                )}
                 <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
                   <span style={{ fontSize: 11, color: "#64748B" }}>$</span>
                   <input
@@ -166,8 +178,9 @@ function Section({ section, values, freqs, onChange, onFreqToggle, open, onToggl
                     min="0"
                     placeholder="0"
                     value={values[r.label] || ""}
-                    onChange={e => onChange(r.label, e.target.value)}
-                    style={{ ...inputStyle, width: 100 }}
+                    onChange={e => !isReadOnly && onChange(r.label, e.target.value)}
+                    readOnly={isReadOnly}
+                    style={{ ...inputStyle, width: 100, opacity: isReadOnly ? 0.5 : 1, cursor: isReadOnly ? "not-allowed" : "text" }}
                   />
                 </div>
               </div>
@@ -222,6 +235,22 @@ export default function BudgetGrid({ onClose, onSaved }) {
           const totalSides = sides.reduce((s, sh) => s + (parseFloat(sh.revenu_mensuel_moyen) || 0), 0);
           if (totalSides > 0) prefill["2e emploi / freelance / travailleur autonome"] = totalSides.toFixed(0);
         }
+      }
+
+      // 3. Toujours pré-remplir les impôts depuis l'ABF (read-only, source unique)
+      const bySection = {};
+      profiles.forEach(p => { bySection[p.section] = p.data || {}; });
+      const revData = bySection["revenu"];
+      if (revData) {
+        const rd = revData.data || revData;
+        const emplois = rd.emplois || [];
+        let totalImpot = 0;
+        for (const e of emplois) {
+          const saisi = parseFloat(e.impot_saisi || e.impot_mensuel) || 0;
+          const freq = e.impot_freq || "mensuel";
+          totalImpot += freq === "annuel" ? saisi / 12 : saisi;
+        }
+        if (totalImpot > 0) prefill["Impôts (retenues à la source)"] = totalImpot.toFixed(0);
       }
 
       setValues(prev => ({ ...prev, ...prefill }));
