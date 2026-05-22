@@ -69,13 +69,15 @@ export default function InfoTooltip({ explanation, label, position = "top" }) {
         <div
           ref={tooltipRef}
           role="tooltip"
-          className={`absolute ${positionClasses[position]} left-1/2 transform -translate-x-1/2 opacity-0 animation-fadeIn pointer-events-auto`}
+          className={`absolute ${positionClasses[position]} opacity-0 animation-fadeIn pointer-events-auto`}
           style={{
             animation: "fadeIn 0.2s ease-out forwards",
             minWidth: "200px",
             maxWidth: "280px",
             width: "max-content",
             zIndex: 9999,
+            left: "50%",
+            transform: "translateX(-10%)",
           }}
         >
           {/* Contenu tooltip */}
@@ -112,11 +114,11 @@ export default function InfoTooltip({ explanation, label, position = "top" }) {
         @keyframes fadeIn {
           from {
             opacity: 0;
-            transform: translate(-50%, -4px);
+            transform: translateX(-10%) translateY(-4px);
           }
           to {
             opacity: 1;
-            transform: translate(-50%, 0);
+            transform: translateX(-10%) translateY(0);
           }
         }
 
