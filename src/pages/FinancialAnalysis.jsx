@@ -56,11 +56,12 @@ function StepProfilPersonnel({ data, setData }) {
   const fc = (k) => (v) => setData(p => ({ ...p, conjoint: { ...(p.conjoint || {}), [k]: v } }));
   const conjoint = data.conjoint || {};
 
-  const enCouple = data.situation === "marie" || data.situation === "conjoint" || data.situation === "union_civile";
+  const enCouple = ["marie", "conjoint", "union_civile"].includes(data.situation);
+  const memeAdresse = conjoint.meme_adresse === true;
 
   return (
     <div className="space-y-6">
-      {/* Infos personnelles */}
+      {/* Principal */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <Field label="Prénom et nom"><Input value={data.nom} onChange={f("nom")} placeholder="Jean Tremblay" /></Field>
         <Field label="Date de naissance"><Input value={data.dob} onChange={f("dob")} type="date" /></Field>
@@ -84,76 +85,12 @@ function StepProfilPersonnel({ data, setData }) {
         </div>
       </div>
 
-      {/* Enfants */}
-      {(() => {
-        const enfants = data.enfants_profil || [];
-        const updateEnfant = (i, k, v) => setData(p => ({
-          ...p,
-          enfants_profil: (p.enfants_profil || []).map((e, idx) => idx === i ? { ...e, [k]: v } : e)
-        }));
-        const addEnfant = () => setData(p => ({ ...p, enfants_profil: [...(p.enfants_profil || []), { prenom: "", dob: "" }] }));
-        const removeEnfant = (i) => setData(p => ({ ...p, enfants_profil: (p.enfants_profil || []).filter((_, idx) => idx !== i) }));
-
-        return (
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <p className="text-[14px] font-semibold text-white">Enfants à charge</p>
-                <p className="text-[11.5px] mt-0.5" style={{ color: "#94A3B8" }}>Utilisé pour calculer les allocations familiales (ACE + PFCE)</p>
-              </div>
-              <button onClick={addEnfant} className="text-[12px] font-semibold px-3 py-1.5 rounded-lg"
-                style={{ background: "rgba(201,160,99,0.1)", color: "#C9A063", border: "1px solid rgba(201,160,99,0.2)" }}>
-                + Ajouter un enfant
-              </button>
-            </div>
-
-            {enfants.length === 0 && (
-              <div className="rounded-xl px-4 py-3 text-[12px]" style={{ background: "rgba(255,255,255,0.02)", border: "1px dashed rgba(255,255,255,0.08)", color: "#94A3B8" }}>
-                Aucun enfant à charge. Cliquez sur "+ Ajouter un enfant" si applicable.
-              </div>
-            )}
-
-            <div className="space-y-3">
-              {enfants.map((e, i) => {
-                const age = e.dob ? Math.floor((new Date() - new Date(e.dob)) / (365.25 * 24 * 3600 * 1000)) : null;
-                const allocationACE = age !== null && age < 18
-                  ? age < 6 ? 665 : 561
-                  : null;
-                return (
-                  <div key={i} className="rounded-xl p-4 relative" style={{ background: "rgba(201,160,99,0.04)", border: "1px solid rgba(201,160,99,0.12)" }}>
-                    <button onClick={() => removeEnfant(i)} className="absolute top-3 right-3 text-[11px]" style={{ color: "rgba(248,113,113,0.7)" }}>✕ Retirer</button>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      <Field label={`Prénom (enfant ${i + 1})`}>
-                        <Input value={e.prenom} onChange={v => updateEnfant(i, "prenom", v)} placeholder="ex: Emma" />
-                      </Field>
-                      <Field label="Date de naissance">
-                        <Input type="date" value={e.dob} onChange={v => updateEnfant(i, "dob", v)} />
-                      </Field>
-                      {age !== null && (
-                        <div className="flex flex-col justify-end">
-                          <div className="rounded-lg px-3 py-2.5 text-center" style={{ background: "rgba(201,160,99,0.07)", border: "1px solid rgba(201,160,99,0.15)" }}>
-                            <p className="text-[10px] mb-0.5" style={{ color: "#94A3B8" }}>Âge · ACE estimée/mois</p>
-                            <p className="font-financial text-[13px] font-bold" style={{ color: "#C9A063" }}>
-                              {age} ans · {allocationACE !== null ? `${allocationACE}$` : "18+ ans"}
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* Infos du/de la conjoint(e) */}
+      {/* Conjoint(e) — infos de base seulement */}
       {enCouple && (
-        <div className="rounded-2xl p-5 space-y-5" style={{ background: "rgba(107,140,214,0.05)", border: "1px solid rgba(107,140,214,0.18)" }}>
+        <div className="rounded-2xl p-5 space-y-4" style={{ background: "rgba(107,140,214,0.05)", border: "1px solid rgba(107,140,214,0.18)" }}>
           <div>
-            <p className="text-[13px] font-bold text-white mb-0.5">Informations du/de la conjoint(e)</p>
-            <p className="text-[11.5px]" style={{ color: "#94A3B8" }}>Ces informations permettent d'optimiser votre planification financière de couple.</p>
+            <p className="text-[13px] font-bold text-white mb-0.5">Conjoint(e)</p>
+            <p className="text-[11.5px]" style={{ color: "#94A3B8" }}>Les informations financières du/de la conjoint(e) seront demandées dans les sections suivantes.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -163,56 +100,28 @@ function StepProfilPersonnel({ data, setData }) {
             <Field label="Téléphone"><Input value={conjoint.cell} onChange={fc("cell")} placeholder="514-555-0001" /></Field>
           </div>
 
-          <div>
-            <p className="text-[12px] font-bold tracking-wider uppercase mb-3" style={{ color: "rgba(107,140,214,0.7)" }}>Situation professionnelle</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Field label="Type d'emploi">
-                <RadioGroup value={conjoint.type_emploi} onChange={fc("type_emploi")} options={[
-                  { value: "salarie", label: "Salarié(e)" },
-                  { value: "autonome", label: "Travailleur autonome" },
-                  { value: "sans_emploi", label: "Sans emploi" },
-                  { value: "retraite", label: "Retraité(e)" },
-                ]} />
-              </Field>
-              <Field label="Employeur / Secteur"><Input value={conjoint.employeur} onChange={fc("employeur")} placeholder="ex: Gouvernement du Québec" /></Field>
-              <Field label="Revenu brut annuel ($)"><Input value={conjoint.revenu_brut} onChange={fc("revenu_brut")} type="number" placeholder="65 000" /></Field>
-              <Field label="Impôt retenu / mois ($)" hint="Retenue à la source">
-                <Input value={conjoint.impot_mensuel} onChange={fc("impot_mensuel")} type="number" placeholder="800" />
-              </Field>
+          {/* Case à cocher même adresse */}
+          <button
+            onClick={() => fc("meme_adresse")(!memeAdresse)}
+            className="flex items-center gap-3 w-full text-left"
+          >
+            <div className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 transition-all"
+              style={memeAdresse
+                ? { background: "#6B8ED6", border: "1px solid #6B8ED6" }
+                : { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.15)" }
+              }>
+              {memeAdresse && <span className="text-white text-[11px] font-bold">✓</span>}
             </div>
-          </div>
+            <span className="text-[13px]" style={{ color: memeAdresse ? "#fff" : "rgba(255,255,255,0.55)" }}>
+              Même adresse que {data.nom ? data.nom.split(" ")[0] : "le/la principal(e)"}
+            </span>
+          </button>
 
-          <div>
-            <p className="text-[12px] font-bold tracking-wider uppercase mb-3" style={{ color: "rgba(107,140,214,0.7)" }}>Épargne & retraite</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Field label="Solde REER ($)"><Input value={conjoint.reer} onChange={fc("reer")} type="number" placeholder="0" /></Field>
-              <Field label="Solde CELI ($)"><Input value={conjoint.celi} onChange={fc("celi")} type="number" placeholder="0" /></Field>
-              <Field label="Autres épargnes ($)"><Input value={conjoint.autres_epargnes} onChange={fc("autres_epargnes")} type="number" placeholder="0" /></Field>
-              <Field label="Âge prévu de retraite"><Input value={conjoint.age_retraite} onChange={fc("age_retraite")} type="number" placeholder="65" /></Field>
-            </div>
-          </div>
-
-          <div>
-            <p className="text-[12px] font-bold tracking-wider uppercase mb-3" style={{ color: "rgba(107,140,214,0.7)" }}>Protections</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Field label="Assurance-vie ?">
-                <RadioGroup value={conjoint.a_assurance_vie} onChange={fc("a_assurance_vie")} options={[
-                  { value: "oui", label: "Oui" }, { value: "non", label: "Non" },
-                ]} />
-              </Field>
-              {conjoint.a_assurance_vie === "oui" && (
-                <Field label="Couverture vie ($)"><Input value={conjoint.couverture_vie} onChange={fc("couverture_vie")} type="number" /></Field>
-              )}
-              <Field label="Assurance invalidité ?">
-                <RadioGroup value={conjoint.a_assurance_invalidite} onChange={fc("a_assurance_invalidite")} options={[
-                  { value: "oui", label: "Oui" }, { value: "non", label: "Non" },
-                ]} />
-              </Field>
-              {conjoint.a_assurance_invalidite === "oui" && (
-                <Field label="Couverture invalidité ($)"><Input value={conjoint.couverture_invalidite} onChange={fc("couverture_invalidite")} type="number" /></Field>
-              )}
-            </div>
-          </div>
+          {!memeAdresse && (
+            <Field label="Adresse du/de la conjoint(e)">
+              <Input value={conjoint.adresse} onChange={fc("adresse")} placeholder="123 rue des Érables, Montréal, QC" />
+            </Field>
+          )}
         </div>
       )}
     </div>
