@@ -420,8 +420,8 @@ function CompteEpargneSection({ type, label, comptes, setComptes }) {
 
   const tooltipText = COMPTES_TYPES.find(t => t.key === type)?.tooltip;
   return (
-    <div className="rounded-xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
-      <div className="flex items-center justify-between px-4 py-3" style={{ background: "rgba(255,255,255,0.03)" }}>
+    <div className="rounded-xl" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
+      <div className="flex items-center justify-between px-4 py-3 rounded-t-xl" style={{ background: "rgba(255,255,255,0.03)" }}>
         <p className="text-[13px] font-semibold text-white">
           {label}
           {tooltipText && <InfoTooltip explanation={tooltipText} position="bottom" />}
