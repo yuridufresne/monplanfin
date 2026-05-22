@@ -24,8 +24,9 @@ export async function syncABFToEntities() {
     const emplois = revData.emplois || [];
     let totalImpotMensuel = 0;
     for (const e of emplois) {
-      const impot = parseFloat(e.impot_mensuel) || 0;
-      totalImpotMensuel += impot;
+      const saisi = parseFloat(e.impot_saisi || e.impot_mensuel) || 0;
+      const freq = e.impot_freq || "mensuel";
+      totalImpotMensuel += freq === "annuel" ? saisi / 12 : saisi;
     }
     if (totalImpotMensuel > 0) {
       const label = "Impôts (retenues à la source)";

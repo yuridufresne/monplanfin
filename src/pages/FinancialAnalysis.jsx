@@ -190,8 +190,27 @@ function RevenuPanel({ data, setData }) {
                 <Field label="Employeur / Client"><Input value={e.employeur} onChange={v => updateEmploi(i, "employeur", v)} /></Field>
                 <Field label="Poste occupé"><Input value={e.poste} onChange={v => updateEmploi(i, "poste", v)} /></Field>
                 <Field label="Revenu brut annuel ($)"><Input value={e.revenu_brut} onChange={v => updateEmploi(i, "revenu_brut", v)} type="number" /></Field>
-                <Field label="Impôt retenu / mois ($)" hint="Pour vérifier si retenue à la source adéquate">
-                  <Input value={e.impot_mensuel} onChange={v => updateEmploi(i, "impot_mensuel", v)} type="number" />
+                <Field label="Impôt retenu ($)" hint="Pour vérifier si retenue à la source adéquate">
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      value={e.impot_saisi || ""}
+                      onChange={ev => updateEmploi(i, "impot_saisi", ev.target.value)}
+                      placeholder="0"
+                      className="w-full px-4 py-2.5 rounded-xl text-[13px] outline-none transition-all"
+                      style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff" }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => updateEmploi(i, "impot_freq", (e.impot_freq || "mensuel") === "mensuel" ? "annuel" : "mensuel")}
+                      className="shrink-0 px-3 py-2 rounded-xl text-[11px] font-bold transition-all"
+                      style={(e.impot_freq || "mensuel") === "annuel"
+                        ? { background: "rgba(201,160,99,0.2)", color: "#C9A063", border: "1px solid rgba(201,160,99,0.35)" }
+                        : { background: "rgba(255,255,255,0.05)", color: "#94A3B8", border: "1px solid rgba(255,255,255,0.1)" }
+                      }>
+                      {(e.impot_freq || "mensuel") === "annuel" ? "annuel" : "mensuel"}
+                    </button>
+                  </div>
                 </Field>
                 {e.type === "autonome" && (
                   <Field label="TPS/TVQ inscrit ?" hint="Obligatoire si revenus > 30 000$/an">
