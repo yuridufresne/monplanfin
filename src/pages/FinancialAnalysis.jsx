@@ -79,11 +79,74 @@ function StepProfilPersonnel({ data, setData }) {
             ]} />
           </Field>
         </div>
-        <Field label="Nombre d'enfants"><Input value={data.nb_enfants} onChange={f("nb_enfants")} type="number" placeholder="0" /></Field>
         <div className="md:col-span-2">
           <Field label="Adresse"><Input value={data.adresse} onChange={f("adresse")} placeholder="123 rue des Érables, Montréal, QC" /></Field>
         </div>
       </div>
+
+      {/* Enfants */}
+      {(() => {
+        const enfants = data.enfants_profil || [];
+        const updateEnfant = (i, k, v) => setData(p => ({
+          ...p,
+          enfants_profil: (p.enfants_profil || []).map((e, idx) => idx === i ? { ...e, [k]: v } : e)
+        }));
+        const addEnfant = () => setData(p => ({ ...p, enfants_profil: [...(p.enfants_profil || []), { prenom: "", dob: "" }] }));
+        const removeEnfant = (i) => setData(p => ({ ...p, enfants_profil: (p.enfants_profil || []).filter((_, idx) => idx !== i) }));
+
+        return (
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-[14px] font-semibold text-white">Enfants à charge</p>
+                <p className="text-[11.5px] mt-0.5" style={{ color: "#94A3B8" }}>Utilisé pour calculer les allocations familiales (ACE + PFCE)</p>
+              </div>
+              <button onClick={addEnfant} className="text-[12px] font-semibold px-3 py-1.5 rounded-lg"
+                style={{ background: "rgba(201,160,99,0.1)", color: "#C9A063", border: "1px solid rgba(201,160,99,0.2)" }}>
+                + Ajouter un enfant
+              </button>
+            </div>
+
+            {enfants.length === 0 && (
+              <div className="rounded-xl px-4 py-3 text-[12px]" style={{ background: "rgba(255,255,255,0.02)", border: "1px dashed rgba(255,255,255,0.08)", color: "#94A3B8" }}>
+                Aucun enfant à charge. Cliquez sur "+ Ajouter un enfant" si applicable.
+              </div>
+            )}
+
+            <div className="space-y-3">
+              {enfants.map((e, i) => {
+                const age = e.dob ? Math.floor((new Date() - new Date(e.dob)) / (365.25 * 24 * 3600 * 1000)) : null;
+                const allocationACE = age !== null && age < 18
+                  ? age < 6 ? 665 : 561
+                  : null;
+                return (
+                  <div key={i} className="rounded-xl p-4 relative" style={{ background: "rgba(201,160,99,0.04)", border: "1px solid rgba(201,160,99,0.12)" }}>
+                    <button onClick={() => removeEnfant(i)} className="absolute top-3 right-3 text-[11px]" style={{ color: "rgba(248,113,113,0.7)" }}>✕ Retirer</button>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <Field label={`Prénom (enfant ${i + 1})`}>
+                        <Input value={e.prenom} onChange={v => updateEnfant(i, "prenom", v)} placeholder="ex: Emma" />
+                      </Field>
+                      <Field label="Date de naissance">
+                        <Input type="date" value={e.dob} onChange={v => updateEnfant(i, "dob", v)} />
+                      </Field>
+                      {age !== null && (
+                        <div className="flex flex-col justify-end">
+                          <div className="rounded-lg px-3 py-2.5 text-center" style={{ background: "rgba(201,160,99,0.07)", border: "1px solid rgba(201,160,99,0.15)" }}>
+                            <p className="text-[10px] mb-0.5" style={{ color: "#94A3B8" }}>Âge · ACE estimée/mois</p>
+                            <p className="font-financial text-[13px] font-bold" style={{ color: "#C9A063" }}>
+                              {age} ans · {allocationACE !== null ? `${allocationACE}$` : "18+ ans"}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Infos du/de la conjoint(e) */}
       {enCouple && (
