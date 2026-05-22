@@ -66,17 +66,21 @@ export default function Budget() {
     }
   };
 
-  // Revenus calculés depuis l'ABF uniquement
+  // Revenus calculés depuis l'ABF uniquement (net = brut - impôts)
   const totalRev = useMemo(() => {
     const revenuProfile = profiles.find(p => p.section === "revenu");
     const raw = revenuProfile?.data || {};
-    // Gérer la structure potentiellement imbriquée (data.data)
     const data = raw.data || raw;
     const emplois = data.emplois || [];
     const sides = data.sidehustles || [];
-    const totalEmplois = emplois.reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0) / 12, 0);
-    const totalSides = sides.reduce((s, sh) => s + (parseFloat(sh.revenu_mensuel_moyen) || 0), 0);
-    return totalEmplois + totalSides;
+    const totalBrut = emplois.reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0) / 12, 0)
+      + sides.reduce((s, sh) => s + (parseFloat(sh.revenu_mensuel_moyen) || 0), 0);
+    const totalImpots = emplois.reduce((s, e) => {
+      const saisi = parseFloat(e.impot_saisi || e.impot_mensuel) || 0;
+      const freq = e.impot_freq || "mensuel";
+      return s + (freq === "annuel" ? saisi / 12 : saisi);
+    }, 0);
+    return totalBrut - totalImpots;
   }, [profiles]);
 
   // Entrées budget = dépenses uniquement
