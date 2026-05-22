@@ -203,11 +203,15 @@ function RevenuPanel({ data, setData }) {
                     <button
                       type="button"
                       onClick={() => updateEmploi(i, "impot_freq", (e.impot_freq || "mensuel") === "mensuel" ? "annuel" : "mensuel")}
-                      className="shrink-0 px-3 py-2 rounded-xl text-[11px] font-bold transition-all"
-                      style={(e.impot_freq || "mensuel") === "annuel"
-                        ? { background: "rgba(201,160,99,0.2)", color: "#C9A063", border: "1px solid rgba(201,160,99,0.35)" }
-                        : { background: "rgba(255,255,255,0.05)", color: "#94A3B8", border: "1px solid rgba(255,255,255,0.1)" }
-                      }>
+                      className="shrink-0 rounded-xl text-[11px] font-bold transition-all"
+                      style={{
+                        width: "70px",
+                        padding: "10px 12px",
+                        textAlign: "center",
+                        ...(e.impot_freq || "mensuel") === "annuel"
+                          ? { background: "rgba(201,160,99,0.2)", color: "#C9A063", border: "1px solid rgba(201,160,99,0.35)" }
+                          : { background: "rgba(255,255,255,0.05)", color: "#94A3B8", border: "1px solid rgba(255,255,255,0.1)" }
+                      }}>
                       {(e.impot_freq || "mensuel") === "annuel" ? "annuel" : "mensuel"}
                     </button>
                   </div>
