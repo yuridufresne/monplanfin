@@ -53,23 +53,105 @@ function RadioGroup({ options, value, onChange }) {
 
 function StepProfilPersonnel({ data, setData }) {
   const f = (k) => (v) => setData(p => ({ ...p, [k]: v }));
+  const fc = (k) => (v) => setData(p => ({ ...p, conjoint: { ...(p.conjoint || {}), [k]: v } }));
+  const conjoint = data.conjoint || {};
+
+  const enCouple = data.situation === "marie" || data.situation === "conjoint" || data.situation === "union_civile";
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-      <Field label="Prénom et nom"><Input value={data.nom} onChange={f("nom")} placeholder="Jean Tremblay" /></Field>
-      <Field label="Date de naissance"><Input value={data.dob} onChange={f("dob")} type="date" /></Field>
-      <Field label="Courriel"><Input value={data.email} onChange={f("email")} placeholder="jean@exemple.com" /></Field>
-      <Field label="Téléphone cellulaire"><Input value={data.cell} onChange={f("cell")} placeholder="514-555-0000" /></Field>
-      <Field label="Situation familiale">
-        <RadioGroup value={data.situation} onChange={f("situation")} options={[
-          { value: "celibataire", label: "Célibataire" },
-          { value: "marie", label: "Marié(e)" },
-          { value: "conjoint", label: "Conjoint(e) de fait" },
-        ]} />
-      </Field>
-      <Field label="Nombre d'enfants"><Input value={data.nb_enfants} onChange={f("nb_enfants")} type="number" placeholder="0" /></Field>
-      <div className="md:col-span-2">
-        <Field label="Adresse"><Input value={data.adresse} onChange={f("adresse")} placeholder="123 rue des Érables, Montréal, QC" /></Field>
+    <div className="space-y-6">
+      {/* Infos personnelles */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <Field label="Prénom et nom"><Input value={data.nom} onChange={f("nom")} placeholder="Jean Tremblay" /></Field>
+        <Field label="Date de naissance"><Input value={data.dob} onChange={f("dob")} type="date" /></Field>
+        <Field label="Courriel"><Input value={data.email} onChange={f("email")} placeholder="jean@exemple.com" /></Field>
+        <Field label="Téléphone cellulaire"><Input value={data.cell} onChange={f("cell")} placeholder="514-555-0000" /></Field>
+        <div className="md:col-span-2">
+          <Field label="Statut matrimonial">
+            <RadioGroup value={data.situation} onChange={f("situation")} options={[
+              { value: "celibataire", label: "Célibataire" },
+              { value: "marie", label: "Marié(e)" },
+              { value: "conjoint", label: "Conjoint(e) de fait" },
+              { value: "union_civile", label: "Union civile" },
+              { value: "separe", label: "Séparé(e)" },
+              { value: "divorce", label: "Divorcé(e)" },
+              { value: "veuf", label: "Veuf / Veuve" },
+            ]} />
+          </Field>
+        </div>
+        <Field label="Nombre d'enfants"><Input value={data.nb_enfants} onChange={f("nb_enfants")} type="number" placeholder="0" /></Field>
+        <div className="md:col-span-2">
+          <Field label="Adresse"><Input value={data.adresse} onChange={f("adresse")} placeholder="123 rue des Érables, Montréal, QC" /></Field>
+        </div>
       </div>
+
+      {/* Infos du/de la conjoint(e) */}
+      {enCouple && (
+        <div className="rounded-2xl p-5 space-y-5" style={{ background: "rgba(107,140,214,0.05)", border: "1px solid rgba(107,140,214,0.18)" }}>
+          <div>
+            <p className="text-[13px] font-bold text-white mb-0.5">Informations du/de la conjoint(e)</p>
+            <p className="text-[11.5px]" style={{ color: "#94A3B8" }}>Ces informations permettent d'optimiser votre planification financière de couple.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Field label="Prénom et nom"><Input value={conjoint.nom} onChange={fc("nom")} placeholder="Marie Tremblay" /></Field>
+            <Field label="Date de naissance"><Input value={conjoint.dob} onChange={fc("dob")} type="date" /></Field>
+            <Field label="Courriel"><Input value={conjoint.email} onChange={fc("email")} placeholder="marie@exemple.com" /></Field>
+            <Field label="Téléphone"><Input value={conjoint.cell} onChange={fc("cell")} placeholder="514-555-0001" /></Field>
+          </div>
+
+          <div>
+            <p className="text-[12px] font-bold tracking-wider uppercase mb-3" style={{ color: "rgba(107,140,214,0.7)" }}>Situation professionnelle</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Field label="Type d'emploi">
+                <RadioGroup value={conjoint.type_emploi} onChange={fc("type_emploi")} options={[
+                  { value: "salarie", label: "Salarié(e)" },
+                  { value: "autonome", label: "Travailleur autonome" },
+                  { value: "sans_emploi", label: "Sans emploi" },
+                  { value: "retraite", label: "Retraité(e)" },
+                ]} />
+              </Field>
+              <Field label="Employeur / Secteur"><Input value={conjoint.employeur} onChange={fc("employeur")} placeholder="ex: Gouvernement du Québec" /></Field>
+              <Field label="Revenu brut annuel ($)"><Input value={conjoint.revenu_brut} onChange={fc("revenu_brut")} type="number" placeholder="65 000" /></Field>
+              <Field label="Impôt retenu / mois ($)" hint="Retenue à la source">
+                <Input value={conjoint.impot_mensuel} onChange={fc("impot_mensuel")} type="number" placeholder="800" />
+              </Field>
+            </div>
+          </div>
+
+          <div>
+            <p className="text-[12px] font-bold tracking-wider uppercase mb-3" style={{ color: "rgba(107,140,214,0.7)" }}>Épargne & retraite</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Field label="Solde REER ($)"><Input value={conjoint.reer} onChange={fc("reer")} type="number" placeholder="0" /></Field>
+              <Field label="Solde CELI ($)"><Input value={conjoint.celi} onChange={fc("celi")} type="number" placeholder="0" /></Field>
+              <Field label="Autres épargnes ($)"><Input value={conjoint.autres_epargnes} onChange={fc("autres_epargnes")} type="number" placeholder="0" /></Field>
+              <Field label="Âge prévu de retraite"><Input value={conjoint.age_retraite} onChange={fc("age_retraite")} type="number" placeholder="65" /></Field>
+            </div>
+          </div>
+
+          <div>
+            <p className="text-[12px] font-bold tracking-wider uppercase mb-3" style={{ color: "rgba(107,140,214,0.7)" }}>Protections</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Field label="Assurance-vie ?">
+                <RadioGroup value={conjoint.a_assurance_vie} onChange={fc("a_assurance_vie")} options={[
+                  { value: "oui", label: "Oui" }, { value: "non", label: "Non" },
+                ]} />
+              </Field>
+              {conjoint.a_assurance_vie === "oui" && (
+                <Field label="Couverture vie ($)"><Input value={conjoint.couverture_vie} onChange={fc("couverture_vie")} type="number" /></Field>
+              )}
+              <Field label="Assurance invalidité ?">
+                <RadioGroup value={conjoint.a_assurance_invalidite} onChange={fc("a_assurance_invalidite")} options={[
+                  { value: "oui", label: "Oui" }, { value: "non", label: "Non" },
+                ]} />
+              </Field>
+              {conjoint.a_assurance_invalidite === "oui" && (
+                <Field label="Couverture invalidité ($)"><Input value={conjoint.couverture_invalidite} onChange={fc("couverture_invalidite")} type="number" /></Field>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
