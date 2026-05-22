@@ -1037,10 +1037,15 @@ export default function FinancialAnalysis() {
   };
 
   useEffect(() => {
-    base44.entities.FinancialProfile.list().then(profiles => {
+    Promise.all([
+      base44.entities.FinancialProfile.list(),
+      base44.entities.BudgetEntry.list(),
+    ]).then(([profiles, budgetEntries]) => {
       const map = {};
       const done = new Set();
       profiles.forEach(p => { map[p.section] = p.data || {}; if (p.completed) done.add(p.section); });
+      // Marquer budget comme complété si des entrées existent
+      if (budgetEntries.length > 0) done.add("budget");
       setStepData(map);
       setCompletedSteps(done);
     });
