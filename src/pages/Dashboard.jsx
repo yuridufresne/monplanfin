@@ -1,12 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { ArrowRight, Plus, Pencil } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { syncABFToEntities } from "@/hooks/useABFSync";
-import EditDebtModal from "@/components/dashboard/EditDebtModal";
-import EditGoalModal from "@/components/dashboard/EditGoalModal";
 import ResetDataModal from "@/components/dashboard/ResetDataModal";
 
 const fmt = (v) => new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v || 0);
@@ -24,8 +22,6 @@ const glass = {
 export default function Dashboard() {
   const [user, setUser] = useState(null);
   const [synced, setSynced] = useState(false);
-  const [editDebt, setEditDebt] = useState(null);
-  const [editGoal, setEditGoal] = useState(null);
   const [showReset, setShowReset] = useState(false);
 
   useEffect(() => {
@@ -38,9 +34,20 @@ export default function Dashboard() {
   const { data: investments = [] } = useQuery({ queryKey: ["investments"], queryFn: () => base44.entities.Investment.list(), enabled: synced });
   const { data: debts = [] } = useQuery({ queryKey: ["debts"], queryFn: () => base44.entities.Debt.list(), enabled: synced });
   const { data: goals = [] } = useQuery({ queryKey: ["goals"], queryFn: () => base44.entities.FinancialGoal.list(), enabled: synced });
+  const { data: profiles = [] } = useQuery({ queryKey: ["financialProfiles"], queryFn: () => base44.entities.FinancialProfile.list(), enabled: synced });
 
   // ── Calculs ────────────────────────────────────────────────────────────────
-  const totalRevenue = budgetEntries.filter(e => e.type === "revenu").reduce((s, e) => s + (e.amount || 0), 0);
+  // Revenus lus UNIQUEMENT depuis l'ABF (source unique de vérité)
+  const totalRevenue = useMemo(() => {
+    const revenuProfile = profiles.find(p => p.section === "revenu");
+    const raw = revenuProfile?.data || {};
+    const data = raw.data || raw;
+    const emplois = data.emplois || [];
+    const sides = data.sidehustles || [];
+    return emplois.reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0) / 12, 0)
+         + sides.reduce((s, sh) => s + (parseFloat(sh.revenu_mensuel_moyen) || 0), 0);
+  }, [profiles]);
+
   const totalExpenses = budgetEntries.filter(e => e.type === "depense").reduce((s, e) => s + (e.amount || 0), 0);
   const balance = totalRevenue - totalExpenses;
   const savingsRate = totalRevenue > 0 ? (balance / totalRevenue) * 100 : 0;
@@ -54,7 +61,7 @@ export default function Dashboard() {
   const annualExpenses = totalExpenses * 12;
   const nifTarget = annualExpenses * 25;
   const highRateDebt = debts.filter(d => d.interest_rate > 15);
-  const isEmpty = budgetEntries.length === 0 && investments.length === 0 && debts.length === 0;
+  const isEmpty = budgetEntries.length === 0 && investments.length === 0 && debts.length === 0 && profiles.length === 0;
 
   return (
     <div style={{ background: "linear-gradient(135deg, #050810 0%, #080d1a 60%, #050810 100%)", minHeight: "100vh", position: "relative", overflow: "hidden" }}>
@@ -63,18 +70,6 @@ export default function Dashboard() {
       <div style={{ position: "absolute", bottom: "5%", left: "-12%", width: 600, height: 600, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(107,142,214,0.07) 0%, transparent 70%)", pointerEvents: "none" }} />
 
       {/* Modals */}
-      {editDebt !== null && (
-        <EditDebtModal
-          debt={editDebt === "new" ? null : editDebt}
-          onClose={() => setEditDebt(null)}
-        />
-      )}
-      {editGoal !== null && (
-        <EditGoalModal
-          goal={editGoal === "new" ? null : editGoal}
-          onClose={() => setEditGoal(null)}
-        />
-      )}
       {showReset && <ResetDataModal onClose={() => setShowReset(false)} />}
 
       <div className="relative max-w-7xl mx-auto px-6 lg:px-10 py-14 md:py-20">
@@ -111,7 +106,7 @@ export default function Dashboard() {
                 { label: "NIF (Cible)", val: fmt(nifTarget), sub: "Dépenses annuelles × 25", color: "#5BC4A0" },
                 { label: "Valeur nette", val: fmt(netWorth), sub: "Actifs − Passifs", color: "#fff" },
                 { label: "Ratio d'endettement", val: `${debtRatio.toFixed(1)} %`, sub: "Passifs / Actifs", color: debtRatio < 50 ? "#5BC4A0" : debtRatio < 80 ? "#f59e0b" : "#f87171" },
-                { label: "Revenu mensuel", val: fmt(totalRevenue), sub: `${budgetEntries.filter(e => e.type === "revenu").length} source(s)`, color: "#C9A063" },
+                { label: "Revenu mensuel", val: fmt(totalRevenue), sub: "Source : ABF", color: "#C9A063" },
               ].map((item) => (
                 <div key={item.label}>
                   <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(148,163,184,0.5)", marginBottom: 10 }}>{item.label}</p>
@@ -141,7 +136,7 @@ export default function Dashboard() {
             {/* Second row — 4 KPI cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
               {[
-                { label: "Revenus mensuels", value: fmt(totalRevenue), sub: `${budgetEntries.filter(e => e.type === "revenu").length} source(s)`, color: "#5BC4A0" },
+                { label: "Revenus mensuels", value: fmt(totalRevenue), sub: "Source : ABF", color: "#5BC4A0" },
                 { label: "Dépenses mensuelles", value: fmt(totalExpenses), sub: `${budgetEntries.filter(e => e.type === "depense").length} poste(s)`, color: "#f87171" },
                 { label: "Total des dettes", value: fmt(totalDebt), sub: `${debts.length} obligation(s)`, color: totalDebt > 0 ? "#f87171" : "#5BC4A0" },
                 { label: "Placements", value: fmt(totalAssets), sub: `${fmtPct(investmentGainPct)} vs coût`, color: "#DEFF9A" },
@@ -168,9 +163,9 @@ export default function Dashboard() {
                       <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(201,160,99,0.5)", marginBottom: 4 }}>Dettes</p>
                       <h3 style={{ fontFamily: "var(--font-urbanist)", fontSize: 17, fontWeight: 700, color: "#fff" }}>Obligations financières</h3>
                     </div>
-                    <button onClick={() => setEditDebt("new")} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 600, color: "#C9A063", background: "rgba(201,160,99,0.1)", border: "1px solid rgba(201,160,99,0.2)", padding: "6px 12px", borderRadius: 10 }}>
-                      <Plus style={{ width: 12, height: 12 }} /> Ajouter
-                    </button>
+                    <Link to="/analyse" style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 600, color: "#94A3B8", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", padding: "6px 12px", borderRadius: 10, textDecoration: "none" }}>
+                      Modifier dans l'ABF →
+                    </Link>
                   </div>
                   <div style={{ padding: "0.75rem 2rem" }}>
                     {debts.length === 0 ? (
@@ -181,12 +176,7 @@ export default function Dashboard() {
                           <p style={{ fontSize: 13.5, fontWeight: 600, color: "#fff", marginBottom: 3 }}>{debt.name}</p>
                           <p style={{ fontSize: 11.5, color: "#94A3B8" }}>{debt.interest_rate}% · {debt.type}</p>
                         </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          <p style={{ fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 700, color: "#f87171" }}>{fmt(debt.balance)}</p>
-                          <button onClick={() => setEditDebt(debt)} style={{ padding: 6, borderRadius: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-                            <Pencil style={{ width: 11, height: 11, color: "#94A3B8" }} />
-                          </button>
-                        </div>
+                        <p style={{ fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 700, color: "#f87171" }}>{fmt(debt.balance)}</p>
                       </div>
                     ))}
                   </div>
@@ -201,15 +191,15 @@ export default function Dashboard() {
                       <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(201,160,99,0.5)", marginBottom: 4 }}>Objectifs financiers</p>
                       <h3 style={{ fontFamily: "var(--font-urbanist)", fontSize: 17, fontWeight: 700, color: "#fff" }}>Progression</h3>
                     </div>
-                    <button onClick={() => setEditGoal("new")} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 600, color: "#C9A063", background: "rgba(201,160,99,0.1)", border: "1px solid rgba(201,160,99,0.2)", padding: "6px 12px", borderRadius: 10 }}>
-                      <Plus style={{ width: 12, height: 12 }} /> Ajouter
-                    </button>
+                    <Link to="/analyse" style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 600, color: "#94A3B8", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", padding: "6px 12px", borderRadius: 10, textDecoration: "none" }}>
+                      Modifier dans l'ABF →
+                    </Link>
                   </div>
                   <div style={{ padding: "1.75rem 2rem" }}>
                     {goals.length === 0 ? (
                       <div style={{ textAlign: "center", padding: "1rem 0" }}>
                         <p style={{ fontSize: 13, fontWeight: 300, color: "#94A3B8", marginBottom: 10 }}>Aucun objectif défini</p>
-                        <p style={{ fontSize: 12, color: "rgba(148,163,184,0.5)" }}>Complétez la section "Objectifs" dans l'ABF ou ajoutez-en un ici.</p>
+                        <Link to="/analyse" style={{ fontSize: 12, color: "#C9A063", textDecoration: "none" }}>Complétez la section "Objectifs" dans l'ABF →</Link>
                       </div>
                     ) : (
                       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -221,9 +211,6 @@ export default function Dashboard() {
                                 <span style={{ fontSize: 13.5, fontWeight: 600, color: "#fff" }}>{goal.title}</span>
                                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                                   <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "#C9A063", fontWeight: 700 }}>{Math.round(progress)}%</span>
-                                  <button onClick={() => setEditGoal(goal)} style={{ padding: 5, borderRadius: 7, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-                                    <Pencil style={{ width: 10, height: 10, color: "#94A3B8" }} />
-                                  </button>
                                 </div>
                               </div>
                               <div style={{ height: 5, borderRadius: 99, background: "rgba(255,255,255,0.07)", overflow: "hidden", marginBottom: 5 }}>
