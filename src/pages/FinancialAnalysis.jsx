@@ -522,6 +522,19 @@ function DettesPanel({ data, setData }) {
           </div>
         )}
       </div>
+      {/* PENSION ALIMENTAIRE */}
+      <div className="rounded-xl p-4 space-y-4" style={{ background: "rgba(245,158,11,0.04)", border: "1px solid rgba(245,158,11,0.15)" }}>
+        <p className="text-[14px] font-semibold text-white">Pension alimentaire</p>
+        <Field label="Payez-vous une pension alimentaire ?">
+          <RadioGroup value={data.a_pension} onChange={f("a_pension")} options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]} />
+        </Field>
+        {data.a_pension === "oui" && (
+          <Field label="Montant mensuel ($)">
+            <Input value={data.pension_mensuelle} onChange={f("pension_mensuelle")} type="number" placeholder="0" />
+          </Field>
+        )}
+      </div>
+
       {totalDettes > 0 && (
         <div className="rounded-xl px-5 py-4 flex items-center justify-between"
           style={{ background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.15)" }}>

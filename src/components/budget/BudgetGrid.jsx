@@ -114,7 +114,7 @@ const SECTIONS = [
     color: "#f59e0b",
     rows: [
       { label: "Impôts (retenues à la source)",         category: "divers",           type: "depense", abfReadOnly: true },
-      { label: "Pension alimentaire",                   category: "divers",           type: "depense" },
+      { label: "Pension alimentaire",                   category: "divers",           type: "depense", abfReadOnly: true },
     ],
   },
 ];
@@ -237,9 +237,10 @@ export default function BudgetGrid({ onClose, onSaved }) {
         }
       }
 
-      // 3. Toujours pré-remplir les impôts depuis l'ABF (read-only, source unique)
+      // 3. Toujours pré-remplir les impôts et pension alimentaire depuis l'ABF (read-only)
       const bySection = {};
       profiles.forEach(p => { bySection[p.section] = p.data || {}; });
+
       const revData = bySection["revenu"];
       if (revData) {
         const rd = revData.data || revData;
@@ -251,6 +252,11 @@ export default function BudgetGrid({ onClose, onSaved }) {
           totalImpot += freq === "annuel" ? saisi / 12 : saisi;
         }
         if (totalImpot > 0) prefill["Impôts (retenues à la source)"] = totalImpot.toFixed(0);
+      }
+
+      const dettesData = bySection["dettes"];
+      if (dettesData?.a_pension === "oui" && dettesData?.pension_mensuelle) {
+        prefill["Pension alimentaire"] = String(parseFloat(dettesData.pension_mensuelle) || 0);
       }
 
       setValues(prev => ({ ...prev, ...prefill }));
