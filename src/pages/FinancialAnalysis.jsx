@@ -418,25 +418,19 @@ function CompteEpargneSection({ type, label, comptes, setComptes }) {
   }));
   const list = comptes[type] || [];
 
+  const tooltipText = COMPTES_TYPES.find(t => t.key === type)?.tooltip;
   return (
     <div className="rounded-xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
       <div className="flex items-center justify-between px-4 py-3" style={{ background: "rgba(255,255,255,0.03)" }}>
-        <p className="text-[13px] font-semibold text-white">{label}</p>
+        <p className="text-[13px] font-semibold text-white">
+          {label}
+          {tooltipText && <InfoTooltip explanation={tooltipText} position="bottom" />}
+        </p>
         <button onClick={addCompte} className="text-[11px] font-semibold px-3 py-1 rounded-lg"
           style={{ background: "rgba(201,160,99,0.1)", color: "#C9A063", border: "1px solid rgba(201,160,99,0.2)" }}>
           + Ajouter
         </button>
       </div>
-      {/* Info tooltip */}
-      {type && COMPTES_TYPES.find(t => t.key === type)?.tooltip && (
-        <div className="px-4 pt-2 pb-1">
-          <div className="flex items-start gap-2">
-            <p className="text-[11px] text-white" style={{ color: "rgba(255,255,255,0.7)" }}>
-              <InfoTooltip explanation={COMPTES_TYPES.find(t => t.key === type)?.tooltip} position="bottom" />
-            </p>
-          </div>
-        </div>
-      )}
       {list.length > 0 && (
         <div className="px-4 pb-3 space-y-3 pt-2">
           {list.map((c, i) => (
