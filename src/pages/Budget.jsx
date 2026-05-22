@@ -66,30 +66,21 @@ export default function Budget() {
     }
   };
 
-  // Revenus et impôts calculés depuis l'ABF uniquement
-  const { totalRev, totalImpots } = useMemo(() => {
+  // Revenus calculés depuis l'ABF (source unique de vérité)
+  const totalRev = useMemo(() => {
     const revenuProfile = profiles.find(p => p.section === "revenu");
     const raw = revenuProfile?.data || {};
     const data = raw.data || raw;
     const emplois = data.emplois || [];
     const sides = data.sidehustles || [];
-    const rev = emplois.reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0) / 12, 0)
+    return emplois.reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0) / 12, 0)
       + sides.reduce((s, sh) => s + (parseFloat(sh.revenu_mensuel_moyen) || 0), 0);
-    const impots = emplois.reduce((s, e) => {
-      const saisi = parseFloat(e.impot_saisi || e.impot_mensuel) || 0;
-      const freq = e.impot_freq || "mensuel";
-      return s + (freq === "annuel" ? saisi / 12 : saisi);
-    }, 0);
-    return { totalRev: rev, totalImpots: impots };
   }, [profiles]);
 
-  // Entrées budget = dépenses uniquement
+  // Dépenses = uniquement depuis BudgetEntry (impôts et pension inclus via source: "abf")
   const revenus = entries.filter(e => e.type === "revenu");
   const depenses = entries.filter(e => e.type === "depense");
-  // Total dépenses = entrées BudgetEntry + impôts ABF (si pas déjà en BudgetEntry)
-  const hasImpotsEntry = depenses.some(e => e.label === "Impôts (retenues à la source)");
-  const totalDep = depenses.reduce((s, e) => s + toMonthly(e.amount, e.frequency), 0)
-    + (hasImpotsEntry ? 0 : totalImpots);
+  const totalDep = depenses.reduce((s, e) => s + toMonthly(e.amount, e.frequency), 0);
   const balance = totalRev - totalDep;
 
   const pieData = Object.entries(
