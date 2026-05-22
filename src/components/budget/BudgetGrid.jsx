@@ -212,10 +212,11 @@ export default function BudgetGrid({ onClose, onSaved }) {
       const prefill = {};
       const prefillFreqs = {};
 
-      // 1. Pré-remplir depuis les entrées existantes en BD
+      // 1. Pré-remplir depuis les entrées existantes en BD (sauf les lignes abfReadOnly)
+      const abfReadOnlyLabels = new Set(SECTIONS.flatMap(s => s.rows).filter(r => r.abfReadOnly).map(r => r.label));
       const allLabels = SECTIONS.flatMap(s => s.rows).map(r => r.label);
       existing.forEach(e => {
-        if (allLabels.includes(e.label)) {
+        if (allLabels.includes(e.label) && !abfReadOnlyLabels.has(e.label)) {
           prefill[e.label] = String(e.amount || "");
           if (e.frequency === "annuel") prefillFreqs[e.label] = "annuel";
         }
