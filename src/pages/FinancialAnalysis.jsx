@@ -219,9 +219,17 @@ function StepProfilPersonnel({ data, setData }) {
   );
 }
 
-function StepRevenu({ data, setData }) {
-  const f = (k) => (v) => setData(p => ({ ...p, [k]: v }));
+const SIDE_TYPES = [
+  { value: "uber", label: "Uber / Lyft" },
+  { value: "doordash", label: "DoorDash / Uber Eats" },
+  { value: "airbnb", label: "Airbnb" },
+  { value: "freelance", label: "Freelance" },
+  { value: "vente_en_ligne", label: "Vente en ligne" },
+  { value: "investissement", label: "Revenus de placements" },
+  { value: "autre", label: "Autre" },
+];
 
+function RevenuPanel({ data, setData }) {
   const emplois = data.emplois || [{ employeur: "", poste: "", revenu_brut: "", impot_mensuel: "", type: "salarie" }];
   const sidehustles = data.sidehustles || [];
 
@@ -242,19 +250,10 @@ function StepRevenu({ data, setData }) {
   const totalBrut = emplois.reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0), 0)
     + sidehustles.reduce((s, e) => s + (parseFloat(e.revenu_mensuel_moyen) || 0) * 12, 0);
 
-  const SIDE_TYPES = [
-    { value: "uber", label: "Uber / Lyft" },
-    { value: "doordash", label: "DoorDash / Uber Eats" },
-    { value: "airbnb", label: "Airbnb" },
-    { value: "freelance", label: "Freelance" },
-    { value: "vente_en_ligne", label: "Vente en ligne" },
-    { value: "investissement", label: "Revenus de placements" },
-    { value: "autre", label: "Autre" },
-  ];
+  const f = (k) => (v) => setData(p => ({ ...p, [k]: v }));
 
   return (
     <div className="space-y-7">
-
       {/* EMPLOIS */}
       <div>
         <div className="flex items-center justify-between mb-3">
@@ -308,13 +307,11 @@ function StepRevenu({ data, setData }) {
             + Ajouter
           </button>
         </div>
-
         {sidehustles.length === 0 && (
           <div className="rounded-xl px-4 py-3 text-[12px]" style={{ background: "rgba(255,255,255,0.02)", border: "1px dashed rgba(255,255,255,0.08)", color: "#94A3B8" }}>
             Aucun revenu supplémentaire. Cliquez sur "+ Ajouter" si applicable.
           </div>
         )}
-
         <div className="space-y-3">
           {sidehustles.map((s, i) => (
             <div key={i} className="rounded-xl p-4 relative" style={{ background: "rgba(245,158,11,0.04)", border: "1px solid rgba(245,158,11,0.15)" }}>
@@ -350,7 +347,7 @@ function StepRevenu({ data, setData }) {
         </div>
       </div>
 
-      {/* TOTAL SUMMARY */}
+      {/* TOTAL */}
       {totalBrut > 0 && (
         <div className="rounded-xl px-5 py-4 flex items-center justify-between"
           style={{ background: "rgba(201,160,99,0.07)", border: "1px solid rgba(201,160,99,0.2)" }}>
@@ -367,6 +364,52 @@ function StepRevenu({ data, setData }) {
       </Field>
       {data.retour_impot === "oui" && (
         <Field label="Montant estimé du retour ($)"><Input value={data.montant_retour} onChange={f("montant_retour")} type="number" /></Field>
+      )}
+    </div>
+  );
+}
+
+function StepRevenu({ data, setData, stepData }) {
+  const [activeTab, setActiveTab] = useState("principal");
+
+  const profilData = stepData?.profil_personnel || {};
+  const enCouple = ["marie", "conjoint", "union_civile"].includes(profilData.situation);
+  const nomPrincipal = profilData.nom ? profilData.nom.split(" ")[0] : "Principal(e)";
+  const nomConjoint = profilData.conjoint?.nom ? profilData.conjoint.nom.split(" ")[0] : "Conjoint(e)";
+
+  // Données principal = racine de data, données conjoint = data.conjoint
+  const setConjointData = (updater) => setData(p => ({
+    ...p,
+    conjoint: typeof updater === "function" ? updater(p.conjoint || {}) : updater,
+  }));
+
+  return (
+    <div className="space-y-5">
+      {/* Onglets Principal / Conjoint */}
+      {enCouple && (
+        <div className="flex gap-2 p-1 rounded-xl" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+          {[
+            { key: "principal", label: nomPrincipal, color: "#C9A063" },
+            { key: "conjoint", label: nomConjoint, color: "#6B8ED6" },
+          ].map(tab => (
+            <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+              className="flex-1 py-2 rounded-lg text-[13px] font-semibold transition-all"
+              style={activeTab === tab.key
+                ? { background: tab.color, color: tab.key === "principal" ? "#050810" : "#fff" }
+                : { color: "rgba(255,255,255,0.45)" }
+              }>
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Contenu */}
+      {(!enCouple || activeTab === "principal") && (
+        <RevenuPanel data={data} setData={setData} />
+      )}
+      {enCouple && activeTab === "conjoint" && (
+        <RevenuPanel data={data.conjoint || {}} setData={setConjointData} />
       )}
     </div>
   );
@@ -917,7 +960,7 @@ export default function FinancialAnalysis() {
                 <span className="ml-auto text-[12px]" style={{ color: "#94A3B8" }}>{currentStep + 1} / {STEPS.length}</span>
               </div>
               <div className="p-8">
-                <StepComponent data={data} setData={setData} />
+                <StepComponent data={data} setData={setData} stepData={stepData} />
               </div>
               <div className="px-8 py-5 flex justify-between" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
                 <button
