@@ -84,8 +84,19 @@ export default function Budget() {
   const balance = totalRev - totalDep;
 
   const pieData = Object.entries(
-    depenses.reduce((acc, e) => { acc[e.category] = (acc[e.category] || 0) + toMonthly(e.amount, e.frequency); return acc; }, {})
-  ).map(([name, value]) => ({ name: CATEGORY_LABELS[name] || name, value: Math.round(value) }));
+    depenses.reduce((acc, e) => {
+      // Grouper impôts et obligations légales
+      if (e.label === "Impôts (retenues à la source)" || e.label === "Pension alimentaire") {
+        acc["impots_obligations"] = (acc["impots_obligations"] || 0) + toMonthly(e.amount, e.frequency);
+      } else {
+        acc[e.category] = (acc[e.category] || 0) + toMonthly(e.amount, e.frequency);
+      }
+      return acc;
+    }, {})
+  ).map(([name, value]) => ({ 
+    name: name === "impots_obligations" ? "Impôts & Obligations" : (CATEGORY_LABELS[name] || name), 
+    value: Math.round(value) 
+  }));
 
   const displayed = activeTab === "revenus" ? revenus : depenses;
 
