@@ -216,7 +216,7 @@ export default function Budget() {
                     <Pie data={pieData} cx="50%" cy="50%" innerRadius={55} outerRadius={85} dataKey="value">
                       {pieData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                     </Pie>
-                    <Tooltip formatter={(v) => fmt(v)} contentStyle={{ background: "rgba(10,15,30,0.4)", backdropFilter: "blur(16px)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 12, color: "#ffffff", fontSize: 12 }} />
+                    <Tooltip formatter={(v) => fmt(v)} contentStyle={{ background: "rgba(10,15,30,0.85)", backdropFilter: "blur(16px)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 12, color: "#ffffff", fontSize: 12 }} itemStyle={{ color: "#ffffff" }} labelStyle={{ color: "#ffffff" }} />
                   </PieChart>
                 </ResponsiveContainer>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 16 }}>
