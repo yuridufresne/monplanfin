@@ -261,8 +261,9 @@ export default function BudgetGrid({ onClose, onSaved }) {
 
       setValues(prev => ({ ...prev, ...prefill }));
       setFreqs(prev => ({ ...prev, ...prefillFreqs }));
-      if (Object.keys(prefill).length > 0) {
-        setOpenSections(prev => ({ ...prev, 9: true }));
+      // Ouvrir la section impôts (index 9 = épargne, index 10 = impôts & obligations légales)
+      if (prefill["Impôts (retenues à la source)"] || prefill["Pension alimentaire"]) {
+        setOpenSections(prev => ({ ...prev, 10: true }));
       }
     });
   }, []);
@@ -283,7 +284,7 @@ export default function BudgetGrid({ onClose, onSaved }) {
     setSaving(true);
 
     const entries = allRows
-      .filter(r => parseFloat(values[r.label]) > 0)
+      .filter(r => parseFloat(values[r.label]) > 0 && !r.abfReadOnly)
       .map(r => ({
         category: r.category,
         label: r.label,

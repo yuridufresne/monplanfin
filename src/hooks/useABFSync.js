@@ -41,6 +41,24 @@ export async function syncABFToEntities() {
     }
   }
 
+  // ── 1c. PENSION ALIMENTAIRE (ABF dettes → BudgetEntry dépense) ───────────
+  const dettesRevData = bySection["dettes"];
+  if (dettesRevData?.a_pension === "oui" && dettesRevData?.pension_mensuelle) {
+    const montant = parseFloat(dettesRevData.pension_mensuelle) || 0;
+    if (montant > 0) {
+      const label = "Pension alimentaire";
+      const existing = await base44.entities.BudgetEntry.filter({ label });
+      if (existing.length === 0) {
+        await base44.entities.BudgetEntry.create({
+          category: "divers", label, amount: montant,
+          type: "depense", frequency: "mensuel", is_fixed: true, source: "abf",
+        });
+      } else {
+        await base44.entities.BudgetEntry.update(existing[0].id, { amount: montant, source: "abf" });
+      }
+    }
+  }
+
   // ── 2. DETTES (ABF dettes → Debt) ─────────────────────────────────────────
   const dettesData = bySection["dettes"];
   if (dettesData) {
