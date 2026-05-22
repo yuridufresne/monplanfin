@@ -502,28 +502,21 @@ function RetraitePanel({ data, setData }) {
 
       {/* Fonds de pension */}
       <div>
-        <div className="flex items-center gap-2 mb-3">
-          <p className="text-[14px] font-semibold text-white">Fonds de pension (employeur)</p>
+        <p className="text-[14px] font-semibold text-white mb-3">
+          Fonds de pension (employeur)
           <InfoTooltip explanation="Régime de retraite offert par votre employeur. Deux types : cotisation déterminée (vous connaissez votre contribution) ou prestation déterminée (vous connaissez votre revenu de retraite assuré)." position="right" />
-        </div>
+        </p>
         <Field label="Avez-vous un fonds de pension au travail ?">
           <RadioGroup value={data.a_fond_pension} onChange={f("a_fond_pension")} options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]} />
         </Field>
         {data.a_fond_pension === "oui" && (
           <div className="mt-4 rounded-xl p-4 space-y-4" style={{ background: "rgba(107,140,214,0.05)", border: "1px solid rgba(107,140,214,0.18)" }}>
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <span className="text-[12.5px] font-semibold" style={{ color: "#94A3B8" }}>Type de régime</span>
-                <InfoTooltip 
-                  explanation="CD: Vous versez chaque mois, la retraite dépend des rendements. PD: Votre employeur garantit votre revenu de retraite."
-                  position="right"
-                />
-              </div>
+            <Field label={<span>Type de régime <InfoTooltip explanation="CD: Vous versez chaque mois, la retraite dépend des rendements. PD: Votre employeur garantit votre revenu de retraite." position="right" /></span>}>
               <RadioGroup value={fondPension.type} onChange={v => setFondPension("type", v)} options={[
                 { value: "cotisation_determinee", label: "Cotisation déterminée" },
                 { value: "prestation_determinee", label: "Prestation déterminée" },
               ]} />
-            </div>
+            </Field>
             <Field label="Institution / Gestionnaire"><Input value={fondPension.institution} onChange={v => setFondPension("institution", v)} placeholder="ex: Sun Life, Manulife, CAAT..." /></Field>
 
             {fondPension.type === "cotisation_determinee" && (
@@ -548,7 +541,10 @@ function RetraitePanel({ data, setData }) {
 
       {/* Comptes d'épargne */}
       <div>
-        <p className="text-[14px] font-semibold text-white mb-1">Comptes d'épargne & placements</p>
+        <p className="text-[14px] font-semibold text-white mb-1">
+          Comptes d'épargne & placements
+          <InfoTooltip explanation="Différents véhicules de placement : comptes non enregistrés, CELI, REER, REEE, etc. Chacun offre des avantages fiscaux différents." position="right" />
+        </p>
         <p className="text-[12px] mb-3" style={{ color: "#94A3B8" }}>Ajoutez un compte par ligne si vous en avez plusieurs du même type.</p>
         <div className="space-y-2">
           {COMPTES_TYPES.map(t => (
