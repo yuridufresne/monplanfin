@@ -38,17 +38,26 @@ export default function Dashboard() {
 
   // ── Calculs ────────────────────────────────────────────────────────────────
   // Revenus lus UNIQUEMENT depuis l'ABF (source unique de vérité)
-  const totalRevenue = useMemo(() => {
+  const { totalRevenue, totalImpots } = useMemo(() => {
     const revenuProfile = profiles.find(p => p.section === "revenu");
     const raw = revenuProfile?.data || {};
     const data = raw.data || raw;
     const emplois = data.emplois || [];
     const sides = data.sidehustles || [];
-    return emplois.reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0) / 12, 0)
+    const rev = emplois.reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0) / 12, 0)
       + sides.reduce((s, sh) => s + (parseFloat(sh.revenu_mensuel_moyen) || 0), 0);
+    const impots = emplois.reduce((s, e) => {
+      const saisi = parseFloat(e.impot_saisi || e.impot_mensuel) || 0;
+      const freq = e.impot_freq || "mensuel";
+      return s + (freq === "annuel" ? saisi / 12 : saisi);
+    }, 0);
+    return { totalRevenue: rev, totalImpots: impots };
   }, [profiles]);
 
-  const totalExpenses = budgetEntries.filter(e => e.type === "depense").reduce((s, e) => s + (e.amount || 0), 0);
+  const depenseEntries = budgetEntries.filter(e => e.type === "depense");
+  const hasImpotsEntry = depenseEntries.some(e => e.label === "Impôts (retenues à la source)");
+  const totalExpenses = depenseEntries.reduce((s, e) => s + (e.amount || 0), 0)
+    + (hasImpotsEntry ? 0 : totalImpots);
   const balance = totalRevenue - totalExpenses;
   const savingsRate = totalRevenue > 0 ? (balance / totalRevenue) * 100 : 0;
   const totalAssets = investments.reduce((s, i) => s + (i.current_value || 0), 0);
