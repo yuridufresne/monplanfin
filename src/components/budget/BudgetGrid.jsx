@@ -291,9 +291,9 @@ export default function BudgetGrid({ onClose, onSaved }) {
       .map(r => ({
         category: r.category,
         label: r.label,
-        amount: monthlyAmount(r),
+        amount: parseFloat(values[r.label]),
         type: r.type,
-        frequency: "mensuel",
+        frequency: freqs[r.label] === "annuel" ? "annuel" : "mensuel",
         is_fixed: true,
         ...(r.abfReadOnly ? { source: "abf" } : {}),
       }));
@@ -307,7 +307,13 @@ export default function BudgetGrid({ onClose, onSaved }) {
 
     await Promise.all([
       ...toCreate.length > 0 ? [base44.entities.BudgetEntry.bulkCreate(toCreate)] : [],
-      ...toUpdate.map(e => base44.entities.BudgetEntry.update(existingByLabel[e.label].id, { amount: e.amount, frequency: e.frequency })),
+      ...toUpdate.map(e => base44.entities.BudgetEntry.update(existingByLabel[e.label].id, {
+        amount: e.amount,
+        frequency: e.frequency,
+        category: e.category,
+        type: e.type,
+        ...(e.source ? { source: e.source } : {}),
+      })),
     ]);
 
     qc.invalidateQueries({ queryKey: ["budgetEntries"] });
