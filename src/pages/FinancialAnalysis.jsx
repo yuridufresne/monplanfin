@@ -324,7 +324,29 @@ function StepRevenu({ data, setData, stepData }) {
   );
 }
 
-function StepRetraite({ data, setData }) {
+// ── Composant réutilisable pour les onglets Principal / Conjoint ─────────────
+function PersonTabs({ activeTab, setActiveTab, nomPrincipal, nomConjoint }) {
+  return (
+    <div className="flex gap-2 p-1 rounded-xl" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+      {[
+        { key: "principal", label: nomPrincipal, color: "#C9A063", textColor: "#050810" },
+        { key: "conjoint", label: nomConjoint, color: "#6B8ED6", textColor: "#fff" },
+      ].map(tab => (
+        <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+          className="flex-1 py-2 rounded-lg text-[13px] font-semibold transition-all"
+          style={activeTab === tab.key
+            ? { background: tab.color, color: tab.textColor }
+            : { color: "rgba(255,255,255,0.45)" }
+          }>
+          {tab.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ── Retraite ─────────────────────────────────────────────────────────────────
+function RetraitePanel({ data, setData }) {
   const f = (k) => (v) => setData(p => ({ ...p, [k]: v }));
   return (
     <div className="space-y-5">
@@ -353,32 +375,41 @@ function StepRetraite({ data, setData }) {
   );
 }
 
-function StepDettes({ data, setData }) {
-  const f = (k) => (v) => setData(p => ({ ...p, [k]: v }));
+function StepRetraite({ data, setData, stepData }) {
+  const [activeTab, setActiveTab] = useState("principal");
+  const profilData = stepData?.profil_personnel || {};
+  const enCouple = ["marie", "conjoint", "union_civile"].includes(profilData.situation);
+  const nomPrincipal = profilData.nom ? profilData.nom.split(" ")[0] : "Principal(e)";
+  const nomConjoint = profilData.conjoint?.nom ? profilData.conjoint.nom.split(" ")[0] : "Conjoint(e)";
+  const setConjointData = (updater) => setData(p => ({ ...p, conjoint: typeof updater === "function" ? updater(p.conjoint || {}) : updater }));
 
+  return (
+    <div className="space-y-5">
+      {enCouple && <PersonTabs activeTab={activeTab} setActiveTab={setActiveTab} nomPrincipal={nomPrincipal} nomConjoint={nomConjoint} />}
+      {(!enCouple || activeTab === "principal") && <RetraitePanel data={data} setData={setData} />}
+      {enCouple && activeTab === "conjoint" && <RetraitePanel data={data.conjoint || {}} setData={setConjointData} />}
+    </div>
+  );
+}
+
+// ── Dettes ───────────────────────────────────────────────────────────────────
+function DettesPanel({ data, setData }) {
+  const f = (k) => (v) => setData(p => ({ ...p, [k]: v }));
   const hypotheques = data.hypotheques || [];
   const dettes = data.dettes || [];
-
   const updateHypo = (i, k, v) => setData(p => ({ ...p, hypotheques: hypotheques.map((h, idx) => idx === i ? { ...h, [k]: v } : h) }));
   const addHypo = () => setData(p => ({ ...p, hypotheques: [...hypotheques, { adresse: "", prix_achat: "", annee_achat: "", solde: "", taux: "", type_taux: "fixe", terme_restant: "", amortissement_initial: "", amortissement_restant: "", paiement_mensuel: "", mise_de_fonds_pct: "", usage: "principale" }] }));
   const removeHypo = (i) => setData(p => ({ ...p, hypotheques: hypotheques.filter((_, idx) => idx !== i) }));
-
   const updateDette = (i, k, v) => setData(p => ({ ...p, dettes: dettes.map((d, idx) => idx === i ? { ...d, [k]: v } : d) }));
   const addDette = () => setData(p => ({ ...p, dettes: [...dettes, { type: "", solde: "", taux: "", paiement_min: "" }] }));
   const removeDette = (i) => setData(p => ({ ...p, dettes: dettes.filter((_, idx) => idx !== i) }));
-
-  const totalDettes = dettes.reduce((s, d) => s + (parseFloat(d.solde) || 0), 0)
-    + hypotheques.reduce((s, h) => s + (parseFloat(h.solde) || 0), 0);
+  const totalDettes = dettes.reduce((s, d) => s + (parseFloat(d.solde) || 0), 0) + hypotheques.reduce((s, h) => s + (parseFloat(h.solde) || 0), 0);
 
   return (
     <div className="space-y-7">
-
-      {/* ── CRÉDIT ── */}
       <Field label="Connaissez-vous votre cote de crédit ?">
         <RadioGroup value={data.connait_cote} onChange={f("connait_cote")} options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]} />
       </Field>
-
-      {/* ── HYPOTHÈQUES ── */}
       <div>
         <div className="flex items-center justify-between mb-3">
           <div>
@@ -390,11 +421,9 @@ function StepDettes({ data, setData }) {
             + Ajouter une hypothèque
           </button>
         </div>
-
         <Field label="Détenez-vous au moins une hypothèque ?">
           <RadioGroup value={data.a_hypotheque} onChange={f("a_hypotheque")} options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]} />
         </Field>
-
         {data.a_hypotheque === "oui" && (
           <div className="space-y-4 mt-4">
             {hypotheques.length === 0 && (
@@ -409,7 +438,6 @@ function StepDettes({ data, setData }) {
                   <p className="text-[12px] font-bold tracking-wider uppercase" style={{ color: "rgba(201,160,99,0.6)" }}>Hypothèque {i + 1}</p>
                   <button onClick={() => removeHypo(i)} className="text-[11px] px-2 py-1 rounded" style={{ color: "rgba(248,113,113,0.7)" }}>✕ Retirer</button>
                 </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Field label="Usage de la propriété">
                     <RadioGroup value={h.usage} onChange={v => updateHypo(i, "usage", v)} options={[
@@ -418,45 +446,20 @@ function StepDettes({ data, setData }) {
                       { value: "secondaire", label: "Résidence secondaire" },
                     ]} />
                   </Field>
-                  <Field label="Adresse / Description">
-                    <Input value={h.adresse} onChange={v => updateHypo(i, "adresse", v)} placeholder="ex: 123 rue des Érables, Montréal" />
-                  </Field>
-                  <Field label="Prix d'achat ($)">
-                    <Input type="number" value={h.prix_achat} onChange={v => updateHypo(i, "prix_achat", v)} placeholder="350 000" />
-                  </Field>
-                  <Field label="Année d'achat">
-                    <Input type="number" value={h.annee_achat} onChange={v => updateHypo(i, "annee_achat", v)} placeholder="2019" />
-                  </Field>
-                  <Field label="Mise de fonds (%)">
-                    <Input type="number" value={h.mise_de_fonds_pct} onChange={v => updateHypo(i, "mise_de_fonds_pct", v)} placeholder="20" />
-                  </Field>
-                  <Field label="Solde hypothécaire actuel ($)">
-                    <Input type="number" value={h.solde} onChange={v => updateHypo(i, "solde", v)} placeholder="280 000" />
-                  </Field>
-                  <Field label="Taux d'intérêt actuel (%)">
-                    <Input type="number" value={h.taux} onChange={v => updateHypo(i, "taux", v)} placeholder="5.25" />
-                  </Field>
+                  <Field label="Adresse / Description"><Input value={h.adresse} onChange={v => updateHypo(i, "adresse", v)} placeholder="ex: 123 rue des Érables, Montréal" /></Field>
+                  <Field label="Prix d'achat ($)"><Input type="number" value={h.prix_achat} onChange={v => updateHypo(i, "prix_achat", v)} placeholder="350 000" /></Field>
+                  <Field label="Année d'achat"><Input type="number" value={h.annee_achat} onChange={v => updateHypo(i, "annee_achat", v)} placeholder="2019" /></Field>
+                  <Field label="Mise de fonds (%)"><Input type="number" value={h.mise_de_fonds_pct} onChange={v => updateHypo(i, "mise_de_fonds_pct", v)} placeholder="20" /></Field>
+                  <Field label="Solde hypothécaire actuel ($)"><Input type="number" value={h.solde} onChange={v => updateHypo(i, "solde", v)} placeholder="280 000" /></Field>
+                  <Field label="Taux d'intérêt actuel (%)"><Input type="number" value={h.taux} onChange={v => updateHypo(i, "taux", v)} placeholder="5.25" /></Field>
                   <Field label="Type de taux">
-                    <RadioGroup value={h.type_taux} onChange={v => updateHypo(i, "type_taux", v)} options={[
-                      { value: "fixe", label: "Fixe" },
-                      { value: "variable", label: "Variable" },
-                    ]} />
+                    <RadioGroup value={h.type_taux} onChange={v => updateHypo(i, "type_taux", v)} options={[{ value: "fixe", label: "Fixe" }, { value: "variable", label: "Variable" }]} />
                   </Field>
-                  <Field label="Terme restant (mois)" hint="Avant renouvellement">
-                    <Input type="number" value={h.terme_restant} onChange={v => updateHypo(i, "terme_restant", v)} placeholder="36" />
-                  </Field>
-                  <Field label="Amortissement initial (ans)">
-                    <Input type="number" value={h.amortissement_initial} onChange={v => updateHypo(i, "amortissement_initial", v)} placeholder="25" />
-                  </Field>
-                  <Field label="Amortissement restant (ans)">
-                    <Input type="number" value={h.amortissement_restant} onChange={v => updateHypo(i, "amortissement_restant", v)} placeholder="21" />
-                  </Field>
-                  <Field label="Paiement mensuel ($)">
-                    <Input type="number" value={h.paiement_mensuel} onChange={v => updateHypo(i, "paiement_mensuel", v)} placeholder="1 850" />
-                  </Field>
+                  <Field label="Terme restant (mois)" hint="Avant renouvellement"><Input type="number" value={h.terme_restant} onChange={v => updateHypo(i, "terme_restant", v)} placeholder="36" /></Field>
+                  <Field label="Amortissement initial (ans)"><Input type="number" value={h.amortissement_initial} onChange={v => updateHypo(i, "amortissement_initial", v)} placeholder="25" /></Field>
+                  <Field label="Amortissement restant (ans)"><Input type="number" value={h.amortissement_restant} onChange={v => updateHypo(i, "amortissement_restant", v)} placeholder="21" /></Field>
+                  <Field label="Paiement mensuel ($)"><Input type="number" value={h.paiement_mensuel} onChange={v => updateHypo(i, "paiement_mensuel", v)} placeholder="1 850" /></Field>
                 </div>
-
-                {/* Equity calc */}
                 {h.prix_achat && h.solde && (
                   <div className="mt-4 rounded-lg px-4 py-2.5 flex items-center justify-between"
                     style={{ background: "rgba(201,160,99,0.06)", border: "1px solid rgba(201,160,99,0.12)" }}>
@@ -471,15 +474,11 @@ function StepDettes({ data, setData }) {
           </div>
         )}
       </div>
-
-      {/* ── AUTRES DETTES ── */}
       <div>
         <div className="flex items-center justify-between mb-3">
           <p className="text-[14px] font-semibold text-white">Autres dettes</p>
           <button onClick={addDette} className="text-[12px] font-semibold px-3 py-1.5 rounded-lg"
-            style={{ background: "rgba(201,160,99,0.1)", color: "#C9A063", border: "1px solid rgba(201,160,99,0.2)" }}>
-            + Ajouter
-          </button>
+            style={{ background: "rgba(201,160,99,0.1)", color: "#C9A063", border: "1px solid rgba(201,160,99,0.2)" }}>+ Ajouter</button>
         </div>
         <Field label="Avez-vous d'autres dettes (cartes, auto, marges...) ?">
           <RadioGroup value={data.a_dettes} onChange={f("a_dettes")} options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]} />
@@ -500,12 +499,10 @@ function StepDettes({ data, setData }) {
           </div>
         )}
       </div>
-
-      {/* TOTAL */}
       {totalDettes > 0 && (
         <div className="rounded-xl px-5 py-4 flex items-center justify-between"
           style={{ background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.15)" }}>
-          <p className="text-[13px] font-semibold" style={{ color: "#fca5a5" }}>Total des passifs (hypothèques + dettes)</p>
+          <p className="text-[13px] font-semibold" style={{ color: "#fca5a5" }}>Total des passifs</p>
           <p className="font-financial text-[1.4rem] font-bold" style={{ color: "#f87171" }}>
             {new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(totalDettes)}
           </p>
@@ -515,7 +512,25 @@ function StepDettes({ data, setData }) {
   );
 }
 
-function StepAssurance({ data, setData }) {
+function StepDettes({ data, setData, stepData }) {
+  const [activeTab, setActiveTab] = useState("principal");
+  const profilData = stepData?.profil_personnel || {};
+  const enCouple = ["marie", "conjoint", "union_civile"].includes(profilData.situation);
+  const nomPrincipal = profilData.nom ? profilData.nom.split(" ")[0] : "Principal(e)";
+  const nomConjoint = profilData.conjoint?.nom ? profilData.conjoint.nom.split(" ")[0] : "Conjoint(e)";
+  const setConjointData = (updater) => setData(p => ({ ...p, conjoint: typeof updater === "function" ? updater(p.conjoint || {}) : updater }));
+
+  return (
+    <div className="space-y-5">
+      {enCouple && <PersonTabs activeTab={activeTab} setActiveTab={setActiveTab} nomPrincipal={nomPrincipal} nomConjoint={nomConjoint} />}
+      {(!enCouple || activeTab === "principal") && <DettesPanel data={data} setData={setData} />}
+      {enCouple && activeTab === "conjoint" && <DettesPanel data={data.conjoint || {}} setData={setConjointData} />}
+    </div>
+  );
+}
+
+// ── Assurance ─────────────────────────────────────────────────────────────────
+function AssurancePanel({ data, setData }) {
   const f = (k) => (v) => setData(p => ({ ...p, [k]: v }));
   return (
     <div className="space-y-5">
@@ -550,6 +565,23 @@ function StepAssurance({ data, setData }) {
       <Field label="Avez-vous un testament à jour ?">
         <RadioGroup value={data.testament} onChange={f("testament")} options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]} />
       </Field>
+    </div>
+  );
+}
+
+function StepAssurance({ data, setData, stepData }) {
+  const [activeTab, setActiveTab] = useState("principal");
+  const profilData = stepData?.profil_personnel || {};
+  const enCouple = ["marie", "conjoint", "union_civile"].includes(profilData.situation);
+  const nomPrincipal = profilData.nom ? profilData.nom.split(" ")[0] : "Principal(e)";
+  const nomConjoint = profilData.conjoint?.nom ? profilData.conjoint.nom.split(" ")[0] : "Conjoint(e)";
+  const setConjointData = (updater) => setData(p => ({ ...p, conjoint: typeof updater === "function" ? updater(p.conjoint || {}) : updater }));
+
+  return (
+    <div className="space-y-5">
+      {enCouple && <PersonTabs activeTab={activeTab} setActiveTab={setActiveTab} nomPrincipal={nomPrincipal} nomConjoint={nomConjoint} />}
+      {(!enCouple || activeTab === "principal") && <AssurancePanel data={data} setData={setData} />}
+      {enCouple && activeTab === "conjoint" && <AssurancePanel data={data.conjoint || {}} setData={setConjointData} />}
     </div>
   );
 }
