@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronRight, ChevronLeft, Check, User, TrendingDown, Shield, GraduationCap, Target, AlertTriangle, DollarSign, BarChart3 } from "lucide-react";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 
 const STEPS = [
   { key: "profil_personnel", label: "Profil", icon: User, title: "Renseignements personnels" },
@@ -371,13 +372,41 @@ function PersonTabs({ activeTab, setActiveTab, nomPrincipal, nomConjoint }) {
 // ── Retraite / Épargne ────────────────────────────────────────────────────────
 
 const COMPTES_TYPES = [
-  { key: "compte_non_enregistre", label: "Compte épargne (non enregistré)" },
-  { key: "celi", label: "CELI" },
-  { key: "celiapp", label: "CELIAPP" },
-  { key: "reer", label: "REER" },
-  { key: "reee", label: "REEE" },
-  { key: "crypto", label: "Crypto" },
-  { key: "ftq_csn", label: "FTQ / CSN" },
+  {
+    key: "compte_non_enregistre",
+    label: "Compte épargne (non enregistré)",
+    tooltip: "Compte d'épargne ordinaire où vous versez votre argent. Aucun avantage fiscal. Les intérêts et gains en capital sont imposables."
+  },
+  {
+    key: "celi",
+    label: "CELI",
+    tooltip: "Compte d'épargne libre d'impôt. L'argent grandit sans impôt et vous pouvez le retirer en tout temps sans implications fiscales. Limite annuelle : 7 000$ (2024)."
+  },
+  {
+    key: "celiapp",
+    label: "CELIAPP",
+    tooltip: "Compte d'épargne libre d'impôt pour l'achat d'une première propriété. Cotisations déductibles, croissance libre d'impôt, retrait en franchise pour l'achat d'une maison."
+  },
+  {
+    key: "reer",
+    label: "REER",
+    tooltip: "Régime enregistré d'épargne-retraite. Cotisations déductibles du revenu imposable. Croissance à l'abri de l'impôt. Taxé au retrait. Idéal pour les revenus élevés."
+  },
+  {
+    key: "reee",
+    label: "REEE",
+    tooltip: "Régime enregistré d'épargne-études. Pour les études des enfants. Bénéficiez de subventions gouvernementales (SCEE 20%, IQEE 10%). Plafonds : 50 000$/enfant, 2 500$/an pour SCEE max."
+  },
+  {
+    key: "crypto",
+    label: "Crypto",
+    tooltip: "Crypto-monnaies (Bitcoin, Ethereum, etc.). Très volatiles. Les gains en capital sont imposables à 50% au Canada. Conservez vos preuves d'achat pour le fisc."
+  },
+  {
+    key: "ftq_csn",
+    label: "FTQ / CSN",
+    tooltip: "Fonds de travailleurs FTQ et Fonds du Québec de la CSN. Actions de sociétés québécoises. Déduction fiscale de 30% + crédits d'impôt. Rendements variables selon le marché."
+  },
 ];
 
 function CompteEpargneSection({ type, label, comptes, setComptes }) {
@@ -398,6 +427,16 @@ function CompteEpargneSection({ type, label, comptes, setComptes }) {
           + Ajouter
         </button>
       </div>
+      {/* Info tooltip */}
+      {type && COMPTES_TYPES.find(t => t.key === type)?.tooltip && (
+        <div className="px-4 pt-2 pb-1">
+          <div className="flex items-start gap-2">
+            <p className="text-[11px] text-white" style={{ color: "rgba(255,255,255,0.7)" }}>
+              <InfoTooltip explanation={COMPTES_TYPES.find(t => t.key === type)?.tooltip} position="bottom" />
+            </p>
+          </div>
+        </div>
+      )}
       {list.length > 0 && (
         <div className="px-4 pb-3 space-y-3 pt-2">
           {list.map((c, i) => (
@@ -463,18 +502,28 @@ function RetraitePanel({ data, setData }) {
 
       {/* Fonds de pension */}
       <div>
-        <p className="text-[14px] font-semibold text-white mb-3">Fonds de pension (employeur)</p>
+        <div className="flex items-center gap-2 mb-3">
+          <p className="text-[14px] font-semibold text-white">Fonds de pension (employeur)</p>
+          <InfoTooltip explanation="Régime de retraite offert par votre employeur. Deux types : cotisation déterminée (vous connaissez votre contribution) ou prestation déterminée (vous connaissez votre revenu de retraite assuré)." position="right" />
+        </div>
         <Field label="Avez-vous un fonds de pension au travail ?">
           <RadioGroup value={data.a_fond_pension} onChange={f("a_fond_pension")} options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]} />
         </Field>
         {data.a_fond_pension === "oui" && (
           <div className="mt-4 rounded-xl p-4 space-y-4" style={{ background: "rgba(107,140,214,0.05)", border: "1px solid rgba(107,140,214,0.18)" }}>
-            <Field label="Type de régime">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="text-[12.5px] font-semibold" style={{ color: "#94A3B8" }}>Type de régime</span>
+                <InfoTooltip 
+                  explanation="CD: Vous versez chaque mois, la retraite dépend des rendements. PD: Votre employeur garantit votre revenu de retraite."
+                  position="right"
+                />
+              </div>
               <RadioGroup value={fondPension.type} onChange={v => setFondPension("type", v)} options={[
                 { value: "cotisation_determinee", label: "Cotisation déterminée" },
                 { value: "prestation_determinee", label: "Prestation déterminée" },
               ]} />
-            </Field>
+            </div>
             <Field label="Institution / Gestionnaire"><Input value={fondPension.institution} onChange={v => setFondPension("institution", v)} placeholder="ex: Sun Life, Manulife, CAAT..." /></Field>
 
             {fondPension.type === "cotisation_determinee" && (
