@@ -11,6 +11,7 @@ const publicLinks = [
 const privateLinks = [
   { label: "Tableau de bord", path: "/dashboard" },
   { label: "Analyse ABF", path: "/analyse" },
+  { label: "Feuille Résumé", path: "/resume" },
   { label: "Placements", path: "/placements" },
   { label: "Plan financier", path: "/plan" },
 ];

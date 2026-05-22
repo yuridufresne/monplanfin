@@ -13,6 +13,7 @@ import Budget from '@/pages/Budget';
 import Investments from '@/pages/Investments';
 import FinancialPlan from '@/pages/FinancialPlan';
 import FinancialAnalysis from '@/pages/FinancialAnalysis';
+import FeuilleResume from '@/pages/FeuilleResume';
 
 const PUBLIC_PATHS = ['/', '/calculatrices'];
 
@@ -53,6 +54,7 @@ const AuthenticatedApp = () => {
         <Route path="/placements" element={<Investments />} />
         <Route path="/plan" element={<FinancialPlan />} />
         <Route path="/analyse" element={<FinancialAnalysis />} />
+        <Route path="/resume" element={<FeuilleResume />} />
         <Route path="*" element={<PageNotFound />} />
       </Route>
     </Routes>
