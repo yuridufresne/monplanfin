@@ -44,14 +44,8 @@ export default function Dashboard() {
     const data = raw.data || raw;
     const emplois = data.emplois || [];
     const sides = data.sidehustles || [];
-    const totalBrut = emplois.reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0) / 12, 0)
+    return emplois.reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0) / 12, 0)
       + sides.reduce((s, sh) => s + (parseFloat(sh.revenu_mensuel_moyen) || 0), 0);
-    const totalImpots = emplois.reduce((s, e) => {
-      const saisi = parseFloat(e.impot_saisi || e.impot_mensuel) || 0;
-      const freq = e.impot_freq || "mensuel";
-      return s + (freq === "annuel" ? saisi / 12 : saisi);
-    }, 0);
-    return totalBrut - totalImpots;
   }, [profiles]);
 
   const totalExpenses = budgetEntries.filter(e => e.type === "depense").reduce((s, e) => s + (e.amount || 0), 0);
