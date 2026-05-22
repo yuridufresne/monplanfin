@@ -15,7 +15,7 @@ const CATEGORY_LABELS = {
   logement: "Logement", transport: "Transport", alimentation: "Alimentation",
   services_publics: "Services publics", assurances: "Assurances", sante: "Santé",
   loisirs: "Loisirs", vetements: "Vêtements", education: "Éducation",
-  epargne: "Épargne", dettes: "Dettes", divers: "Divers",
+  epargne: "Épargne", dettes: "Dettes", divers: "Divers", revenu: "Revenu",
 };
 const COLORS = ["#C9A063","#6B8ED6","#5BC4A0","#E07B6B","#A87DD3","#E0B44B","#6BBCE0","#D36B8E","#7DC46B","#E09A6B","#6BD3C4","#B0B0B0"];
 
@@ -163,7 +163,7 @@ export default function Budget() {
                       <div style={{ width: 8, height: 8, borderRadius: "50%", background: entry.type === "revenu" ? "#5BC4A0" : "#C9A063", flexShrink: 0 }} />
                       <div>
                         <p style={{ fontSize: 14, fontWeight: 600, color: "#fff" }}>{entry.label}</p>
-                        <p style={{ fontSize: 12, color: "#94A3B8", marginTop: 2 }}>{CATEGORY_LABELS[entry.category]} · {entry.frequency || "mensuel"}</p>
+                        <p style={{ fontSize: 12, color: "#94A3B8", marginTop: 2 }}>{entry.type === "revenu" ? "Revenu" : (CATEGORY_LABELS[entry.category] || entry.category)} · {entry.frequency || "mensuel"}</p>
                       </div>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>

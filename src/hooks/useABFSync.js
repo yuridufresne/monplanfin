@@ -36,7 +36,7 @@ export async function syncABFToEntities() {
           type: "depense", frequency: "mensuel", is_fixed: true, source: "abf",
         });
       } else {
-        await base44.entities.BudgetEntry.update(existing[0].id, { amount: totalImpotMensuel, source: "abf" });
+        await base44.entities.BudgetEntry.update(existing[0].id, { amount: totalImpotMensuel, source: "abf", category: "divers", type: "depense" });
       }
     }
   }
