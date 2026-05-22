@@ -242,10 +242,12 @@ export default function BudgetGrid({ onClose, onSaved }) {
       const bySection = {};
       profiles.forEach(p => { bySection[p.section] = p.data || {}; });
 
-      const revData = bySection["revenu"];
-      if (revData) {
-        const rd = revData.data || revData;
-        const emplois = rd.emplois || [];
+      // Impôts — chercher dans toutes les structures possibles
+      const revProfile = profiles.find(p => p.section === "revenu");
+      if (revProfile) {
+        const raw = revProfile.data || {};
+        // Supporter { emplois: [...] } et { data: { emplois: [...] } }
+        const emplois = raw.emplois || raw.data?.emplois || [];
         let totalImpot = 0;
         for (const e of emplois) {
           const saisi = parseFloat(e.impot_saisi || e.impot_mensuel) || 0;
