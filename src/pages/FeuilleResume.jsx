@@ -226,10 +226,11 @@ export default function FeuilleResume() {
   const deductionCotisTA = isTA ? cotisTA.rrq / 2 + cotisTA.rqap / 2 : 0; // partie déductible
   const revenuImposable = Math.max(0, revenuNetAvantCotisations - deductionCotisTA);
 
-  // Correction 4 : Impôts calculés sur 100% du revenu imposable, puis crédits soustraits
-  const impotFedBrut = calcImpotPaliers(revenuImposable, PALIERS_FED);
-  const creditFed    = calcCreditFederal(revenuImposable);
-  const impotFed     = Math.max(0, impotFedBrut - creditFed);
+  // Impôts calculés sur 100% du revenu imposable, puis crédits soustraits, puis abattement Québec (16,5%)
+  const impotFedBrut          = calcImpotPaliers(revenuImposable, PALIERS_FED);
+  const creditFed             = calcCreditFederal(revenuImposable);
+  const impotFedApresCredits  = Math.max(0, impotFedBrut - creditFed);
+  const impotFed              = Math.max(0, impotFedApresCredits * (1 - 0.165)); // abattement Québec 16,5%
 
   const impotQcBrut  = calcImpotPaliers(revenuImposable, PALIERS_QC);
   const impotQc      = Math.max(0, impotQcBrut - CREDIT_QC);
@@ -520,7 +521,7 @@ export default function FeuilleResume() {
                   {isTA && <TableRow cells={["Cotisation déductible (½ RRQ)", "−", fmt(cotisTA.rrq / 2)]} />}
                   {isTA && <TableRow cells={["Cotisation déductible (½ RQAP)", "−", fmt(cotisTA.rqap / 2)]} />}
                   <TableRow cells={["Revenu imposable", "=", fmt(revenuImposable)]} />
-                  <TableRow cells={[`Impôt fédéral (brut ${fmt(impotFedBrut)} − crédit ${fmt(creditFed)})`, "−", fmt(impotFed)]} />
+                  <TableRow cells={[`Impôt fédéral (brut ${fmt(impotFedBrut)} − crédit ${fmt(creditFed)} − abattement QC 16,5 %)`, "−", fmt(impotFed)]} />
                   <TableRow cells={[`Impôt provincial (brut ${fmt(impotQcBrut)} − crédit ${fmt(CREDIT_QC)})`, "−", fmt(impotQc)]} />
                   {isTA && <TableRow cells={["Cotisations sociales totales (TA)", "−", fmt(totalCotisationsSociales)]} />}
                   <TableRow cells={["REVENU NET ANNUEL", "=", fmt(revenuNetTotal)]} highlight />
