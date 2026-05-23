@@ -8,6 +8,44 @@ import { syncBudgetRevenuToABF } from "@/hooks/useABFSync";
 import BudgetEntryForm from "@/components/budget/BudgetEntryForm";
 import BudgetGrid from "@/components/budget/BudgetGrid";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
+import { calcAllocations } from "@/lib/allocations2026";
+
+// ── Fonctions fiscales (miroir de FeuilleResume) ──────────────────────────
+const PALIERS_FED = [
+  { min: 0, max: 58523, rate: 0.15 }, { min: 58523, max: 117045, rate: 0.205 },
+  { min: 117045, max: 181440, rate: 0.26 }, { min: 181440, max: 258482, rate: 0.29 },
+  { min: 258482, max: Infinity, rate: 0.33 },
+];
+const PALIERS_QC = [
+  { min: 0, max: 54345, rate: 0.14 }, { min: 54345, max: 108680, rate: 0.19 },
+  { min: 108680, max: 132245, rate: 0.24 }, { min: 132245, max: Infinity, rate: 0.2575 },
+];
+function calcImpotPaliers(rev, paliers) {
+  let t = 0;
+  for (const p of paliers) {
+    if (rev <= p.min) break;
+    t += (Math.min(rev, p.max) - p.min) * p.rate;
+  }
+  return Math.max(0, t);
+}
+function calcCreditFederal(rev) {
+  let base = 16452;
+  if (rev > 181440) base = Math.max(14829, Math.min(16452, 16452 - ((rev - 181440) * (1623 / 77042))));
+  return base * 0.15;
+}
+const CREDIT_QC = 18952 * 0.14;
+function calcNetPersonne(brut) {
+  const MGA = 74600, MSGA = 85000, EXEMPTION = 3500;
+  const rrq = Math.min((Math.max(0, Math.min(brut, MGA) - EXEMPTION)) * 0.064, 4551.40)
+            + Math.min(Math.max(0, Math.min(brut, MSGA) - MGA) * 0.04, 416.00);
+  const rqap = Math.min(Math.min(brut, 103000) * 0.00494, 509.18);
+  const ae = Math.min(Math.min(brut, 68900) * 0.013, 895.70);
+  const cotis = rrq + rqap + ae;
+  const imposable = Math.max(0, brut);
+  const impFed = Math.max(0, (calcImpotPaliers(imposable, PALIERS_FED) - calcCreditFederal(imposable)) * (1 - 0.165));
+  const impQc = Math.max(0, calcImpotPaliers(imposable, PALIERS_QC) - CREDIT_QC);
+  return Math.max(0, brut - impFed - impQc - cotis);
+}
 
 const CATEGORY_LABELS = {
   logement: "Logement", transport: "Transport", alimentation: "Alimentation",
@@ -60,11 +98,42 @@ export default function StepBudget() {
     }
   };
 
-  const totalRev = useMemo(() => {
-    return entries
-      .filter(e => e.type === "revenu")
-      .reduce((s, e) => s + toMonthly(parseFloat(e.amount) || 0, e.frequency), 0);
-  }, [entries]);
+  // Revenu net annuel calculé depuis les profils ABF (même logique que FeuilleResume)
+  const revenuNetMensuel = useMemo(() => {
+    const revProfile = profiles.find(p => p.section === "revenu");
+    const raw = revProfile?.data || {};
+    const d = (raw.data && typeof raw.data === "object") ? raw.data : raw;
+    const emplois = d.emplois || [];
+    const conjointEmplois = d.conjoint?.emplois || [];
+    const brutP1 = emplois.reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0), 0);
+    const brutP2 = conjointEmplois.reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0), 0);
+    return (calcNetPersonne(brutP1) + calcNetPersonne(brutP2)) / 12;
+  }, [profiles]);
+
+  // Allocations familiales mensuelles
+  const allocMensuel = useMemo(() => {
+    const allocProfile = profiles.find(p => p.section === "allocations");
+    const raw = allocProfile?.data || {};
+    const d = (raw.data && typeof raw.data === "object") ? raw.data : raw;
+    if (d.a_enfants !== true) return 0;
+    const enfants = d.enfants || [];
+    let nbMoins6 = 0, nb6_17 = 0;
+    enfants.forEach(e => {
+      if (!e.date_naissance) return;
+      const age = (new Date() - new Date(e.date_naissance)) / (365.25 * 24 * 3600 * 1000);
+      if (age < 6) nbMoins6++; else if (age < 18) nb6_17++;
+    });
+    const monoparental = (d.situation_familiale || "monoparental") === "monoparental";
+    const revProfile = profiles.find(p => p.section === "revenu");
+    const rawR = revProfile?.data || {};
+    const dr = (rawR.data && typeof rawR.data === "object") ? rawR.data : rawR;
+    const brutP1 = (dr.emplois || []).reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0), 0);
+    const brutP2 = (dr.conjoint?.emplois || []).reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0), 0);
+    const rfnr = calcNetPersonne(brutP1) + calcNetPersonne(brutP2);
+    return calcAllocations({ rfnr, nbMoins6, nb6_17, monoparental }).mensuel;
+  }, [profiles]);
+
+  const totalRev = revenuNetMensuel + allocMensuel;
 
   const revenus = entries.filter(e => e.type === "revenu");
   const depenses = entries.filter(e => e.type === "depense");
@@ -107,7 +176,7 @@ export default function StepBudget() {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[
-          { label: "Revenus mensuels", value: fmt(totalRev), color: "#5BC4A0", icon: TrendingUp },
+          { label: allocMensuel > 0 ? "Revenu net + allocations" : "Revenu net mensuel", value: fmt(totalRev), color: "#5BC4A0", icon: TrendingUp },
           { label: "Dépenses mensuelles", value: fmt(totalDep), color: "#f87171", icon: TrendingDown },
           { label: "Solde mensuel", value: fmt(balance), color: balance >= 0 ? "#C9A063" : "#f87171", icon: DollarSign },
         ].map(k => (
