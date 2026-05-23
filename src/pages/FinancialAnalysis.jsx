@@ -962,10 +962,30 @@ function StepAssurance({ data, setData, stepData }) {
   );
 }
 
-function StepEtudes({ data, setData }) {
+function StepEtudes({ data, setData, stepData }) {
   const f = (k) => (v) => setData(p => ({ ...p, [k]: v }));
 
-  const enfants = data.enfants || [];
+  // Pré-remplir depuis les enfants saisis à l'étape Allocations
+  const enfantsAlloc = (stepData?.allocations?.enfants || []).filter(e => {
+    if (!e.date_naissance) return false;
+    const age = (new Date() - new Date(e.date_naissance)) / (365.25 * 24 * 3600 * 1000);
+    return age < 18;
+  });
+
+  const enfants = (() => {
+    const existants = data.enfants || [];
+    if (existants.length > 0 || enfantsAlloc.length === 0) return existants;
+    // Pré-remplir avec les enfants des allocations si aucun enfant saisi
+    return enfantsAlloc.map(e => ({
+      prenom: e.prenom || "",
+      date_naissance: e.date_naissance || "",
+      reee_solde: "",
+      reee_cotisation_mensuelle: "",
+      age_debut_etudes: "18",
+      type_reee: "individuel",
+    }));
+  })();
+
   const updateEnfant = (i, k, v) => setData(p => ({ ...p, enfants: enfants.map((e, idx) => idx === i ? { ...e, [k]: v } : e) }));
   const addEnfant = () => setData(p => ({ ...p, enfants: [...enfants, { prenom: "", date_naissance: "", reee_solde: "", reee_cotisation_mensuelle: "", age_debut_etudes: "18", type_reee: "individuel" }] }));
   const removeEnfant = (i) => setData(p => ({ ...p, enfants: enfants.filter((_, idx) => idx !== i) }));
