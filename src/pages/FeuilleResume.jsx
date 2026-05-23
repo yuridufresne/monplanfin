@@ -49,37 +49,48 @@ function calcImpotPaliers(revenuImposable, paliers) {
   return Math.max(0, impot);
 }
 
-// ── Cotisations obligatoires TA Québec 2026 ──────────────────────────────
-function calcCotisationsTA(revenuNet, inscritAE = false) {
-  // RRQ
+// ── Cotisations obligatoires Québec 2026 (salariés ET travailleurs autonomes) ──
+// Pour les SALARIÉS : taux employé seulement (RRQ 6,4%, RQAP 0,494%, AE 1,30%)
+// Pour les TA : taux double RRQ (12,6%+8%), RQAP (0,764%), AE optionnel, + FSS
+function calcCotisations(revenuBrut, isTravailleurAutonome = false, inscritAE = false) {
   const MGA = 74600; const MSGA = 85000; const EXEMPTION = 3500;
-  const rrqBase = Math.max(0, Math.min(revenuNet, MGA) - EXEMPTION) * 0.126;
-  const rrqSupp = Math.max(0, Math.min(revenuNet, MSGA) - MGA) * 0.08;
-  const rrq = Math.min(rrqBase, 8958.60) + Math.min(rrqSupp, 832.00);
 
-  // RQAP
+  // RRQ — salarié : 6,4% jusqu'au MGA + 4% supplémentaire entre MGA et MSGA
+  // TA : double part (12,6% + 8%)
+  const tauxRRQ1 = isTravailleurAutonome ? 0.126 : 0.064;
+  const tauxRRQ2 = isTravailleurAutonome ? 0.08  : 0.04;
+  const rrqBase = Math.max(0, Math.min(revenuBrut, MGA) - EXEMPTION) * tauxRRQ1;
+  const rrqSupp = Math.max(0, Math.min(revenuBrut, MSGA) - MGA) * tauxRRQ2;
+  const rrqMaxBase = isTravailleurAutonome ? 8958.60 : 4551.40;
+  const rrqMaxSupp = isTravailleurAutonome ? 832.00  : 416.00;
+  const rrq = Math.min(rrqBase, rrqMaxBase) + Math.min(rrqSupp, rrqMaxSupp);
+
+  // RQAP — salarié : 0,494% / TA : 0,764%
   const RQAP_MAX = 103000;
-  const rqap = Math.min(revenuNet, RQAP_MAX) * 0.00764;
-  const rqapMax = 786.92;
-  const rqapFinal = Math.min(rqap, rqapMax);
+  const tauxRQAP = isTravailleurAutonome ? 0.00764 : 0.00494;
+  const rqapMax  = isTravailleurAutonome ? 786.92  : 509.18;
+  const rqap = Math.min(Math.min(revenuBrut, RQAP_MAX) * tauxRQAP, rqapMax);
 
-  // AE (optionnel)
+  // AE — salarié : 1,30% / TA : optionnel (même taux)
   const AE_MAX_ASSURABLE = 68900;
-  const ae = inscritAE ? Math.min(revenuNet, AE_MAX_ASSURABLE) * 0.013 : 0;
-  const aeMax = 895.70;
-  const aeFinal = Math.min(ae, aeMax);
+  const aeActif = isTravailleurAutonome ? inscritAE : true; // salariés toujours inscrits
+  const ae = aeActif ? Math.min(Math.min(revenuBrut, AE_MAX_ASSURABLE) * 0.013, 895.70) : 0;
 
-  // FSS (simplifié : 1% sur revenu > seuil, max 1 000$)
-  const fss = Math.min(Math.max(0, revenuNet - 25000) * 0.01, 1000);
+  // FSS — seulement pour les TA (cotisation au Fonds des services de santé)
+  const fss = isTravailleurAutonome
+    ? Math.min(Math.max(0, revenuBrut - 25000) * 0.01, 1000)
+    : 0;
 
   return {
-    rrq: Math.round(rrq * 100) / 100,
-    rqap: Math.round(rqapFinal * 100) / 100,
-    ae: Math.round(aeFinal * 100) / 100,
-    fss: Math.round(fss * 100) / 100,
-    total: Math.round((rrq + rqapFinal + aeFinal + fss) * 100) / 100,
+    rrq:   Math.round(rrq  * 100) / 100,
+    rqap:  Math.round(rqap * 100) / 100,
+    ae:    Math.round(ae   * 100) / 100,
+    fss:   Math.round(fss  * 100) / 100,
+    total: Math.round((rrq + rqap + ae + fss) * 100) / 100,
   };
 }
+// Alias pour la compatibilité avec le code existant
+const calcCotisationsTA = (rev, ae) => calcCotisations(rev, true, ae);
 
 // ── Glazsmorphism shared style ────────────────────────────────────────────
 const glass = {
@@ -234,29 +245,40 @@ export default function FeuilleResume() {
 
   // ── RÈGLE 1 : Imposition strictement INDIVIDUELLE ────────────────────
   // Chaque conjoint calcule son propre impôt de façon totalement isolée.
-  // Le moteur roule deux fois indépendamment (p1, puis p2 si en couple).
+  // Les cotisations sociales (RRQ/RQAP/AE) s'appliquent à TOUS les travailleurs,
+  // pas seulement aux travailleurs autonomes.
   function calcPersonneRevenu(emploisP, sidesP, inscritAEP) {
     const brut = emploisP.reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0), 0)
       + sidesP.reduce((s, sh) => s + (parseFloat(sh.revenu_mensuel_moyen) || 0) * 12, 0);
     const deductibles = sidesP.reduce((s, sh) => s + (parseFloat(sh.depenses_deductibles) || 0), 0);
     const isTAP = emploisP.some(e => e.type === "autonome") || sidesP.length > 0;
     const revAvantCotis = Math.max(0, brut - deductibles);
-    const cotis = isTAP ? calcCotisationsTA(revAvantCotis, inscritAEP) : { rrq: 0, rqap: 0, ae: 0, fss: 0, total: 0 };
+
+    // Cotisations sociales — s'appliquent à TOUS (salariés ET TA), taux différents
+    const cotis = calcCotisations(revAvantCotis, isTAP, isTAP ? inscritAEP : true);
+
+    // Déductions pour revenu imposable :
+    // TA : déduit ½ RRQ + ½ RQAP (part patronale fictive)
+    // Salarié : aucune déduction sur cotisations (employeur les a déjà déduites)
     const deductionCotis = isTAP ? cotis.rrq / 2 + cotis.rqap / 2 : 0;
     const imposable = Math.max(0, revAvantCotis - deductionCotis);
+
+    // Impôt INDIVIDUEL avec crédits de base appliqués sur CE contribuable seulement
     const impFedBrut = calcImpotPaliers(imposable, PALIERS_FED);
     const credFed = calcCreditFederal(imposable);
-    // Montant de base fédéral inutilisé (si revenu < 16 452$) → disponible pour transfert au conjoint
-    const montantBaseFed = Math.min(imposable > 0 ? imposable : 0, 16452);
-    const creditBaseFedUtilise = montantBaseFed * 0.15;
+    // Crédit de base fédéral inutilisé → disponible pour transfert au conjoint (Règle 3)
+    const creditBaseFedUtilise = Math.min(imposable * 0.15, calcCreditFederal(imposable));
     const creditBaseFedInutilise = Math.max(0, 16452 * 0.15 - creditBaseFedUtilise);
     const impFed = Math.max(0, (impFedBrut - credFed) * (1 - 0.165));
+
     const impQcBrut = calcImpotPaliers(imposable, PALIERS_QC);
     const creditQcUtilise = Math.min(imposable * 0.14, CREDIT_QC);
     const creditQcInutilise = Math.max(0, CREDIT_QC - creditQcUtilise);
     const impQc = Math.max(0, impQcBrut - CREDIT_QC);
-    // Revenu net individuel = brut − impôts − cotisations TA
-    const net = Math.max(0, brut - impFed - impQc - (isTAP ? cotis.total : 0));
+
+    // Revenu net individuel = brut − impôts − TOUTES cotisations sociales (correction bug 4)
+    const net = Math.max(0, brut - impFed - impQc - cotis.total);
+
     return {
       brut, net, impFed, impQcBrut, impFedBrut, impQc, imposable, cotis, isTAP, deductibles,
       creditBaseFedInutilise, creditQcInutilise,
@@ -319,6 +341,7 @@ export default function FeuilleResume() {
 
   const txEffectif = revenuBrutAnnuel > 0 ? (totalImpots / revenuBrutAnnuel) * 100 : 0;
 
+  // Cotisations sociales totales foyer — incluent RRQ+RQAP+AE pour TOUS les travailleurs
   const totalCotisationsSociales = cotisTA.total;
   // Revenu net foyer = somme des revenus nets individuels (règle 1)
   const revenuNetTotal   = p1.net + p2.net;
@@ -455,7 +478,14 @@ export default function FeuilleResume() {
   const pension = (dettesABF.a_pension === "oui" ? parseFloat(dettesABF.pension_mensuelle) || 0 : 0)
                 + (dettesABFConjoint.a_pension === "oui" ? parseFloat(dettesABFConjoint.pension_mensuelle) || 0 : 0);
 
-  const toutesLesDettes = [
+  // ── CORRECTION BUG 1 : Source unique pour les dettes ─────────────────
+  // Priorité : données ABF (saisies dans le formulaire) si disponibles,
+  // sinon entités Debt (saisies manuellement dans le module dettes).
+  // On ne combine PAS les deux sources pour éviter les doublons.
+  const abfADesToDonnees = hypotheques.length > 0 || autresDettes.length > 0
+    || hypothequesConjoint.length > 0 || autresDettesConjoint.length > 0;
+
+  const toutesLesDettes = abfADesToDonnees ? [
     ...hypotheques.map(h => ({
       type: `Hypothèque — ${h.adresse || h.usage || "résidence"}`,
       solde: parseFloat(h.solde) || 0,
@@ -480,13 +510,13 @@ export default function FeuilleResume() {
       paiement: parseFloat(d.paiement_min) || 0,
       taux: parseFloat(d.taux) || 0,
     })),
-    ...debts.map(d => ({
-      type: d.name || "Dette",
-      solde: parseFloat(d.balance) || 0,
-      paiement: parseFloat(d.monthly_payment) || parseFloat(d.minimum_payment) || 0,
-      taux: parseFloat(d.interest_rate) || 0,
-    })),
-  ];
+  ] : debts.map(d => ({
+    // Fallback : entités Debt seulement si aucune donnée ABF
+    type: d.name || "Dette",
+    solde: parseFloat(d.balance) || 0,
+    paiement: parseFloat(d.monthly_payment) || parseFloat(d.minimum_payment) || 0,
+    taux: parseFloat(d.interest_rate) || 0,
+  }));
 
   const totalSoldeDettes = toutesLesDettes.reduce((s, d) => s + d.solde, 0);
   const totalPaiementDettes = toutesLesDettes.reduce((s, d) => s + d.paiement, 0) + pension;
@@ -593,17 +623,16 @@ export default function FeuilleResume() {
   const montantFonds = parseFloat(fondsABF.montant_fonds) || 0;
   const moisCouverts = depensesMensuelles > 0 ? montantFonds / depensesMensuelles : 0;
 
-  // Correction 2 : Graphique — somme = revenuBrutAnnuel exactement, "Revenu disponible" = revenuNetTotal corrigé
+  // Graphique — somme = revenuBrutAnnuel exactement (correction bug 4)
+  // Les cotisations s'affichent pour TOUS les travailleurs (salariés et TA)
   const repartitionRevenu = [
-    { name: "Impôts fédéraux",   value: Math.round(impotFed) },
-    { name: "Impôts provinciaux",value: Math.round(impotQc) },
-    ...(isTA ? [
-      { name: "RRQ",  value: Math.round(cotisTA.rrq) },
-      { name: "RQAP", value: Math.round(cotisTA.rqap) },
-      { name: "FSS",  value: Math.round(cotisTA.fss) },
-      ...(inscritAE ? [{ name: "AE", value: Math.round(cotisTA.ae) }] : []),
-    ] : []),
-    { name: "Revenu disponible", value: Math.round(revenuNetTotal) },
+    { name: "Impôts fédéraux",    value: Math.round(impotFed) },
+    { name: "Impôts provinciaux", value: Math.round(impotQc) },
+    { name: "RRQ",  value: Math.round(cotisTA.rrq) },
+    { name: "RQAP", value: Math.round(cotisTA.rqap) },
+    { name: "AE",   value: Math.round(cotisTA.ae) },
+    ...(isTA && cotisTA.fss > 0 ? [{ name: "FSS", value: Math.round(cotisTA.fss) }] : []),
+    { name: "Revenu disponible",  value: Math.round(revenuNetTotal) },
   ].filter(x => x.value > 0);
 
   if (loading) {
@@ -673,31 +702,24 @@ export default function FeuilleResume() {
           {/* Répartition donut + paliers */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div>
-              {/* Cotisations TA — Collapsible */}
-              {isTA && (
+              {/* Cotisations sociales — Collapsible (tous travailleurs) */}
+              {revenuBrutAnnuel > 0 && (
                 <div style={{ background: "rgba(201,160,99,0.06)", border: "1px solid rgba(201,160,99,0.15)", borderRadius: 16, padding: "1rem 1.25rem", marginBottom: 16 }}>
                   <button onClick={() => setExpandCotis(!expandCotis)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: expandCotis ? 12 : 0, background: "none", border: "none", cursor: "pointer", padding: 0 }}>
-                    <p style={{ fontSize: 12, fontWeight: 700, color: "#C9A063", textTransform: "uppercase", letterSpacing: "0.08em" }}>Cotisations obligatoires — Travailleur autonome</p>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      {/* AE toggle */}
-                      <button onClick={(e) => { e.stopPropagation(); setInscritAE(!inscritAE); }} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: inscritAE ? "#5BC4A0" : "#94A3B8", background: "none", border: "none", cursor: "pointer" }}>
-                        <div style={{ width: 30, height: 16, borderRadius: 8, background: inscritAE ? "#5BC4A0" : "rgba(255,255,255,0.1)", position: "relative", transition: "all 0.2s" }}>
-                          <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#fff", position: "absolute", top: 2, left: inscritAE ? 16 : 2, transition: "all 0.2s" }} />
-                        </div>
-                        AE
-                      </button>
-                      <ChevronDown style={{ width: 16, height: 16, color: "#C9A063", transform: expandCotis ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }} />
-                    </div>
+                    <p style={{ fontSize: 12, fontWeight: 700, color: "#C9A063", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                      Cotisations sociales obligatoires — {isTA ? "Travailleur autonome" : "Salarié(e)"}
+                    </p>
+                    <ChevronDown style={{ width: 16, height: 16, color: "#C9A063", transform: expandCotis ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }} />
                   </button>
                   {expandCotis && (
                     <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                      <thead><tr>{["Cotisation", "Base de calcul", "Taux", "Montant annuel"].map(h => <th key={h} style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.35)", textAlign: "right", padding: "4px 10px", textTransform: "uppercase" }}>{h}</th>)}</tr></thead>
+                      <thead><tr>{["Cotisation", "Base", "Taux", "Montant annuel"].map(h => <th key={h} style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.35)", textAlign: "right", padding: "4px 10px", textTransform: "uppercase" }}>{h}</th>)}</tr></thead>
                       <tbody>
-                        <TableRow cells={["RRQ (part TA — employé + employeur)", `${fmt(Math.min(revenuNetAvantCotisations, 85000))} net`, "12,6% + 8%", fmt(cotisTA.rrq)]} />
-                        <TableRow cells={["RQAP", `${fmt(Math.min(revenuNetAvantCotisations, 103000))} net`, "0,764%", fmt(cotisTA.rqap)]} />
-                        <TableRow cells={["FSS (Fonds services de santé)", `${fmt(revenuNetAvantCotisations)} net`, "~1% excédent", fmt(cotisTA.fss)]} />
-                        {inscritAE && <TableRow cells={["AE (prestations spéciales)", `${fmt(Math.min(revenuNetAvantCotisations, 68900))} net`, "1,30%", fmt(cotisTA.ae)]} />}
-                        <TableRow cells={["TOTAL COTISATIONS", "", "", fmt(cotisTA.total)]} highlight />
+                        <TableRow cells={[`RRQ (${isTA ? "part totale TA 12,6%+8%" : "part salarié 6,4%+4%"})`, fmt(Math.min(revenuBrutAnnuel, 85000)), isTA ? "12,6%+8%" : "6,4%+4%", fmt(cotisTA.rrq)]} />
+                        <TableRow cells={["RQAP", fmt(Math.min(revenuBrutAnnuel, 103000)), isTA ? "0,764%" : "0,494%", fmt(cotisTA.rqap)]} />
+                        <TableRow cells={["AE (assurance-emploi)", fmt(Math.min(revenuBrutAnnuel, 68900)), "1,30%", fmt(cotisTA.ae)]} />
+                        {isTA && cotisTA.fss > 0 && <TableRow cells={["FSS (Fonds services de santé — TA seulement)", fmt(revenuBrutAnnuel), "~1%", fmt(cotisTA.fss)]} />}
+                        <TableRow cells={["TOTAL COTISATIONS SOCIALES", "", "", fmt(cotisTA.total)]} highlight />
                       </tbody>
                     </table>
                   )}
@@ -723,20 +745,19 @@ export default function FeuilleResume() {
                 </div>
               </div>
 
-              {/* Résumé fiscal — formule corrigée sans double soustraction */}
+              {/* Résumé fiscal — formule complète avec cotisations pour tous */}
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <tbody>
                   <TableRow cells={["Revenu brut annuel", "", fmt(revenuBrutAnnuel)]} />
                   {depensesDeductibles > 0 && <TableRow cells={["Dépenses déductibles (TA)", "−", fmt(depensesDeductibles)]} />}
-                  {isTA && <TableRow cells={["Cotisation déductible (½ RRQ)", "−", fmt(cotisTA.rrq / 2)]} />}
-                  {isTA && <TableRow cells={["Cotisation déductible (½ RQAP)", "−", fmt(cotisTA.rqap / 2)]} />}
+                  {isTA && <TableRow cells={["Cotisation déductible TA (½ RRQ + ½ RQAP)", "−", fmt(cotisTA.rrq / 2 + cotisTA.rqap / 2)]} />}
                   <TableRow cells={["Revenu imposable", "=", fmt(revenuImposable)]} />
-                  <TableRow cells={[`Impôt fédéral (brut ${fmt(impotFedBrut)} − crédit ${fmt(creditFed)} − abattement QC 16,5 %)`, "−", fmt(impotFed)]} />
-                  <TableRow cells={[`Impôt provincial (brut ${fmt(impotQcBrut)} − crédit ${fmt(CREDIT_QC)})`, "−", fmt(impotQc)]} />
-                  {isTA && <TableRow cells={["Cotisations sociales totales (TA)", "−", fmt(totalCotisationsSociales)]} />}
+                  <TableRow cells={[`Impôt fédéral (brut ${fmt(impotFedBrut)} − crédit ${fmt(creditFed)} − abatt. QC 16,5 %)`, "−", fmt(impotFed)]} />
+                  <TableRow cells={[`Impôt provincial (brut ${fmt(impotQcBrut)} − crédit ${fmt(CREDIT_QC * (enCouple ? 2 : 1))})`, "−", fmt(impotQc)]} />
+                  <TableRow cells={[`Cotisations sociales (RRQ ${fmt(cotisTA.rrq)} + RQAP ${fmt(cotisTA.rqap)} + AE ${fmt(cotisTA.ae)}${isTA && cotisTA.fss > 0 ? ` + FSS ${fmt(cotisTA.fss)}` : ""})`, "−", fmt(totalCotisationsSociales)]} />
                   <TableRow cells={["REVENU NET ANNUEL", "=", fmt(revenuNetTotal)]} highlight />
                   <TableRow cells={["Revenu net mensuel", "", fmt(revenuNetMensuel)]} />
-                  <TableRow cells={["Taux d'imposition effectif moyen (/ brut)", "", fmtPct(txEffectif)]} />
+                  <TableRow cells={["Taux d'imposition effectif (impôts / brut)", "", fmtPct(txEffectif)]} />
                 </tbody>
               </table>
             </div>
