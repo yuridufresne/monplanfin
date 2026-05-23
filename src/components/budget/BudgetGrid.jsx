@@ -9,6 +9,7 @@ const SECTIONS = [
     color: "#6B8ED6",
     rows: [
       { label: "Paiement hypothécaire ou loyer",       category: "logement",         type: "depense" },
+      { label: "Paiement hypothécaire principal (ABF)", category: "logement",         type: "depense", abfReadOnly: true },
       { label: "Taxes municipales et scolaires",        category: "logement",         type: "depense" },
       { label: "Assurance habitation",                  category: "assurances",       type: "depense" },
       { label: "Électricité (Hydro-Québec)",            category: "services_publics", type: "depense" },
@@ -96,7 +97,7 @@ const SECTIONS = [
       { label: "Frais bancaires mensuels",              category: "dettes",           type: "depense" },
       { label: "Intérêts cartes de crédit / marge",     category: "dettes",           type: "depense" },
       { label: "Remboursement prêt personnel/étudiant", category: "dettes",           type: "depense" },
-      { label: "Paiements hypothécaires (ABF)",         category: "dettes",           type: "depense", abfReadOnly: true },
+
       { label: "Paiements dettes (ABF)",                category: "dettes",           type: "depense", abfReadOnly: true },
     ],
   },
@@ -278,7 +279,7 @@ export default function BudgetGrid({ onClose, onSaved }) {
         const d = unwrap(dettesProfile.data);
         const hypos = [...(d.hypotheques || []), ...((d.conjoint?.hypotheques) || [])];
         const totalHypo = hypos.reduce((s, h) => s + (parseFloat(h.paiement_mensuel) || 0), 0);
-        if (totalHypo > 0) prefill["Paiements hypothécaires (ABF)"] = totalHypo.toFixed(0);
+        if (totalHypo > 0) prefill["Paiement hypothécaire principal (ABF)"] = totalHypo.toFixed(0);
 
         const autresDettes = [...(d.dettes || []), ...((d.conjoint?.dettes) || [])];
         const totalDettes = autresDettes.reduce((s, dt) => s + (parseFloat(dt.paiement_min) || 0), 0);
@@ -325,7 +326,10 @@ export default function BudgetGrid({ onClose, onSaved }) {
       if (prefill["Impôts (retenues à la source)"] || prefill["Pension alimentaire"]) {
         setOpenSections(prev => ({ ...prev, 10: true }));
       }
-      if (prefill["Paiements hypothécaires (ABF)"] || prefill["Paiements dettes (ABF)"]) {
+      if (prefill["Paiement hypothécaire principal (ABF)"]) {
+        setOpenSections(prev => ({ ...prev, 0: true }));
+      }
+      if (prefill["Paiements dettes (ABF)"]) {
         setOpenSections(prev => ({ ...prev, 7: true }));
       }
       if (prefill["REEE (études des enfants)"] || prefill["CELI"] || prefill["REER"] || prefill["CELIAPP"] || prefill["FTQ / CSN (ABF)"]) {
