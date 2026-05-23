@@ -165,7 +165,7 @@ export default function FeuilleResume() {
   const [investments, setInvestments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [inscritAE, setInscritAE] = useState(false);
-  const [activeSection, setActiveSection] = useState(null);
+  const [expandCotis, setExpandCotis] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -462,29 +462,34 @@ export default function FeuilleResume() {
           {/* Répartition donut + paliers */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div>
-              {/* Cotisations TA */}
+              {/* Cotisations TA — Collapsible */}
               {isTA && (
                 <div style={{ background: "rgba(201,160,99,0.06)", border: "1px solid rgba(201,160,99,0.15)", borderRadius: 16, padding: "1rem 1.25rem", marginBottom: 16 }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                  <button onClick={() => setExpandCotis(!expandCotis)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: expandCotis ? 12 : 0, background: "none", border: "none", cursor: "pointer", padding: 0 }}>
                     <p style={{ fontSize: 12, fontWeight: 700, color: "#C9A063", textTransform: "uppercase", letterSpacing: "0.08em" }}>Cotisations obligatoires — Travailleur autonome</p>
-                    {/* AE toggle */}
-                    <button onClick={() => setInscritAE(!inscritAE)} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: inscritAE ? "#5BC4A0" : "#94A3B8", background: "none", border: "none", cursor: "pointer" }}>
-                      <div style={{ width: 30, height: 16, borderRadius: 8, background: inscritAE ? "#5BC4A0" : "rgba(255,255,255,0.1)", position: "relative", transition: "all 0.2s" }}>
-                        <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#fff", position: "absolute", top: 2, left: inscritAE ? 16 : 2, transition: "all 0.2s" }} />
-                      </div>
-                      AE optionnelle
-                    </button>
-                  </div>
-                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                    <thead><tr>{["Cotisation", "Base de calcul", "Taux", "Montant annuel"].map(h => <th key={h} style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.35)", textAlign: "right", padding: "4px 10px", textTransform: "uppercase" }}>{h}</th>)}</tr></thead>
-                    <tbody>
-                      <TableRow cells={["RRQ (part TA — employé + employeur)", `${fmt(Math.min(revenuNetAvantCotisations, 85000))} net`, "12,6% + 8%", fmt(cotisTA.rrq)]} />
-                      <TableRow cells={["RQAP", `${fmt(Math.min(revenuNetAvantCotisations, 103000))} net`, "0,764%", fmt(cotisTA.rqap)]} />
-                      <TableRow cells={["FSS (Fonds services de santé)", `${fmt(revenuNetAvantCotisations)} net`, "~1% excédent", fmt(cotisTA.fss)]} />
-                      {inscritAE && <TableRow cells={["AE (prestations spéciales)", `${fmt(Math.min(revenuNetAvantCotisations, 68900))} net`, "1,30%", fmt(cotisTA.ae)]} />}
-                      <TableRow cells={["TOTAL COTISATIONS", "", "", fmt(cotisTA.total)]} highlight />
-                    </tbody>
-                  </table>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      {/* AE toggle */}
+                      <button onClick={(e) => { e.stopPropagation(); setInscritAE(!inscritAE); }} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: inscritAE ? "#5BC4A0" : "#94A3B8", background: "none", border: "none", cursor: "pointer" }}>
+                        <div style={{ width: 30, height: 16, borderRadius: 8, background: inscritAE ? "#5BC4A0" : "rgba(255,255,255,0.1)", position: "relative", transition: "all 0.2s" }}>
+                          <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#fff", position: "absolute", top: 2, left: inscritAE ? 16 : 2, transition: "all 0.2s" }} />
+                        </div>
+                        AE
+                      </button>
+                      <ChevronDown style={{ width: 16, height: 16, color: "#C9A063", transform: expandCotis ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }} />
+                    </div>
+                  </button>
+                  {expandCotis && (
+                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                      <thead><tr>{["Cotisation", "Base de calcul", "Taux", "Montant annuel"].map(h => <th key={h} style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.35)", textAlign: "right", padding: "4px 10px", textTransform: "uppercase" }}>{h}</th>)}</tr></thead>
+                      <tbody>
+                        <TableRow cells={["RRQ (part TA — employé + employeur)", `${fmt(Math.min(revenuNetAvantCotisations, 85000))} net`, "12,6% + 8%", fmt(cotisTA.rrq)]} />
+                        <TableRow cells={["RQAP", `${fmt(Math.min(revenuNetAvantCotisations, 103000))} net`, "0,764%", fmt(cotisTA.rqap)]} />
+                        <TableRow cells={["FSS (Fonds services de santé)", `${fmt(revenuNetAvantCotisations)} net`, "~1% excédent", fmt(cotisTA.fss)]} />
+                        {inscritAE && <TableRow cells={["AE (prestations spéciales)", `${fmt(Math.min(revenuNetAvantCotisations, 68900))} net`, "1,30%", fmt(cotisTA.ae)]} />}
+                        <TableRow cells={["TOTAL COTISATIONS", "", "", fmt(cotisTA.total)]} highlight />
+                      </tbody>
+                    </table>
+                  )}
                 </div>
               )}
 
