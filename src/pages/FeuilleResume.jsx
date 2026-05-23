@@ -1264,7 +1264,6 @@ export default function FeuilleResume() {
                     <tr key={i} style={{ borderBottom: "1px solid rgba(255,255,255,0.05)", background: a.isImmo ? "rgba(201,160,99,0.03)" : "transparent" }}>
                       <td style={{ padding: "10px 14px", fontSize: 12.5, color: "rgba(255,255,255,0.8)" }}>
                         <span style={{ fontWeight: 700 }}>{a.type}</span>
-                        {a.isImmo && <span style={{ display: "block", fontSize: 10, color: "#C9A063", marginTop: 2 }}>{a.sourceLabel}</span>}
                       </td>
                       <td style={{ padding: "10px 14px", fontSize: 12.5, color: "rgba(255,255,255,0.55)" }}>{a.institution}</td>
                       <td style={{ padding: "10px 14px", fontFamily: "var(--font-mono)", textAlign: "right" }}>
