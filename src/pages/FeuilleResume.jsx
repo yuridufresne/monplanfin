@@ -1269,12 +1269,6 @@ export default function FeuilleResume() {
                       <td style={{ padding: "10px 14px", fontSize: 12.5, color: "rgba(255,255,255,0.55)" }}>{a.institution}</td>
                       <td style={{ padding: "10px 14px", fontFamily: "var(--font-mono)", textAlign: "right" }}>
                         <span style={{ fontSize: 13, fontWeight: 700, color: "#5BC4A0" }}>{fmt(a.solde)}</span>
-                        {a.isImmo && a.soldeHypo > 0 && (
-                          <span style={{ display: "block", fontSize: 11, color: "rgba(248,113,113,0.7)", marginTop: 1 }}>− {fmt(a.soldeHypo)} hypo.</span>
-                        )}
-                        {a.isImmo && (
-                          <span style={{ display: "block", fontSize: 11, color: "#C9A063", marginTop: 1 }}>= {fmt(a.equite)} équité</span>
-                        )}
                       </td>
                       <td style={{ padding: "10px 14px", fontSize: 12.5, color: a.cotisation > 0 ? "#C9A063" : "#64748B", fontFamily: "var(--font-mono)", textAlign: "right" }}>{a.cotisation > 0 ? fmt(a.cotisation) : "—"}</td>
                       <td style={{ padding: "10px 14px", fontSize: 12.5, color: "#6B8ED6", fontFamily: "var(--font-mono)", textAlign: "right" }}>{a.rendement > 0 ? `${a.rendement} %` : "—"}</td>
