@@ -746,12 +746,14 @@ function DettesPanel({ data, setData }) {
                   <Field label="Amortissement restant (ans)"><Input type="number" value={h.amortissement_restant} onChange={v => updateHypo(i, "amortissement_restant", v)} placeholder="21" /></Field>
                   <Field label="Paiement mensuel ($)"><Input type="number" value={h.paiement_mensuel} onChange={v => updateHypo(i, "paiement_mensuel", v)} placeholder="1 850" /></Field>
                 </div>
-                {h.prix_achat && h.solde && (
+                {h.solde && (h.valeur_marchande || h.prix_achat) && (
                   <div className="mt-4 rounded-lg px-4 py-2.5 flex items-center justify-between"
                     style={{ background: "rgba(201,160,99,0.06)", border: "1px solid rgba(201,160,99,0.12)" }}>
-                    <span className="text-[12px]" style={{ color: "#94A3B8" }}>Équité estimée</span>
+                    <span className="text-[12px]" style={{ color: "#94A3B8" }}>
+                      Équité estimée {h.valeur_marchande ? "(valeur marchande)" : "(prix d'achat)"}
+                    </span>
                     <span className="font-financial text-[14px] font-bold" style={{ color: "#C9A063" }}>
-                      {new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format((parseFloat(h.prix_achat) || 0) - (parseFloat(h.solde) || 0))}
+                      {new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format((parseFloat(h.valeur_marchande) || parseFloat(h.prix_achat) || 0) - (parseFloat(h.solde) || 0))}
                     </span>
                   </div>
                 )}
