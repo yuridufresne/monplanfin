@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { syncABFToEntities } from "@/hooks/useABFSync";
 import ResetDataModal from "@/components/dashboard/ResetDataModal";
+import NIFCalculator from "@/components/dashboard/NIFCalculator";
 
 const fmt = (v) => new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v || 0);
 const fmtPct = (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)} %`;
@@ -160,6 +161,11 @@ export default function Dashboard() {
                 </motion.div>
               ))}
             </div>
+
+            {/* NIF Calculator */}
+            <motion.div {...fadeUp(0.20)} className="mb-8">
+              <NIFCalculator profiles={profiles} />
+            </motion.div>
 
             {/* Lower grid — Dettes + Objectifs */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
