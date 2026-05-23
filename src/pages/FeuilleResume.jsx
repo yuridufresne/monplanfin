@@ -181,6 +181,8 @@ export default function FeuilleResume() {
   const [allocOverride, setAllocOverride] = useState(null); // null = valeur calculée
   const [editingAlloc, setEditingAlloc] = useState(false);
   const [allocInputVal, setAllocInputVal] = useState("");
+  // Onglet fiscal actif : "foyer" | "p1" | "p2"
+  const [ongletFiscal, setOngletFiscal] = useState("foyer");
 
   useEffect(() => {
     Promise.all([
@@ -623,16 +625,68 @@ export default function FeuilleResume() {
   const montantFonds = parseFloat(fondsABF.montant_fonds) || 0;
   const moisCouverts = depensesMensuelles > 0 ? montantFonds / depensesMensuelles : 0;
 
-  // Graphique — somme = revenuBrutAnnuel exactement (correction bug 4)
-  // Les cotisations s'affichent pour TOUS les travailleurs (salariés et TA)
+  // ── Données selon l'onglet actif ─────────────────────────────────────
+  // Vue individuelle ou foyer selon la sélection
+  const vueActuelle = useMemo(() => {
+    const pActive = ongletFiscal === "p1" ? p1 : ongletFiscal === "p2" ? p2 : null;
+    if (pActive) {
+      // Vue individuelle : calculs sur cette personne seule
+      const txMargFed = PALIERS_FED.slice().reverse().find(p => pActive.imposable > p.min)?.rate || 0;
+      const txMargQc  = PALIERS_QC.slice().reverse().find(p => pActive.imposable > p.min)?.rate || 0;
+      return {
+        brut: pActive.brut,
+        imposable: pActive.imposable,
+        impFed: pActive.impFed,
+        impQc: pActive.impQc,
+        impFedBrut: pActive.impFedBrut,
+        impQcBrut: pActive.impQcBrut,
+        totalImpots: pActive.impFed + pActive.impQc,
+        cotis: pActive.cotis,
+        net: pActive.net,
+        deductibles: pActive.deductibles,
+        isTA: pActive.isTAP,
+        creditFed: calcCreditFederal(pActive.imposable),
+        creditQc: CREDIT_QC,
+        txEffectif: pActive.brut > 0 ? ((pActive.impFed + pActive.impQc) / pActive.brut) * 100 : 0,
+        txMarginalCombine: ((txMargFed * (1 - 0.165)) + txMargQc) * 100,
+      };
+    }
+    // Vue foyer (somme des deux)
+    return {
+      brut: revenuBrutAnnuel,
+      imposable: revenuImposable,
+      impFed: impotFed,
+      impQc: impotQc,
+      impFedBrut: impotFedBrut,
+      impQcBrut: impotQcBrut,
+      totalImpots,
+      cotis: cotisTA,
+      net: revenuNetTotal,
+      deductibles: depensesDeductibles,
+      isTA,
+      creditFed,
+      creditQc: CREDIT_QC * (enCouple ? 2 : 1),
+      txEffectif,
+      txMarginalCombine,
+    };
+  }, [ongletFiscal, p1, p2, revenuBrutAnnuel, revenuImposable, impotFed, impotQc, impotFedBrut, impotQcBrut, totalImpots, cotisTA, revenuNetTotal, depensesDeductibles, isTA, creditFed, txEffectif, txMarginalCombine]);
+
+  // Allocations selon l'onglet : 50% si vue individuelle, 100% si foyer
+  const allocFacteur = ongletFiscal === "foyer" ? 1 : 0.5;
+  const allocAce = allocCalc.ace * allocFacteur;
+  const allocQcVue = allocCalc.allocQC * allocFacteur;
+  const allocTotalVue = allocCalc.total * allocFacteur;
+  const allocMensuelVue = allocCalc.mensuel * allocFacteur;
+
+  // Graphique dynamique selon l'onglet
   const repartitionRevenu = [
-    { name: "Impôts fédéraux",    value: Math.round(impotFed) },
-    { name: "Impôts provinciaux", value: Math.round(impotQc) },
-    { name: "RRQ",  value: Math.round(cotisTA.rrq) },
-    { name: "RQAP", value: Math.round(cotisTA.rqap) },
-    { name: "AE",   value: Math.round(cotisTA.ae) },
-    ...(isTA && cotisTA.fss > 0 ? [{ name: "FSS", value: Math.round(cotisTA.fss) }] : []),
-    { name: "Revenu disponible",  value: Math.round(revenuNetTotal) },
+    { name: "Impôts fédéraux",    value: Math.round(vueActuelle.impFed) },
+    { name: "Impôts provinciaux", value: Math.round(vueActuelle.impQc) },
+    { name: "RRQ",  value: Math.round(vueActuelle.cotis.rrq) },
+    { name: "RQAP", value: Math.round(vueActuelle.cotis.rqap) },
+    { name: "AE",   value: Math.round(vueActuelle.cotis.ae) },
+    ...(vueActuelle.isTA && vueActuelle.cotis.fss > 0 ? [{ name: "FSS", value: Math.round(vueActuelle.cotis.fss) }] : []),
+    { name: "Revenu disponible",  value: Math.round(vueActuelle.net) },
   ].filter(x => x.value > 0);
 
   if (loading) {
@@ -699,15 +753,56 @@ export default function FeuilleResume() {
         <div style={{ ...glass, borderRadius: 24, padding: "2rem", marginBottom: 28 }}>
           <SectionTitle icon={DollarSign} color="#C9A063">1. Revenus, Cotisations & Fiscalité (Québec 2026)</SectionTitle>
 
+          {/* ── SÉLECTEUR D'ONGLETS ─────────────────────────────────── */}
+          {enCouple && (
+            <div style={{ display: "flex", gap: 4, padding: 4, borderRadius: 14, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", marginBottom: 24, width: "fit-content" }}>
+              {[
+                { key: "p1", label: profil.nom?.split(" ")[0] || "Client 1", color: "#C9A063" },
+                { key: "p2", label: profil.conjoint?.nom?.split(" ")[0] || "Client 2", color: "#6B8ED6" },
+                { key: "foyer", label: "Foyer (les deux)", color: "#5BC4A0" },
+              ].map(tab => (
+                <button
+                  key={tab.key}
+                  onClick={() => setOngletFiscal(tab.key)}
+                  style={{
+                    padding: "7px 16px", borderRadius: 10, border: "none", cursor: "pointer",
+                    fontSize: 12.5, fontWeight: 700, transition: "all 0.2s",
+                    background: ongletFiscal === tab.key ? tab.color : "transparent",
+                    color: ongletFiscal === tab.key ? "#050810" : "rgba(255,255,255,0.45)",
+                    boxShadow: ongletFiscal === tab.key ? `0 2px 12px ${tab.color}50` : "none",
+                  }}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Badge informatif foyer */}
+          {enCouple && ongletFiscal === "foyer" && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, padding: "8px 14px", borderRadius: 10, background: "rgba(91,196,160,0.07)", border: "1px solid rgba(91,196,160,0.2)", width: "fit-content" }}>
+              <span style={{ fontSize: 11, color: "#5BC4A0", fontWeight: 600 }}>
+                ✓ Vue Foyer — somme des calculs individuels de {profil.nom?.split(" ")[0] || "Client 1"} + {profil.conjoint?.nom?.split(" ")[0] || "Client 2"}. L'impôt n'est pas recalculé sur le revenu combiné.
+              </span>
+            </div>
+          )}
+          {enCouple && ongletFiscal !== "foyer" && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, padding: "8px 14px", borderRadius: 10, background: "rgba(201,160,99,0.06)", border: "1px solid rgba(201,160,99,0.15)", width: "fit-content" }}>
+              <span style={{ fontSize: 11, color: "#C9A063", fontWeight: 600 }}>
+                Vue individuelle — impôt calculé sur le revenu de {ongletFiscal === "p1" ? (profil.nom?.split(" ")[0] || "Client 1") : (profil.conjoint?.nom?.split(" ")[0] || "Client 2")} uniquement, avec ses propres crédits de base.
+              </span>
+            </div>
+          )}
+
           {/* Répartition donut + paliers */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div>
-              {/* Cotisations sociales — Collapsible (tous travailleurs) */}
-              {revenuBrutAnnuel > 0 && (
+              {/* Cotisations sociales — Collapsible */}
+              {vueActuelle.brut > 0 && (
                 <div style={{ background: "rgba(201,160,99,0.06)", border: "1px solid rgba(201,160,99,0.15)", borderRadius: 16, padding: "1rem 1.25rem", marginBottom: 16 }}>
                   <button onClick={() => setExpandCotis(!expandCotis)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: expandCotis ? 12 : 0, background: "none", border: "none", cursor: "pointer", padding: 0 }}>
                     <p style={{ fontSize: 12, fontWeight: 700, color: "#C9A063", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                      Cotisations sociales obligatoires — {isTA ? "Travailleur autonome" : "Salarié(e)"}
+                      Cotisations sociales obligatoires — {vueActuelle.isTA ? "Travailleur autonome" : "Salarié(e)"}
                     </p>
                     <ChevronDown style={{ width: 16, height: 16, color: "#C9A063", transform: expandCotis ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }} />
                   </button>
@@ -715,11 +810,11 @@ export default function FeuilleResume() {
                     <table style={{ width: "100%", borderCollapse: "collapse" }}>
                       <thead><tr>{["Cotisation", "Base", "Taux", "Montant annuel"].map(h => <th key={h} style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.35)", textAlign: "right", padding: "4px 10px", textTransform: "uppercase" }}>{h}</th>)}</tr></thead>
                       <tbody>
-                        <TableRow cells={[`RRQ (${isTA ? "part totale TA 12,6%+8%" : "part salarié 6,4%+4%"})`, fmt(Math.min(revenuBrutAnnuel, 85000)), isTA ? "12,6%+8%" : "6,4%+4%", fmt(cotisTA.rrq)]} />
-                        <TableRow cells={["RQAP", fmt(Math.min(revenuBrutAnnuel, 103000)), isTA ? "0,764%" : "0,494%", fmt(cotisTA.rqap)]} />
-                        <TableRow cells={["AE (assurance-emploi)", fmt(Math.min(revenuBrutAnnuel, 68900)), "1,30%", fmt(cotisTA.ae)]} />
-                        {isTA && cotisTA.fss > 0 && <TableRow cells={["FSS (Fonds services de santé — TA seulement)", fmt(revenuBrutAnnuel), "~1%", fmt(cotisTA.fss)]} />}
-                        <TableRow cells={["TOTAL COTISATIONS SOCIALES", "", "", fmt(cotisTA.total)]} highlight />
+                        <TableRow cells={[`RRQ (${vueActuelle.isTA ? "part totale TA 12,6%+8%" : "part salarié 6,4%+4%"})`, fmt(Math.min(vueActuelle.brut, 85000)), vueActuelle.isTA ? "12,6%+8%" : "6,4%+4%", fmt(vueActuelle.cotis.rrq)]} />
+                        <TableRow cells={["RQAP", fmt(Math.min(vueActuelle.brut, 103000)), vueActuelle.isTA ? "0,764%" : "0,494%", fmt(vueActuelle.cotis.rqap)]} />
+                        <TableRow cells={["AE (assurance-emploi)", fmt(Math.min(vueActuelle.brut, 68900)), "1,30%", fmt(vueActuelle.cotis.ae)]} />
+                        {vueActuelle.isTA && vueActuelle.cotis.fss > 0 && <TableRow cells={["FSS (Fonds services de santé — TA)", fmt(vueActuelle.brut), "~1%", fmt(vueActuelle.cotis.fss)]} />}
+                        <TableRow cells={["TOTAL COTISATIONS SOCIALES", "", "", fmt(vueActuelle.cotis.total)]} highlight />
                       </tbody>
                     </table>
                   )}
@@ -729,13 +824,13 @@ export default function FeuilleResume() {
               {/* Paliers fiscaux */}
               <div style={{ marginBottom: 16 }}>
                 <p style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>Paliers d'imposition 2026</p>
-                <PalierBar revenuImposable={revenuImposable} paliers={PALIERS_FED} label="Fédéral" mpb={0} color="#6B8ED6" />
-                <PalierBar revenuImposable={revenuImposable} paliers={PALIERS_QC} label="Québec" mpb={0} color="#C9A063" />
+                <PalierBar revenuImposable={vueActuelle.imposable} paliers={PALIERS_FED} label="Fédéral" mpb={0} color="#6B8ED6" />
+                <PalierBar revenuImposable={vueActuelle.imposable} paliers={PALIERS_QC} label="Québec" mpb={0} color="#C9A063" />
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginTop: 12 }}>
                   {[
-                    { label: "Impôt fédéral", val: fmt(impotFed), color: "#6B8ED6" },
-                    { label: "Impôt provincial", val: fmt(impotQc), color: "#C9A063" },
-                    { label: "Taux marginal combiné", val: `${txMarginalCombine.toFixed(2)}%`, color: "#E07B6B" },
+                    { label: "Impôt fédéral", val: fmt(vueActuelle.impFed), color: "#6B8ED6" },
+                    { label: "Impôt provincial", val: fmt(vueActuelle.impQc), color: "#C9A063" },
+                    { label: "Taux marginal combiné", val: `${vueActuelle.txMarginalCombine.toFixed(2)}%`, color: "#E07B6B" },
                   ].map(x => (
                     <div key={x.label} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10, padding: "8px 10px", textAlign: "center" }}>
                       <p style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginBottom: 3 }}>{x.label}</p>
@@ -745,26 +840,55 @@ export default function FeuilleResume() {
                 </div>
               </div>
 
-              {/* Résumé fiscal — formule complète avec cotisations pour tous */}
+              {/* Résumé fiscal */}
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <tbody>
-                  <TableRow cells={["Revenu brut annuel", "", fmt(revenuBrutAnnuel)]} />
-                  {depensesDeductibles > 0 && <TableRow cells={["Dépenses déductibles (TA)", "−", fmt(depensesDeductibles)]} />}
-                  {isTA && <TableRow cells={["Cotisation déductible TA (½ RRQ + ½ RQAP)", "−", fmt(cotisTA.rrq / 2 + cotisTA.rqap / 2)]} />}
-                  <TableRow cells={["Revenu imposable", "=", fmt(revenuImposable)]} />
-                  <TableRow cells={[`Impôt fédéral (brut ${fmt(impotFedBrut)} − crédit ${fmt(creditFed)} − abatt. QC 16,5 %)`, "−", fmt(impotFed)]} />
-                  <TableRow cells={[`Impôt provincial (brut ${fmt(impotQcBrut)} − crédit ${fmt(CREDIT_QC * (enCouple ? 2 : 1))})`, "−", fmt(impotQc)]} />
-                  <TableRow cells={[`Cotisations sociales (RRQ ${fmt(cotisTA.rrq)} + RQAP ${fmt(cotisTA.rqap)} + AE ${fmt(cotisTA.ae)}${isTA && cotisTA.fss > 0 ? ` + FSS ${fmt(cotisTA.fss)}` : ""})`, "−", fmt(totalCotisationsSociales)]} />
-                  <TableRow cells={["REVENU NET ANNUEL", "=", fmt(revenuNetTotal)]} highlight />
-                  <TableRow cells={["Revenu net mensuel", "", fmt(revenuNetMensuel)]} />
-                  <TableRow cells={["Taux d'imposition effectif (impôts / brut)", "", fmtPct(txEffectif)]} />
+                  <TableRow cells={["Revenu brut annuel", "", fmt(vueActuelle.brut)]} />
+                  {vueActuelle.deductibles > 0 && <TableRow cells={["Dépenses déductibles (TA)", "−", fmt(vueActuelle.deductibles)]} />}
+                  {vueActuelle.isTA && <TableRow cells={["Cotisation déductible TA (½ RRQ + ½ RQAP)", "−", fmt(vueActuelle.cotis.rrq / 2 + vueActuelle.cotis.rqap / 2)]} />}
+                  <TableRow cells={["Revenu imposable", "=", fmt(vueActuelle.imposable)]} />
+                  <TableRow cells={[`Impôt fédéral (brut ${fmt(vueActuelle.impFedBrut)} − crédit ${fmt(vueActuelle.creditFed)} − abatt. QC 16,5 %)`, "−", fmt(vueActuelle.impFed)]} />
+                  <TableRow cells={[`Impôt provincial (brut ${fmt(vueActuelle.impQcBrut)} − crédit ${fmt(vueActuelle.creditQc)})`, "−", fmt(vueActuelle.impQc)]} />
+                  <TableRow cells={[`Cotisations sociales (RRQ ${fmt(vueActuelle.cotis.rrq)} + RQAP ${fmt(vueActuelle.cotis.rqap)} + AE ${fmt(vueActuelle.cotis.ae)}${vueActuelle.isTA && vueActuelle.cotis.fss > 0 ? ` + FSS ${fmt(vueActuelle.cotis.fss)}` : ""})`, "−", fmt(vueActuelle.cotis.total)]} />
+                  <TableRow cells={["REVENU NET DISPONIBLE", "=", fmt(vueActuelle.net)]} highlight />
+                  <TableRow cells={["Revenu net mensuel", "", fmt(vueActuelle.net / 12)]} />
+                  <TableRow cells={["Taux d'imposition effectif (impôts / brut)", "", fmtPct(vueActuelle.txEffectif)]} />
                 </tbody>
               </table>
+
+              {/* ── LIQUIDITÉS NON IMPOSABLES (Allocations) ─────────── */}
+              {hasEnfants && (
+                <div style={{ marginTop: 16, borderRadius: 14, padding: "1rem 1.25rem", background: "rgba(167,125,211,0.07)", border: "1px solid rgba(167,125,211,0.2)" }}>
+                  <p style={{ fontSize: 11, fontWeight: 800, color: "#A87DD3", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 10 }}>
+                    💰 Liquidités non imposables (Allocations)
+                    {ongletFiscal !== "foyer" && enCouple && (
+                      <span style={{ fontSize: 10, fontWeight: 600, color: "rgba(167,125,211,0.6)", marginLeft: 8 }}>— 50 % (vue individuelle)</span>
+                    )}
+                  </p>
+                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                    <tbody>
+                      <TableRow cells={["Fédéral : Allocation canadienne pour enfants (ACE)", fmt(allocAce)]} />
+                      <TableRow cells={["Provincial : Soutien aux enfants (Retraite Québec)", fmt(allocQcVue)]} />
+                      <TableRow cells={["TOTAL ANNUEL", fmt(allocTotalVue)]} highlight />
+                      <TableRow cells={["≈ par mois", fmt(allocMensuelVue)]} />
+                    </tbody>
+                  </table>
+                  <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.3)", marginTop: 8 }}>
+                    Ces montants sont <strong style={{ color: "#A87DD3" }}>non imposables</strong> et s'ajoutent au revenu net disponible.
+                    {ongletFiscal === "foyer" ? " Montant familial complet." : " 50 % attribué à cette personne."}
+                  </p>
+                </div>
+              )}
             </div>
 
-            {/* Donut */}
+            {/* Donut — dynamique selon l'onglet */}
             <div>
-              <p style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>Ventilation du revenu brut</p>
+              <p style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>
+                Ventilation du revenu brut
+                {enCouple && <span style={{ marginLeft: 6, color: ongletFiscal === "foyer" ? "#5BC4A0" : ongletFiscal === "p1" ? "#C9A063" : "#6B8ED6", fontSize: 10 }}>
+                  — {ongletFiscal === "foyer" ? "Foyer" : ongletFiscal === "p1" ? (profil.nom?.split(" ")[0] || "Client 1") : (profil.conjoint?.nom?.split(" ")[0] || "Client 2")}
+                </span>}
+              </p>
               <ResponsiveContainer width="100%" height={220}>
                 <PieChart>
                   <Pie data={repartitionRevenu} cx="50%" cy="50%" innerRadius={60} outerRadius={90} dataKey="value">
@@ -782,42 +906,52 @@ export default function FeuilleResume() {
                     </div>
                     <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                       <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "#fff", fontWeight: 600 }}>{fmt(d.value)}</span>
-                      <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{revenuBrutAnnuel > 0 ? `${((d.value / revenuBrutAnnuel) * 100).toFixed(1)} %` : "—"}</span>
+                      <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{vueActuelle.brut > 0 ? `${((d.value / vueActuelle.brut) * 100).toFixed(1)} %` : "—"}</span>
                     </div>
                   </div>
                 ))}
               </div>
 
-              {/* Sources de revenus — foyer complet */}
-              {(emplois.length > 0 || emploisConjoint.length > 0) && (
-                <div style={{ marginTop: 20, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, padding: "1rem" }}>
-                  <p style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>Sources de revenus{enCouple ? " — Foyer" : ""}</p>
-                  {emplois.map((e, i) => (
-                    <div key={`p1e${i}`} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "5px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                      <span style={{ color: "#94A3B8" }}>{e.poste || e.employeur || `Emploi ${i + 1}`} <span style={{ fontSize: 10, color: "#6B8ED6" }}>({e.type})</span></span>
-                      <span style={{ fontFamily: "var(--font-mono)", color: "#C9A063", fontWeight: 600 }}>{fmt(parseFloat(e.revenu_brut) || 0)}</span>
-                    </div>
-                  ))}
-                  {sides.map((s, i) => (
-                    <div key={`p1s${i}`} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "5px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                      <span style={{ color: "#94A3B8" }}>{s.nom || s.type} <span style={{ fontSize: 10, color: "#E0B44B" }}>(side)</span></span>
-                      <span style={{ fontFamily: "var(--font-mono)", color: "#E0B44B", fontWeight: 600 }}>{fmt((parseFloat(s.revenu_mensuel_moyen) || 0) * 12)}</span>
-                    </div>
-                  ))}
-                  {emploisConjoint.map((e, i) => (
-                    <div key={`p2e${i}`} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "5px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                      <span style={{ color: "#94A3B8" }}>{e.poste || e.employeur || `Emploi ${i + 1}`} <span style={{ fontSize: 10, color: "#6B8ED6" }}>({e.type})</span> <span style={{ fontSize: 10, color: "rgba(107,142,214,0.6)" }}>· {profil.conjoint?.nom?.split(" ")[0] || "Conjoint"}</span></span>
-                      <span style={{ fontFamily: "var(--font-mono)", color: "#6B8ED6", fontWeight: 600 }}>{fmt(parseFloat(e.revenu_brut) || 0)}</span>
-                    </div>
-                  ))}
-                  {sidesConjoint.map((s, i) => (
-                    <div key={`p2s${i}`} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "5px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                      <span style={{ color: "#94A3B8" }}>{s.nom || s.type} <span style={{ fontSize: 10, color: "#E0B44B" }}>(side)</span> <span style={{ fontSize: 10, color: "rgba(107,142,214,0.6)" }}>· {profil.conjoint?.nom?.split(" ")[0] || "Conjoint"}</span></span>
-                      <span style={{ fontFamily: "var(--font-mono)", color: "#E0B44B", fontWeight: 600 }}>{fmt((parseFloat(s.revenu_mensuel_moyen) || 0) * 12)}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
+              {/* Sources de revenus filtrées selon l'onglet */}
+              {(() => {
+                const showP1 = ongletFiscal === "foyer" || ongletFiscal === "p1";
+                const showP2 = (ongletFiscal === "foyer" || ongletFiscal === "p2") && enCouple;
+                const filtreEmplois = showP1 ? emplois : [];
+                const filtreSides = showP1 ? sides : [];
+                const filtreEmploisC = showP2 ? emploisConjoint : [];
+                const filtreSidesC = showP2 ? sidesConjoint : [];
+                const hasAnySrc = filtreEmplois.length > 0 || filtreSides.length > 0 || filtreEmploisC.length > 0 || filtreSidesC.length > 0;
+                if (!hasAnySrc) return null;
+                return (
+                  <div style={{ marginTop: 20, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, padding: "1rem" }}>
+                    <p style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>Sources de revenus</p>
+                    {filtreEmplois.map((e, i) => (
+                      <div key={`p1e${i}`} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "5px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                        <span style={{ color: "#94A3B8" }}>{e.poste || e.employeur || `Emploi ${i + 1}`} <span style={{ fontSize: 10, color: "#6B8ED6" }}>({e.type})</span></span>
+                        <span style={{ fontFamily: "var(--font-mono)", color: "#C9A063", fontWeight: 600 }}>{fmt(parseFloat(e.revenu_brut) || 0)}</span>
+                      </div>
+                    ))}
+                    {filtreSides.map((s, i) => (
+                      <div key={`p1s${i}`} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "5px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                        <span style={{ color: "#94A3B8" }}>{s.nom || s.type} <span style={{ fontSize: 10, color: "#E0B44B" }}>(side)</span></span>
+                        <span style={{ fontFamily: "var(--font-mono)", color: "#E0B44B", fontWeight: 600 }}>{fmt((parseFloat(s.revenu_mensuel_moyen) || 0) * 12)}</span>
+                      </div>
+                    ))}
+                    {filtreEmploisC.map((e, i) => (
+                      <div key={`p2e${i}`} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "5px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                        <span style={{ color: "#94A3B8" }}>{e.poste || e.employeur || `Emploi ${i + 1}`} <span style={{ fontSize: 10, color: "#6B8ED6" }}>({e.type})</span> <span style={{ fontSize: 10, color: "rgba(107,142,214,0.6)" }}>· {profil.conjoint?.nom?.split(" ")[0] || "Conjoint"}</span></span>
+                        <span style={{ fontFamily: "var(--font-mono)", color: "#6B8ED6", fontWeight: 600 }}>{fmt(parseFloat(e.revenu_brut) || 0)}</span>
+                      </div>
+                    ))}
+                    {filtreSidesC.map((s, i) => (
+                      <div key={`p2s${i}`} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "5px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                        <span style={{ color: "#94A3B8" }}>{s.nom || s.type} <span style={{ fontSize: 10, color: "#E0B44B" }}>(side)</span> <span style={{ fontSize: 10, color: "rgba(107,142,214,0.6)" }}>· {profil.conjoint?.nom?.split(" ")[0] || "Conjoint"}</span></span>
+                        <span style={{ fontFamily: "var(--font-mono)", color: "#E0B44B", fontWeight: 600 }}>{fmt((parseFloat(s.revenu_mensuel_moyen) || 0) * 12)}</span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>
