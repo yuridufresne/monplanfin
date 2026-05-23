@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { syncABFToEntities } from "@/hooks/useABFSync";
+import { calcRevenuDisponible } from "@/lib/calcRevenuNet";
 import ResetDataModal from "@/components/dashboard/ResetDataModal";
 import RetirementReport from "@/components/dashboard/RetirementReport";
 
@@ -38,27 +39,21 @@ export default function Dashboard() {
   const { data: profiles = [] } = useQuery({ queryKey: ["financialProfiles"], queryFn: () => base44.entities.FinancialProfile.list(), enabled: synced });
 
   // ── Calculs ────────────────────────────────────────────────────────────────
-  // Revenus lus UNIQUEMENT depuis l'ABF (source unique de vérité)
-  const { totalRevenue, totalImpots } = useMemo(() => {
-    const revenuProfile = profiles.find(p => p.section === "revenu");
-    const raw = revenuProfile?.data || {};
-    const data = raw.data || raw;
-    const emplois = data.emplois || [];
-    const sides = data.sidehustles || [];
-    const rev = emplois.reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0) / 12, 0)
-      + sides.reduce((s, sh) => s + (parseFloat(sh.revenu_mensuel_moyen) || 0), 0);
-    const impots = emplois.reduce((s, e) => {
-      const saisi = parseFloat(e.impot_saisi || e.impot_mensuel) || 0;
-      const freq = e.impot_freq || "mensuel";
-      return s + (freq === "annuel" ? saisi / 12 : saisi);
-    }, 0);
-    return { totalRevenue: rev, totalImpots: impots };
-  }, [profiles]);
+  // Revenu net + allocations — source unique via calcRevenuDisponible (= FeuilleResume)
+  const { totalMensuel: totalRevenue, allocMensuel } = useMemo(
+    () => calcRevenuDisponible(profiles),
+    [profiles]
+  );
 
   const depenseEntries = budgetEntries.filter(e => e.type === "depense");
-  const hasImpotsEntry = depenseEntries.some(e => e.label === "Impôts (retenues à la source)");
-  const totalExpenses = depenseEntries.reduce((s, e) => s + (e.amount || 0), 0)
-    + (hasImpotsEntry ? 0 : totalImpots);
+  const totalExpenses = depenseEntries.reduce((s, e) => {
+    const freq = e.frequency || "mensuel";
+    const amount = parseFloat(e.amount) || 0;
+    if (freq === "annuel") return s + amount / 12;
+    if (freq === "hebdomadaire") return s + amount * 52 / 12;
+    if (freq === "bimensuel") return s + amount * 2;
+    return s + amount;
+  }, 0);
   const balance = totalRevenue - totalExpenses;
   const savingsRate = totalRevenue > 0 ? (balance / totalRevenue) * 100 : 0;
   const totalAssets = investments.reduce((s, i) => s + (i.current_value || 0), 0);
@@ -116,7 +111,7 @@ export default function Dashboard() {
                 { label: "NIF (Cible)", val: fmt(nifTarget), sub: "Dépenses annuelles × 25", color: "#5BC4A0" },
                 { label: "Valeur nette", val: fmt(netWorth), sub: "Actifs − Passifs", color: "#fff" },
                 { label: "Ratio d'endettement", val: `${debtRatio.toFixed(1)} %`, sub: "Passifs / Actifs", color: debtRatio < 50 ? "#5BC4A0" : debtRatio < 80 ? "#f59e0b" : "#f87171" },
-                { label: "Revenu mensuel", val: fmt(totalRevenue), sub: "Source : ABF", color: "#C9A063" },
+                { label: "Revenu net mensuel", val: fmt(totalRevenue), sub: allocMensuel > 0 ? `dont ${fmt(allocMensuel)}/mois alloc.` : "Net après impôts", color: "#C9A063" },
               ].map((item) => (
                 <div key={item.label}>
                   <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(148,163,184,0.5)", marginBottom: 10 }}>{item.label}</p>
@@ -146,7 +141,7 @@ export default function Dashboard() {
             {/* Second row — 4 KPI cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
               {[
-                { label: "Revenus mensuels", value: fmt(totalRevenue), sub: "Source : ABF", color: "#5BC4A0" },
+                { label: allocMensuel > 0 ? "Revenu net + allocations" : "Revenu net mensuel", value: fmt(totalRevenue), sub: allocMensuel > 0 ? `dont ${fmt(allocMensuel)} alloc.` : "Net après impôts & cotisations", color: "#5BC4A0" },
                 { label: "Dépenses mensuelles", value: fmt(totalExpenses), sub: `${budgetEntries.filter(e => e.type === "depense").length} poste(s)`, color: "#f87171" },
                 { label: "Total des dettes", value: fmt(totalDebt), sub: `${debts.length} obligation(s)`, color: totalDebt > 0 ? "#f87171" : "#5BC4A0" },
                 { label: "Placements", value: fmt(totalAssets), sub: `${fmtPct(investmentGainPct)} vs coût`, color: "#DEFF9A" },
