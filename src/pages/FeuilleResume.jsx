@@ -12,24 +12,31 @@ const fmt = (v) => new Intl.NumberFormat("fr-CA", { style: "currency", currency:
 const fmtPct = (v) => `${(v || 0).toFixed(2)} %`;
 const fmtPct1 = (v) => `${(v || 0).toFixed(1)} %`;
 
-// ── Paliers fiscaux 2026 ───────────────────────────────────────────────────
+// ── Paliers fiscaux 2026 (taux plein dès le 1er dollar) ──────────────────
 const PALIERS_FED = [
-  { min: 0,      max: 16452,   rate: 0 },
-  { min: 16452,  max: 58523,   rate: 0.15 },
+  { min: 0,      max: 58523,   rate: 0.15 },
   { min: 58523,  max: 117045,  rate: 0.205 },
   { min: 117045, max: 181440,  rate: 0.26 },
   { min: 181440, max: 258482,  rate: 0.29 },
   { min: 258482, max: Infinity,rate: 0.33 },
 ];
 const PALIERS_QC = [
-  { min: 0,      max: 18952,   rate: 0 },
-  { min: 18952,  max: 54345,   rate: 0.14 },
+  { min: 0,      max: 54345,   rate: 0.14 },
   { min: 54345,  max: 108680,  rate: 0.19 },
   { min: 108680, max: 132245,  rate: 0.24 },
   { min: 132245, max: Infinity,rate: 0.2575 },
 ];
-const MPB_FED = 16452;
-const MPB_QC  = 18952;
+
+// ── Correction 4 : Crédits d'impôt sur montants personnels de base 2026 ──
+function calcCreditFederal(revenuImposable) {
+  let montantBase = 16452;
+  if (revenuImposable > 181440) {
+    montantBase = 16452 - ((revenuImposable - 181440) * (1623 / 77042));
+    montantBase = Math.max(14829, Math.min(16452, montantBase));
+  }
+  return montantBase * 0.15;
+}
+const CREDIT_QC = 18952 * 0.14; // fixe, pas de réduction selon le revenu
 
 function calcImpotPaliers(revenuImposable, paliers) {
   let impot = 0;
@@ -219,18 +226,27 @@ export default function FeuilleResume() {
   const deductionCotisTA = isTA ? cotisTA.rrq / 2 + cotisTA.rqap / 2 : 0; // partie déductible
   const revenuImposable = Math.max(0, revenuNetAvantCotisations - deductionCotisTA);
 
-  // Impôts
-  const impotFed = calcImpotPaliers(Math.max(0, revenuImposable - MPB_FED), PALIERS_FED.slice(1));
-  const impotQc  = calcImpotPaliers(Math.max(0, revenuImposable - MPB_QC), PALIERS_QC.slice(1));
+  // Correction 4 : Impôts calculés sur 100% du revenu imposable, puis crédits soustraits
+  const impotFedBrut = calcImpotPaliers(revenuImposable, PALIERS_FED);
+  const creditFed    = calcCreditFederal(revenuImposable);
+  const impotFed     = Math.max(0, impotFedBrut - creditFed);
+
+  const impotQcBrut  = calcImpotPaliers(revenuImposable, PALIERS_QC);
+  const impotQc      = Math.max(0, impotQcBrut - CREDIT_QC);
+
   const totalImpots = impotFed + impotQc;
 
-  // Taux effectif moyen
-  const txEffectif = revenuImposable > 0 ? (totalImpots / revenuImposable) * 100 : 0;
+  // Correction 3 : Taux marginal combiné avec abattement du Québec (16,5%)
   const txMarginalFed = PALIERS_FED.slice().reverse().find(p => revenuImposable > p.min)?.rate || 0;
   const txMarginalQc  = PALIERS_QC.slice().reverse().find(p => revenuImposable > p.min)?.rate || 0;
-  const txMarginalCombine = (txMarginalFed + txMarginalQc) * 100;
+  const txMarginalCombine = ((txMarginalFed * (1 - 0.165)) + txMarginalQc) * 100;
 
-  const revenuNetTotal = Math.max(0, revenuImposable - totalImpots - (isTA ? cotisTA.total : 0));
+  // Taux effectif moyen
+  const txEffectif = revenuBrutAnnuel > 0 ? (totalImpots / revenuBrutAnnuel) * 100 : 0;
+
+  // Correction 1 : Revenu net = Brut − Impôts fédéraux − Impôts provinciaux − Cotisations sociales (pas de double soustraction)
+  const totalCotisationsSociales = isTA ? cotisTA.total : 0;
+  const revenuNetTotal   = Math.max(0, revenuBrutAnnuel - impotFed - impotQc - totalCotisationsSociales);
   const revenuNetMensuel = revenuNetTotal / 12;
 
   // ── Budget ────────────────────────────────────────────────────────────
@@ -366,14 +382,14 @@ export default function FeuilleResume() {
   const montantFonds = parseFloat(fondsABF.montant_fonds) || 0;
   const moisCouverts = depensesMensuelles > 0 ? montantFonds / depensesMensuelles : 0;
 
-  // ── Répartition revenus (donut) ───────────────────────────────────────
+  // Correction 2 : Graphique — somme = revenuBrutAnnuel exactement, "Revenu disponible" = revenuNetTotal corrigé
   const repartitionRevenu = [
-    { name: "Impôts fédéraux", value: Math.round(impotFed) },
-    { name: "Impôts provinciaux", value: Math.round(impotQc) },
+    { name: "Impôts fédéraux",   value: Math.round(impotFed) },
+    { name: "Impôts provinciaux",value: Math.round(impotQc) },
     ...(isTA ? [
-      { name: "RRQ", value: Math.round(cotisTA.rrq) },
+      { name: "RRQ",  value: Math.round(cotisTA.rrq) },
       { name: "RQAP", value: Math.round(cotisTA.rqap) },
-      { name: "FSS", value: Math.round(cotisTA.fss) },
+      { name: "FSS",  value: Math.round(cotisTA.fss) },
       ...(inscritAE ? [{ name: "AE", value: Math.round(cotisTA.ae) }] : []),
     ] : []),
     { name: "Revenu disponible", value: Math.round(revenuNetTotal) },
@@ -475,8 +491,8 @@ export default function FeuilleResume() {
               {/* Paliers fiscaux */}
               <div style={{ marginBottom: 16 }}>
                 <p style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>Paliers d'imposition 2026</p>
-                <PalierBar revenuImposable={revenuImposable} paliers={PALIERS_FED} label="Fédéral" mpb={MPB_FED} color="#6B8ED6" />
-                <PalierBar revenuImposable={revenuImposable} paliers={PALIERS_QC} label="Québec" mpb={MPB_QC} color="#C9A063" />
+                <PalierBar revenuImposable={revenuImposable} paliers={PALIERS_FED} label="Fédéral" mpb={0} color="#6B8ED6" />
+                <PalierBar revenuImposable={revenuImposable} paliers={PALIERS_QC} label="Québec" mpb={0} color="#C9A063" />
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginTop: 12 }}>
                   {[
                     { label: "Impôt fédéral", val: fmt(impotFed), color: "#6B8ED6" },
@@ -491,19 +507,19 @@ export default function FeuilleResume() {
                 </div>
               </div>
 
-              {/* Résumé fiscal */}
+              {/* Résumé fiscal — formule corrigée sans double soustraction */}
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <tbody>
                   <TableRow cells={["Revenu brut annuel", "", fmt(revenuBrutAnnuel)]} />
                   {depensesDeductibles > 0 && <TableRow cells={["Dépenses déductibles (TA)", "−", fmt(depensesDeductibles)]} />}
                   {isTA && <TableRow cells={["Cotisations déductibles (½ RRQ + ½ RQAP)", "−", fmt(deductionCotisTA)]} />}
                   <TableRow cells={["Revenu imposable", "=", fmt(revenuImposable)]} />
-                  <TableRow cells={["Impôt fédéral", "−", fmt(impotFed)]} />
-                  <TableRow cells={["Impôt provincial (Québec)", "−", fmt(impotQc)]} />
-                  {isTA && <TableRow cells={["Cotisations sociales totales (TA)", "−", fmt(cotisTA.total)]} />}
+                  <TableRow cells={[`Impôt fédéral (brut ${fmt(impotFedBrut)} − crédit ${fmt(creditFed)})`, "−", fmt(impotFed)]} />
+                  <TableRow cells={[`Impôt provincial (brut ${fmt(impotQcBrut)} − crédit ${fmt(CREDIT_QC)})`, "−", fmt(impotQc)]} />
+                  {isTA && <TableRow cells={["Cotisations sociales totales (TA)", "−", fmt(totalCotisationsSociales)]} />}
                   <TableRow cells={["REVENU NET ANNUEL", "=", fmt(revenuNetTotal)]} highlight />
                   <TableRow cells={["Revenu net mensuel", "", fmt(revenuNetMensuel)]} />
-                  <TableRow cells={["Taux d'imposition effectif moyen", "", fmtPct(txEffectif)]} />
+                  <TableRow cells={["Taux d'imposition effectif moyen (/ brut)", "", fmtPct(txEffectif)]} />
                 </tbody>
               </table>
             </div>
@@ -528,7 +544,7 @@ export default function FeuilleResume() {
                     </div>
                     <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                       <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "#fff", fontWeight: 600 }}>{fmt(d.value)}</span>
-                      <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{revenuBrutAnnuel > 0 ? `${((d.value / revenuBrutAnnuel) * 100).toFixed(1)}%` : "—"}</span>
+                      <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{revenuBrutAnnuel > 0 ? `${((d.value / revenuBrutAnnuel) * 100).toFixed(1)} %` : "—"}</span>
                     </div>
                   </div>
                 ))}
