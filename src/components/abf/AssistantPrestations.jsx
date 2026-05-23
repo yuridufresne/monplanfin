@@ -99,7 +99,9 @@ export default function AssistantPrestations({ data, setData, stepData }) {
   // ── SV inputs ─────────────────────────────────────────────────────────────
   const residenceContinu = data.sv_canada_continu;
   const anneesCanada = data.sv_annees_canada;
-  const revenuRetraite = data.sv_revenu_retraite;
+  // Revenu à la retraite : utiliser celui déjà saisi dans l'étape retraite
+  const revenuMensuelRetraite = parseFloat(data.revenu_retraite_mensuel) || null;
+  const revenuRetraite = revenuMensuelRetraite !== null ? String(revenuMensuelRetraite * 12) : null;
 
   const svCalc = (residenceContinu === "oui" || parseFloat(anneesCanada) > 0)
     ? calcSV({ situation, dob, anneesCanada, residenceContinu, revenuRetraite })
@@ -205,34 +207,6 @@ export default function AssistantPrestations({ data, setData, stepData }) {
                   <p className="text-[11px]" style={{ color: "rgba(148,163,184,0.5)" }}>
                     La SV exige 40 ans de résidence pour la pension complète (max).
                   </p>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Q : revenu estimé à la retraite (pour SRG) */}
-          <AnimatePresence>
-            {(residenceContinu === "oui" || parseFloat(anneesCanada) > 0) && (
-              <motion.div key="sv-revenu"
-                initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.2 }}
-                className="overflow-hidden">
-                <div className="space-y-1.5">
-                  <FieldLabel>
-                    Quel sera votre revenu annuel net lorsque vous recevrez vos prestations ?
-                    <InfoTooltip
-                      explanation="Votre déclaration de revenus sera utilisée lors de la demande. Pour l'instant, estimez ce que vous pourriez recevoir par année à la retraite. Cela permet de calculer si vous avez droit au Supplément de revenu garanti (SRG)."
-                      position="top"
-                    />
-                  </FieldLabel>
-                  <input
-                    type="number" min={0}
-                    value={revenuRetraite || ""}
-                    onChange={e => f("sv_revenu_retraite")(e.target.value)}
-                    placeholder="ex: 25 000"
-                    className="w-full px-4 py-2.5 rounded-xl text-[13px] outline-none"
-                    style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff" }}
-                  />
                 </div>
               </motion.div>
             )}
