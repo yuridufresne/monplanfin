@@ -59,7 +59,7 @@ function PrestationBlock({ label, modeKey, estimKey, data, setData, children }) 
                   Où trouver ce document ?{" "}
                   <span className="inline-flex items-center">
                     <InfoTooltip
-                      explanation="Connectez-vous à Mon Dossier Retraite Québec (retraitequebec.gouv.qc.ca) pour obtenir votre relevé de participation et vos estimations officielles de prestations."
+                      explanation="Connectez-vous à Mon dossier Service Canada (service.canada.ca/monseignement) pour obtenir votre relevé de la Sécurité de la vieillesse et vos estimations officielles de prestations."
                       position="top"
                     />
                   </span>
