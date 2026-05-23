@@ -147,13 +147,64 @@ const SIDE_TYPES = [
   { value: "autre", label: "Autre" },
 ];
 
+// ── Estimateur d'impôt retenu à la source (Québec 2026) ─────────────────────
+// Paliers simplifiés pour estimation de la retenue mensuelle recommandée
+const PALIERS_FED_EST = [
+  { min: 0,      max: 58523,   rate: 0.15 },
+  { min: 58523,  max: 117045,  rate: 0.205 },
+  { min: 117045, max: 181440,  rate: 0.26 },
+  { min: 181440, max: 258482,  rate: 0.29 },
+  { min: 258482, max: Infinity,rate: 0.33 },
+];
+const PALIERS_QC_EST = [
+  { min: 0,      max: 54345,   rate: 0.14 },
+  { min: 54345,  max: 108680,  rate: 0.19 },
+  { min: 108680, max: 132245,  rate: 0.24 },
+  { min: 132245, max: Infinity,rate: 0.2575 },
+];
+
+function estimerImpotMensuel(revenuBrut) {
+  if (!revenuBrut || revenuBrut <= 0) return 0;
+  const brut = parseFloat(revenuBrut) || 0;
+
+  let impFed = 0;
+  for (const p of PALIERS_FED_EST) {
+    if (brut <= p.min) break;
+    impFed += (Math.min(brut, p.max) - p.min) * p.rate;
+  }
+  // Crédit de base fédéral + abattement QC
+  impFed = Math.max(0, (impFed - 16452 * 0.15) * (1 - 0.165));
+
+  let impQc = 0;
+  for (const p of PALIERS_QC_EST) {
+    if (brut <= p.min) break;
+    impQc += (Math.min(brut, p.max) - p.min) * p.rate;
+  }
+  impQc = Math.max(0, impQc - 18952 * 0.14);
+
+  return Math.round((impFed + impQc) / 12);
+}
+
 function RevenuPanel({ data, setData }) {
   const emplois = data.emplois || [{ employeur: "", poste: "", revenu_brut: "", impot_mensuel: "", type: "salarie" }];
   const sidehustles = data.sidehustles || [];
 
   const updateEmploi = (i, k, v) => {
-    const n = emplois.map((e, idx) => idx === i ? { ...e, [k]: v } : e);
-    setData(p => ({ ...p, emplois: n }));
+    const emploisActuels = data.emplois || [];
+    let updated = emploisActuels.map((e, idx) => idx === i ? { ...e, [k]: v } : e);
+    // Auto-remplir impôt si le revenu change et que l'impôt n'a pas été modifié manuellement
+    if (k === "revenu_brut") {
+      const emploi = updated[i];
+      if (!emploi.impot_modifie) {
+        const impotEstime = estimerImpotMensuel(v);
+        updated = updated.map((e, idx) => idx === i ? { ...e, impot_saisi: impotEstime > 0 ? String(impotEstime) : "", impot_freq: "mensuel" } : e);
+      }
+    }
+    if (k === "impot_saisi") {
+      // Marquer comme modifié manuellement
+      updated = updated.map((e, idx) => idx === i ? { ...e, impot_modifie: true } : e);
+    }
+    setData(p => ({ ...p, emplois: updated }));
   };
   const addEmploi = () => setData(p => ({ ...p, emplois: [...emplois, { employeur: "", poste: "", revenu_brut: "", impot_mensuel: "", type: "salarie" }] }));
   const removeEmploi = (i) => setData(p => ({ ...p, emplois: emplois.filter((_, idx) => idx !== i) }));
@@ -199,7 +250,10 @@ function RevenuPanel({ data, setData }) {
                 <Field label="Employeur / Client"><Input value={e.employeur} onChange={v => updateEmploi(i, "employeur", v)} /></Field>
                 <Field label="Poste occupé"><Input value={e.poste} onChange={v => updateEmploi(i, "poste", v)} /></Field>
                 <Field label="Revenu brut annuel ($)"><Input value={e.revenu_brut} onChange={v => updateEmploi(i, "revenu_brut", v)} type="number" /></Field>
-                <Field label="Impôt retenu ($)" hint="Pour vérifier si retenue à la source adéquate">
+                <Field
+                  label={<span>Impôt retenu ($) {!e.impot_modifie && e.impot_saisi && <span style={{ fontSize: 10, color: "#5BC4A0", fontWeight: 600, marginLeft: 4 }}>✦ Estimé auto</span>}</span>}
+                  hint={e.impot_modifie ? "Montant personnalisé" : "Estimation calculée — modifiez si différent"}
+                >
                   <div className="flex gap-2">
                     <input
                       type="number"
@@ -207,7 +261,11 @@ function RevenuPanel({ data, setData }) {
                       onChange={ev => updateEmploi(i, "impot_saisi", ev.target.value)}
                       placeholder="0"
                       className="w-full px-4 py-2.5 rounded-xl text-[13px] outline-none transition-all"
-                      style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff" }}
+                      style={{
+                        background: "rgba(255,255,255,0.05)",
+                        border: `1px solid ${!e.impot_modifie && e.impot_saisi ? "rgba(91,196,160,0.3)" : "rgba(255,255,255,0.1)"}`,
+                        color: "#fff"
+                      }}
                     />
                     <button
                       type="button"
