@@ -622,6 +622,20 @@ export default function FeuilleResume() {
         sourceLabel: h.valeur_marchande ? "Valeur marchande" : "Prix d'achat",
       });
     } else if (soldeHypo > 0) {
+      // Fallback : utiliser le solde hypothécaire comme valeur minimale connue
+      lignesActifs.push({
+        type: "Immobilier",
+        institution: h.adresse || h.usage || "Propriété",
+        solde: soldeHypo,
+        cotisation: 0,
+        rendement: 3,
+        subventions: "—",
+        isImmo: true,
+        valeurMarchande: 0,
+        soldeHypo,
+        equite: 0,
+        sourceLabel: "Solde hypothécaire (valeur marchande non saisie)",
+      });
       hypothequesSansValeur.push(h.adresse || h.usage || "Propriété");
     }
   });
