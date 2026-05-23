@@ -176,10 +176,17 @@ export default function FeuilleResume() {
   }, []);
 
   // ── Extraction données ABF ────────────────────────────────────────────
-  // Normalise le double-nesting possible : { data: { ... } } ou { ... }
+  // Désimbrique récursivement { data: { data: { ... } } } jusqu'aux vraies données
   const unwrap = (raw) => {
-    if (!raw) return {};
-    return raw.data && typeof raw.data === "object" && !Array.isArray(raw.data) ? raw.data : raw;
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return raw || {};
+    // Si l'objet a une clé "data" qui est un objet (pas un array), on descend
+    // MAIS seulement si l'objet ne contient pas de champs métier directement
+    const hasBusinessFields = raw.emplois || raw.hypotheques || raw.dettes || raw.comptes || raw.montant_fonds || raw.nom || raw.enfants;
+    if (hasBusinessFields) return raw;
+    if (raw.data && typeof raw.data === "object" && !Array.isArray(raw.data)) {
+      return unwrap(raw.data);
+    }
+    return raw;
   };
 
   const bySection = useMemo(() => {
