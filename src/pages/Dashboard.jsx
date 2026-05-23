@@ -6,7 +6,6 @@ import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { syncABFToEntities } from "@/hooks/useABFSync";
 import ResetDataModal from "@/components/dashboard/ResetDataModal";
-import NIFCalculator from "@/components/dashboard/NIFCalculator";
 import RetirementReport from "@/components/dashboard/RetirementReport";
 
 const fmt = (v) => new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v || 0);
@@ -163,13 +162,8 @@ export default function Dashboard() {
               ))}
             </div>
 
-            {/* NIF Calculator */}
-            <motion.div {...fadeUp(0.20)} className="mb-8">
-              <NIFCalculator profiles={profiles} />
-            </motion.div>
-
             {/* Retirement Report — lecture seule */}
-            <motion.div {...fadeUp(0.26)} className="mb-8">
+            <motion.div {...fadeUp(0.20)} className="mb-8">
               <RetirementReport profiles={profiles} />
             </motion.div>
 
