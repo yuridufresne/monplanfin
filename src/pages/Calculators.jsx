@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
+import SimulateurImpot from "@/components/SimulateurImpot";
+import SimulateurRetraite from "@/components/SimulateurRetraite";
+import OptimiseurDettes from "@/components/OptimiseurDettes";
 
 const tabs = [
   {
@@ -71,7 +74,15 @@ const fadeUp = (delay = 0) => ({
   transition: { duration: 0.5, delay, ease: [0.22, 1, 0.36, 1] },
 });
 
+const LOCAL_TOOLS = [
+  { value: "impot",   label: "🧮 Impôt QC 2026",     sub: "Calcul interactif" },
+  { value: "retraite",label: "🏖 Simulateur retraite", sub: "Projection REER/CELI" },
+  { value: "dettes",  label: "💳 Optimiseur dettes",  sub: "Avalanche & hypo" },
+];
+
 export default function Calculators() {
+  const [section, setSection] = useState("local"); // "local" | "externe"
+  const [activeTool, setActiveTool] = useState("impot");
   const [active, setActive] = useState("epargne");
   const current = tabs.find((t) => t.value === active);
 
@@ -95,6 +106,43 @@ export default function Calculators() {
           </p>
         </motion.div>
 
+        {/* Section switcher */}
+        <motion.div {...fadeUp(0.04)} className="mb-8">
+          <div className="flex gap-2 flex-wrap">
+            <button onClick={() => setSection("local")}
+              className={`px-5 py-2.5 rounded-xl text-[13px] font-semibold transition-all border ${section === "local" ? "bg-primary text-white border-primary shadow-float" : "bg-white border-slate-200 text-foreground hover:border-primary/30"}`}>
+              🇨🇦 Simulateurs QC / Canada
+            </button>
+            <button onClick={() => setSection("externe")}
+              className={`px-5 py-2.5 rounded-xl text-[13px] font-semibold transition-all border ${section === "externe" ? "bg-primary text-white border-primary shadow-float" : "bg-white border-slate-200 text-foreground hover:border-primary/30"}`}>
+              Calculatrices générales
+            </button>
+          </div>
+        </motion.div>
+
+        {/* ── SIMULATEURS LOCAUX ── */}
+        {section === "local" && (
+          <motion.div key="local" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
+            <div className="flex gap-2 mb-6 flex-wrap">
+              {LOCAL_TOOLS.map(t => (
+                <button key={t.value} onClick={() => setActiveTool(t.value)}
+                  className={`text-left px-4 py-3 rounded-xl border transition-all text-[13px] font-semibold ${activeTool === t.value ? "bg-primary text-white border-primary shadow-float" : "bg-white border-slate-200 text-foreground hover:border-primary/30 shadow-sm"}`}>
+                  {t.label}
+                  <p className={`text-[11px] font-light mt-0.5 ${activeTool === t.value ? "text-white/60" : "text-muted-foreground"}`}>{t.sub}</p>
+                </button>
+              ))}
+            </div>
+            <div className="rounded-2xl overflow-hidden border border-slate-200 shadow-lg mb-16">
+              {activeTool === "impot"    && <SimulateurImpot />}
+              {activeTool === "retraite" && <SimulateurRetraite />}
+              {activeTool === "dettes"   && <OptimiseurDettes />}
+            </div>
+          </motion.div>
+        )}
+
+        {/* ── CALCULATRICES EXTERNES ── */}
+        {section === "externe" && (
+          <>
         {/* Tab grid */}
         <motion.div {...fadeUp(0.06)} className="mb-6">
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
@@ -163,6 +211,8 @@ export default function Calculators() {
             </div>
           </motion.div>
         </AnimatePresence>
+          </>
+        )}
 
       </div>
     </div>
