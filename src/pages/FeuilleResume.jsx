@@ -768,9 +768,16 @@ export default function FeuilleResume() {
         )}
 
         {/* ── KPIs GLOBAUX ──────────────────────────────────────────── */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4" style={{ marginBottom: 40 }}>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4" style={{ marginBottom: 40 }}>
           <KpiCard label="Revenu brut annuel" value={fmt(revenuBrutAnnuel)} icon={TrendingUp} color="#C9A063" />
           <KpiCard label="Impôts totaux" value={fmt(totalImpots)} sub={`Taux effectif ${fmtPct1(txEffectif)}`} icon={FileText} color="#E07B6B" />
+          <KpiCard
+            label="Revenu disponible"
+            value={fmt(revenuNetTotal + (hasEnfants ? allocMensuelEffectif * 12 : 0))}
+            sub={hasEnfants ? `dont ${fmt(allocMensuelEffectif * 12)}/an alloc.` : `${fmt(revenuNetMensuel)}/mois`}
+            icon={DollarSign}
+            color="#A87DD3"
+          />
           <KpiCard label="Total passifs" value={fmt(totalSoldeDettes)} sub={`ATD ${fmtPct1(atd)}`} icon={TrendingDown} color="#f87171" />
           <KpiCard label="Actifs totaux" value={fmt(totalActifs)} sub={`Valeur nette ${fmt(valeurNette)}`} icon={BarChart3} color="#5BC4A0" />
         </div>
