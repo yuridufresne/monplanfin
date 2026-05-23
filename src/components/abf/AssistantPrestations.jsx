@@ -75,11 +75,13 @@ function calcSV({ situation, dob, anneesCanada, residenceContinu, revenuRetraite
   // Pension de base SV
   const pensionBase = Math.round((annees / 40) * SV_MAX_MENSUEL);
 
-  // SRG (Supplément de revenu garanti) — si revenu faible
-  const revenuAnnuel = parseFloat(revenuRetraite) || 0;
+  // SRG (Supplément de revenu garanti) — seulement si le revenu a été saisi
+  const revenuAnnuel = parseFloat(revenuRetraite);
   const enCouple = ["marie", "conjoint", "union_civile"].includes(situation);
   const seuil = enCouple ? SRS_SEUIL_COUPLE : SRS_SEUIL_SEUL;
-  const srg = revenuAnnuel < seuil ? Math.round(((seuil - revenuAnnuel) / seuil) * (enCouple ? 510 : 1065)) : 0;
+  const srg = (!isNaN(revenuAnnuel) && revenuRetraite !== "" && revenuRetraite !== null && revenuAnnuel < seuil)
+    ? Math.round(((seuil - revenuAnnuel) / seuil) * (enCouple ? 510 : 1065))
+    : 0;
 
   return { pensionBase, srg, total: pensionBase + srg, annees, age };
 }
