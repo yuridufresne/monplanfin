@@ -213,10 +213,10 @@ export default function FeuilleResume() {
   const fondsABF      = bySection.fonds_urgence    || {};
   const allocationsABF= bySection.allocations      || {};
 
-  // ── Prestations de retraite gouvernementales ──────────────────────────
-  const prestationsData = retraiteABF; // SV, RRQ stockés directement dans la section retraite
-  const svMensuel  = parseFloat(prestationsData.sv)  || 0;
-  const rrqMensuel = parseFloat(prestationsData.rrq) || 0;
+  // ── Prestations de retraite gouvernementales (foyer complet) ─────────
+  const prestationsData = retraiteABF;
+  const svMensuel  = (parseFloat(retraiteABF.sv)  || 0) + (enCouple ? (parseFloat(retraiteConjoint.sv)  || 0) : 0);
+  const rrqMensuel = (parseFloat(retraiteABF.rrq) || 0) + (enCouple ? (parseFloat(retraiteConjoint.rrq) || 0) : 0);
   const srgMensuel = (() => {
     // Recalcul du SRG depuis les données sauvegardées
     const revenuRetraiteAnnuel = (parseFloat(prestationsData.revenu_retraite_mensuel) || 0) * 12;
@@ -231,46 +231,67 @@ export default function FeuilleResume() {
   const totalPrestationsMensuel = svMensuel + rrqMensuel + srgMensuel;
   const hasPrestations = svMensuel > 0 || rrqMensuel > 0;
 
-  // ── Revenus ───────────────────────────────────────────────────────────
+  // ── Détection couple ──────────────────────────────────────────────────
+  const enCouple = ["marie", "conjoint", "union_civile"].includes(profil.situation || "");
+  const revenuABFConjoint = enCouple ? (revenuABF.conjoint || {}) : {};
+
+  // ── Revenus — agrégation foyer ────────────────────────────────────────
+  // Fonction helper pour calculer le revenu net d'une personne
+  function calcPersonneRevenu(emploisP, sidesP, inscritAEP) {
+    const brut = emploisP.reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0), 0)
+      + sidesP.reduce((s, sh) => s + (parseFloat(sh.revenu_mensuel_moyen) || 0) * 12, 0);
+    const deductibles = sidesP.reduce((s, sh) => s + (parseFloat(sh.depenses_deductibles) || 0), 0);
+    const isTAP = emploisP.some(e => e.type === "autonome") || sidesP.length > 0;
+    const revAvantCotis = Math.max(0, brut - deductibles);
+    const cotis = isTAP ? calcCotisationsTA(revAvantCotis, inscritAEP) : { rrq: 0, rqap: 0, ae: 0, fss: 0, total: 0 };
+    const deductionCotis = isTAP ? cotis.rrq / 2 + cotis.rqap / 2 : 0;
+    const imposable = Math.max(0, revAvantCotis - deductionCotis);
+    const impFedBrut = calcImpotPaliers(imposable, PALIERS_FED);
+    const credFed = calcCreditFederal(imposable);
+    const impFed = Math.max(0, (impFedBrut - credFed) * (1 - 0.165));
+    const impQcBrut = calcImpotPaliers(imposable, PALIERS_QC);
+    const impQc = Math.max(0, impQcBrut - CREDIT_QC);
+    const net = Math.max(0, brut - impFed - impQc - (isTAP ? cotis.total : 0));
+    return { brut, net, impFed, impQcBrut, impFedBrut, impQc, imposable, cotis, isTAP, deductibles };
+  }
+
   const emplois = revenuABF.emplois || [];
   const sides = revenuABF.sidehustles || [];
-  const revenuBrutAnnuel = emplois.reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0), 0)
-    + sides.reduce((s, sh) => s + (parseFloat(sh.revenu_mensuel_moyen) || 0) * 12, 0);
-  const isTA = emplois.some(e => e.type === "autonome") || sides.length > 0;
+  const emploisConjoint = revenuABFConjoint.emplois || [];
+  const sidesConjoint = revenuABFConjoint.sidehustles || [];
 
-  // Déductions dépenses TA
-  const depensesDeductibles = sides.reduce((s, sh) => s + (parseFloat(sh.depenses_deductibles) || 0), 0);
+  const p1 = calcPersonneRevenu(emplois, sides, inscritAE);
+  const p2 = enCouple ? calcPersonneRevenu(emploisConjoint, sidesConjoint, false) : { brut: 0, net: 0, impFed: 0, impQc: 0, impFedBrut: 0, impQcBrut: 0, imposable: 0, cotis: { rrq: 0, rqap: 0, ae: 0, fss: 0, total: 0 }, isTAP: false, deductibles: 0 };
 
-  // RRQ / RQAP / AE / FSS
+  const revenuBrutAnnuel = p1.brut + p2.brut;
+  const isTA = p1.isTAP || p2.isTAP;
+  const depensesDeductibles = p1.deductibles + p2.deductibles;
   const revenuNetAvantCotisations = Math.max(0, revenuBrutAnnuel - depensesDeductibles);
-  const cotisTA = calcCotisationsTA(revenuNetAvantCotisations, inscritAE);
-
-  // Revenu imposable après cotisations TA
-  const deductionCotisTA = isTA ? cotisTA.rrq / 2 + cotisTA.rqap / 2 : 0; // partie déductible
-  const revenuImposable = Math.max(0, revenuNetAvantCotisations - deductionCotisTA);
-
-  // Impôts calculés sur 100% du revenu imposable, puis crédits soustraits, puis abattement Québec (16,5%)
-  const impotFedBrut          = calcImpotPaliers(revenuImposable, PALIERS_FED);
-  const creditFed             = calcCreditFederal(revenuImposable);
-  const impotFedApresCredits  = Math.max(0, impotFedBrut - creditFed);
-  const impotFed              = Math.max(0, impotFedApresCredits * (1 - 0.165)); // abattement Québec 16,5%
-
-  const impotQcBrut  = calcImpotPaliers(revenuImposable, PALIERS_QC);
-  const impotQc      = Math.max(0, impotQcBrut - CREDIT_QC);
-
+  const cotisTA = {
+    rrq: p1.cotis.rrq + p2.cotis.rrq,
+    rqap: p1.cotis.rqap + p2.cotis.rqap,
+    ae: p1.cotis.ae + p2.cotis.ae,
+    fss: p1.cotis.fss + p2.cotis.fss,
+    total: p1.cotis.total + p2.cotis.total,
+  };
+  const revenuImposable = p1.imposable + p2.imposable;
+  const impotFedBrut = p1.impFedBrut + p2.impFedBrut;
+  const creditFed = calcCreditFederal(p1.imposable) + calcCreditFederal(p2.imposable);
+  const impotFed = p1.impFed + p2.impFed;
+  const impotQcBrut = p1.impQcBrut + p2.impQcBrut;
+  const impotQc = p1.impQc + p2.impQc;
   const totalImpots = impotFed + impotQc;
 
-  // Correction 3 : Taux marginal combiné avec abattement du Québec (16,5%)
-  const txMarginalFed = PALIERS_FED.slice().reverse().find(p => revenuImposable > p.min)?.rate || 0;
-  const txMarginalQc  = PALIERS_QC.slice().reverse().find(p => revenuImposable > p.min)?.rate || 0;
+  // Taux marginal — basé sur le plus haut revenu du foyer
+  const revImposableMax = Math.max(p1.imposable, p2.imposable);
+  const txMarginalFed = PALIERS_FED.slice().reverse().find(p => revImposableMax > p.min)?.rate || 0;
+  const txMarginalQc  = PALIERS_QC.slice().reverse().find(p => revImposableMax > p.min)?.rate || 0;
   const txMarginalCombine = ((txMarginalFed * (1 - 0.165)) + txMarginalQc) * 100;
 
-  // Taux effectif moyen
   const txEffectif = revenuBrutAnnuel > 0 ? (totalImpots / revenuBrutAnnuel) * 100 : 0;
 
-  // Correction 1 : Revenu net = Brut − Impôts fédéraux − Impôts provinciaux − Cotisations sociales (pas de double soustraction)
-  const totalCotisationsSociales = isTA ? cotisTA.total : 0;
-  const revenuNetTotal   = Math.max(0, revenuBrutAnnuel - impotFed - impotQc - totalCotisationsSociales);
+  const totalCotisationsSociales = cotisTA.total;
+  const revenuNetTotal   = p1.net + p2.net;
   const revenuNetMensuel = revenuNetTotal / 12;
 
   // ── Allocations familiales ─────────────────────────────────────────────
@@ -323,9 +344,14 @@ export default function FeuilleResume() {
   const capaciteEpargne = revenuNetMensuelAvecAlloc - depensesMensuelles;
 
   // ── Dettes ────────────────────────────────────────────────────────────
+  // Agréger dettes du principal + conjoint
+  const dettesABFConjoint = enCouple ? (dettesABF.conjoint || {}) : {};
   const hypotheques = dettesABF.hypotheques || [];
   const autresDettes = dettesABF.dettes || [];
-  const pension = dettesABF.a_pension === "oui" ? parseFloat(dettesABF.pension_mensuelle) || 0 : 0;
+  const hypothequesConjoint = dettesABFConjoint.hypotheques || [];
+  const autresDettesConjoint = dettesABFConjoint.dettes || [];
+  const pension = (dettesABF.a_pension === "oui" ? parseFloat(dettesABF.pension_mensuelle) || 0 : 0)
+                + (dettesABFConjoint.a_pension === "oui" ? parseFloat(dettesABFConjoint.pension_mensuelle) || 0 : 0);
 
   const toutesLesDettes = [
     ...hypotheques.map(h => ({
@@ -334,8 +360,20 @@ export default function FeuilleResume() {
       paiement: parseFloat(h.paiement_mensuel) || 0,
       taux: parseFloat(h.taux) || 0,
     })),
+    ...hypothequesConjoint.map(h => ({
+      type: `Hypothèque — ${h.adresse || h.usage || "résidence"} (Conjoint)`,
+      solde: parseFloat(h.solde) || 0,
+      paiement: parseFloat(h.paiement_mensuel) || 0,
+      taux: parseFloat(h.taux) || 0,
+    })),
     ...autresDettes.map(d => ({
       type: d.type || "Autre",
+      solde: parseFloat(d.solde) || 0,
+      paiement: parseFloat(d.paiement_min) || 0,
+      taux: parseFloat(d.taux) || 0,
+    })),
+    ...autresDettesConjoint.map(d => ({
+      type: `${d.type || "Autre"} (Conjoint)`,
       solde: parseFloat(d.solde) || 0,
       paiement: parseFloat(d.paiement_min) || 0,
       taux: parseFloat(d.taux) || 0,
@@ -364,34 +402,53 @@ export default function FeuilleResume() {
     compte_non_enregistre: "Non-enregistré", ftq_csn: "FTQ/CSN", crypto: "Crypto",
   };
 
+  // Agréger comptes du principal + conjoint
+  const retraiteConjoint = enCouple ? (retraiteABF.conjoint || {}) : {};
   const comptesPrincipal = retraiteABF.comptes || {};
+  const comptesConjoint  = retraiteConjoint.comptes || {};
   const fondPension = retraiteABF.fond_pension || {};
+  const fondPensionConjoint = retraiteConjoint.fond_pension || {};
 
   const lignesActifs = [];
 
-  // Comptes ABF
-  Object.entries(comptesPrincipal).forEach(([type, list]) => {
-    if (!Array.isArray(list)) return;
-    list.forEach(c => {
-      if (!c.solde) return;
-      lignesActifs.push({
-        type: COMPTE_LABELS[type] || type,
-        institution: c.institution || "—",
-        solde: parseFloat(c.solde) || 0,
-        cotisation: parseFloat(c.cotisation_mensuelle) || 0,
-        rendement: type === "celi" ? 4 : type === "reer" ? 6 : type === "reee" ? 5 : type === "crypto" ? 0 : 5,
-        subventions: type === "reee" ? "SCEE 20% + IQEE 10%" : "—",
+  function ajouterComptes(comptes, suffixe) {
+    Object.entries(comptes).forEach(([type, list]) => {
+      if (!Array.isArray(list)) return;
+      list.forEach(c => {
+        if (!c.solde) return;
+        lignesActifs.push({
+          type: COMPTE_LABELS[type] || type,
+          institution: `${c.institution || "—"}${suffixe}`,
+          solde: parseFloat(c.solde) || 0,
+          cotisation: parseFloat(c.cotisation_mensuelle) || 0,
+          rendement: type === "celi" ? 4 : type === "reer" ? 6 : type === "reee" ? 5 : type === "crypto" ? 0 : 5,
+          subventions: type === "reee" ? "SCEE 20% + IQEE 10%" : "—",
+        });
       });
     });
-  });
+  }
 
-  // Fonds pension
+  ajouterComptes(comptesPrincipal, "");
+  if (enCouple) ajouterComptes(comptesConjoint, ` (${profil.conjoint?.nom?.split(" ")[0] || "Conjoint"})`);
+
+  // Fonds pension — principal
   if (fondPension.solde) {
     lignesActifs.push({
       type: "Fonds de pension",
       institution: fondPension.institution || "—",
       solde: parseFloat(fondPension.solde) || 0,
       cotisation: (parseFloat(fondPension.cotisation_salariale) || 0) + (parseFloat(fondPension.cotisation_patronale) || 0),
+      rendement: 5.5,
+      subventions: "Contribution patronale",
+    });
+  }
+  // Fonds pension — conjoint
+  if (enCouple && fondPensionConjoint.solde) {
+    lignesActifs.push({
+      type: "Fonds de pension",
+      institution: `${fondPensionConjoint.institution || "—"} (${profil.conjoint?.nom?.split(" ")[0] || "Conjoint"})`,
+      solde: parseFloat(fondPensionConjoint.solde) || 0,
+      cotisation: (parseFloat(fondPensionConjoint.cotisation_salariale) || 0) + (parseFloat(fondPensionConjoint.cotisation_patronale) || 0),
       rendement: 5.5,
       subventions: "Contribution patronale",
     });
@@ -409,9 +466,10 @@ export default function FeuilleResume() {
     });
   });
 
-  // Immobilier (équité)
-  hypotheques.forEach(h => {
-    const equite = (parseFloat(h.prix_achat) || 0) - (parseFloat(h.solde) || 0);
+  // Immobilier (équité) — toutes hypothèques du foyer
+  [...hypotheques, ...hypothequesConjoint].forEach(h => {
+    const valRef = parseFloat(h.valeur_marchande) || parseFloat(h.prix_achat) || 0;
+    const equite = valRef - (parseFloat(h.solde) || 0);
     if (equite > 0) {
       lignesActifs.push({
         type: "Immobilier",
@@ -419,7 +477,7 @@ export default function FeuilleResume() {
         solde: equite,
         cotisation: 0,
         rendement: 3,
-        subventions: "Équité estimée",
+        subventions: h.valeur_marchande ? "Valeur marchande" : "Équité estimée",
       });
     }
   });
@@ -474,7 +532,7 @@ export default function FeuilleResume() {
                 Feuille Résumé — ABF
               </h1>
               <p style={{ fontSize: 14, color: "#94A3B8", marginTop: 6 }}>
-                {profil.nom ? `${profil.nom} · ` : ""}Analyse de besoins financiers · Québec 2026
+                {profil.nom ? `${profil.nom}${enCouple && profil.conjoint?.nom ? ` & ${profil.conjoint.nom}` : ""} · ` : ""}Analyse de besoins financiers · Québec 2026{enCouple ? " · Foyer" : ""}
               </p>
             </div>
             <div style={{ display: "flex", gap: 8 }}>
@@ -608,19 +666,31 @@ export default function FeuilleResume() {
                 ))}
               </div>
 
-              {/* Sources de revenus */}
-              {emplois.length > 0 && (
+              {/* Sources de revenus — foyer complet */}
+              {(emplois.length > 0 || emploisConjoint.length > 0) && (
                 <div style={{ marginTop: 20, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, padding: "1rem" }}>
-                  <p style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>Sources de revenus</p>
+                  <p style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>Sources de revenus{enCouple ? " — Foyer" : ""}</p>
                   {emplois.map((e, i) => (
-                    <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "5px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                    <div key={`p1e${i}`} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "5px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
                       <span style={{ color: "#94A3B8" }}>{e.poste || e.employeur || `Emploi ${i + 1}`} <span style={{ fontSize: 10, color: "#6B8ED6" }}>({e.type})</span></span>
                       <span style={{ fontFamily: "var(--font-mono)", color: "#C9A063", fontWeight: 600 }}>{fmt(parseFloat(e.revenu_brut) || 0)}</span>
                     </div>
                   ))}
                   {sides.map((s, i) => (
-                    <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "5px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                    <div key={`p1s${i}`} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "5px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
                       <span style={{ color: "#94A3B8" }}>{s.nom || s.type} <span style={{ fontSize: 10, color: "#E0B44B" }}>(side)</span></span>
+                      <span style={{ fontFamily: "var(--font-mono)", color: "#E0B44B", fontWeight: 600 }}>{fmt((parseFloat(s.revenu_mensuel_moyen) || 0) * 12)}</span>
+                    </div>
+                  ))}
+                  {emploisConjoint.map((e, i) => (
+                    <div key={`p2e${i}`} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "5px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                      <span style={{ color: "#94A3B8" }}>{e.poste || e.employeur || `Emploi ${i + 1}`} <span style={{ fontSize: 10, color: "#6B8ED6" }}>({e.type})</span> <span style={{ fontSize: 10, color: "rgba(107,142,214,0.6)" }}>· {profil.conjoint?.nom?.split(" ")[0] || "Conjoint"}</span></span>
+                      <span style={{ fontFamily: "var(--font-mono)", color: "#6B8ED6", fontWeight: 600 }}>{fmt(parseFloat(e.revenu_brut) || 0)}</span>
+                    </div>
+                  ))}
+                  {sidesConjoint.map((s, i) => (
+                    <div key={`p2s${i}`} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "5px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                      <span style={{ color: "#94A3B8" }}>{s.nom || s.type} <span style={{ fontSize: 10, color: "#E0B44B" }}>(side)</span> <span style={{ fontSize: 10, color: "rgba(107,142,214,0.6)" }}>· {profil.conjoint?.nom?.split(" ")[0] || "Conjoint"}</span></span>
                       <span style={{ fontFamily: "var(--font-mono)", color: "#E0B44B", fontWeight: 600 }}>{fmt((parseFloat(s.revenu_mensuel_moyen) || 0) * 12)}</span>
                     </div>
                   ))}

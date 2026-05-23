@@ -129,10 +129,14 @@ export default function RetirementReport({ profiles }) {
   const retraite = abf.retraite || {};
   const revABF   = abf.revenu || {};
 
+  const enCouple = ["marie", "conjoint", "union_civile"].includes(profil.situation || "");
+  const retraiteConjoint = enCouple ? (retraite.conjoint || {}) : {};
+  const revABFConjoint   = enCouple ? (revABF.conjoint || {}) : {};
+
   // ── 2. Paramètres calculés depuis l'ABF ───────────────────────────────────
   const ageActuel = useMemo(() => {
     const dob = profil.dob;
-    if (!dob) return 35; // fallback fictif
+    if (!dob) return 35;
     return Math.floor((new Date() - new Date(dob)) / (365.25 * 24 * 3600 * 1000));
   }, [profil.dob]);
 
@@ -141,14 +145,14 @@ export default function RetirementReport({ profiles }) {
   const anneesAvant   = Math.max(1, ageRetraite - ageActuel);
   const anneesPend    = Math.max(1, esperanceVie - ageRetraite);
 
-  // Revenus annuels bruts ABF
+  // Revenus bruts du foyer complet
   const revenuBrutAnnuel = useMemo(() => {
-    const e = revABF.emplois || [];
-    const s = revABF.sidehustles || [];
-    const total = e.reduce((a, x) => a + (parseFloat(x.revenu_brut) || 0), 0)
-      + s.reduce((a, x) => a + (parseFloat(x.revenu_mensuel_moyen) || 0) * 12, 0);
-    return total || 80000; // fallback fictif
-  }, [revABF]);
+    const sumEmplois = (emplois) => (emplois || []).reduce((a, x) => a + (parseFloat(x.revenu_brut) || 0), 0);
+    const sumSides   = (sides)   => (sides   || []).reduce((a, x) => a + (parseFloat(x.revenu_mensuel_moyen) || 0) * 12, 0);
+    const total = sumEmplois(revABF.emplois) + sumSides(revABF.sidehustles)
+                + sumEmplois(revABFConjoint.emplois) + sumSides(revABFConjoint.sidehustles);
+    return total || 80000;
+  }, [revABF, revABFConjoint]);
 
   const revenuNetAnnuel = Math.round(revenuBrutAnnuel * 0.72);
 
@@ -161,34 +165,45 @@ export default function RetirementReport({ profiles }) {
 
   const revenuDesireFutur = Math.round(revenuDesireAuj * Math.pow(1 + INF, anneesAvant));
 
-  // Revenus garantis : SV + RRQ + fonds pension
-  const svM  = parseFloat(retraite.sv)  || 0;
-  const rrqM = parseFloat(retraite.rrq) || 0;
-  const fpM  = parseFloat((retraite.fond_pension || {}).rente_mensuelle_estimee) || 0;
-  const revenuGarantiAuj = (svM + rrqM + fpM) * 12;
+  // Revenus garantis foyer (SV + RRQ + fonds pension des deux)
+  function sumGaranti(ret) {
+    const sv  = parseFloat(ret.sv)  || 0;
+    const rrq = parseFloat(ret.rrq) || 0;
+    const fp  = parseFloat((ret.fond_pension || {}).rente_mensuelle_estimee) || 0;
+    return (sv + rrq + fp) * 12;
+  }
+  const revenuGarantiAuj = sumGaranti(retraite) + sumGaranti(retraiteConjoint);
 
-  // Épargne actuelle totale
-  const epargneActuelle = useMemo(() => {
-    const comptes = retraite.comptes || {};
+  // Épargne actuelle totale — foyer
+  function sumEpargne(ret) {
+    const comptes = ret.comptes || {};
     let total = Object.values(comptes).reduce((s, list) => {
       if (!Array.isArray(list)) return s;
       return s + list.reduce((a, c) => a + (parseFloat(c.solde) || 0), 0);
     }, 0);
-    total += parseFloat((retraite.fond_pension || {}).solde) || 0;
-    return total || 25000; // fallback fictif
-  }, [retraite]);
+    total += parseFloat((ret.fond_pension || {}).solde) || 0;
+    return total;
+  }
+  const epargneActuelle = useMemo(() => {
+    const total = sumEpargne(retraite) + sumEpargne(retraiteConjoint);
+    return total || 25000;
+  }, [retraite, retraiteConjoint]);
 
-  // Épargne mensuelle actuelle (cotisations de tous les comptes)
-  const epargneMensActuelle = useMemo(() => {
-    const comptes = retraite.comptes || {};
+  // Épargne mensuelle actuelle — foyer
+  function sumCotisations(ret) {
+    const comptes = ret.comptes || {};
     let total = Object.values(comptes).reduce((s, list) => {
       if (!Array.isArray(list)) return s;
       return s + list.reduce((a, c) => a + (parseFloat(c.cotisation_mensuelle) || 0), 0);
     }, 0);
-    const fp = retraite.fond_pension || {};
+    const fp = ret.fond_pension || {};
     total += (parseFloat(fp.cotisation_salariale) || 0) + (parseFloat(fp.cotisation_patronale) || 0);
-    return total || 500; // fallback fictif
-  }, [retraite]);
+    return total;
+  }
+  const epargneMensActuelle = useMemo(() => {
+    const total = sumCotisations(retraite) + sumCotisations(retraiteConjoint);
+    return total || 500;
+  }, [retraite, retraiteConjoint]);
 
   // ── 3. Taux de rendement ──────────────────────────────────────────────────
   const REND_AV   = 0.06; // avant retraite (6%)
