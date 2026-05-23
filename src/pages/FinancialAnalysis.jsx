@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight, ChevronLeft, Check, User, TrendingDown, Shield, GraduationCap, Target, AlertTriangle, DollarSign, BarChart3, Wallet } from "lucide-react";
+import { ChevronRight, ChevronLeft, Check, User, TrendingDown, Shield, GraduationCap, Target, AlertTriangle, DollarSign, BarChart3, Wallet, Baby } from "lucide-react";
 import InfoTooltip from "@/components/ui/InfoTooltip";
 import StepBudget from "@/components/abf/StepBudget";
+import StepAllocations from "@/components/abf/StepAllocations";
 
 const STEPS = [
   { key: "profil_personnel", label: "Profil", icon: User, title: "Renseignements personnels" },
@@ -12,6 +13,7 @@ const STEPS = [
   { key: "dettes", label: "Dettes", icon: TrendingDown, title: "Règlement des dettes" },
   { key: "assurance", label: "Assurance", icon: Shield, title: "Assurance-vie & invalidité" },
   { key: "etudes", label: "Études", icon: GraduationCap, title: "Épargne-études" },
+  { key: "allocations", label: "Allocations", icon: Baby, title: "Allocations familiales 2026" },
   { key: "budget", label: "Budget", icon: Wallet, title: "Budget mensuel" },
   { key: "objectifs", label: "Objectifs", icon: Target, title: "Objectifs & rêves" },
   { key: "fonds_urgence", label: "Urgence", icon: AlertTriangle, title: "Fonds d'urgence" },
@@ -1002,6 +1004,7 @@ const STEP_COMPONENTS = {
   dettes: StepDettes,
   assurance: StepAssurance,
   etudes: StepEtudes,
+  allocations: StepAllocations,
   budget: () => <StepBudget />,
   objectifs: StepObjectifs,
   fonds_urgence: StepFondsUrgence,

@@ -1,11 +1,12 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { motion } from "framer-motion";
 import {
   TrendingUp, TrendingDown, DollarSign, Shield, Target, AlertTriangle,
-  BarChart3, FileText, ChevronDown, ChevronUp, Info
+  BarChart3, FileText, ChevronDown, Baby, Pencil, Check as CheckIcon
 } from "lucide-react";
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from "recharts";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
+import { calcAllocations } from "@/lib/allocations2026";
 
 // ── Formatters ──────────────────────────────────────────────────────────────
 const fmt = (v) => new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v || 0);
@@ -166,6 +167,9 @@ export default function FeuilleResume() {
   const [loading, setLoading] = useState(true);
   const [inscritAE, setInscritAE] = useState(false);
   const [expandCotis, setExpandCotis] = useState(false);
+  const [allocOverride, setAllocOverride] = useState(null); // null = valeur calculée
+  const [editingAlloc, setEditingAlloc] = useState(false);
+  const [allocInputVal, setAllocInputVal] = useState("");
 
   useEffect(() => {
     Promise.all([
@@ -202,11 +206,12 @@ export default function FeuilleResume() {
     return m;
   }, [profiles]);
 
-  const profil     = bySection.profil_personnel || {};
-  const revenuABF  = bySection.revenu           || {};
-  const dettesABF  = bySection.dettes           || {};
-  const retraiteABF= bySection.retraite         || {};
-  const fondsABF   = bySection.fonds_urgence    || {};
+  const profil        = bySection.profil_personnel || {};
+  const revenuABF     = bySection.revenu           || {};
+  const dettesABF     = bySection.dettes           || {};
+  const retraiteABF   = bySection.retraite         || {};
+  const fondsABF      = bySection.fonds_urgence    || {};
+  const allocationsABF= bySection.allocations      || {};
 
   // ── Revenus ───────────────────────────────────────────────────────────
   const emplois = revenuABF.emplois || [];
@@ -250,6 +255,21 @@ export default function FeuilleResume() {
   const revenuNetTotal   = Math.max(0, revenuBrutAnnuel - impotFed - impotQc - totalCotisationsSociales);
   const revenuNetMensuel = revenuNetTotal / 12;
 
+  // ── Allocations familiales ─────────────────────────────────────────────
+  const allocCalc = useMemo(() => {
+    const nbMoins6   = parseInt(allocationsABF.nb_enfants_moins_6) || 0;
+    const nb6_17     = parseInt(allocationsABF.nb_enfants_6_17) || 0;
+    const monoparental = (allocationsABF.situation_familiale || "monoparental") === "monoparental";
+    const rfnr = (parseFloat(allocationsABF.revenu_net_p1) || 0)
+               + (monoparental ? 0 : (parseFloat(allocationsABF.revenu_net_p2) || 0));
+    return calcAllocations({ rfnr, nbMoins6, nb6_17, monoparental });
+  }, [allocationsABF]);
+
+  // Montant effectif : override manuel sinon calculé
+  const allocMensuelEffectif = allocOverride !== null ? allocOverride : allocCalc.mensuel;
+  const allocAnnuelEffectif  = allocMensuelEffectif * 12;
+  const hasEnfants = (parseInt(allocationsABF.nb_enfants_moins_6) || 0) + (parseInt(allocationsABF.nb_enfants_6_17) || 0) > 0;
+
   // ── Budget ────────────────────────────────────────────────────────────
   function toMonthly(amount, freq) {
     if (freq === "hebdomadaire") return amount * 52 / 12;
@@ -269,7 +289,9 @@ export default function FeuilleResume() {
     }, {})
   ).map(([name, value]) => ({ name: name.replace(/_/g, " "), value: Math.round(value) }));
 
-  const capaciteEpargne = revenuNetMensuel - depensesMensuelles;
+  // Inclure les allocations dans le cashflow disponible
+  const revenuNetMensuelAvecAlloc = revenuNetMensuel + allocMensuelEffectif;
+  const capaciteEpargne = revenuNetMensuelAvecAlloc - depensesMensuelles;
 
   // ── Dettes ────────────────────────────────────────────────────────────
   const hypotheques = dettesABF.hypotheques || [];
@@ -579,6 +601,126 @@ export default function FeuilleResume() {
           </div>
         </div>
 
+        {/* ── SECTION 1b : ALLOCATIONS FAMILIALES (modifiable) ─────── */}
+        {hasEnfants && (
+          <div style={{ ...glass, borderRadius: 24, padding: "2rem", marginBottom: 28 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
+              <SectionTitle icon={Baby} color="#A87DD3">
+                1b. Allocations familiales 2026
+              </SectionTitle>
+              {/* Astérisque + tooltip */}
+              <div style={{ position: "relative", display: "inline-block" }} className="group">
+                <span style={{ fontSize: 18, color: "#C9A063", cursor: "help", fontWeight: 800 }}>*</span>
+                <div style={{
+                  position: "absolute", bottom: "calc(100% + 8px)", right: 0,
+                  width: 280, padding: "10px 14px", borderRadius: 12,
+                  background: "#0D1628", border: "1px solid rgba(201,160,99,0.3)",
+                  color: "#E5E7EB", fontSize: 12, lineHeight: 1.5,
+                  boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
+                  pointerEvents: "none", opacity: 0, transition: "opacity 0.2s",
+                  zIndex: 50,
+                }} className="group-hover:opacity-100">
+                  Si vous recevez une somme différente due à des revenus antérieurs différents, veuillez modifier.
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Détail calculé */}
+              <div>
+                <p style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>Calcul automatique 2026</p>
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <tbody>
+                    <TableRow cells={["ACE — Allocation canadienne (fédéral)", fmt(allocCalc.ace)]} />
+                    <TableRow cells={["AF Québec (Retraite Québec)", fmt(allocCalc.allocQC)]} />
+                    {(allocationsABF.situation_familiale || "monoparental") === "monoparental" && (
+                      <TableRow cells={["Supplément monoparental inclus", "✓"]} />
+                    )}
+                    <TableRow cells={["TOTAL ANNUEL CALCULÉ", fmt(allocCalc.total)]} highlight />
+                    <TableRow cells={["≈ par mois (calculé)", fmt(allocCalc.mensuel)]} />
+                  </tbody>
+                </table>
+                <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginTop: 8 }}>
+                  RFNR : {fmt((parseFloat(allocationsABF.revenu_net_p1) || 0) + ((allocationsABF.situation_familiale || "monoparental") === "couple" ? (parseFloat(allocationsABF.revenu_net_p2) || 0) : 0))} ·{" "}
+                  {(parseInt(allocationsABF.nb_enfants_moins_6) || 0)} enfant(s) &lt;6 ans,{" "}
+                  {(parseInt(allocationsABF.nb_enfants_6_17) || 0)} enfant(s) 6-17 ans
+                </p>
+              </div>
+
+              {/* Montant effectif — modifiable */}
+              <div>
+                <p style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>
+                  Montant utilisé dans le cashflow{" "}
+                  <span style={{ color: "#C9A063" }}>*</span>
+                </p>
+                <div style={{ background: "rgba(167,125,211,0.07)", border: "1px solid rgba(167,125,211,0.2)", borderRadius: 16, padding: "1.25rem" }}>
+                  {editingAlloc ? (
+                    <div>
+                      <p style={{ fontSize: 11, color: "#94A3B8", marginBottom: 8 }}>Montant mensuel réel ($)</p>
+                      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                        <input
+                          type="number"
+                          value={allocInputVal}
+                          onChange={e => setAllocInputVal(e.target.value)}
+                          autoFocus
+                          style={{
+                            flex: 1, padding: "10px 14px", borderRadius: 10, fontSize: 16,
+                            fontFamily: "var(--font-mono)", fontWeight: 700, color: "#A87DD3",
+                            background: "rgba(255,255,255,0.05)", border: "1px solid rgba(167,125,211,0.4)",
+                            outline: "none",
+                          }}
+                        />
+                        <button
+                          onClick={() => {
+                            const v = parseFloat(allocInputVal);
+                            if (!isNaN(v) && v >= 0) setAllocOverride(v);
+                            else setAllocOverride(null);
+                            setEditingAlloc(false);
+                          }}
+                          style={{ width: 36, height: 36, borderRadius: 10, background: "#A87DD3", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <CheckIcon style={{ width: 16, height: 16, color: "#fff" }} />
+                        </button>
+                        <button
+                          onClick={() => { setAllocOverride(null); setEditingAlloc(false); }}
+                          style={{ fontSize: 11, color: "#94A3B8", background: "none", border: "none", cursor: "pointer", padding: "4px 8px" }}>
+                          Réinitialiser
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <div>
+                          <p style={{ fontFamily: "var(--font-mono)", fontSize: "2rem", fontWeight: 800, color: "#A87DD3", letterSpacing: "-0.02em" }}>
+                            {fmt(allocMensuelEffectif)}
+                            <span style={{ fontSize: 13, color: "rgba(167,125,211,0.6)", fontWeight: 500 }}>/mois</span>
+                          </p>
+                          <p style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "rgba(255,255,255,0.45)", marginTop: 3 }}>
+                            {fmt(allocAnnuelEffectif)}/an
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => { setAllocInputVal(String(allocMensuelEffectif)); setEditingAlloc(true); }}
+                          style={{ width: 34, height: 34, borderRadius: 10, background: "rgba(167,125,211,0.15)", border: "1px solid rgba(167,125,211,0.3)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <Pencil style={{ width: 14, height: 14, color: "#A87DD3" }} />
+                        </button>
+                      </div>
+                      {allocOverride !== null && (
+                        <p style={{ fontSize: 11, color: "#C9A063", marginTop: 8 }}>
+                          ✎ Montant personnalisé · <button onClick={() => setAllocOverride(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#94A3B8", fontSize: 11, textDecoration: "underline" }}>Revenir au calculé ({fmt(allocCalc.mensuel)}/mois)</button>
+                        </p>
+                      )}
+                      {allocOverride === null && (
+                        <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginTop: 8 }}>Montant calculé automatiquement — cliquez sur ✎ pour modifier</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ── SECTION 2 : DETTES ───────────────────────────────────── */}
         <div style={{ ...glass, borderRadius: 24, padding: "2rem", marginBottom: 28 }}>
           <SectionTitle icon={TrendingDown} color="#f87171">2. Dettes & Passifs</SectionTitle>
@@ -682,7 +824,13 @@ export default function FeuilleResume() {
           {/* Cashflow */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4" style={{ marginBottom: 24 }}>
             {[
-              { label: "Revenus nets mensuels", val: fmt(revenuNetMensuel), color: "#5BC4A0", icon: TrendingUp },
+              {
+                label: hasEnfants ? "Revenus nets + allocations" : "Revenus nets mensuels",
+                val: fmt(revenuNetMensuelAvecAlloc),
+                color: "#5BC4A0",
+                icon: TrendingUp,
+                sub: hasEnfants && allocMensuelEffectif > 0 ? `dont ${fmt(allocMensuelEffectif)}/mois d'allocations` : undefined,
+              },
               { label: "Dépenses mensuelles totales", val: fmt(depensesMensuelles), color: "#f87171", icon: TrendingDown },
               {
                 label: "Capacité d'épargne mensuelle",
@@ -699,6 +847,7 @@ export default function FeuilleResume() {
                 </div>
                 <p style={{ fontFamily: "var(--font-mono)", fontSize: "1.5rem", fontWeight: 700, color: x.color }}>{x.val}</p>
                 {x.sub && <p style={{ fontSize: 11, color: x.color, opacity: 0.75, marginTop: 3 }}>{x.sub}</p>}
+                {!x.sub && x.extra && <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginTop: 3 }}>{x.extra}</p>}
               </div>
             ))}
           </div>
