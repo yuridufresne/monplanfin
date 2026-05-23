@@ -566,7 +566,7 @@ function RetraitePanel({ data, setData, stepData }) {
         {/* ── EMPLOIS ANTÉRIEURS ── */}
         <div className="rounded-xl p-4 space-y-4" style={{ background: "rgba(201,160,99,0.04)", border: "1px solid rgba(201,160,99,0.14)" }}>
           <p className="text-[11px] font-bold tracking-wider uppercase" style={{ color: "rgba(201,160,99,0.55)" }}>La chasse aux capitaux oubliés — Emplois antérieurs</p>
-          <Field label="Avez-vous quitté un ancien employeur au cours de votre carrière avec qui vous aviez des avantages sociaux ?">
+          <Field label="Avez-vous quitté un ancien employeur au cours de votre carrière avec qui vous aviez un fonds de pension ?">
             <RadioGroup
               value={data.a_ancien_employeur}
               onChange={f("a_ancien_employeur")}
