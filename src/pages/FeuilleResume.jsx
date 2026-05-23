@@ -232,8 +232,9 @@ export default function FeuilleResume() {
   const totalPrestationsMensuel = svMensuel + rrqMensuel + srgMensuel;
   const hasPrestations = svMensuel > 0 || rrqMensuel > 0;
 
-  // ── Revenus — agrégation foyer ────────────────────────────────────────
-  // Fonction helper pour calculer le revenu net d'une personne
+  // ── RÈGLE 1 : Imposition strictement INDIVIDUELLE ────────────────────
+  // Chaque conjoint calcule son propre impôt de façon totalement isolée.
+  // Le moteur roule deux fois indépendamment (p1, puis p2 si en couple).
   function calcPersonneRevenu(emploisP, sidesP, inscritAEP) {
     const brut = emploisP.reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0), 0)
       + sidesP.reduce((s, sh) => s + (parseFloat(sh.revenu_mensuel_moyen) || 0) * 12, 0);
@@ -245,11 +246,21 @@ export default function FeuilleResume() {
     const imposable = Math.max(0, revAvantCotis - deductionCotis);
     const impFedBrut = calcImpotPaliers(imposable, PALIERS_FED);
     const credFed = calcCreditFederal(imposable);
+    // Montant de base fédéral inutilisé (si revenu < 16 452$) → disponible pour transfert au conjoint
+    const montantBaseFed = Math.min(imposable > 0 ? imposable : 0, 16452);
+    const creditBaseFedUtilise = montantBaseFed * 0.15;
+    const creditBaseFedInutilise = Math.max(0, 16452 * 0.15 - creditBaseFedUtilise);
     const impFed = Math.max(0, (impFedBrut - credFed) * (1 - 0.165));
     const impQcBrut = calcImpotPaliers(imposable, PALIERS_QC);
+    const creditQcUtilise = Math.min(imposable * 0.14, CREDIT_QC);
+    const creditQcInutilise = Math.max(0, CREDIT_QC - creditQcUtilise);
     const impQc = Math.max(0, impQcBrut - CREDIT_QC);
+    // Revenu net individuel = brut − impôts − cotisations TA
     const net = Math.max(0, brut - impFed - impQc - (isTAP ? cotis.total : 0));
-    return { brut, net, impFed, impQcBrut, impFedBrut, impQc, imposable, cotis, isTAP, deductibles };
+    return {
+      brut, net, impFed, impQcBrut, impFedBrut, impQc, imposable, cotis, isTAP, deductibles,
+      creditBaseFedInutilise, creditQcInutilise,
+    };
   }
 
   const emplois = revenuABF.emplois || [];
@@ -258,8 +269,24 @@ export default function FeuilleResume() {
   const sidesConjoint = revenuABFConjoint.sidehustles || [];
 
   const p1 = calcPersonneRevenu(emplois, sides, inscritAE);
-  const p2 = enCouple ? calcPersonneRevenu(emploisConjoint, sidesConjoint, false) : { brut: 0, net: 0, impFed: 0, impQc: 0, impFedBrut: 0, impQcBrut: 0, imposable: 0, cotis: { rrq: 0, rqap: 0, ae: 0, fss: 0, total: 0 }, isTAP: false, deductibles: 0 };
+  const p2 = enCouple
+    ? calcPersonneRevenu(emploisConjoint, sidesConjoint, false)
+    : { brut: 0, net: 0, impFed: 0, impQc: 0, impFedBrut: 0, impQcBrut: 0, imposable: 0, cotis: { rrq: 0, rqap: 0, ae: 0, fss: 0, total: 0 }, isTAP: false, deductibles: 0, creditBaseFedInutilise: 0, creditQcInutilise: 0 };
 
+  // ── RÈGLE 3 : Transfert des crédits inutilisés (montant personnel de base) ─
+  // Si un conjoint gagne moins que le montant de base, la portion inutilisée
+  // peut être transférée au conjoint à revenu plus élevé.
+  const [pHaut, pBas] = p1.imposable >= p2.imposable ? [p1, p2] : [p2, p1];
+  const creditTransfereFed = enCouple ? Math.min(pBas.creditBaseFedInutilise, calcImpotPaliers(pHaut.imposable, PALIERS_FED) * 0.15) : 0;
+  const creditTransfereQc  = enCouple ? Math.min(pBas.creditQcInutilise, calcImpotPaliers(pHaut.imposable, PALIERS_QC) * 0.14) : 0;
+  // Appliquer le transfert sur le conjoint à haut revenu
+  const impFedHautApresTransfert = Math.max(0, pHaut.impFed - creditTransfereFed * (1 - 0.165));
+  const impQcHautApresTransfert  = Math.max(0, pHaut.impQc  - creditTransfereQc);
+  const economieTransfert = enCouple
+    ? (pHaut.impFed - impFedHautApresTransfert) + (pHaut.impQc - impQcHautApresTransfert)
+    : 0;
+
+  // Totaux foyer — impôts individuels additionnés (règle 1)
   const revenuBrutAnnuel = p1.brut + p2.brut;
   const isTA = p1.isTAP || p2.isTAP;
   const depensesDeductibles = p1.deductibles + p2.deductibles;
@@ -274,9 +301,14 @@ export default function FeuilleResume() {
   const revenuImposable = p1.imposable + p2.imposable;
   const impotFedBrut = p1.impFedBrut + p2.impFedBrut;
   const creditFed = calcCreditFederal(p1.imposable) + calcCreditFederal(p2.imposable);
-  const impotFed = p1.impFed + p2.impFed;
+  // Impôts finaux après transferts de crédits (règle 3)
+  const impotFed = enCouple
+    ? impFedHautApresTransfert + (pBas === p1 ? p1.impFed : p2.impFed)
+    : p1.impFed;
   const impotQcBrut = p1.impQcBrut + p2.impQcBrut;
-  const impotQc = p1.impQc + p2.impQc;
+  const impotQc = enCouple
+    ? impQcHautApresTransfert + (pBas === p1 ? p1.impQc : p2.impQc)
+    : p1.impQc;
   const totalImpots = impotFed + impotQc;
 
   // Taux marginal — basé sur le plus haut revenu du foyer
@@ -288,12 +320,83 @@ export default function FeuilleResume() {
   const txEffectif = revenuBrutAnnuel > 0 ? (totalImpots / revenuBrutAnnuel) * 100 : 0;
 
   const totalCotisationsSociales = cotisTA.total;
+  // Revenu net foyer = somme des revenus nets individuels (règle 1)
   const revenuNetTotal   = p1.net + p2.net;
   const revenuNetMensuel = revenuNetTotal / 12;
 
-  // ── Allocations familiales ─────────────────────────────────────────────
+  // ── RÈGLE 2 : RFNR = somme des revenus nets INDIVIDUELS ──────────────
+  // Le RFNR pour les allocations familiales utilise les vrais revenus nets calculés
+  // pour chaque personne séparément, puis additionnés.
+  const rfnrCalcule = p1.net + p2.net;
+
+  // ── RÈGLE 4 : Opportunités d'optimisation fiscale conjugale ──────────
+  const optimisations = enCouple ? (() => {
+    const ops = [];
+    const nomHaut = pHaut === p1 ? (profil.nom?.split(" ")[0] || "Client 1") : (profil.conjoint?.nom?.split(" ")[0] || "Conjoint");
+    const nomBas  = pBas  === p1 ? (profil.nom?.split(" ")[0] || "Client 1") : (profil.conjoint?.nom?.split(" ")[0] || "Conjoint");
+    const ecartRevenu = pHaut.brut - pBas.brut;
+
+    // REER de conjoint — si écart > 20 000$
+    if (ecartRevenu > 20000) {
+      const economieEstimee = Math.round(ecartRevenu * 0.05); // estimation conservatrice
+      ops.push({
+        titre: "REER de conjoint",
+        detail: `${nomHaut} cotise au REER de ${nomBas}. ${nomHaut} obtient la déduction aujourd'hui (taux marginal élevé) et ${nomBas} sera imposé(e) au retrait (taux bas).`,
+        economie: economieEstimee,
+        couleur: "#5BC4A0",
+        icone: "💡",
+      });
+    }
+
+    // Transfert de crédits inutilisés
+    if (economieTransfert > 50) {
+      ops.push({
+        titre: "Transfert du montant personnel de base",
+        detail: `${nomBas} n'utilise pas la totalité de son montant personnel de base. La portion inutilisée (${fmt(creditTransfereFed + creditTransfereQc)}) peut être transférée à ${nomHaut}.`,
+        economie: Math.round(economieTransfert),
+        couleur: "#6B8ED6",
+        icone: "🔁",
+      });
+    }
+
+    // Frais médicaux — toujours recommandé de regrouper sur le plus faible revenu
+    ops.push({
+      titre: "Frais médicaux — regrouper sur le plus faible revenu",
+      detail: `Réclamez tous les frais médicaux de la famille sur la déclaration de ${nomBas}. Le seuil de 3 % du revenu net est plus bas (${fmt(pBas.net * 0.03)} vs ${fmt(pHaut.net * 0.03)}), maximisant le crédit.`,
+      economie: null,
+      couleur: "#E0B44B",
+      icone: "🏥",
+    });
+
+    // Dons de charité — regrouper sur le plus haut revenu
+    ops.push({
+      titre: "Dons de charité — regrouper sur le revenu le plus élevé",
+      detail: `Combinez tous les reçus de dons et réclamez-les sur la déclaration de ${nomHaut}. Le crédit passe à 29 % fédéral après les premiers 200 $, plus avantageux à taux marginal élevé.`,
+      economie: null,
+      couleur: "#A87DD3",
+      icone: "🎁",
+    });
+
+    // Fractionnement de revenu de pension (si âge > 65 dans les données)
+    const dob1 = profil.dob;
+    const age1 = dob1 ? Math.floor((new Date() - new Date(dob1)) / (365.25 * 24 * 3600 * 1000)) : 0;
+    if (age1 >= 55 && ecartRevenu > 10000) {
+      ops.push({
+        titre: "Fractionnement du revenu de pension (65 ans+)",
+        detail: `À la retraite, ${nomHaut} pourra transférer jusqu'à 50 % de son revenu de pension/FERR à ${nomBas}, évitant les paliers élevés et préservant la SV.`,
+        economie: null,
+        couleur: "#C9A063",
+        icone: "⚖️",
+      });
+    }
+
+    return ops;
+  })() : [];
+
+  // ── RÈGLE 2 : Allocations — RFNR = revenus nets individuels additionnés ──
+  // Les allocations sont basées sur le revenu FAMILIAL, pas individuel.
+  // On utilise rfnrCalcule (somme p1.net + p2.net) comme source de vérité.
   const allocCalc = useMemo(() => {
-    // Dériver les compteurs depuis la liste d'enfants
     const enfantsList = allocationsABF.enfants || [];
     let nbMoins6 = 0, nb6_17 = 0;
     enfantsList.forEach(e => {
@@ -303,10 +406,12 @@ export default function FeuilleResume() {
       else if (age < 18) nb6_17++;
     });
     const monoparental = (allocationsABF.situation_familiale || "monoparental") === "monoparental";
-    const rfnr = (parseFloat(allocationsABF.revenu_net_p1) || 0)
-               + (monoparental ? 0 : (parseFloat(allocationsABF.revenu_net_p2) || 0));
+    // Priorité : revenu net calculé depuis l'ABF (rfnrCalcule), sinon valeurs saisies manuellement
+    const rfnrManuel = (parseFloat(allocationsABF.revenu_net_p1) || 0)
+                     + (monoparental ? 0 : (parseFloat(allocationsABF.revenu_net_p2) || 0));
+    const rfnr = rfnrCalcule > 0 ? rfnrCalcule : rfnrManuel;
     return calcAllocations({ rfnr, nbMoins6, nb6_17, monoparental });
-  }, [allocationsABF]);
+  }, [allocationsABF, rfnrCalcule]);
 
   // Montant effectif : override manuel sinon calculé
   const allocMensuelEffectif = allocOverride !== null ? allocOverride : allocCalc.mensuel;
@@ -736,7 +841,9 @@ export default function FeuilleResume() {
                   </tbody>
                 </table>
                 <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginTop: 8 }}>
-                  RFNR : {fmt((parseFloat(allocationsABF.revenu_net_p1) || 0) + ((allocationsABF.situation_familiale || "monoparental") === "couple" ? (parseFloat(allocationsABF.revenu_net_p2) || 0) : 0))} ·{" "}
+                  RFNR utilisé : {fmt(rfnrCalcule > 0 ? rfnrCalcule : (parseFloat(allocationsABF.revenu_net_p1) || 0))}
+                  {rfnrCalcule > 0 && <span style={{ color: "#5BC4A0", marginLeft: 4 }}>(calculé depuis l'ABF)</span>}
+                  {" "}·{" "}
                   {(() => {
                     const el = allocationsABF.enfants || [];
                     let m6 = 0, s17 = 0;
@@ -1106,6 +1213,80 @@ export default function FeuilleResume() {
             </div>
           </div>
         </div>
+
+        {/* ── SECTION 4b : OPTIMISATIONS FISCALES CONJUGALES ──────── */}
+        {enCouple && optimisations.length > 0 && (
+          <div style={{ ...glass, borderRadius: 24, padding: "2rem", marginBottom: 28 }}>
+            <SectionTitle icon={Target} color="#5BC4A0">4b. Optimisations fiscales conjugales</SectionTitle>
+            <p style={{ fontSize: 12.5, color: "rgba(255,255,255,0.45)", marginBottom: 20, lineHeight: 1.6 }}>
+              Au Canada, l'impôt est <strong style={{ color: "#fff" }}>individuel</strong> mais plusieurs mécanismes permettent d'optimiser la fiscalité du foyer. Voici les opportunités identifiées.
+            </p>
+
+            {/* Tableau comparatif individuel */}
+            <div style={{ marginBottom: 20, overflowX: "auto" }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>Imposition individuelle — vue comparative</p>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+                    {["", profil.nom?.split(" ")[0] || "Client 1", profil.conjoint?.nom?.split(" ")[0] || "Conjoint", "Foyer"].map((h, i) => (
+                      <th key={i} style={{ padding: "8px 14px", fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", color: i === 0 ? "rgba(255,255,255,0.25)" : i === 1 ? "#C9A063" : i === 2 ? "#6B8ED6" : "rgba(255,255,255,0.6)", textAlign: i === 0 ? "left" : "right" }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { label: "Revenu brut", v1: p1.brut, v2: p2.brut, total: p1.brut + p2.brut },
+                    { label: "Revenu imposable", v1: p1.imposable, v2: p2.imposable, total: p1.imposable + p2.imposable },
+                    { label: "Impôt fédéral", v1: p1.impFed, v2: p2.impFed, total: p1.impFed + p2.impFed },
+                    { label: "Impôt provincial", v1: p1.impQc, v2: p2.impQc, total: p1.impQc + p2.impQc },
+                    { label: "Revenu net individuel", v1: p1.net, v2: p2.net, total: p1.net + p2.net, highlight: true },
+                    { label: "RFNR (base allocations)", v1: null, v2: null, total: rfnrCalcule, highlight: true, note: "Règle 2" },
+                  ].map((row, i) => (
+                    <tr key={i} style={{ borderBottom: "1px solid rgba(255,255,255,0.05)", background: row.highlight ? "rgba(201,160,99,0.04)" : "transparent" }}>
+                      <td style={{ padding: "9px 14px", fontSize: 12.5, color: "rgba(255,255,255,0.7)", fontWeight: row.highlight ? 700 : 400 }}>
+                        {row.label}
+                        {row.note && <span style={{ fontSize: 10, color: "#5BC4A0", marginLeft: 6 }}>[{row.note}]</span>}
+                      </td>
+                      <td style={{ padding: "9px 14px", textAlign: "right", fontFamily: "var(--font-mono)", fontSize: 12.5, color: "#C9A063" }}>{row.v1 !== null ? fmt(row.v1) : "—"}</td>
+                      <td style={{ padding: "9px 14px", textAlign: "right", fontFamily: "var(--font-mono)", fontSize: 12.5, color: "#6B8ED6" }}>{row.v2 !== null ? fmt(row.v2) : "—"}</td>
+                      <td style={{ padding: "9px 14px", textAlign: "right", fontFamily: "var(--font-mono)", fontSize: 12.5, color: row.highlight ? "#5BC4A0" : "rgba(255,255,255,0.7)", fontWeight: row.highlight ? 700 : 400 }}>{fmt(row.total)}</td>
+                    </tr>
+                  ))}
+                  {economieTransfert > 0 && (
+                    <tr style={{ background: "rgba(91,196,160,0.05)", borderBottom: "1px solid rgba(91,196,160,0.15)" }}>
+                      <td style={{ padding: "9px 14px", fontSize: 12.5, color: "#5BC4A0", fontWeight: 700 }}>
+                        Économie — transfert crédit de base <span style={{ fontSize: 10 }}>[Règle 3]</span>
+                      </td>
+                      <td colSpan={2} />
+                      <td style={{ padding: "9px 14px", textAlign: "right", fontFamily: "var(--font-mono)", fontSize: 12.5, color: "#5BC4A0", fontWeight: 700 }}>−{fmt(economieTransfert)}</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Opportunités d'optimisation (Règle 4) */}
+            <p style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>Opportunités identifiées</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {optimisations.map((op, i) => (
+                <div key={i} style={{ display: "flex", gap: 14, padding: "14px 16px", borderRadius: 14, background: `${op.couleur}08`, border: `1px solid ${op.couleur}25` }}>
+                  <span style={{ fontSize: 20, flexShrink: 0, marginTop: 1 }}>{op.icone}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 4 }}>
+                      <p style={{ fontSize: 13, fontWeight: 700, color: op.couleur }}>{op.titre}</p>
+                      {op.economie && (
+                        <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "#5BC4A0", fontWeight: 700, background: "rgba(91,196,160,0.1)", border: "1px solid rgba(91,196,160,0.25)", padding: "2px 8px", borderRadius: 6, whiteSpace: "nowrap" }}>
+                          ~{fmt(op.economie)} d'économie
+                        </span>
+                      )}
+                    </div>
+                    <p style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>{op.detail}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ── BILAN FINANCIER ─────────────────────────────────────── */}
         <div style={{ ...glass, borderRadius: 24, padding: "2rem" }}>
