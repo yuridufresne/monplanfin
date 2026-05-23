@@ -1,6 +1,5 @@
-import React, { useEffect, useState, useMemo, useRef } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
-import { motion } from "framer-motion";
 import {
   TrendingUp, TrendingDown, DollarSign, Shield, Target, AlertTriangle,
   BarChart3, FileText, ChevronDown, Baby, Pencil, Check as CheckIcon
@@ -89,8 +88,7 @@ function calcCotisations(revenuBrut, isTravailleurAutonome = false, inscritAE = 
     total: Math.round((rrq + rqap + ae + fss) * 100) / 100,
   };
 }
-// Alias pour la compatibilité avec le code existant
-const calcCotisationsTA = (rev, ae) => calcCotisations(rev, true, ae);
+// (alias supprimé — calcCotisations couvre tous les cas)
 
 // ── Glazsmorphism shared style ────────────────────────────────────────────
 const glass = {
@@ -314,7 +312,7 @@ export default function FeuilleResume() {
   const revenuBrutAnnuel = p1.brut + p2.brut;
   const isTA = p1.isTAP || p2.isTAP;
   const depensesDeductibles = p1.deductibles + p2.deductibles;
-  const revenuNetAvantCotisations = Math.max(0, revenuBrutAnnuel - depensesDeductibles);
+  // revenuNetAvantCotisations supprimé (variable zombie non utilisée)
   const cotisTA = {
     rrq: p1.cotis.rrq + p2.cotis.rrq,
     rqap: p1.cotis.rqap + p2.cotis.rqap,
@@ -487,33 +485,38 @@ export default function FeuilleResume() {
   const abfADesToDonnees = hypotheques.length > 0 || autresDettes.length > 0
     || hypothequesConjoint.length > 0 || autresDettesConjoint.length > 0;
 
+  // Source unique pour les dettes — clés stables pour éviter duplication visuelle React
   const toutesLesDettes = abfADesToDonnees ? [
-    ...hypotheques.map(h => ({
+    ...hypotheques.map((h, i) => ({
+      _key: `hypo-p1-${i}`,
       type: `Hypothèque — ${h.adresse || h.usage || "résidence"}`,
       solde: parseFloat(h.solde) || 0,
       paiement: parseFloat(h.paiement_mensuel) || 0,
       taux: parseFloat(h.taux) || 0,
     })),
-    ...hypothequesConjoint.map(h => ({
+    ...hypothequesConjoint.map((h, i) => ({
+      _key: `hypo-p2-${i}`,
       type: `Hypothèque — ${h.adresse || h.usage || "résidence"} (Conjoint)`,
       solde: parseFloat(h.solde) || 0,
       paiement: parseFloat(h.paiement_mensuel) || 0,
       taux: parseFloat(h.taux) || 0,
     })),
-    ...autresDettes.map(d => ({
+    ...autresDettes.map((d, i) => ({
+      _key: `dette-p1-${i}`,
       type: d.type || "Autre",
       solde: parseFloat(d.solde) || 0,
       paiement: parseFloat(d.paiement_min) || 0,
       taux: parseFloat(d.taux) || 0,
     })),
-    ...autresDettesConjoint.map(d => ({
+    ...autresDettesConjoint.map((d, i) => ({
+      _key: `dette-p2-${i}`,
       type: `${d.type || "Autre"} (Conjoint)`,
       solde: parseFloat(d.solde) || 0,
       paiement: parseFloat(d.paiement_min) || 0,
       taux: parseFloat(d.taux) || 0,
     })),
   ] : debts.map(d => ({
-    // Fallback : entités Debt seulement si aucune donnée ABF
+    _key: `debt-entity-${d.id}`,
     type: d.name || "Dette",
     solde: parseFloat(d.balance) || 0,
     paiement: parseFloat(d.monthly_payment) || parseFloat(d.minimum_payment) || 0,
@@ -676,7 +679,8 @@ export default function FeuilleResume() {
       txEffectif,
       txMarginalCombine,
     };
-  }, [ongletFiscal, p1, p2, revenuBrutAnnuel, revenuImposable, impotFed, impotQc, impotFedBrut, impotQcBrut, totalImpots, cotisTA, revenuNetTotal, depensesDeductibles, isTA, creditFed, txEffectif, txMarginalCombine]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ongletFiscal, p1, p2, enCouple, revenuBrutAnnuel, revenuImposable, impotFed, impotQc, impotFedBrut, impotQcBrut, totalImpots, cotisTA, revenuNetTotal, depensesDeductibles, isTA, creditFed, txEffectif, txMarginalCombine]);
 
   // Allocations selon l'onglet : 50% si vue individuelle, 100% si foyer
   const allocFacteur = ongletFiscal === "foyer" ? 1 : 0.5;
@@ -1184,8 +1188,8 @@ export default function FeuilleResume() {
                   </tr>
                 </thead>
                 <tbody>
-                  {toutesLesDettes.map((d, i) => (
-                    <TableRow key={i} cells={[
+                  {toutesLesDettes.map((d) => (
+                    <TableRow key={d._key} cells={[
                       d.type,
                       fmt(d.solde),
                       fmt(d.paiement),
@@ -1485,8 +1489,8 @@ export default function FeuilleResume() {
               <p style={{ fontSize: 11, fontWeight: 700, color: "#f87171", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>PASSIFS</p>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <tbody>
-                  {toutesLesDettes.map((d, i) => (
-                    <TableRow key={i} cells={[d.type, fmt(d.solde)]} />
+                  {toutesLesDettes.map((d) => (
+                    <TableRow key={d._key} cells={[d.type, fmt(d.solde)]} />
                   ))}
                   {toutesLesDettes.length === 0 && <TableRow cells={["Aucune dette enregistrée", "—"]} />}
                   <TableRow cells={["TOTAL PASSIFS", fmt(totalSoldeDettes)]} highlight />
