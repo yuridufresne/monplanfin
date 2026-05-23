@@ -213,6 +213,24 @@ export default function FeuilleResume() {
   const fondsABF      = bySection.fonds_urgence    || {};
   const allocationsABF= bySection.allocations      || {};
 
+  // ── Prestations de retraite gouvernementales ──────────────────────────
+  const prestationsData = retraiteABF; // SV, RRQ stockés directement dans la section retraite
+  const svMensuel  = parseFloat(prestationsData.sv)  || 0;
+  const rrqMensuel = parseFloat(prestationsData.rrq) || 0;
+  const srgMensuel = (() => {
+    // Recalcul du SRG depuis les données sauvegardées
+    const revenuRetraiteAnnuel = (parseFloat(prestationsData.revenu_retraite_mensuel) || 0) * 12;
+    const sit = profil.situation || "";
+    const enCouple = ["marie", "conjoint", "union_civile"].includes(sit);
+    const seuil = enCouple ? 29000 : 22000;
+    if (revenuRetraiteAnnuel > 0 && revenuRetraiteAnnuel < seuil) {
+      return Math.round(((seuil - revenuRetraiteAnnuel) / seuil) * (enCouple ? 510 : 1065));
+    }
+    return 0;
+  })();
+  const totalPrestationsMensuel = svMensuel + rrqMensuel + srgMensuel;
+  const hasPrestations = svMensuel > 0 || rrqMensuel > 0;
+
   // ── Revenus ───────────────────────────────────────────────────────────
   const emplois = revenuABF.emplois || [];
   const sides = revenuABF.sidehustles || [];
@@ -734,6 +752,65 @@ export default function FeuilleResume() {
                       )}
                     </div>
                   )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── SECTION 1c : PRESTATIONS DE RETRAITE ────────────────── */}
+        {hasPrestations && (
+          <div style={{ ...glass, borderRadius: 24, padding: "2rem", marginBottom: 28 }}>
+            <SectionTitle icon={Shield} color="#6B8ED6">1c. Prestations de retraite gouvernementales (estimées à 65 ans)</SectionTitle>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div>
+                <p style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>Détail des prestations mensuelles</p>
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <tbody>
+                    {svMensuel > 0 && (
+                      <TableRow cells={["Sécurité de la vieillesse (SV)", fmt(svMensuel)]} />
+                    )}
+                    {srgMensuel > 0 && (
+                      <TableRow cells={["Supplément de revenu garanti (SRG)", fmt(srgMensuel)]} />
+                    )}
+                    {rrqMensuel > 0 && (
+                      <TableRow cells={["Rente de retraite (RRQ)", fmt(rrqMensuel)]} />
+                    )}
+                    <TableRow cells={["TOTAL MENSUEL ESTIMÉ", fmt(totalPrestationsMensuel)]} highlight />
+                    <TableRow cells={["Total annuel estimé", fmt(totalPrestationsMensuel * 12)]} />
+                  </tbody>
+                </table>
+                <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginTop: 8 }}>
+                  * Estimations basées sur les données fournies dans le module Retraite. Les montants réels peuvent varier.
+                </p>
+              </div>
+              <div>
+                <p style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>Aperçu</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {[
+                    { label: "SV", val: svMensuel, color: "#6B8ED6", show: svMensuel > 0 },
+                    { label: "SRG", val: srgMensuel, color: "#A87DD3", show: srgMensuel > 0 },
+                    { label: "RRQ", val: rrqMensuel, color: "#5BC4A0", show: rrqMensuel > 0 },
+                  ].filter(x => x.show).map(x => (
+                    <div key={x.label} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <div style={{ width: 36, height: 36, borderRadius: 10, background: `${x.color}18`, border: `1px solid ${x.color}30`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <span style={{ fontSize: 11, fontWeight: 800, color: x.color }}>{x.label}</span>
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ height: 6, borderRadius: 3, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+                          <div style={{ height: "100%", width: `${totalPrestationsMensuel > 0 ? (x.val / totalPrestationsMensuel) * 100 : 0}%`, background: x.color, borderRadius: 3, transition: "width 0.5s" }} />
+                        </div>
+                      </div>
+                      <div style={{ textAlign: "right", minWidth: 90 }}>
+                        <p style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 700, color: x.color }}>{fmt(x.val)}<span style={{ fontSize: 10, fontWeight: 400, color: "rgba(255,255,255,0.35)" }}>/mois</span></p>
+                        <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>{totalPrestationsMensuel > 0 ? `${((x.val / totalPrestationsMensuel) * 100).toFixed(1)}%` : "—"}</p>
+                      </div>
+                    </div>
+                  ))}
+                  <div style={{ marginTop: 8, padding: "12px 16px", borderRadius: 12, background: "rgba(107,142,214,0.08)", border: "1px solid rgba(107,142,214,0.2)" }}>
+                    <p style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginBottom: 4 }}>Total annuel gouvernemental</p>
+                    <p style={{ fontFamily: "var(--font-mono)", fontSize: "1.4rem", fontWeight: 800, color: "#6B8ED6" }}>{fmt(totalPrestationsMensuel * 12)}</p>
+                  </div>
                 </div>
               </div>
             </div>
