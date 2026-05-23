@@ -14,8 +14,10 @@ export default function AddressAutocomplete({ value, onChange, placeholder = "12
   const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0, width: 0 });
   const debounceRef = useRef(null);
   const containerRef = useRef(null);
+  const inputRef = useRef(null);
 
   // Sync external value changes
   useEffect(() => { setQuery(value || ""); }, [value]);
@@ -58,10 +60,18 @@ export default function AddressAutocomplete({ value, onChange, placeholder = "12
     }
   };
 
+  const updateDropdownPos = () => {
+    if (inputRef.current) {
+      const rect = inputRef.current.getBoundingClientRect();
+      setDropdownPos({ top: rect.bottom + window.scrollY + 6, left: rect.left + window.scrollX, width: rect.width });
+    }
+  };
+
   const handleInput = (e) => {
     const val = e.target.value;
     setQuery(val);
     onChange(val); // keep parent in sync while typing
+    updateDropdownPos();
     clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => search(val), 250);
   };
@@ -79,10 +89,11 @@ export default function AddressAutocomplete({ value, onChange, placeholder = "12
     <div ref={containerRef} style={{ position: "relative" }}>
       <div style={{ position: "relative" }}>
         <input
+          ref={inputRef}
           type="text"
           value={query}
           onChange={handleInput}
-          onFocus={() => suggestions.length > 0 && setOpen(true)}
+          onFocus={() => { updateDropdownPos(); suggestions.length > 0 && setOpen(true); }}
           placeholder={placeholder}
           className={className}
           style={{
@@ -103,7 +114,11 @@ export default function AddressAutocomplete({ value, onChange, placeholder = "12
 
       {open && suggestions.length > 0 && (
         <div style={{
-          position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0, zIndex: 9999,
+          position: "fixed",
+          top: dropdownPos.top,
+          left: dropdownPos.left,
+          width: dropdownPos.width,
+          zIndex: 99999,
           background: "#0D1628", border: "1px solid rgba(201,160,99,0.25)",
           borderRadius: 12, overflow: "hidden",
           boxShadow: "0 12px 32px rgba(0,0,0,0.5)",
