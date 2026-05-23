@@ -1139,7 +1139,10 @@ export default function FeuilleResume() {
                     {rrqMensuel > 0 && (
                       <TableRow cells={["Rente de retraite (RRQ)", fmt(rrqMensuel)]} />
                     )}
-                    <TableRow cells={["TOTAL MENSUEL ESTIMÉ", fmt(totalPrestationsMensuel)]} highlight />
+                    {svMensuel > 0 && rrqMensuel > 0 && (
+                      <TableRow cells={["SV + RRQ combinés", fmt(svMensuel + rrqMensuel)]} />
+                    )}
+                    <TableRow cells={["TOTAL MENSUEL ESTIMÉ (SV + SRG + RRQ)", fmt(totalPrestationsMensuel)]} highlight />
                     <TableRow cells={["Total annuel estimé", fmt(totalPrestationsMensuel * 12)]} />
                   </tbody>
                 </table>
