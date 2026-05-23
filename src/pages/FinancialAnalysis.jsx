@@ -733,6 +733,8 @@ function DettesPanel({ data, setData }) {
                   <Field label="Adresse / Description"><Input value={h.adresse} onChange={v => updateHypo(i, "adresse", v)} placeholder="ex: 123 rue des Érables, Montréal" /></Field>
                   <Field label="Prix d'achat ($)"><Input type="number" value={h.prix_achat} onChange={v => updateHypo(i, "prix_achat", v)} placeholder="350 000" /></Field>
                   <Field label="Année d'achat"><Input type="number" value={h.annee_achat} onChange={v => updateHypo(i, "annee_achat", v)} placeholder="2019" /></Field>
+                  <Field label="Valeur marchande estimée ($)" hint="Estimation actuelle de la propriété"><Input type="number" value={h.valeur_marchande} onChange={v => updateHypo(i, "valeur_marchande", v)} placeholder="550 000" /></Field>
+                  <Field label="Date de prochain renouvellement"><Input type="date" value={h.date_renouvellement} onChange={v => updateHypo(i, "date_renouvellement", v)} /></Field>
                   <Field label="Mise de fonds (%)"><Input type="number" value={h.mise_de_fonds_pct} onChange={v => updateHypo(i, "mise_de_fonds_pct", v)} placeholder="20" /></Field>
                   <Field label="Solde hypothécaire actuel ($)"><Input type="number" value={h.solde} onChange={v => updateHypo(i, "solde", v)} placeholder="280 000" /></Field>
                   <Field label="Taux d'intérêt actuel (%)"><Input type="number" value={h.taux} onChange={v => updateHypo(i, "taux", v)} placeholder="5.25" /></Field>
