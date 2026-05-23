@@ -1187,26 +1187,34 @@ export default function FeuilleResume() {
               <div>
                 <p style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>Aperçu</p>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {[
-                    { label: "SV", val: svMensuel, color: "#6B8ED6", show: svMensuel > 0 },
-                    { label: "SRG", val: srgMensuel, color: "#A87DD3", show: srgMensuel > 0 },
-                    { label: "RRQ", val: rrqMensuel, color: "#5BC4A0", show: rrqMensuel > 0 },
-                  ].filter(x => x.show).map(x => (
-                    <div key={x.label} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                      <div style={{ width: 36, height: 36, borderRadius: 10, background: `${x.color}18`, border: `1px solid ${x.color}30`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        <span style={{ fontSize: 11, fontWeight: 800, color: x.color }}>{x.label}</span>
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ height: 6, borderRadius: 3, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
-                          <div style={{ height: "100%", width: `${totalPrestationsMensuel > 0 ? (x.val / totalPrestationsMensuel) * 100 : 0}%`, background: x.color, borderRadius: 3, transition: "width 0.5s" }} />
+                  {(() => {
+                    const nom1 = profil.nom?.split(" ")[0] || "Client 1";
+                    const nom2 = profil.conjoint?.nom?.split(" ")[0] || "Client 2";
+                    const rows = [
+                      ...(svP1 > 0 ? [{ label: `SV — ${nom1}`, val: svP1, color: "#6B8ED6" }] : []),
+                      ...(enCouple && svP2 > 0 ? [{ label: `SV — ${nom2}`, val: svP2, color: "#6B8ED6" }] : []),
+                      ...(srgMensuel > 0 ? [{ label: "SRG", val: srgMensuel, color: "#A87DD3" }] : []),
+                      ...(rrqP1 > 0 ? [{ label: `RRQ — ${nom1}`, val: rrqP1, color: "#5BC4A0" }] : []),
+                      ...(enCouple && rrqP2 > 0 ? [{ label: `RRQ — ${nom2}`, val: rrqP2, color: "#5BC4A0" }] : []),
+                    ];
+                    return rows.map(x => (
+                      <div key={x.label} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        <div style={{ width: 36, height: 36, borderRadius: 10, background: `${x.color}18`, border: `1px solid ${x.color}30`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          <span style={{ fontSize: 10, fontWeight: 800, color: x.color, textAlign: "center", lineHeight: 1.1 }}>{x.label.split(" — ")[0]}</span>
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <p style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginBottom: 3 }}>{x.label.split(" — ")[1] || ""}</p>
+                          <div style={{ height: 6, borderRadius: 3, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+                            <div style={{ height: "100%", width: `${totalPrestationsMensuel > 0 ? (x.val / totalPrestationsMensuel) * 100 : 0}%`, background: x.color, borderRadius: 3, transition: "width 0.5s" }} />
+                          </div>
+                        </div>
+                        <div style={{ textAlign: "right", minWidth: 90 }}>
+                          <p style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 700, color: x.color }}>{fmt(x.val)}<span style={{ fontSize: 10, fontWeight: 400, color: "rgba(255,255,255,0.35)" }}>/mois</span></p>
+                          <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>{totalPrestationsMensuel > 0 ? `${((x.val / totalPrestationsMensuel) * 100).toFixed(1)}%` : "—"}</p>
                         </div>
                       </div>
-                      <div style={{ textAlign: "right", minWidth: 90 }}>
-                        <p style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 700, color: x.color }}>{fmt(x.val)}<span style={{ fontSize: 10, fontWeight: 400, color: "rgba(255,255,255,0.35)" }}>/mois</span></p>
-                        <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>{totalPrestationsMensuel > 0 ? `${((x.val / totalPrestationsMensuel) * 100).toFixed(1)}%` : "—"}</p>
-                      </div>
-                    </div>
-                  ))}
+                    ));
+                  })()}
                   <div style={{ marginTop: 8, padding: "12px 16px", borderRadius: 12, background: "rgba(107,142,214,0.08)", border: "1px solid rgba(107,142,214,0.2)" }}>
                     <p style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginBottom: 4 }}>Total annuel gouvernemental</p>
                     <p style={{ fontFamily: "var(--font-mono)", fontSize: "1.4rem", fontWeight: 800, color: "#6B8ED6" }}>{fmt(totalPrestationsMensuel * 12)}</p>
