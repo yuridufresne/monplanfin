@@ -61,14 +61,10 @@ export default function StepBudget() {
   };
 
   const totalRev = useMemo(() => {
-    const revenuProfile = profiles.find(p => p.section === "revenu");
-    const raw = revenuProfile?.data || {};
-    const data = raw.data || raw;
-    const emplois = data.emplois || [];
-    const sides = data.sidehustles || [];
-    return emplois.reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0) / 12, 0)
-      + sides.reduce((s, sh) => s + (parseFloat(sh.revenu_mensuel_moyen) || 0), 0);
-  }, [profiles]);
+    return entries
+      .filter(e => e.type === "revenu")
+      .reduce((s, e) => s + toMonthly(parseFloat(e.amount) || 0, e.frequency), 0);
+  }, [entries]);
 
   const revenus = entries.filter(e => e.type === "revenu");
   const depenses = entries.filter(e => e.type === "depense");
