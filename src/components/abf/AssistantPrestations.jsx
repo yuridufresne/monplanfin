@@ -105,8 +105,7 @@ export default function AssistantPrestations({ data, setData }) {
 
         <div className="p-4 space-y-4">
           <p className="text-[12px]" style={{ color: "#94A3B8" }}>
-            La SV est versée automatiquement par le gouvernement fédéral — aucun relevé n'est disponible. 
-            Le montant dépend uniquement du nombre d'années de résidence au Canada.
+            Nous allons estimer votre SV en fonction de vos années de résidence au Canada.
           </p>
 
           {/* Q1 */}
