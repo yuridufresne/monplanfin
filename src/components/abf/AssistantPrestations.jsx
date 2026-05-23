@@ -112,14 +112,21 @@ export default function AssistantPrestations({ data, setData }) {
   return (
     <div className="space-y-4">
       {/* ── SV ── */}
-      <PrestationBlock label="Sécurité de la vieillesse (SV)" modeKey="sv_mode" estimKey="sv" data={data} setData={setData}>
-        <div className="space-y-4">
+      <div className="rounded-xl" style={{ border: "1px solid rgba(255,255,255,0.09)" }}>
+        <div className="px-4 py-3 flex items-center gap-3" style={{ background: "rgba(255,255,255,0.03)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          <p className="text-[13px] font-semibold text-white">Sécurité de la vieillesse (SV)</p>
+          <span className="text-[11px] px-2 py-0.5 rounded-full" style={{ background: "rgba(201,160,99,0.12)", color: "#C9A063" }}>Estimation automatique</span>
+        </div>
+        <div className="p-4 space-y-4">
+          <p className="text-[12px]" style={{ color: "#94A3B8" }}>
+            La SV est versée automatiquement à 65 ans par le gouvernement fédéral — il n'y a pas de relevé à obtenir. Le montant dépend uniquement du nombre d'années de résidence au Canada.
+          </p>
           <div>
             <p className="text-[12.5px] font-semibold mb-2" style={{ color: "#94A3B8" }}>
               Avez-vous vécu au Canada de façon continue depuis vos 18 ans ?
             </p>
             <div className="flex gap-2">
-              {[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }].map(o => (
+              {[{ value: "oui", label: "Oui (40 ans+)" }, { value: "non", label: "Non" }].map(o => (
                 <button key={o.value} type="button" onClick={() => f("sv_canada_continu")(o.value)}
                   className="px-4 py-2 rounded-xl text-[13px] font-medium transition-all"
                   style={svCanadaContinu === o.value
@@ -154,7 +161,7 @@ export default function AssistantPrestations({ data, setData }) {
             <ResultBox label="SV estimée" value={fmt(svEstimee)} unit="/mois" />
           )}
         </div>
-      </PrestationBlock>
+      </div>
 
       {/* ── RRQ ── */}
       <PrestationBlock label="Rente de retraite RRQ" modeKey="rrq_mode" estimKey="rrq" data={data} setData={setData}>
@@ -203,7 +210,7 @@ export default function AssistantPrestations({ data, setData }) {
       </PrestationBlock>
 
       {/* Disclaimer */}
-      {(data.sv_mode === "estimer" || data.rrq_mode === "estimer") && (
+      {data.rrq_mode === "estimer" && (
         <p className="text-[11px] italic text-center" style={{ color: "rgba(148,163,184,0.5)" }}>
           *Ceci est une estimation. Pour une planification d'indépendance financière précise, votre relevé gouvernemental sera requis.*
         </p>
