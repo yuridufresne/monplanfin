@@ -6,6 +6,7 @@ import InfoTooltip from "@/components/ui/InfoTooltip";
 import StepBudget from "@/components/abf/StepBudget";
 import StepAllocations from "@/components/abf/StepAllocations";
 import AddressAutocomplete from "@/components/ui/AddressAutocomplete";
+import AssistantPrestations from "@/components/abf/AssistantPrestations";
 
 const STEPS = [
   { key: "profil_personnel", label: "Profil", icon: User, title: "Renseignements personnels" },
@@ -495,9 +496,9 @@ function RetraitePanel({ data, setData }) {
         <Field label="Espérance de vie visée"><Input value={data.esperance_vie} onChange={f("esperance_vie")} type="number" placeholder="90" /></Field>
         <Field label="Revenu mensuel désiré à la retraite ($)"><Input value={data.revenu_retraite_mensuel} onChange={f("revenu_retraite_mensuel")} type="number" /></Field>
         <Field label="% du revenu actuel" hint="80% recommandé"><Input value={data.revenu_retraite_pct} onChange={f("revenu_retraite_pct")} type="number" placeholder="80" /></Field>
-        <Field label="Prestations RRQ mensuelles estimées ($)"><Input value={data.rrq} onChange={f("rrq")} type="number" /></Field>
-        <Field label="Prestations SV mensuelles estimées ($)"><Input value={data.sv} onChange={f("sv")} type="number" /></Field>
       </div>
+
+      <AssistantPrestations data={data} setData={setData} />
 
       <Field label="Souhaitez-vous laisser un héritage ?">
         <RadioGroup value={data.heritage} onChange={f("heritage")} options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]} />
