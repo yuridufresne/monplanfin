@@ -163,18 +163,19 @@ const PALIERS_QC_EST = [
   { min: 132245, max: Infinity,rate: 0.2575 },
 ];
 
-function estimerImpotMensuel(revenuBrut) {
+function estimerRetenueMensuelle(revenuBrut) {
   if (!revenuBrut || revenuBrut <= 0) return 0;
   const brut = parseFloat(revenuBrut) || 0;
 
+  // ── Impôt fédéral ────────────────────────────────────────────────
   let impFed = 0;
   for (const p of PALIERS_FED_EST) {
     if (brut <= p.min) break;
     impFed += (Math.min(brut, p.max) - p.min) * p.rate;
   }
-  // Crédit de base fédéral + abattement QC
   impFed = Math.max(0, (impFed - 16452 * 0.15) * (1 - 0.165));
 
+  // ── Impôt provincial (Québec) ────────────────────────────────────
   let impQc = 0;
   for (const p of PALIERS_QC_EST) {
     if (brut <= p.min) break;
@@ -182,8 +183,24 @@ function estimerImpotMensuel(revenuBrut) {
   }
   impQc = Math.max(0, impQc - 18952 * 0.14);
 
-  return Math.round((impFed + impQc) / 12);
+  // ── Cotisations sociales (salarié — part employé) ────────────────
+  // RRQ : 6,4% jusqu'au MGA (74 600$) + 4% supplémentaire jusqu'au MSGA (85 000$)
+  const MGA = 74600; const MSGA = 85000; const EXEMPTION = 3500;
+  const rrq = Math.min(Math.max(0, Math.min(brut, MGA) - EXEMPTION) * 0.064, 4551.40)
+            + Math.min(Math.max(0, Math.min(brut, MSGA) - MGA) * 0.04, 416.00);
+
+  // RQAP : 0,494% jusqu'à 103 000$
+  const rqap = Math.min(Math.min(brut, 103000) * 0.00494, 509.18);
+
+  // AE : 1,30% jusqu'à 68 900$
+  const ae = Math.min(Math.min(brut, 68900) * 0.013, 895.70);
+
+  const totalAnnuel = impFed + impQc + rrq + rqap + ae;
+  return Math.round(totalAnnuel / 12);
 }
+
+// Alias pour compatibilité
+const estimerImpotMensuel = estimerRetenueMensuelle;
 
 function RevenuPanel({ data, setData }) {
   const emplois = data.emplois || [{ employeur: "", poste: "", revenu_brut: "", impot_mensuel: "", type: "salarie" }];
