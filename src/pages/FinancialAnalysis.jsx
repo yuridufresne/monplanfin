@@ -405,6 +405,11 @@ const COMPTES_TYPES = [
     tooltip: "Régime enregistré d'épargne-études. Pour les études des enfants. Bénéficiez de subventions gouvernementales (SCEE 20%, IQEE 10%). Plafonds : 50 000$/enfant, 2 500$/an pour SCEE max."
   },
   {
+    key: "cri_lira",
+    label: "CRI / LIRA (Ancien fonds de pension)",
+    tooltip: "Compte de retraite immobilisé (CRI) ou Locked-In Retirement Account (LIRA). Fonds provenant d'un ancien régime de pension d'employeur. L'argent est « immobilisé » jusqu'à la retraite mais peut être transféré et géré selon vos objectifs."
+  },
+  {
     key: "crypto",
     label: "Crypto",
     tooltip: "Crypto-monnaies (Bitcoin, Ethereum, etc.). Très volatiles. Les gains en capital sont imposables à 50% au Canada. Conservez vos preuves d'achat pour le fisc."
@@ -502,42 +507,123 @@ function RetraitePanel({ data, setData }) {
       )}
 
       {/* Fonds de pension */}
-      <div>
-        <p className="text-[14px] font-semibold text-white mb-3">
+      <div className="space-y-5">
+        <p className="text-[14px] font-semibold text-white">
           Fonds de pension (employeur)
           <InfoTooltip explanation="Régime de retraite offert par votre employeur. Deux types : cotisation déterminée (vous connaissez votre contribution) ou prestation déterminée (vous connaissez votre revenu de retraite assuré)." position="right" />
         </p>
-        <Field label="Avez-vous un fonds de pension au travail ?">
-          <RadioGroup value={data.a_fond_pension} onChange={f("a_fond_pension")} options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]} />
-        </Field>
-        {data.a_fond_pension === "oui" && (
-          <div className="mt-4 rounded-xl p-4 space-y-4" style={{ background: "rgba(107,140,214,0.05)", border: "1px solid rgba(107,140,214,0.18)" }}>
-            <Field label={<span>Type de régime <InfoTooltip explanation="CD: Vous versez chaque mois, la retraite dépend des rendements. PD: Votre employeur garantit votre revenu de retraite." position="right" /></span>}>
-              <RadioGroup value={fondPension.type} onChange={v => setFondPension("type", v)} options={[
-                { value: "cotisation_determinee", label: "Cotisation déterminée" },
-                { value: "prestation_determinee", label: "Prestation déterminée" },
-              ]} />
-            </Field>
-            <Field label="Institution / Gestionnaire"><Input value={fondPension.institution} onChange={v => setFondPension("institution", v)} placeholder="ex: Sun Life, Manulife, CAAT..." /></Field>
 
-            {fondPension.type === "cotisation_determinee" && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <Field label="Solde actuel ($)"><Input value={fondPension.solde} onChange={v => setFondPension("solde", v)} type="number" /></Field>
-                <Field label="Cotisation salariale mensuelle ($)"><Input value={fondPension.cotisation_salariale} onChange={v => setFondPension("cotisation_salariale", v)} type="number" /></Field>
-                <Field label="Cotisation patronale mensuelle ($)"><Input value={fondPension.cotisation_patronale} onChange={v => setFondPension("cotisation_patronale", v)} type="number" /></Field>
-              </div>
-            )}
+        {/* ── EMPLOI ACTUEL ── */}
+        <div className="rounded-xl p-4 space-y-4" style={{ background: "rgba(107,140,214,0.04)", border: "1px solid rgba(107,140,214,0.14)" }}>
+          <p className="text-[11px] font-bold tracking-wider uppercase" style={{ color: "rgba(107,140,214,0.6)" }}>Emploi actuel</p>
+          <Field label="Avez-vous un fonds de pension au travail ?">
+            <RadioGroup value={data.a_fond_pension} onChange={f("a_fond_pension")} options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]} />
+          </Field>
+          <AnimatePresence>
+            {data.a_fond_pension === "oui" && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.25 }}
+                className="overflow-hidden"
+              >
+                <div className="space-y-4 pt-1">
+                  <Field label="Années de service reconnues (emploi actuel)">
+                    <Input value={fondPension.annees_service} onChange={v => setFondPension("annees_service", v)} type="number" placeholder="ex: 8" />
+                  </Field>
+                  <Field label={<span>Type de régime <InfoTooltip explanation="CD: Vous versez chaque mois, la retraite dépend des rendements. PD: Votre employeur garantit votre revenu de retraite." position="right" /></span>}>
+                    <RadioGroup value={fondPension.type} onChange={v => setFondPension("type", v)} options={[
+                      { value: "cotisation_determinee", label: "Cotisation déterminée" },
+                      { value: "prestation_determinee", label: "Prestation déterminée" },
+                    ]} />
+                  </Field>
+                  <Field label="Institution / Gestionnaire"><Input value={fondPension.institution} onChange={v => setFondPension("institution", v)} placeholder="ex: Sun Life, Manulife, CAAT..." /></Field>
 
-            {fondPension.type === "prestation_determinee" && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <Field label="Prestation estimée à la retraite ($/mois)"><Input value={fondPension.prestation_mensuelle} onChange={v => setFondPension("prestation_mensuelle", v)} type="number" /></Field>
-                <Field label="Âge de retraite du régime"><Input value={fondPension.age_retraite_regime} onChange={v => setFondPension("age_retraite_regime", v)} type="number" placeholder="65" /></Field>
-                <Field label="Cotisation salariale mensuelle ($)"><Input value={fondPension.cotisation_salariale} onChange={v => setFondPension("cotisation_salariale", v)} type="number" /></Field>
-                <Field label="Cotisation patronale mensuelle ($)"><Input value={fondPension.cotisation_patronale} onChange={v => setFondPension("cotisation_patronale", v)} type="number" /></Field>
-              </div>
+                  {fondPension.type === "cotisation_determinee" && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <Field label="Solde actuel ($)"><Input value={fondPension.solde} onChange={v => setFondPension("solde", v)} type="number" /></Field>
+                      <Field label="Cotisation salariale mensuelle ($)"><Input value={fondPension.cotisation_salariale} onChange={v => setFondPension("cotisation_salariale", v)} type="number" /></Field>
+                      <Field label="Cotisation patronale mensuelle ($)"><Input value={fondPension.cotisation_patronale} onChange={v => setFondPension("cotisation_patronale", v)} type="number" /></Field>
+                    </div>
+                  )}
+
+                  {fondPension.type === "prestation_determinee" && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <Field label="Prestation estimée à la retraite ($/mois)"><Input value={fondPension.prestation_mensuelle} onChange={v => setFondPension("prestation_mensuelle", v)} type="number" /></Field>
+                      <Field label="Âge de retraite du régime"><Input value={fondPension.age_retraite_regime} onChange={v => setFondPension("age_retraite_regime", v)} type="number" placeholder="65" /></Field>
+                      <Field label="Cotisation salariale mensuelle ($)"><Input value={fondPension.cotisation_salariale} onChange={v => setFondPension("cotisation_salariale", v)} type="number" /></Field>
+                      <Field label="Cotisation patronale mensuelle ($)"><Input value={fondPension.cotisation_patronale} onChange={v => setFondPension("cotisation_patronale", v)} type="number" /></Field>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
             )}
-          </div>
-        )}
+          </AnimatePresence>
+        </div>
+
+        {/* ── EMPLOIS ANTÉRIEURS ── */}
+        <div className="rounded-xl p-4 space-y-4" style={{ background: "rgba(201,160,99,0.04)", border: "1px solid rgba(201,160,99,0.14)" }}>
+          <p className="text-[11px] font-bold tracking-wider uppercase" style={{ color: "rgba(201,160,99,0.55)" }}>La chasse aux capitaux oubliés — Emplois antérieurs</p>
+          <Field label="Avez-vous quitté un ancien employeur au cours de votre carrière avec qui vous aviez des avantages sociaux ?">
+            <RadioGroup
+              value={data.a_ancien_employeur}
+              onChange={f("a_ancien_employeur")}
+              options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]}
+            />
+          </Field>
+
+          <AnimatePresence>
+            {data.a_ancien_employeur === "oui" && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.25 }}
+                className="overflow-hidden"
+              >
+                <div className="space-y-4 pt-1">
+                  <Field label="Nombre d'années à cet ancien emploi">
+                    <Input value={data.annees_ancien_emploi} onChange={f("annees_ancien_emploi")} type="number" placeholder="ex: 5" />
+                  </Field>
+
+                  <Field label="Y avait-il un fonds de pension ou un REER collectif avec cet employeur ?">
+                    <RadioGroup
+                      value={data.ancien_fond_pension}
+                      onChange={f("ancien_fond_pension")}
+                      options={[
+                        { value: "oui", label: "Oui" },
+                        { value: "non", label: "Non" },
+                        { value: "incertain", label: "Je ne suis pas certain(e)" },
+                      ]}
+                    />
+                  </Field>
+
+                  <AnimatePresence>
+                    {(data.ancien_fond_pension === "oui" || data.ancien_fond_pension === "incertain") && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <div className="rounded-xl px-4 py-4 flex gap-3" style={{ background: "rgba(201,160,99,0.08)", border: "1px solid rgba(201,160,99,0.35)" }}>
+                          <span className="text-[18px] shrink-0 mt-0.5">💡</span>
+                          <div>
+                            <p className="text-[12.5px] font-semibold mb-1" style={{ color: "#C9A063" }}>Opportunité</p>
+                            <p className="text-[12px] leading-relaxed" style={{ color: "rgba(255,255,255,0.7)" }}>
+                              Il est possible qu'une somme d'argent soit toujours bloquée chez votre ancien employeur ou administrateur. Lors de notre rencontre, nous vérifierons s'il est possible de récupérer et consolider ces sommes dans un <strong style={{ color: "#fff" }}>CRI (Compte de retraite immobilisé)</strong>.
+                            </p>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
       {/* Comptes d'épargne */}
