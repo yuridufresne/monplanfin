@@ -190,9 +190,9 @@ export default function RetirementReport({ profiles }) {
     return total || 500; // fallback fictif
   }, [retraite]);
 
-  // ── 3. Taux de rendement (constants du rapport) ───────────────────────────
-  const REND_AV   = 0.06; // avant retraite
-  const REND_PEND = 0.03; // pendant retraite
+  // ── 3. Taux de rendement ──────────────────────────────────────────────────
+  const REND_AV   = 0.06; // avant retraite (6%)
+  const REND_PEND = 0.04; // pendant retraite (4%)
 
   // ── 4. NIF cible & PMT requis ─────────────────────────────────────────────
   const nifCible = useMemo(() => calcNIF({
