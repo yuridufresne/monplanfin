@@ -257,8 +257,15 @@ export default function FeuilleResume() {
 
   // ── Allocations familiales ─────────────────────────────────────────────
   const allocCalc = useMemo(() => {
-    const nbMoins6   = parseInt(allocationsABF.nb_enfants_moins_6) || 0;
-    const nb6_17     = parseInt(allocationsABF.nb_enfants_6_17) || 0;
+    // Dériver les compteurs depuis la liste d'enfants
+    const enfantsList = allocationsABF.enfants || [];
+    let nbMoins6 = 0, nb6_17 = 0;
+    enfantsList.forEach(e => {
+      if (!e.date_naissance) return;
+      const age = (new Date() - new Date(e.date_naissance)) / (365.25 * 24 * 3600 * 1000);
+      if (age < 6) nbMoins6++;
+      else if (age < 18) nb6_17++;
+    });
     const monoparental = (allocationsABF.situation_familiale || "monoparental") === "monoparental";
     const rfnr = (parseFloat(allocationsABF.revenu_net_p1) || 0)
                + (monoparental ? 0 : (parseFloat(allocationsABF.revenu_net_p2) || 0));
@@ -268,7 +275,11 @@ export default function FeuilleResume() {
   // Montant effectif : override manuel sinon calculé
   const allocMensuelEffectif = allocOverride !== null ? allocOverride : allocCalc.mensuel;
   const allocAnnuelEffectif  = allocMensuelEffectif * 12;
-  const hasEnfants = (parseInt(allocationsABF.nb_enfants_moins_6) || 0) + (parseInt(allocationsABF.nb_enfants_6_17) || 0) > 0;
+  const hasEnfants = allocationsABF.a_enfants === true && (allocationsABF.enfants || []).some(e => {
+    if (!e.date_naissance) return false;
+    const age = (new Date() - new Date(e.date_naissance)) / (365.25 * 24 * 3600 * 1000);
+    return age < 18;
+  });
 
   // ── Budget ────────────────────────────────────────────────────────────
   function toMonthly(amount, freq) {
@@ -642,8 +653,16 @@ export default function FeuilleResume() {
                 </table>
                 <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginTop: 8 }}>
                   RFNR : {fmt((parseFloat(allocationsABF.revenu_net_p1) || 0) + ((allocationsABF.situation_familiale || "monoparental") === "couple" ? (parseFloat(allocationsABF.revenu_net_p2) || 0) : 0))} ·{" "}
-                  {(parseInt(allocationsABF.nb_enfants_moins_6) || 0)} enfant(s) &lt;6 ans,{" "}
-                  {(parseInt(allocationsABF.nb_enfants_6_17) || 0)} enfant(s) 6-17 ans
+                  {(() => {
+                    const el = allocationsABF.enfants || [];
+                    let m6 = 0, s17 = 0;
+                    el.forEach(e => {
+                      if (!e.date_naissance) return;
+                      const a = (new Date() - new Date(e.date_naissance)) / (365.25*24*3600*1000);
+                      if (a < 6) m6++; else if (a < 18) s17++;
+                    });
+                    return `${m6} enfant(s) <6 ans, ${s17} enfant(s) 6-17 ans`;
+                  })()}
                 </p>
               </div>
 
