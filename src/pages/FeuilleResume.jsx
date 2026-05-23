@@ -176,17 +176,23 @@ export default function FeuilleResume() {
   }, []);
 
   // ── Extraction données ABF ────────────────────────────────────────────
+  // Normalise le double-nesting possible : { data: { ... } } ou { ... }
+  const unwrap = (raw) => {
+    if (!raw) return {};
+    return raw.data && typeof raw.data === "object" && !Array.isArray(raw.data) ? raw.data : raw;
+  };
+
   const bySection = useMemo(() => {
     const m = {};
-    profiles.forEach(p => { m[p.section] = p.data || {}; });
+    profiles.forEach(p => { m[p.section] = unwrap(p.data); });
     return m;
   }, [profiles]);
 
-  const profil = bySection.profil_personnel || {};
-  const revenuABF = bySection.revenu || {};
-  const dettesABF = bySection.dettes || {};
-  const retraiteABF = bySection.retraite || {};
-  const fondsABF = bySection.fonds_urgence || {};
+  const profil     = bySection.profil_personnel || {};
+  const revenuABF  = bySection.revenu           || {};
+  const dettesABF  = bySection.dettes           || {};
+  const retraiteABF= bySection.retraite         || {};
+  const fondsABF   = bySection.fonds_urgence    || {};
 
   // ── Revenus ───────────────────────────────────────────────────────────
   const emplois = revenuABF.emplois || [];
