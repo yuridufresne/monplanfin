@@ -517,7 +517,8 @@ export default function FeuilleResume() {
                 <tbody>
                   <TableRow cells={["Revenu brut annuel", "", fmt(revenuBrutAnnuel)]} />
                   {depensesDeductibles > 0 && <TableRow cells={["Dépenses déductibles (TA)", "−", fmt(depensesDeductibles)]} />}
-                  {isTA && <TableRow cells={["Cotisations déductibles (½ RRQ + ½ RQAP)", "−", fmt(deductionCotisTA)]} />}
+                  {isTA && <TableRow cells={["Cotisation déductible (½ RRQ)", "−", fmt(cotisTA.rrq / 2)]} />}
+                  {isTA && <TableRow cells={["Cotisation déductible (½ RQAP)", "−", fmt(cotisTA.rqap / 2)]} />}
                   <TableRow cells={["Revenu imposable", "=", fmt(revenuImposable)]} />
                   <TableRow cells={[`Impôt fédéral (brut ${fmt(impotFedBrut)} − crédit ${fmt(creditFed)})`, "−", fmt(impotFed)]} />
                   <TableRow cells={[`Impôt provincial (brut ${fmt(impotQcBrut)} − crédit ${fmt(CREDIT_QC)})`, "−", fmt(impotQc)]} />
