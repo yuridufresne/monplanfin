@@ -321,50 +321,6 @@ export default function RetirementReport({ profiles }) {
           </div>
         </div>
 
-        {/* ── 2. BLOC NARRATIF ──────────────────────────────────────────── */}
-        <div style={{
-          borderLeft: `4px solid ${GOLD}`,
-          background: "rgba(201,160,99,0.05)",
-          borderRadius: "0 14px 14px 0",
-          padding: "1.2rem 1.5rem",
-        }}>
-          <p style={{ fontSize: 10.5, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.12em", color: GOLD, marginBottom: "0.85rem" }}>
-            📋 Analyse &amp; Plan d'action
-          </p>
-          <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
-            {[
-              {
-                icon: "📊", color: "#6B8ED6",
-                text: <>Constat : D'après vos données, votre besoin de revenu projeté sera de{" "}
-                  <strong style={{ color: "#fff" }}>{fmt(revenuDesireFutur)}</strong> par année au cours de la première année de votre retraite en raison de l'inflation.</>,
-              },
-              {
-                icon: "🎯", color: GOLD,
-                text: <>La Cible : Pour atteindre cet objectif de revenu pour la vie, vous devez accumuler{" "}
-                  <strong style={{ color: GOLD }}>{fmt(nifCible)}</strong> d'ici votre âge de retraite de{" "}
-                  <strong style={{ color: "#fff" }}>{ageRetraite} ans</strong>. Il s'agit de votre numéro d'indépendance financière.</>,
-              },
-              {
-                icon: "💪", color: "#5BC4A0",
-                text: <>L'Effort : L'un des moyens pour y parvenir est d'effectuer des épargnes de{" "}
-                  <strong style={{ color: "#5BC4A0" }}>{fmt(pmtRequis)}</strong> par mois (soit{" "}
-                  <strong style={{ color: "#5BC4A0" }}>{fmtPct(pmtPct)}</strong> de votre revenu net annuel).</>,
-              },
-              {
-                icon: "⏳", color: "#f59e0b",
-                text: <>L'Urgence : Un retard de seulement cinq ans pour épargner signifie que vous devez épargner{" "}
-                  <strong style={{ color: "#f59e0b" }}>{fmt(pmtAvec5ans)}</strong> par mois plutôt que{" "}
-                  <strong style={{ color: "#fff" }}>{fmt(pmtRequis)}</strong>.</>,
-              },
-            ].map((b, i) => (
-              <li key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-                <span style={{ fontSize: 14, marginTop: 1, flexShrink: 0 }}>{b.icon}</span>
-                <p style={{ fontSize: 13, color: "rgba(255,255,255,0.72)", lineHeight: 1.65 }}>{b.text}</p>
-              </li>
-            ))}
-          </ul>
-        </div>
-
         {/* ── 3. GRAND CHIFFRE NIF ──────────────────────────────────────── */}
         <div style={{
           textAlign: "center",
