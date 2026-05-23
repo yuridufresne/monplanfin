@@ -228,10 +228,16 @@ export default function FeuilleResume() {
   const enCouple = ["marie", "conjoint", "union_civile"].includes(profil.situation || "");
   const revenuABFConjoint = enCouple ? (revenuABF.conjoint || {}) : {};
 
-  // ── Prestations de retraite gouvernementales (foyer complet) ─────────
+  // ── Prestations de retraite gouvernementales (individuel + foyer) ────
   const retraiteConjoint = enCouple ? (retraiteABF.conjoint || {}) : {};
-  const svMensuel  = (parseFloat(retraiteABF.sv)  || 0) + (enCouple ? (parseFloat(retraiteConjoint.sv)  || 0) : 0);
-  const rrqMensuel = (parseFloat(retraiteABF.rrq) || 0) + (enCouple ? (parseFloat(retraiteConjoint.rrq) || 0) : 0);
+  // Individuels
+  const svP1  = parseFloat(retraiteABF.sv)  || 0;
+  const rrqP1 = parseFloat(retraiteABF.rrq) || 0;
+  const svP2  = enCouple ? (parseFloat(retraiteConjoint.sv)  || 0) : 0;
+  const rrqP2 = enCouple ? (parseFloat(retraiteConjoint.rrq) || 0) : 0;
+  // Totaux foyer
+  const svMensuel  = svP1  + svP2;
+  const rrqMensuel = rrqP1 + rrqP2;
   const srgMensuel = (() => {
     const revenuRetraiteAnnuel = (parseFloat(retraiteABF.revenu_retraite_mensuel) || 0) * 12;
     const seuil = enCouple ? 29000 : 22000;
@@ -1129,21 +1135,49 @@ export default function FeuilleResume() {
               <div>
                 <p style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>Détail des prestations mensuelles</p>
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                      <th style={{ padding: "6px 14px", fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.3)", textAlign: "left", textTransform: "uppercase" }}>Prestation</th>
+                      <th style={{ padding: "6px 14px", fontSize: 10, fontWeight: 700, color: "#C9A063", textAlign: "right", textTransform: "uppercase" }}>{profil.nom?.split(" ")[0] || "Client 1"}</th>
+                      {enCouple && <th style={{ padding: "6px 14px", fontSize: 10, fontWeight: 700, color: "#6B8ED6", textAlign: "right", textTransform: "uppercase" }}>{profil.conjoint?.nom?.split(" ")[0] || "Client 2"}</th>}
+                      <th style={{ padding: "6px 14px", fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.5)", textAlign: "right", textTransform: "uppercase" }}>Total</th>
+                    </tr>
+                  </thead>
                   <tbody>
-                    {svMensuel > 0 && (
-                      <TableRow cells={["Sécurité de la vieillesse (SV)", fmt(svMensuel)]} />
+                    {(svP1 > 0 || svP2 > 0) && (
+                      <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                        <td style={{ padding: "10px 14px", fontSize: 12.5, color: "rgba(255,255,255,0.8)" }}>Sécurité de la vieillesse (SV)</td>
+                        <td style={{ padding: "10px 14px", fontFamily: "var(--font-mono)", fontSize: 12.5, color: "#C9A063", textAlign: "right" }}>{svP1 > 0 ? fmt(svP1) : "—"}</td>
+                        {enCouple && <td style={{ padding: "10px 14px", fontFamily: "var(--font-mono)", fontSize: 12.5, color: "#6B8ED6", textAlign: "right" }}>{svP2 > 0 ? fmt(svP2) : "—"}</td>}
+                        <td style={{ padding: "10px 14px", fontFamily: "var(--font-mono)", fontSize: 12.5, color: "rgba(255,255,255,0.65)", textAlign: "right" }}>{fmt(svMensuel)}</td>
+                      </tr>
                     )}
                     {srgMensuel > 0 && (
-                      <TableRow cells={["Supplément de revenu garanti (SRG)", fmt(srgMensuel)]} />
+                      <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                        <td style={{ padding: "10px 14px", fontSize: 12.5, color: "rgba(255,255,255,0.8)" }}>Supplément de revenu garanti (SRG)</td>
+                        <td style={{ padding: "10px 14px", fontFamily: "var(--font-mono)", fontSize: 12.5, color: "#C9A063", textAlign: "right" }}>{fmt(srgMensuel)}</td>
+                        {enCouple && <td style={{ padding: "10px 14px", fontFamily: "var(--font-mono)", fontSize: 12.5, color: "#6B8ED6", textAlign: "right" }}>—</td>}
+                        <td style={{ padding: "10px 14px", fontFamily: "var(--font-mono)", fontSize: 12.5, color: "rgba(255,255,255,0.65)", textAlign: "right" }}>{fmt(srgMensuel)}</td>
+                      </tr>
                     )}
-                    {rrqMensuel > 0 && (
-                      <TableRow cells={["Rente de retraite (RRQ)", fmt(rrqMensuel)]} />
+                    {(rrqP1 > 0 || rrqP2 > 0) && (
+                      <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                        <td style={{ padding: "10px 14px", fontSize: 12.5, color: "rgba(255,255,255,0.8)" }}>Rente de retraite (RRQ)</td>
+                        <td style={{ padding: "10px 14px", fontFamily: "var(--font-mono)", fontSize: 12.5, color: "#C9A063", textAlign: "right" }}>{rrqP1 > 0 ? fmt(rrqP1) : "—"}</td>
+                        {enCouple && <td style={{ padding: "10px 14px", fontFamily: "var(--font-mono)", fontSize: 12.5, color: "#6B8ED6", textAlign: "right" }}>{rrqP2 > 0 ? fmt(rrqP2) : "—"}</td>}
+                        <td style={{ padding: "10px 14px", fontFamily: "var(--font-mono)", fontSize: 12.5, color: "rgba(255,255,255,0.65)", textAlign: "right" }}>{fmt(rrqMensuel)}</td>
+                      </tr>
                     )}
-                    {svMensuel > 0 && rrqMensuel > 0 && (
-                      <TableRow cells={["SV + RRQ combinés", fmt(svMensuel + rrqMensuel)]} />
-                    )}
-                    <TableRow cells={["TOTAL MENSUEL ESTIMÉ (SV + SRG + RRQ)", fmt(totalPrestationsMensuel)]} highlight />
-                    <TableRow cells={["Total annuel estimé", fmt(totalPrestationsMensuel * 12)]} />
+                    <tr style={{ background: "rgba(201,160,99,0.04)", borderTop: "1px solid rgba(255,255,255,0.1)" }}>
+                      <td style={{ padding: "10px 14px", fontSize: 12.5, fontWeight: 700, color: "rgba(255,255,255,0.9)" }}>TOTAL MENSUEL</td>
+                      <td style={{ padding: "10px 14px", fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 700, color: "#C9A063", textAlign: "right" }}>{fmt(svP1 + rrqP1 + (srgMensuel))}</td>
+                      {enCouple && <td style={{ padding: "10px 14px", fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 700, color: "#6B8ED6", textAlign: "right" }}>{fmt(svP2 + rrqP2)}</td>}
+                      <td style={{ padding: "10px 14px", fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 700, color: "#5BC4A0", textAlign: "right" }}>{fmt(totalPrestationsMensuel)}</td>
+                    </tr>
+                    <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                      <td style={{ padding: "8px 14px", fontSize: 12, color: "rgba(255,255,255,0.5)" }}>Total annuel estimé</td>
+                      <td colSpan={enCouple ? 3 : 2} style={{ padding: "8px 14px", fontFamily: "var(--font-mono)", fontSize: 12, color: "rgba(255,255,255,0.5)", textAlign: "right" }}>{fmt(totalPrestationsMensuel * 12)}</td>
+                    </tr>
                   </tbody>
                 </table>
                 <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginTop: 8 }}>
