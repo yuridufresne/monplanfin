@@ -603,24 +603,26 @@ export default function FeuilleResume() {
   });
 
   // Immobilier — valeur marchande brute dans les actifs (la dette hypothécaire est dans les passifs)
+  // Si valeur_marchande et prix_achat sont absents mais qu'un solde hypothécaire existe,
+  // on affiche quand même la ligne en utilisant le solde comme approximation de valeur minimale.
   [...hypotheques, ...hypothequesConjoint].forEach(h => {
+    const soldeHypo = parseFloat(h.solde) || 0;
     const valRef = parseFloat(h.valeur_marchande) || parseFloat(h.prix_achat) || 0;
-    if (valRef > 0) {
-      const soldeHypo = parseFloat(h.solde) || 0;
-      const equite = valRef - soldeHypo;
+    // Afficher si on a une valeur marchande/prix d'achat OU si l'hypothèque a un solde
+    if (valRef > 0 || soldeHypo > 0) {
+      const equite = valRef > 0 ? valRef - soldeHypo : 0;
       lignesActifs.push({
         type: "Immobilier",
         institution: h.adresse || h.usage || "Propriété",
-        solde: valRef,
+        solde: valRef > 0 ? valRef : soldeHypo, // fallback : solde hypo si pas de valeur marchande
         cotisation: 0,
         rendement: 3,
         subventions: "—",
-        // Champs spécifiques immobilier
         isImmo: true,
         valeurMarchande: valRef,
         soldeHypo,
         equite,
-        sourceLabel: h.valeur_marchande ? "Valeur marchande" : "Prix d'achat",
+        sourceLabel: h.valeur_marchande ? "Valeur marchande" : h.prix_achat ? "Prix d'achat" : "Solde hypothécaire (aucune valeur saisie)",
       });
     }
   });
