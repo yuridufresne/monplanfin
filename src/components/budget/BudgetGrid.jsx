@@ -8,7 +8,7 @@ const SECTIONS = [
     title: "1. Logement et Habitation",
     color: "#6B8ED6",
     rows: [
-      { label: "Paiement hypothécaire ou loyer",       category: "logement",         type: "depense" },
+      { label: "Loyer",                                 category: "logement",         type: "depense" },
       { label: "Paiement hypothécaire principal (ABF)", category: "logement",         type: "depense", abfReadOnly: true },
       { label: "Taxes municipales et scolaires",        category: "logement",         type: "depense" },
       { label: "Assurance habitation",                  category: "assurances",       type: "depense" },
