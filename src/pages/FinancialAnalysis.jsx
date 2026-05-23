@@ -972,18 +972,45 @@ function StepEtudes({ data, setData, stepData }) {
     return age < 18;
   });
 
+  // REEE saisis dans l'étape Épargne (retraite.comptes.reee)
+  // On combine les REEE de tous les panels (principal + conjoint si couple)
+  const reeeEpargne = [
+    ...((stepData?.retraite?.comptes?.reee) || []),
+    ...((stepData?.retraite?.conjoint?.comptes?.reee) || []),
+  ];
+
   const enfants = (() => {
     const existants = data.enfants || [];
-    if (existants.length > 0 || enfantsAlloc.length === 0) return existants;
-    // Pré-remplir avec les enfants des allocations si aucun enfant saisi
-    return enfantsAlloc.map(e => ({
-      prenom: e.prenom || "",
-      date_naissance: e.date_naissance || "",
-      reee_solde: "",
-      reee_cotisation_mensuelle: "",
-      age_debut_etudes: "18",
-      type_reee: "individuel",
-    }));
+
+    // Si des enfants existent déjà dans Étude, on complète les champs REEE manquants
+    // depuis l'étape Épargne (par position : REEE[0] → enfant[0], etc.)
+    if (existants.length > 0) {
+      return existants.map((e, i) => {
+        const reee = reeeEpargne[i];
+        if (!reee) return e;
+        return {
+          ...e,
+          reee_solde: e.reee_solde || reee.solde || "",
+          reee_cotisation_mensuelle: e.reee_cotisation_mensuelle || reee.cotisation_mensuelle || "",
+          institution: e.institution || reee.institution || "",
+        };
+      });
+    }
+
+    // Aucun enfant dans Étude → pré-remplir depuis Allocations
+    if (enfantsAlloc.length === 0) return [];
+    return enfantsAlloc.map((e, i) => {
+      const reee = reeeEpargne[i];
+      return {
+        prenom: e.prenom || "",
+        date_naissance: e.date_naissance || "",
+        reee_solde: reee?.solde || "",
+        reee_cotisation_mensuelle: reee?.cotisation_mensuelle || "",
+        institution: reee?.institution || "",
+        age_debut_etudes: "18",
+        type_reee: "individuel",
+      };
+    });
   })();
 
   const updateEnfant = (i, k, v) => setData(p => ({ ...p, enfants: enfants.map((e, idx) => idx === i ? { ...e, [k]: v } : e) }));
