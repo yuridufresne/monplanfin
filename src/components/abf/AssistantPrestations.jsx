@@ -186,20 +186,23 @@ export default function AssistantPrestations({ data, setData, stepData }) {
                 className="overflow-hidden">
                 <div className="space-y-1.5">
                   <FieldLabel>
-                    Depuis l'âge de 18 ans, combien d'années avez-vous vécu au Canada ?
+                    Au total, combien d'années aurez-vous vécu au Canada entre vos 18 ans et votre retraite (65 ans) ?
                     <InfoTooltip
-                      explanation="Ne comptez pas les périodes où vous étiez à l'extérieur du Canada pendant au moins 6 mois consécutifs. Certaines exceptions s'appliquent (ex : travailler pour un employeur canadien à l'étranger)."
+                      explanation="Comptez toutes vos années de résidence au Canada depuis 18 ans, incluant celles encore à venir jusqu'à 65 ans. Ne comptez pas les périodes où vous avez vécu à l'extérieur du Canada pendant au moins 6 mois consécutifs."
                       position="top"
                     />
                   </FieldLabel>
                   <input
-                    type="number" min={0} max={40}
+                    type="number" min={0} max={47}
                     value={anneesCanada || ""}
-                    onChange={e => f("sv_annees_canada")(Math.min(40, Math.max(0, parseFloat(e.target.value) || 0)).toString())}
-                    placeholder="ex: 30"
+                    onChange={e => f("sv_annees_canada")(Math.min(47, Math.max(0, parseFloat(e.target.value) || 0)).toString())}
+                    placeholder="ex: 40"
                     className="w-full px-4 py-2.5 rounded-xl text-[13px] outline-none"
                     style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff" }}
                   />
+                  <p className="text-[11px]" style={{ color: "rgba(148,163,184,0.5)" }}>
+                    La SV exige 40 ans de résidence pour la pension complète (max).
+                  </p>
                 </div>
               </motion.div>
             )}
