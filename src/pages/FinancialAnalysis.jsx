@@ -462,7 +462,7 @@ function CompteEpargneSection({ type, label, comptes, setComptes }) {
   );
 }
 
-function RetraitePanel({ data, setData }) {
+function RetraitePanel({ data, setData, stepData }) {
   const f = (k) => (v) => setData(p => ({ ...p, [k]: v }));
 
   const comptes = data.comptes || {};
@@ -498,7 +498,7 @@ function RetraitePanel({ data, setData }) {
         <Field label="% du revenu actuel" hint="80% recommandé"><Input value={data.revenu_retraite_pct} onChange={f("revenu_retraite_pct")} type="number" placeholder="80" /></Field>
       </div>
 
-      <AssistantPrestations data={data} setData={setData} />
+      <AssistantPrestations data={data} setData={setData} stepData={stepData} />
 
       <Field label="Souhaitez-vous laisser un héritage ?">
         <RadioGroup value={data.heritage} onChange={f("heritage")} options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]} />
@@ -670,8 +670,8 @@ function StepRetraite({ data, setData, stepData }) {
   return (
     <div className="space-y-5">
       {enCouple && <PersonTabs activeTab={activeTab} setActiveTab={setActiveTab} nomPrincipal={nomPrincipal} nomConjoint={nomConjoint} />}
-      {(!enCouple || activeTab === "principal") && <RetraitePanel data={data} setData={setData} />}
-      {enCouple && activeTab === "conjoint" && <RetraitePanel data={data.conjoint || {}} setData={setConjointData} />}
+      {(!enCouple || activeTab === "principal") && <RetraitePanel data={data} setData={setData} stepData={stepData} />}
+      {enCouple && activeTab === "conjoint" && <RetraitePanel data={data.conjoint || {}} setData={setConjointData} stepData={stepData} />}
     </div>
   );
 }
