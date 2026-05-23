@@ -9,11 +9,11 @@ import StepAllocations from "@/components/abf/StepAllocations";
 const STEPS = [
   { key: "profil_personnel", label: "Profil", icon: User, title: "Renseignements personnels" },
   { key: "revenu", label: "Revenu", icon: DollarSign, title: "Revenus & emploi" },
+  { key: "allocations", label: "Allocations", icon: Baby, title: "Allocations familiales 2026" },
   { key: "retraite", label: "Épargne", icon: BarChart3, title: "Épargne & Retraite" },
   { key: "dettes", label: "Dettes", icon: TrendingDown, title: "Règlement des dettes" },
   { key: "assurance", label: "Assurance", icon: Shield, title: "Assurance-vie & invalidité" },
   { key: "etudes", label: "Études", icon: GraduationCap, title: "Épargne-études" },
-  { key: "allocations", label: "Allocations", icon: Baby, title: "Allocations familiales 2026" },
   { key: "budget", label: "Budget", icon: Wallet, title: "Budget mensuel" },
   { key: "objectifs", label: "Objectifs", icon: Target, title: "Objectifs & rêves" },
   { key: "fonds_urgence", label: "Urgence", icon: AlertTriangle, title: "Fonds d'urgence" },
