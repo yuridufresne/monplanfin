@@ -5,6 +5,7 @@ import { ChevronRight, ChevronLeft, Check, User, TrendingDown, Shield, Graduatio
 import InfoTooltip from "@/components/ui/InfoTooltip";
 import StepBudget from "@/components/abf/StepBudget";
 import StepAllocations from "@/components/abf/StepAllocations";
+import AddressAutocomplete from "@/components/ui/AddressAutocomplete";
 
 const STEPS = [
   { key: "profil_personnel", label: "Profil", icon: User, title: "Renseignements personnels" },
@@ -86,7 +87,9 @@ function StepProfilPersonnel({ data, setData }) {
           </Field>
         </div>
         <div className="md:col-span-2">
-          <Field label="Adresse"><Input value={data.adresse} onChange={f("adresse")} placeholder="123 rue des Érables, Montréal, QC" /></Field>
+          <Field label="Adresse">
+            <AddressAutocomplete value={data.adresse} onChange={f("adresse")} />
+          </Field>
         </div>
       </div>
 
@@ -124,7 +127,7 @@ function StepProfilPersonnel({ data, setData }) {
 
           {!memeAdresse && (
             <Field label="Adresse du/de la conjoint(e)">
-              <Input value={conjoint.adresse} onChange={fc("adresse")} placeholder="123 rue des Érables, Montréal, QC" />
+              <AddressAutocomplete value={conjoint.adresse} onChange={fc("adresse")} />
             </Field>
           )}
         </div>
