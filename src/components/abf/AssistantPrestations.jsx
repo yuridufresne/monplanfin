@@ -32,7 +32,7 @@ function PrestationBlock({ label, modeKey, estimKey, data, setData, children }) 
   const setMode = (v) => setData(p => ({ ...p, [modeKey]: v }));
 
   return (
-    <div className="rounded-xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.09)" }}>
+    <div className="rounded-xl" style={{ border: "1px solid rgba(255,255,255,0.09)" }}>
       {/* Header avec onglets */}
       <div className="px-4 py-3 flex items-center justify-between gap-4" style={{ background: "rgba(255,255,255,0.03)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         <p className="text-[13px] font-semibold text-white shrink-0">{label}</p>
@@ -60,7 +60,7 @@ function PrestationBlock({ label, modeKey, estimKey, data, setData, children }) 
                   <span className="inline-flex items-center">
                     <InfoTooltip
                       explanation="Connectez-vous à Mon Dossier Retraite Québec (retraitequebec.gouv.qc.ca) pour obtenir votre relevé de participation et vos estimations officielles de prestations."
-                      position="right"
+                      position="top"
                     />
                   </span>
                 </p>
