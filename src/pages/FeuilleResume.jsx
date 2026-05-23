@@ -602,28 +602,27 @@ export default function FeuilleResume() {
     });
   });
 
-  // Immobilier — valeur marchande brute dans les actifs (la dette hypothécaire est dans les passifs)
-  // Si valeur_marchande et prix_achat sont absents mais qu'un solde hypothécaire existe,
-  // on affiche quand même la ligne en utilisant le solde comme approximation de valeur minimale.
+  // Immobilier — valeur marchande dans les actifs, dette dans les passifs
+  const hypothequesSansValeur = [];
   [...hypotheques, ...hypothequesConjoint].forEach(h => {
-    const soldeHypo = parseFloat(h.solde) || 0;
     const valRef = parseFloat(h.valeur_marchande) || parseFloat(h.prix_achat) || 0;
-    // Afficher si on a une valeur marchande/prix d'achat OU si l'hypothèque a un solde
-    if (valRef > 0 || soldeHypo > 0) {
-      const equite = valRef > 0 ? valRef - soldeHypo : 0;
+    const soldeHypo = parseFloat(h.solde) || 0;
+    if (valRef > 0) {
       lignesActifs.push({
         type: "Immobilier",
         institution: h.adresse || h.usage || "Propriété",
-        solde: valRef > 0 ? valRef : soldeHypo, // fallback : solde hypo si pas de valeur marchande
+        solde: valRef,
         cotisation: 0,
         rendement: 3,
         subventions: "—",
         isImmo: true,
         valeurMarchande: valRef,
         soldeHypo,
-        equite,
-        sourceLabel: h.valeur_marchande ? "Valeur marchande" : h.prix_achat ? "Prix d'achat" : "Solde hypothécaire (aucune valeur saisie)",
+        equite: valRef - soldeHypo,
+        sourceLabel: h.valeur_marchande ? "Valeur marchande" : "Prix d'achat",
       });
+    } else if (soldeHypo > 0) {
+      hypothequesSansValeur.push(h.adresse || h.usage || "Propriété");
     }
   });
 
@@ -1225,6 +1224,16 @@ export default function FeuilleResume() {
               </div>
             ))}
           </div>
+
+          {hypothequesSansValeur.length > 0 && (
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 16, padding: "10px 14px", borderRadius: 12, background: "rgba(224,180,75,0.07)", border: "1px solid rgba(224,180,75,0.25)" }}>
+              <AlertTriangle style={{ width: 15, height: 15, color: "#E0B44B", flexShrink: 0, marginTop: 1 }} />
+              <p style={{ fontSize: 12, color: "#E0B44B", lineHeight: 1.5 }}>
+                <strong>Valeur marchande manquante</strong> pour : {hypothequesSansValeur.join(", ")}. 
+                {" "}Ajoutez la valeur marchande (ou le prix d'achat) dans le module <strong>Dettes</strong> de l'ABF pour qu'elle apparaisse ici.
+              </p>
+            </div>
+          )}
 
           {lignesActifs.length > 0 ? (
             <div style={{ overflowX: "auto" }}>
