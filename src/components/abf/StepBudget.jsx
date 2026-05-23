@@ -3,11 +3,10 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Trash2, Edit2, TrendingUp, TrendingDown, DollarSign, LayoutGrid, FileText } from "lucide-react";
+import { Plus, Trash2, Edit2, TrendingUp, TrendingDown, DollarSign, LayoutGrid } from "lucide-react";
 import { syncBudgetRevenuToABF } from "@/hooks/useABFSync";
 import BudgetEntryForm from "@/components/budget/BudgetEntryForm";
 import BudgetGrid from "@/components/budget/BudgetGrid";
-import BankImport from "@/components/budget/BankImport";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 
 const CATEGORY_LABELS = {
@@ -33,7 +32,6 @@ const glass = {
 export default function StepBudget() {
   const [showForm, setShowForm] = useState(false);
   const [showGrid, setShowGrid] = useState(false);
-  const [showBankImport, setShowBankImport] = useState(false);
   const [editing, setEditing] = useState(null);
   const [activeTab, setActiveTab] = useState("revenus");
   const qc = useQueryClient();
@@ -104,9 +102,6 @@ export default function StepBudget() {
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         <button onClick={() => setShowGrid(true)} style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "9px 16px", borderRadius: 12, fontSize: 12, fontWeight: 600, cursor: "pointer", background: "rgba(201,160,99,0.1)", border: "1px solid rgba(201,160,99,0.25)", color: "#C9A063" }}>
           <LayoutGrid style={{ width: 14, height: 14 }} /> Grille budgétaire
-        </button>
-        <button onClick={() => setShowBankImport(true)} style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "9px 16px", borderRadius: 12, fontSize: 12, fontWeight: 600, cursor: "pointer", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.13)", color: "rgba(255,255,255,0.8)" }}>
-          <FileText style={{ width: 14, height: 14 }} /> Relevé bancaire (IA)
         </button>
         <button onClick={() => { setEditing(null); setShowForm(true); }} style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "9px 16px", borderRadius: 12, fontSize: 12, fontWeight: 700, cursor: "pointer", background: "linear-gradient(135deg, #C9A063, #e6c07a)", color: "#050810", border: "none" }}>
           <Plus style={{ width: 14, height: 14 }} /> Ajouter
@@ -227,9 +222,7 @@ export default function StepBudget() {
       <AnimatePresence>
         {showGrid && <BudgetGrid onClose={() => setShowGrid(false)} onSaved={() => { qc.invalidateQueries({ queryKey: ["budgetEntries"] }); setShowGrid(false); }} />}
       </AnimatePresence>
-      <AnimatePresence>
-        {showBankImport && <BankImport onClose={() => setShowBankImport(false)} onSaved={() => { qc.invalidateQueries({ queryKey: ["budgetEntries"] }); setShowBankImport(false); }} />}
-      </AnimatePresence>
+
     </div>
   );
 }
