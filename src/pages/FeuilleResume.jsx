@@ -821,24 +821,26 @@ export default function FeuilleResume() {
                 </div>
               )}
 
-              {/* Paliers fiscaux */}
-              <div style={{ marginBottom: 16 }}>
-                <p style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>Paliers d'imposition 2026</p>
-                <PalierBar revenuImposable={vueActuelle.imposable} paliers={PALIERS_FED} label="Fédéral" mpb={0} color="#6B8ED6" />
-                <PalierBar revenuImposable={vueActuelle.imposable} paliers={PALIERS_QC} label="Québec" mpb={0} color="#C9A063" />
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginTop: 12 }}>
-                  {[
-                    { label: "Impôt fédéral", val: fmt(vueActuelle.impFed), color: "#6B8ED6" },
-                    { label: "Impôt provincial", val: fmt(vueActuelle.impQc), color: "#C9A063" },
-                    { label: "Taux marginal combiné", val: `${vueActuelle.txMarginalCombine.toFixed(2)}%`, color: "#E07B6B" },
-                  ].map(x => (
-                    <div key={x.label} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10, padding: "8px 10px", textAlign: "center" }}>
-                      <p style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginBottom: 3 }}>{x.label}</p>
-                      <p style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 700, color: x.color }}>{x.val}</p>
-                    </div>
-                  ))}
+              {/* Paliers fiscaux — uniquement en vue individuelle */}
+              {ongletFiscal !== "foyer" && (
+                <div style={{ marginBottom: 16 }}>
+                  <p style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>Paliers d'imposition 2026</p>
+                  <PalierBar revenuImposable={vueActuelle.imposable} paliers={PALIERS_FED} label="Fédéral" mpb={0} color="#6B8ED6" />
+                  <PalierBar revenuImposable={vueActuelle.imposable} paliers={PALIERS_QC} label="Québec" mpb={0} color="#C9A063" />
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginTop: 12 }}>
+                    {[
+                      { label: "Impôt fédéral", val: fmt(vueActuelle.impFed), color: "#6B8ED6" },
+                      { label: "Impôt provincial", val: fmt(vueActuelle.impQc), color: "#C9A063" },
+                      { label: "Taux marginal individuel", val: `${vueActuelle.txMarginalCombine.toFixed(2)}%`, color: "#E07B6B" },
+                    ].map(x => (
+                      <div key={x.label} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10, padding: "8px 10px", textAlign: "center" }}>
+                        <p style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginBottom: 3 }}>{x.label}</p>
+                        <p style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 700, color: x.color }}>{x.val}</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Résumé fiscal */}
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
