@@ -8,6 +8,7 @@ import { syncABFToEntities } from "@/hooks/useABFSync";
 import { calcRevenuDisponible } from "@/lib/calcRevenuNet";
 import ResetDataModal from "@/components/dashboard/ResetDataModal";
 import RetirementReport from "@/components/dashboard/RetirementReport";
+import DebtSimulator from "@/components/dashboard/DebtSimulator";
 
 const fmt = (v) => new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v || 0);
 const fmtPct = (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)} %`;
@@ -239,6 +240,11 @@ export default function Dashboard() {
                 </div>
               </motion.div>
             </div>
+
+            {/* Simulateur de remboursement */}
+            <motion.div {...fadeUp(0.33)} className="mb-6">
+              <DebtSimulator debts={debts} />
+            </motion.div>
 
             {/* Observations financières */}
             <motion.div {...fadeUp(0.36)}>
