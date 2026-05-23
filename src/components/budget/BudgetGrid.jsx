@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, X, ChevronDown, ChevronRight } from "lucide-react";
+import { CheckCircle2, X, ChevronDown, ChevronRight, Trash2 } from "lucide-react";
 
 const SECTIONS = [
   {
@@ -392,6 +392,21 @@ export default function BudgetGrid({ onClose, onSaved }) {
 
   const filledCount = allRows.filter(r => parseFloat(values[r.label]) > 0).length;
 
+  const handleResetNonABF = async () => {
+    if (!window.confirm("Supprimer toutes les entrées budgétaires qui ne proviennent pas de l'ABF ?")) return;
+    const toDelete = existingEntries.filter(e => e.source !== "abf");
+    await Promise.all(toDelete.map(e => base44.entities.BudgetEntry.delete(e.id)));
+    // Recharger les entrées et réinitialiser les valeurs non-ABF dans la grille
+    const abfReadOnlyLabels = new Set(SECTIONS.flatMap(s => s.rows).filter(r => r.abfReadOnly).map(r => r.label));
+    setValues(prev => {
+      const next = { ...prev };
+      Object.keys(next).forEach(k => { if (!abfReadOnlyLabels.has(k)) delete next[k]; });
+      return next;
+    });
+    setExistingEntries(prev => prev.filter(e => e.source === "abf"));
+    qc.invalidateQueries({ queryKey: ["budgetEntries"] });
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.85)", backdropFilter: "blur(10px)" }}>
       <div className="w-full max-w-2xl flex flex-col rounded-2xl overflow-hidden" style={{ background: "#0D1628", border: "1px solid rgba(255,255,255,0.1)", maxHeight: "92vh" }}>
@@ -402,7 +417,16 @@ export default function BudgetGrid({ onClose, onSaved }) {
             <h3 className="font-urbanist font-bold text-white text-[18px]">Grille budgétaire complète</h3>
             <p style={{ fontSize: 12, color: "#94A3B8", marginTop: 2 }}>Entrez les montants mensuels pour chaque poste</p>
           </div>
-          <button onClick={onClose}><X className="w-4 h-4 text-white/40 hover:text-white/80" /></button>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <button
+              onClick={handleResetNonABF}
+              title="Supprimer les entrées non-ABF"
+              style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 8, fontSize: 11.5, fontWeight: 600, cursor: "pointer", background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.25)", color: "#f87171" }}
+            >
+              <Trash2 style={{ width: 12, height: 12 }} /> Retirer les non-ABF
+            </button>
+            <button onClick={onClose}><X className="w-4 h-4 text-white/40 hover:text-white/80" /></button>
+          </div>
         </div>
 
         {/* Sections */}
