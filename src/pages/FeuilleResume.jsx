@@ -213,15 +213,16 @@ export default function FeuilleResume() {
   const fondsABF      = bySection.fonds_urgence    || {};
   const allocationsABF= bySection.allocations      || {};
 
+  // ── Détection couple ──────────────────────────────────────────────────
+  const enCouple = ["marie", "conjoint", "union_civile"].includes(profil.situation || "");
+  const revenuABFConjoint = enCouple ? (revenuABF.conjoint || {}) : {};
+
   // ── Prestations de retraite gouvernementales (foyer complet) ─────────
-  const prestationsData = retraiteABF;
+  const retraiteConjoint = enCouple ? (retraiteABF.conjoint || {}) : {};
   const svMensuel  = (parseFloat(retraiteABF.sv)  || 0) + (enCouple ? (parseFloat(retraiteConjoint.sv)  || 0) : 0);
   const rrqMensuel = (parseFloat(retraiteABF.rrq) || 0) + (enCouple ? (parseFloat(retraiteConjoint.rrq) || 0) : 0);
   const srgMensuel = (() => {
-    // Recalcul du SRG depuis les données sauvegardées
-    const revenuRetraiteAnnuel = (parseFloat(prestationsData.revenu_retraite_mensuel) || 0) * 12;
-    const sit = profil.situation || "";
-    const enCouple = ["marie", "conjoint", "union_civile"].includes(sit);
+    const revenuRetraiteAnnuel = (parseFloat(retraiteABF.revenu_retraite_mensuel) || 0) * 12;
     const seuil = enCouple ? 29000 : 22000;
     if (revenuRetraiteAnnuel > 0 && revenuRetraiteAnnuel < seuil) {
       return Math.round(((seuil - revenuRetraiteAnnuel) / seuil) * (enCouple ? 510 : 1065));
@@ -230,10 +231,6 @@ export default function FeuilleResume() {
   })();
   const totalPrestationsMensuel = svMensuel + rrqMensuel + srgMensuel;
   const hasPrestations = svMensuel > 0 || rrqMensuel > 0;
-
-  // ── Détection couple ──────────────────────────────────────────────────
-  const enCouple = ["marie", "conjoint", "union_civile"].includes(profil.situation || "");
-  const revenuABFConjoint = enCouple ? (revenuABF.conjoint || {}) : {};
 
   // ── Revenus — agrégation foyer ────────────────────────────────────────
   // Fonction helper pour calculer le revenu net d'une personne
@@ -403,7 +400,6 @@ export default function FeuilleResume() {
   };
 
   // Agréger comptes du principal + conjoint
-  const retraiteConjoint = enCouple ? (retraiteABF.conjoint || {}) : {};
   const comptesPrincipal = retraiteABF.comptes || {};
   const comptesConjoint  = retraiteConjoint.comptes || {};
   const fondPension = retraiteABF.fond_pension || {};
