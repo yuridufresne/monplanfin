@@ -603,14 +603,21 @@ export default function FeuilleResume() {
   [...hypotheques, ...hypothequesConjoint].forEach(h => {
     const valRef = parseFloat(h.valeur_marchande) || parseFloat(h.prix_achat) || 0;
     if (valRef > 0) {
-      const equite = valRef - (parseFloat(h.solde) || 0);
+      const soldeHypo = parseFloat(h.solde) || 0;
+      const equite = valRef - soldeHypo;
       lignesActifs.push({
         type: "Immobilier",
         institution: h.adresse || h.usage || "Propriété",
         solde: valRef,
         cotisation: 0,
         rendement: 3,
-        subventions: h.valeur_marchande ? `Valeur marchande · équité ${fmt(equite)}` : `Prix d'achat · équité ${fmt(equite)}`,
+        subventions: "—",
+        // Champs spécifiques immobilier
+        isImmo: true,
+        valeurMarchande: valRef,
+        soldeHypo,
+        equite,
+        sourceLabel: h.valeur_marchande ? "Valeur marchande" : "Prix d'achat",
       });
     }
   });
@@ -1218,17 +1225,28 @@ export default function FeuilleResume() {
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
-                    {["Type de compte", "Institution / Actif", "Solde actuel", "Cotisation/mois", "Rend. esp. (%)", "Subventions / Bons"].map(h => (
-                      <th key={h} style={{ padding: "8px 14px", fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.35)", textAlign: h === "Type de compte" || h === "Institution / Actif" || h === "Subventions / Bons" ? "left" : "right", textTransform: "uppercase", letterSpacing: "0.06em" }}>{h}</th>
+                    {["Type", "Description", "Valeur / Solde", "Cotisation/mois", "Rend. esp. (%)", "Détails"].map(h => (
+                      <th key={h} style={{ padding: "8px 14px", fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.35)", textAlign: h === "Type" || h === "Description" || h === "Détails" ? "left" : "right", textTransform: "uppercase", letterSpacing: "0.06em" }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {lignesActifs.map((a, i) => (
-                    <tr key={i} style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                      <td style={{ padding: "10px 14px", fontSize: 12.5, color: "rgba(255,255,255,0.8)" }}><span style={{ fontWeight: 700 }}>{a.type}</span></td>
+                    <tr key={i} style={{ borderBottom: "1px solid rgba(255,255,255,0.05)", background: a.isImmo ? "rgba(201,160,99,0.03)" : "transparent" }}>
+                      <td style={{ padding: "10px 14px", fontSize: 12.5, color: "rgba(255,255,255,0.8)" }}>
+                        <span style={{ fontWeight: 700 }}>{a.type}</span>
+                        {a.isImmo && <span style={{ display: "block", fontSize: 10, color: "#C9A063", marginTop: 2 }}>{a.sourceLabel}</span>}
+                      </td>
                       <td style={{ padding: "10px 14px", fontSize: 12.5, color: "rgba(255,255,255,0.55)" }}>{a.institution}</td>
-                      <td style={{ padding: "10px 14px", fontSize: 12.5, color: "#5BC4A0", fontFamily: "var(--font-mono)", textAlign: "right", fontWeight: 700 }}>{fmt(a.solde)}</td>
+                      <td style={{ padding: "10px 14px", fontFamily: "var(--font-mono)", textAlign: "right" }}>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: "#5BC4A0" }}>{fmt(a.solde)}</span>
+                        {a.isImmo && a.soldeHypo > 0 && (
+                          <span style={{ display: "block", fontSize: 11, color: "rgba(248,113,113,0.7)", marginTop: 1 }}>− {fmt(a.soldeHypo)} hypo.</span>
+                        )}
+                        {a.isImmo && (
+                          <span style={{ display: "block", fontSize: 11, color: "#C9A063", marginTop: 1 }}>= {fmt(a.equite)} équité</span>
+                        )}
+                      </td>
                       <td style={{ padding: "10px 14px", fontSize: 12.5, color: a.cotisation > 0 ? "#C9A063" : "#64748B", fontFamily: "var(--font-mono)", textAlign: "right" }}>{a.cotisation > 0 ? fmt(a.cotisation) : "—"}</td>
                       <td style={{ padding: "10px 14px", fontSize: 12.5, color: "#6B8ED6", fontFamily: "var(--font-mono)", textAlign: "right" }}>{a.rendement > 0 ? `${a.rendement} %` : "—"}</td>
                       <td style={{ padding: "10px 14px", fontSize: 12, color: "#94A3B8" }}>{a.subventions}</td>
