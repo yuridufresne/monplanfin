@@ -96,6 +96,8 @@ const SECTIONS = [
       { label: "Frais bancaires mensuels",              category: "dettes",           type: "depense" },
       { label: "Intérêts cartes de crédit / marge",     category: "dettes",           type: "depense" },
       { label: "Remboursement prêt personnel/étudiant", category: "dettes",           type: "depense" },
+      { label: "Paiements hypothécaires (ABF)",         category: "dettes",           type: "depense", abfReadOnly: true },
+      { label: "Paiements dettes (ABF)",                category: "dettes",           type: "depense", abfReadOnly: true },
     ],
   },
   {
@@ -103,10 +105,11 @@ const SECTIONS = [
     color: "#7DC46B",
     rows: [
       { label: "Fonds d'urgence (CÉAH)",                category: "epargne",          type: "depense" },
-      { label: "REEE (études des enfants)",              category: "epargne",          type: "depense" },
-      { label: "CELI",                                  category: "epargne",          type: "depense" },
-      { label: "REER",                                  category: "epargne",          type: "depense" },
-      { label: "CELIAPP",                               category: "epargne",          type: "depense" },
+      { label: "REEE (études des enfants)",              category: "epargne",          type: "depense", abfReadOnly: true },
+      { label: "CELI",                                  category: "epargne",          type: "depense", abfReadOnly: true },
+      { label: "REER",                                  category: "epargne",          type: "depense", abfReadOnly: true },
+      { label: "CELIAPP",                               category: "epargne",          type: "depense", abfReadOnly: true },
+      { label: "FTQ / CSN (ABF)",                       category: "epargne",          type: "depense", abfReadOnly: true },
     ],
   },
   {
@@ -262,11 +265,71 @@ export default function BudgetGrid({ onClose, onSaved }) {
         prefill["Pension alimentaire"] = String(parseFloat(dettesData.pension_mensuelle) || 0);
       }
 
+      // ── ABF : Hypothèques → paiements mensuels ───────────────────────────
+      const unwrap = (raw) => {
+        if (!raw || typeof raw !== "object") return raw || {};
+        if (raw.emplois || raw.hypotheques || raw.dettes || raw.comptes || raw.a_hypotheque) return raw;
+        if (raw.data && typeof raw.data === "object") return unwrap(raw.data);
+        return raw;
+      };
+
+      const dettesProfile = profiles.find(p => p.section === "dettes");
+      if (dettesProfile) {
+        const d = unwrap(dettesProfile.data);
+        const hypos = [...(d.hypotheques || []), ...((d.conjoint?.hypotheques) || [])];
+        const totalHypo = hypos.reduce((s, h) => s + (parseFloat(h.paiement_mensuel) || 0), 0);
+        if (totalHypo > 0) prefill["Paiements hypothécaires (ABF)"] = totalHypo.toFixed(0);
+
+        const autresDettes = [...(d.dettes || []), ...((d.conjoint?.dettes) || [])];
+        const totalDettes = autresDettes.reduce((s, dt) => s + (parseFloat(dt.paiement_min) || 0), 0);
+        if (totalDettes > 0) prefill["Paiements dettes (ABF)"] = totalDettes.toFixed(0);
+      }
+
+      // ── ABF : Comptes d'épargne (retraite.comptes) ───────────────────────
+      const retraiteProfile = profiles.find(p => p.section === "retraite");
+      if (retraiteProfile) {
+        const r = unwrap(retraiteProfile.data);
+        // Agréger principal + conjoint
+        const panels = [r, ...(r.conjoint ? [r.conjoint] : [])];
+        const sumCotis = (type) => panels.reduce((s, panel) => {
+          return s + ((panel?.comptes?.[type]) || []).reduce((ss, c) => ss + (parseFloat(c.cotisation_mensuelle) || 0), 0);
+        }, 0);
+
+        const reee = sumCotis("reee");
+        if (reee > 0) prefill["REEE (études des enfants)"] = reee.toFixed(0);
+
+        const celi = sumCotis("celi");
+        if (celi > 0) prefill["CELI"] = celi.toFixed(0);
+
+        const reer = sumCotis("reer");
+        if (reer > 0) prefill["REER"] = reer.toFixed(0);
+
+        const celiapp = sumCotis("celiapp");
+        if (celiapp > 0) prefill["CELIAPP"] = celiapp.toFixed(0);
+
+        const ftq = sumCotis("ftq_csn");
+        if (ftq > 0) prefill["FTQ / CSN (ABF)"] = ftq.toFixed(0);
+      }
+
+      // ── ABF : Fonds d'urgence ─────────────────────────────────────────────
+      const fondsProfile = profiles.find(p => p.section === "fonds_urgence");
+      if (fondsProfile) {
+        const fo = unwrap(fondsProfile.data);
+        const cotisationFonds = parseFloat(fo.cotisation_fonds) || 0;
+        if (cotisationFonds > 0) prefill["Fonds d'urgence (CÉAH)"] = cotisationFonds.toFixed(0);
+      }
+
       setValues(prev => ({ ...prev, ...prefill }));
       setFreqs(prev => ({ ...prev, ...prefillFreqs }));
-      // Ouvrir la section impôts (index 9 = épargne, index 10 = impôts & obligations légales)
+      // Ouvrir les sections pré-remplies depuis l'ABF
       if (prefill["Impôts (retenues à la source)"] || prefill["Pension alimentaire"]) {
         setOpenSections(prev => ({ ...prev, 10: true }));
+      }
+      if (prefill["Paiements hypothécaires (ABF)"] || prefill["Paiements dettes (ABF)"]) {
+        setOpenSections(prev => ({ ...prev, 7: true }));
+      }
+      if (prefill["REEE (études des enfants)"] || prefill["CELI"] || prefill["REER"] || prefill["CELIAPP"] || prefill["FTQ / CSN (ABF)"]) {
+        setOpenSections(prev => ({ ...prev, 8: true }));
       }
     });
   }, []);
