@@ -1131,6 +1131,19 @@ export default function FinancialAnalysis() {
     }
   };
 
+  // Désimbrique récursivement { data: { data: {...} } } jusqu'aux vraies données
+  const unwrapData = (raw) => {
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return raw || {};
+    const hasBusinessFields = raw.emplois || raw.hypotheques || raw.dettes || raw.comptes ||
+      raw.montant_fonds || raw.nom || raw.enfants || raw.a_hypotheque || raw.a_dettes ||
+      raw.a_fonds || raw.a_objectifs || raw.objectifs || raw.a_assurance_vie;
+    if (hasBusinessFields) return raw;
+    if (raw.data && typeof raw.data === "object" && !Array.isArray(raw.data)) {
+      return unwrapData(raw.data);
+    }
+    return raw;
+  };
+
   useEffect(() => {
     Promise.all([
       base44.entities.FinancialProfile.list(),
@@ -1138,7 +1151,7 @@ export default function FinancialAnalysis() {
     ]).then(([profiles, budgetEntries]) => {
       const map = {};
       const done = new Set();
-      profiles.forEach(p => { map[p.section] = p.data || {}; if (p.completed) done.add(p.section); });
+      profiles.forEach(p => { map[p.section] = unwrapData(p.data); if (p.completed) done.add(p.section); });
       // Marquer budget comme complété si des entrées existent
       if (budgetEntries.length > 0) done.add("budget");
       setStepData(map);
