@@ -599,18 +599,18 @@ export default function FeuilleResume() {
     });
   });
 
-  // Immobilier (équité) — toutes hypothèques du foyer
+  // Immobilier — valeur marchande brute dans les actifs (la dette hypothécaire est dans les passifs)
   [...hypotheques, ...hypothequesConjoint].forEach(h => {
     const valRef = parseFloat(h.valeur_marchande) || parseFloat(h.prix_achat) || 0;
-    const equite = valRef - (parseFloat(h.solde) || 0);
-    if (equite > 0) {
+    if (valRef > 0) {
+      const equite = valRef - (parseFloat(h.solde) || 0);
       lignesActifs.push({
         type: "Immobilier",
         institution: h.adresse || h.usage || "Propriété",
-        solde: equite,
+        solde: valRef,
         cotisation: 0,
         rendement: 3,
-        subventions: h.valeur_marchande ? "Valeur marchande" : "Équité estimée",
+        subventions: h.valeur_marchande ? `Valeur marchande · équité ${fmt(equite)}` : `Prix d'achat · équité ${fmt(equite)}`,
       });
     }
   });
