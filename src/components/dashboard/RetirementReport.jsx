@@ -206,8 +206,8 @@ export default function RetirementReport({ profiles }) {
   }, [retraite, retraiteConjoint]);
 
   // ── 3. Taux de rendement ──────────────────────────────────────────────────
-  const REND_AV   = 0.06; // avant retraite (6%)
-  const REND_PEND = 0.04; // pendant retraite (4%)
+  const REND_AV   = 0.07; // avant retraite (7%)
+  const REND_PEND = 0.05; // pendant retraite (5%)
 
   // ── 4. NIF cible & PMT requis ─────────────────────────────────────────────
   const nifCible = useMemo(() => calcNIF({
@@ -245,9 +245,9 @@ export default function RetirementReport({ profiles }) {
 
   // ── 6. Matrice de sensibilité ─────────────────────────────────────────────
   const SCENARIOS = [
-    { rendAv: 0.04, rendPend: 0.02 },
-    { rendAv: 0.06, rendPend: 0.03 },
-    { rendAv: 0.08, rendPend: 0.04 },
+    { rendAv: 0.05, rendPend: 0.03 },
+    { rendAv: 0.07, rendPend: 0.05 },
+    { rendAv: 0.09, rendPend: 0.07 },
   ];
   const AGES_MAT = [ageRetraite - 5, ageRetraite, ageRetraite + 5];
 
@@ -452,9 +452,9 @@ export default function RetirementReport({ profiles }) {
                 <span style={{
                   display: "inline-block", fontSize: 10, fontWeight: 700,
                   padding: "3px 12px", borderRadius: 99,
-                  background: sc.rendAv === 0.06 ? "rgba(201,160,99,0.18)" : "rgba(255,255,255,0.04)",
-                  border: sc.rendAv === 0.06 ? "1px solid rgba(201,160,99,0.4)" : "1px solid rgba(255,255,255,0.06)",
-                  color: sc.rendAv === 0.06 ? GOLD : "rgba(255,255,255,0.4)",
+                  background: sc.rendAv === 0.07 ? "rgba(201,160,99,0.18)" : "rgba(255,255,255,0.04)",
+                  border: sc.rendAv === 0.07 ? "1px solid rgba(201,160,99,0.4)" : "1px solid rgba(255,255,255,0.06)",
+                  color: sc.rendAv === 0.07 ? GOLD : "rgba(255,255,255,0.4)",
                   letterSpacing: "0.05em",
                 }}>
                   {(sc.rendAv * 100).toFixed(2)} % av. / {(sc.rendPend * 100).toFixed(2)} % pend.
@@ -476,7 +476,7 @@ export default function RetirementReport({ profiles }) {
                     ageRetraite={age}
                     rendAv={sc.rendAv}
                     rendPend={sc.rendPend}
-                    isTarget={age === ageRetraite && sc.rendAv === 0.06}
+                    isTarget={age === ageRetraite && sc.rendAv === 0.07}
                   />
                 ))}
               </div>
@@ -496,7 +496,7 @@ export default function RetirementReport({ profiles }) {
         {/* ── PIED DE RAPPORT ───────────────────────────────────────────── */}
         <p style={{ fontSize: 10, color: "rgba(255,255,255,0.15)", textAlign: "center", fontStyle: "italic", paddingTop: 4 }}>
           MonPlanFin · Rapport d'indépendance financière · Québec 2026 · Ces projections sont à titre indicatif uniquement et ne constituent pas un conseil financier réglementé.
-          Inflation : 2,1 % · Rendements : 6,00 % / 3,00 % (scénario de base).
+          Inflation : 2,1 % · Rendements : 7,00 % / 5,00 % (scénario de base).
         </p>
       </div>
     </div>
