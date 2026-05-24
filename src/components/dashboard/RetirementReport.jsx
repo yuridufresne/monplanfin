@@ -352,11 +352,11 @@ export default function RetirementReport({ profiles }) {
           </div>
         </div>
 
-        {/* ── COL DROITE : TABLEAU + MATRICE ──────────────────────────── */}
-        <div style={{ flex: 1, minWidth: 0, padding: "1.25rem 1.5rem", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+        {/* ── COL DROITE : TABLEAU + MATRICE côte à côte ──────────────── */}
+        <div style={{ flex: 1, minWidth: 0, padding: "1.25rem 1.5rem", display: "flex", flexDirection: "row", gap: "1.25rem" }}>
 
         {/* ── TABLEAU COMPARATIF ──────────────────────────────────────── */}
-        <div style={cardBase}>
+        <div style={{ ...cardBase, flex: 1, minWidth: 0 }}>
           <SectionTitle>📊 Tableau comparatif</SectionTitle>
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -397,7 +397,7 @@ export default function RetirementReport({ profiles }) {
         </div>
 
         {/* ── MATRICE DE SENSIBILITÉ ───────────────────────────────────── */}
-        <div style={cardBase}>
+        <div style={{ ...cardBase, flex: 1, minWidth: 0 }}>
           <SectionTitle>🔬 Épargne de retraite nécessaire à différents âges et à différents taux de rendement</SectionTitle>
           <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: "1.1rem", lineHeight: 1.6 }}>
             Chaque cellule présente les besoins en épargnes mensuelles selon l'âge de retraite et le taux de rendement.
