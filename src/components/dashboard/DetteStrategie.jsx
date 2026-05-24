@@ -127,8 +127,8 @@ export default function DetteStrategie({ dettes=[] }) {
       </div>
 
       {/* Résumé stats */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:16}}>
-        {isActuel ? [
+      {(() => {
+        const statItems = isActuel ? [
           {l:"Libéré en", v:dateFmt(dernierPayoffActuel), sub:"Au rythme actuel", c:"#fff"},
           {l:"Total intérêts", v:fmt(totalInteretsActuel), sub:"Coût des paiements min.", c:"#f87171"},
           {l:"Économisable", v:fmt(totalInteretsActuel-intAvecAvalanche), sub:"Choisissez une stratégie →", c:"#5BC4A0"},
@@ -136,14 +136,20 @@ export default function DetteStrategie({ dettes=[] }) {
           {l:"Libéré en", v:dateFmt(dernierPayoff), sub: extra>0?`↓ ${Math.abs(gainMois)} mois`:null, c:"#fff"},
           {l:"Total intérêts", v:fmt(intAvec), sub: extra>0?`${fmt(intSans-intAvec)} économisés`:"", c:"#f87171"},
           {l:"Intérêts évités", v:extra>0?fmt(totalEvites):"—", sub: extra>0?"vs paiements min":"Ajoutez un budget extra", c:extra>0?"#5BC4A0":"rgba(255,255,255,0.3)"},
-        ].map(item=>(
-          <div key={item.l} style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:10,padding:"10px 12px"}}>
-            <div style={{fontSize:10,fontWeight:600,color:"rgba(255,255,255,0.28)",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:4}}>{item.l}</div>
-            <div style={{fontSize:14,fontWeight:700,color:item.c}}>{item.v}</div>
-            {item.sub&&<div style={{fontSize:10,color:item.c==="#5BC4A0"?"#5BC4A0":"rgba(255,255,255,0.35)",marginTop:2}}>{item.sub}</div>}
+        ];
+        return (
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:16}}>
+            {statItems.map(item=>(
+              <div key={item.l} style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:10,padding:"10px 12px"}}>
+                <div style={{fontSize:10,fontWeight:600,color:"rgba(255,255,255,0.28)",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:4}}>{item.l}</div>
+                <div style={{fontSize:14,fontWeight:700,color:item.c}}>{item.v}</div>
+                {item.sub&&<div style={{fontSize:10,color:item.c==="#5BC4A0"?"#5BC4A0":"rgba(255,255,255,0.35)",marginTop:2}}>{item.sub}</div>}
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        );
+      })()}
+
 
       {/* Tableau */}
       <div style={{borderRadius:12,overflow:"hidden",border:"1px solid rgba(255,255,255,0.08)"}}>
