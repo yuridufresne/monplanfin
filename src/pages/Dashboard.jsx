@@ -62,9 +62,9 @@ const Row = ({ left, right, sub, dot, onClick }) => (
 
 const SectionHeader = ({ title, badge, link, info } = {}) => (
   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
-    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
       <p style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{title}</p>
-      {info && <InfoTooltip explanation={info} position="bottom" />}
+      {info && <InfoTooltip text={info} />}
       {badge}
     </div>
     {link && (
@@ -302,9 +302,9 @@ export default function Dashboard() {
                 },
               ].map((k, i) => (
                 <div key={k.label} style={{ ...G.card, padding: "1.1rem 1.25rem" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 6 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
                     <p style={LABEL}>{k.label}</p>
-                    <InfoTooltip explanation={k.info} position="bottom" />
+                    <InfoTooltip text={k.info} />
                   </div>
                   <p style={{ ...BIG, color: k.color, fontFamily: "var(--font-mono)" }}>{k.value}</p>
                   <p style={{ ...MUTED, marginTop: 4 }}>{k.sub}</p>
@@ -354,9 +354,9 @@ export default function Dashboard() {
                         }] : []),
                       ].map(m => (
                         <div key={m.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "7px 10px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                             <p style={{ ...MUTED }}>{m.label}</p>
-                            <InfoTooltip explanation={m.info} position="bottom" />
+                            <InfoTooltip text={m.info} />
                           </div>
                           <p style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 700, color: m.color }}>{m.value}</p>
                         </div>
@@ -392,7 +392,7 @@ export default function Dashboard() {
                         <p style={{ ...MUTED }}>Besoin estimé</p>
                         <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                           <p style={{ fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 700, color: "#C9A063" }}>~{fmt(besoinAssurance)}</p>
-                          <InfoTooltip explanation="Formule : 10× revenu brut + dettes − épargne actuelle. Estimation indicative — consultez un conseiller AMF pour une analyse complète." position="bottom" />
+                          <InfoTooltip text="Formule : 10× revenu brut + dettes − épargne actuelle. Estimation indicative — consultez un conseiller AMF pour une analyse complète." />
                         </div>
                       </div>
                     )}
@@ -502,9 +502,9 @@ export default function Dashboard() {
                       { label: "Subventions REEE", val: 240, color: "#C9A063", info: "Augmentez les cotisations REEE à 209$/mois pour maximiser SCEE (20%=500$) + IQEE (10%=250$) = 750$/an de subventions." },
                     ].map(x => (
                       <div key={x.label} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "12px 14px" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 6 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
                           <p style={LABEL}>{x.label}</p>
-                          {x.info && <InfoTooltip explanation={x.info} position="bottom" />}
+                          {x.info && <InfoTooltip text={x.info} />}
                         </div>
                         <p style={{ fontFamily: "var(--font-mono)", fontSize: 16, fontWeight: 700, color: x.color }}>{fmt(x.val)}/an</p>
                         <p style={MUTED}>{fmt(Math.round(x.val / 12))}/mois</p>

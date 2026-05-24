@@ -1,133 +1,99 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 
-/**
- * InfoTooltip — Icône info interactive avec tooltip
- * 
- * Usage:
- * <InfoTooltip label="Ratio d'amortissement" explanation="..." />
- * <label>Ratio d'amortissement <InfoTooltip explanation="..." /></label>
- */
-export default function InfoTooltip({ explanation, label, position = "top" }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const tooltipRef = useRef(null);
-  const iconRef = useRef(null);
+export default function InfoTooltip({ text, explanation, size = "sm" }) {
+  // Support both `text` and legacy `explanation` prop
+  const content = text || explanation;
 
-  // Fermer au clic en dehors
+  const [visible, setVisible] = useState(false);
+  const [coords, setCoords] = useState({ top: 0, left: 0 });
+  const btnRef = useRef(null);
+
+  const show = useCallback(() => {
+    if (!btnRef.current) return;
+    const r = btnRef.current.getBoundingClientRect();
+    const TIP_W = 230;
+    const spaceRight = window.innerWidth - r.left;
+    const alignRight = spaceRight < TIP_W + 16;
+    setCoords({
+      top:  r.bottom + window.scrollY + 6,
+      left: alignRight ? r.right + window.scrollX - TIP_W : r.left + window.scrollX,
+    });
+    setVisible(true);
+  }, []);
+
+  const hide = useCallback(() => setVisible(false), []);
+
   useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (tooltipRef.current && !tooltipRef.current.contains(e.target) && 
-          iconRef.current && !iconRef.current.contains(e.target)) {
-        setIsOpen(false);
-      }
-    };
+    if (!visible) return;
+    const onScroll = () => hide();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [visible, hide]);
 
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
-    }
-  }, [isOpen]);
+  const btnSize = size === "sm" ? 15 : 17;
+  const fontSize = size === "sm" ? 9 : 10;
 
-  const positionClasses = {
-    top: "bottom-full mb-2",
-    bottom: "top-full mt-2",
-    right: "left-full ml-2",
-    left: "right-full mr-2",
-  };
-
-  const arrowClasses = {
-    top: "top-full border-t-[6px] border-x-[4px] border-x-transparent border-b-0",
-    bottom: "bottom-full border-b-[6px] border-x-[4px] border-x-transparent border-t-0",
-    right: "right-full border-r-[6px] border-y-[4px] border-y-transparent border-l-0",
-    left: "left-full border-l-[6px] border-y-[4px] border-y-transparent border-r-0",
-  };
+  if (!content) return null;
 
   return (
-    <span className="relative inline-block">
+    <>
       <button
-        ref={iconRef}
-        onClick={() => setIsOpen(!isOpen)}
-        onMouseEnter={() => setIsOpen(true)}
-        onMouseLeave={() => setIsOpen(false)}
-        aria-label={`Information sur ${label || explanation}`}
-        role="button"
-        className="inline-flex items-center justify-center w-4 h-4 rounded-full cursor-help transition-all duration-200 ml-1"
+        ref={btnRef}
+        onMouseEnter={show}
+        onMouseLeave={hide}
+        onFocus={show}
+        onBlur={hide}
+        onClick={e => { e.stopPropagation(); setVisible(v => !v); }}
+        aria-label="Plus d'informations"
         style={{
-          background: "rgba(201,160,99,0.15)",
-          border: "1px solid rgba(201,160,99,0.3)",
-          color: "#C9A063",
-          fontSize: "11px",
-          fontWeight: "700",
-          lineHeight: "1",
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: btnSize,
+          height: btnSize,
+          borderRadius: "50%",
+          background: visible ? "rgba(201,160,99,0.18)" : "rgba(255,255,255,0.07)",
+          border: `1px solid ${visible ? "rgba(201,160,99,0.45)" : "rgba(255,255,255,0.18)"}`,
+          color: visible ? "#C9A063" : "rgba(255,255,255,0.38)",
+          fontSize,
+          fontWeight: 600,
+          cursor: "pointer",
           flexShrink: 0,
+          lineHeight: 1,
+          transition: "all .15s",
+          verticalAlign: "middle",
+          marginLeft: 5,
+          fontStyle: "italic",
+          fontFamily: "Georgia, serif",
         }}
-      >
-        i
-      </button>
+      >i</button>
 
-      {/* Tooltip */}
-      {isOpen && (
+      {visible && createPortal(
         <div
-          ref={tooltipRef}
-          role="tooltip"
-          className={`absolute ${positionClasses[position]} opacity-0 animation-fadeIn pointer-events-auto`}
+          onMouseEnter={show}
+          onMouseLeave={hide}
           style={{
-            animation: "fadeIn 0.2s ease-out forwards",
-            minWidth: "200px",
-            maxWidth: "280px",
-            width: "max-content",
-            zIndex: 9999,
-            left: "50%",
-            transform: "translateX(-10%)",
+            position: "absolute",
+            top: coords.top,
+            left: coords.left,
+            width: 230,
+            background: "#0C1525",
+            border: "1px solid rgba(201,160,99,0.22)",
+            borderRadius: 10,
+            padding: "10px 13px",
+            fontSize: 12,
+            color: "rgba(255,255,255,0.72)",
+            lineHeight: 1.55,
+            zIndex: 99999,
+            boxShadow: "0 8px 28px rgba(0,0,0,0.55)",
+            pointerEvents: "auto",
+            wordBreak: "break-word",
+            whiteSpace: "normal",
           }}
-        >
-          {/* Contenu tooltip */}
-          <div
-            className="rounded-lg px-3 py-2.5 text-[12px] leading-relaxed font-medium"
-            style={{
-              background: "#0D1628",
-              border: "1px solid rgba(201,160,99,0.25)",
-              color: "#E5E7EB",
-              boxShadow: "0 8px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08)",
-              backdropFilter: "blur(16px)",
-            }}
-          >
-            {explanation}
-          </div>
-
-          {/* Flèche pointant vers l'icône */}
-          <div
-            className={`absolute w-0 h-0 ${arrowClasses[position]}`}
-            style={{
-              borderTopColor: position === "top" ? "#0D1628" : "transparent",
-              borderBottomColor: position === "bottom" ? "#0D1628" : "transparent",
-              borderLeftColor: position === "left" ? "#0D1628" : "transparent",
-              borderRightColor: position === "right" ? "#0D1628" : "transparent",
-              left: position === "left" || position === "right" ? "auto" : "50%",
-              transform: position === "left" || position === "right" ? "none" : "translateX(-50%)",
-            }}
-          />
-        </div>
+        >{content}</div>,
+        document.body
       )}
-
-      {/* Animation CSS */}
-      <style>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateX(-10%) translateY(-4px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(-10%) translateY(0);
-          }
-        }
-
-        @media (max-width: 640px) {
-          [role="tooltip"] {
-            max-width: calc(100vw - 2rem) !important;
-          }
-        }
-      `}</style>
-    </span>
+    </>
   );
 }
