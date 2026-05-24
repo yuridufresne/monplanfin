@@ -156,9 +156,15 @@ export default function PlacementStrategie({ retraiteABF={}, revenuBrut=0, tauxM
 
           {/* Slider budget */}
           <div style={{ marginBottom:10 }}>
-            <div style={{ display:"flex", justifyContent:"space-between", marginBottom:3 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:3 }}>
               <span style={{ ...S.muted }}>Budget mensuel épargne</span>
-              <div style={{ display:"flex", gap:10 }}>
+              <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                <input
+                  type="number" min={0} max={5000} step={25} value={budget}
+                  onChange={e => setBudget(Math.max(0, +e.target.value))}
+                  style={{ width:72, background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.14)", borderRadius:6, padding:"3px 7px", fontSize:12, fontWeight:700, color:"#fff", textAlign:"right", outline:"none" }}
+                />
+                <span style={{ fontSize:11, color:"rgba(255,255,255,0.25)" }}>$</span>
                 <span style={{ fontSize:12, fontWeight:700, color:"#C9A063" }}>REER {Math.round(budget*reerPct/100).toLocaleString("fr-CA")} $</span>
                 <span style={{ fontSize:12, fontWeight:700, color:"#5BC4A0" }}>CELI {Math.round(budget*(100-reerPct)/100).toLocaleString("fr-CA")} $</span>
               </div>
