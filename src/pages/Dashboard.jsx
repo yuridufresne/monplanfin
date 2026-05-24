@@ -13,6 +13,8 @@ import ReerLevierSimulator from "@/components/dashboard/ReerLevierSimulator";
 import NIFScore from "@/components/dashboard/NIFScore";
 import { calcNIFFromProfiles } from "@/lib/calcNIF";
 import InfoTooltip from "@/components/ui/InfoTooltip";
+import FlipCard from "@/components/ui/FlipCard";
+import DetteStrategie from "@/components/dashboard/DetteStrategie";
 
 // ── Formatters ────────────────────────────────────────────────────────────────
 const fmt = (v) => new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v || 0);
@@ -428,33 +430,44 @@ export default function Dashboard() {
 
               {/* Dettes */}
               <motion.div {...fadeUp(0.16)}>
-                <div style={{ ...G.card, padding: "1.25rem 1.4rem", height: "100%" }}>
-                  <SectionHeader
-                    title="Dettes"
-                    badge={highRateDet.length > 0 ? <Badge color="red">{highRateDet[0]?.taux}% — priorité</Badge> : null}
-                    link
-                    info={highRateDet.length > 0 ? `Les dettes à ${highRateDet[0]?.taux}% coûtent ~${fmt(highRateDet.reduce((s, d) => s + d.solde * d.taux / 100, 0))}/an en intérêts. À rembourser avant toute épargne additionnelle.` : "Total des obligations financières selon votre profil."}
-                  />
-                  {toutesLesDettes.length === 0 ? (
-                    <p style={{ ...MUTED, padding: "12px 0" }}>Aucune dette enregistrée</p>
-                  ) : (
+                <FlipCard
+                  expandedHeight={560}
+                  front={
                     <>
-                      {toutesLesDettes.slice(0, 5).map(d => (
-                        <Row
-                          key={d._key}
-                          left={d.nom}
-                          right={fmt(d.solde)}
-                          sub={d.taux > 0 ? `${d.taux}%${d.taux >= 15 ? " ⚠" : d.taux <= 6 ? " · crédit d'impôt 35%" : ""}` : undefined}
-                          dot={d.taux >= 15 ? "#f87171" : d.taux >= 8 ? "#f59e0b" : "rgba(255,255,255,0.2)"}
-                        />
-                      ))}
-                      <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 8, marginTop: 4, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", fontWeight: 600 }}>Total</p>
-                        <p style={{ fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 800, color: "#f87171" }}>{fmt(totalDebt)}</p>
-                      </div>
+                      <SectionHeader
+                        title="Dettes"
+                        badge={highRateDet.length > 0 ? <Badge color="red">{highRateDet[0]?.taux}% — priorité</Badge> : null}
+                        link
+                        info={highRateDet.length > 0 ? `Les dettes à ${highRateDet[0]?.taux}% coûtent ~${fmt(highRateDet.reduce((s, d) => s + d.solde * d.taux / 100, 0))}/an en intérêts. À rembourser avant toute épargne additionnelle.` : "Total des obligations financières selon votre profil."}
+                      />
+                      {toutesLesDettes.length === 0 ? (
+                        <p style={{ ...MUTED, padding: "12px 0" }}>Aucune dette enregistrée</p>
+                      ) : (
+                        <>
+                          {toutesLesDettes.slice(0, 5).map(d => (
+                            <Row
+                              key={d._key}
+                              left={d.nom}
+                              right={fmt(d.solde)}
+                              sub={d.taux > 0 ? `${d.taux}%${d.taux >= 15 ? " ⚠" : d.taux <= 6 ? " · crédit d'impôt 35%" : ""}` : undefined}
+                              dot={d.taux >= 15 ? "#f87171" : d.taux >= 8 ? "#f59e0b" : "rgba(255,255,255,0.2)"}
+                            />
+                          ))}
+                          <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 8, marginTop: 4, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", fontWeight: 600 }}>Total</p>
+                            <p style={{ fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 800, color: "#f87171" }}>{fmt(totalDebt)}</p>
+                          </div>
+                        </>
+                      )}
                     </>
-                  )}
-                </div>
+                  }
+                  back={
+                    <DetteStrategie
+                      dettes={autresDettes}
+                      hypotheques={hypotheques}
+                    />
+                  }
+                />
               </motion.div>
 
               {/* Placements */}
