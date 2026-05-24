@@ -13,11 +13,10 @@ export default function InfoTooltip({ text, explanation, size = "sm" }) {
     if (!btnRef.current) return;
     const r = btnRef.current.getBoundingClientRect();
     const TIP_W = 230;
-    const spaceRight = window.innerWidth - r.left;
-    const alignRight = spaceRight < TIP_W + 16;
+    const wouldOverflow = r.left + TIP_W > window.innerWidth - 12;
     setCoords({
-      top:  r.bottom + window.scrollY + 6,
-      left: alignRight ? r.right + window.scrollX - TIP_W : r.left + window.scrollX,
+      top:  r.bottom + 6,
+      left: wouldOverflow ? Math.max(8, r.right - TIP_W) : r.left,
     });
     setVisible(true);
   }, []);
@@ -74,10 +73,11 @@ export default function InfoTooltip({ text, explanation, size = "sm" }) {
           onMouseEnter={show}
           onMouseLeave={hide}
           style={{
-            position: "absolute",
-            top: coords.top,
+            position: "fixed",
+            top:  coords.top,
             left: coords.left,
             width: 230,
+            maxWidth: "calc(100vw - 24px)",
             background: "#0C1525",
             border: "1px solid rgba(201,160,99,0.22)",
             borderRadius: 10,
@@ -87,7 +87,6 @@ export default function InfoTooltip({ text, explanation, size = "sm" }) {
             lineHeight: 1.55,
             zIndex: 99999,
             boxShadow: "0 8px 28px rgba(0,0,0,0.55)",
-            pointerEvents: "auto",
             wordBreak: "break-word",
             whiteSpace: "normal",
           }}
