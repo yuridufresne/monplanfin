@@ -210,7 +210,7 @@ export default function PlacementStrategie({ retraiteABF={}, retraiteConj={}, re
           <div style={{ ...S.row }}>
             <div style={{ display:"flex", alignItems:"center", gap:7 }}>
               <div style={{ width:6, height:6, borderRadius:"50%", background:"#C9A063", flexShrink:0 }} />
-              <span style={{ fontSize:12 }}>REER</span>
+              <span style={{ fontSize:12, color:"#C9A063", fontWeight:700 }}>REER</span>
             </div>
             <div style={{ fontSize:13, fontWeight:700, color:"#C9A063" }}>{sim.reerMois.toLocaleString("fr-CA")} $<span style={{ fontSize:10, fontWeight:400, color:"rgba(255,255,255,0.3)" }}>/mois</span></div>
           </div>
