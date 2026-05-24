@@ -167,6 +167,11 @@ export default function Dashboard() {
               <NIFHeroBanner profiles={profiles} />
             </motion.div>
 
+            {/* NIF personnalisé */}
+            <motion.div {...fadeUp(0.12)} className="mb-8">
+              <RetirementReport profiles={profiles} />
+            </motion.div>
+
             {/* Hero Grid — 3 KPIs */}
             <motion.div {...fadeUp(0.06)} className="mb-8">
               <div style={{ ...glass.hero, borderRadius: 24, padding: "clamp(1.5rem,4vw,2.5rem)", position: "relative", overflow: "hidden" }}>
