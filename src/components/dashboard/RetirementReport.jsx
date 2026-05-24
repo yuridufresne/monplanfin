@@ -314,7 +314,7 @@ export default function RetirementReport({ profiles }) {
           </p>
           <p style={{
             fontFamily: "var(--font-mono)", fontWeight: 900,
-            fontSize: "clamp(2rem,4vw,3rem)",
+            fontSize: "clamp(2.8rem,6vw,4.5rem)",
             letterSpacing: "-0.04em", lineHeight: 1, color: GOLD,
             textShadow: "0 0 40px rgba(201,160,99,0.6), 0 0 80px rgba(201,160,99,0.25)",
           }}>
