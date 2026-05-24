@@ -229,7 +229,7 @@ export default function PlacementStrategie({ retraiteABF={}, retraiteConj={}, re
               <div style={{ display:"flex", alignItems:"center", gap:7 }}>
                 <div style={{ width:6, height:6, borderRadius:"50%", background:"#A87DD3", flexShrink:0 }} />
                 <span style={{ fontSize:12, color:"#A87DD3" }}>Retour d'impôt REER</span>
-                <InfoTooltip text={"Saviez-vous qu'il est possible de réduire vos retenues à la source si vous cotisez régulièrement à votre REER ?\n\n🇨🇦 Fédéral (ARC) :\nT1213 — Demande de réduction des retenues d'impôt à la source.\n\n🏴󠁣󠁡󠁱󠁣󠁿 Québec (Revenu Québec) :\nTP-1016 — Demande de réduction de la retenue d'impôt.\n\nVotre employeur ajuste vos retenues mensuellement — plus besoin d'attendre le retour d'impôt en avril ni de perdre une année de rendement !"} />
+                <InfoTooltip text={"Saviez-vous qu'il est possible de réduire vos retenues à la source si vous cotisez régulièrement à votre REER ?\n\n🇨🇦 Fédéral (ARC) :\nT1213 — Demande de réduction des retenues d'impôt à la source.\n\n⚜️ Québec (Revenu Québec) :\nTP-1016 — Demande de réduction de la retenue d'impôt.\n\nVotre employeur ajuste vos retenues mensuellement — plus besoin d'attendre le retour d'impôt en avril ni de perdre une année de rendement !"} />
               </div>
               <div style={{ fontSize:13, fontWeight:700, color:"#A87DD3" }}>≈ {sim.retour.toLocaleString("fr-CA")} $<span style={{ fontSize:10, fontWeight:400, color:"rgba(255,255,255,0.3)" }}>/mois</span></div>
             </div>
