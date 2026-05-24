@@ -67,7 +67,8 @@ function TabParametres({ params, setParams, result }) {
         <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: GOLD_DIM, marginBottom: 14 }}>Profil de retraite</p>
         <Slider label="Âge à la retraite" min={55} max={75} step={1} value={params.ageRetraite} onChange={v => set("ageRetraite", v)} fmtFn={v => `${v} ans`} />
         <Slider label="Espérance de vie" min={75} max={100} step={1} value={params.esperanceVie} onChange={v => set("esperanceVie", v)} fmtFn={v => `${v} ans`} />
-        <Slider label="Dépenses cibles annuelles" min={20000} max={150000} step={2500} value={params.revenuCibleAnnuel} onChange={v => set("revenuCibleAnnuel", v)} fmtFn={fmt} />
+        <Slider label="Dépenses cibles annuelles (80% du brut recommandé)" min={20000} max={200000} step={2500} value={params.revenuCibleAnnuel} onChange={v => set("revenuCibleAnnuel", v)} fmtFn={fmt}
+          note="80% du revenu brut = maintenir votre style de vie. 70% = légère réduction. 100% = objectif très ambitieux." />
 
         <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: GOLD_DIM, margin: "18px 0 14px" }}>Épargne accumulée</p>
         <Slider label="Solde REER" min={0} max={1000000} step={10000} value={params.soldeReer} onChange={v => set("soldeReer", v)} fmtFn={fmt} />
@@ -456,7 +457,20 @@ export default function ModelisationRetraite({ profiles }) {
       ageDebutPSV: 65,
       pension: parseFloat((retraite.fond_pension || {}).rente_mensuelle_estimee)
             || parseFloat((retraite.fond_pension || {}).prestation_mensuelle) || 0,
-      revenuCibleAnnuel: 60000,
+      // 80% du revenu brut du foyer (standard recommandé)
+      revenuCibleAnnuel: (() => {
+        const sumBrut = (emplois, sides) =>
+          (emplois || []).reduce((a, x) => a + (parseFloat(x.revenu_brut) || 0), 0)
+          + (sides || []).reduce((a, x) => a + (parseFloat(x.revenu_mensuel_moyen) || 0) * 12, 0);
+        const revABF  = m.revenu || {};
+        const brutP1  = sumBrut(revABF.emplois, revABF.sidehustles);
+        const brutP2  = enCouple ? sumBrut((revABF.conjoint || {}).emplois, (revABF.conjoint || {}).sidehustles) : 0;
+        const brut    = (brutP1 + brutP2) || 80000;
+        const montant = parseFloat(retraite.revenu_retraite_mensuel);
+        if (montant > 0) return montant * 12;
+        const taux = parseInt(retraite.revenu_retraite_pct) || 80;
+        return Math.round(brut * taux / 100);
+      })(),
       rendement: 0.05,
       inflation: 0.025,
       ageBaseConjoint: ageConjoint, // Réduit le minimum FERR si conjoint plus jeune

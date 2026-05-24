@@ -52,7 +52,7 @@ export default function NIFScore({ profiles }) {
     scoreNIF, capitalNIF, capitalProjecte, cotSupp, ageRetraite,
     enCouple, modeNIF, inclureConj, prenomP1, prenomC,
     ratioConjGaranti, rrqMensuelTotal, psvMensuelTotal,
-    revGarantiAnnuel,
+    revGarantiAnnuel, depensesCibles, revBrut, tauxRemplacement,
   } = nif;
 
   const [savingMode, setSavingMode] = useState(false);
@@ -167,6 +167,10 @@ export default function NIFScore({ profiles }) {
               <div style={cardStyle}>
                 <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.4)", marginBottom: 5 }}>Capital NIF nécessaire</p>
                 <p style={{ fontFamily: "var(--font-mono)", fontSize: 15, fontWeight: 700, color: GOLD, lineHeight: 1 }}>{fmt(capitalNIF)}</p>
+                <p style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", marginTop: 5, lineHeight: 1.5 }}>
+                  Cible : {tauxRemplacement}% × {fmt(revBrut)} brut = {fmt(depensesCibles)}/an
+                  {revGarantiAnnuel > 0 && ` − ${fmt(revGarantiAnnuel)} garantis`}
+                </p>
               </div>
               <div style={cardStyle}>
                 <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.4)", marginBottom: 5 }}>Capital projeté à {ageRetraite} ans</p>

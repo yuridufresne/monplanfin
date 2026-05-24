@@ -3,7 +3,7 @@
  * Importé par : NIFScore, RetirementReport, NIFCalculator, Dashboard.
  *
  * FORMULE :
- * 1. Dépenses cibles = revenuRetraite (ABF) ou 70% du revenu net
+ * 1. Dépenses cibles = revenuRetraite (ABF) ou 80% du revenu BRUT (standard recommandé)
  * 2. Revenus garantis = (RRQ + PSV + Pension) × 12  ← soustraits AVANT la règle des 4%
  *    PSV : 715$/mois par personne (si mode foyer + couple → 715×2)
  * 3. Manque annuel = max(0, dépensesCibles − revenusGarantis)
@@ -69,12 +69,13 @@ export function calcNIFFromProfiles(profiles) {
   const brutP2 = inclureConj ? sumBrut(revABFC.emplois, revABFC.sidehustles) : 0;
   const revBrut = (brutP1 + brutP2) || 80000;
 
-  // ── Dépenses cibles (revenu net visé à la retraite) ─────────────────────────
-  const revNet = Math.round(revBrut * 0.72);
-  const pct    = parseInt(retraite.revenu_retraite_pct) || 70;
+  // ── Dépenses cibles — 80% du revenu BRUT (standard recommandé) ──────────────
+  // Si l'utilisateur a saisi un montant mensuel dans l'ABF → priorité absolue
+  // Sinon : taux de remplacement × revenu BRUT du foyer
+  const pct    = parseInt(retraite.revenu_retraite_pct) || 80;
   const depensesCibles = parseFloat(retraite.revenu_retraite_mensuel) > 0
     ? parseFloat(retraite.revenu_retraite_mensuel) * 12
-    : Math.round(revNet * pct / 100);
+    : Math.round(revBrut * pct / 100);
 
   // ── Revenus garantis (RRQ + PSV + Pension PD) ───────────────────────────────
   // RRQ — champ "rrq" dans la section retraite ($/mois)
@@ -185,5 +186,8 @@ export function calcNIFFromProfiles(profiles) {
     // Épargne
     soldeTotal:    Math.round(soldeTotal),
     cotMensuelle:  Math.round(cotMensuelle),
+    // Contexte de la cible (pour affichage "80% × revenu brut")
+    revBrut:       Math.round(revBrut),
+    tauxRemplacement: pct,
   };
 }
