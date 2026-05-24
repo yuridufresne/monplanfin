@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { calcNIFFromProfiles } from "@/lib/calcNIF";
+import { calcNIFFromProfiles, calcAtteintNIF } from "@/lib/calcNIF";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONSTANTES & UTILITAIRES
@@ -36,16 +36,20 @@ function fvCapital({ present, monthly, rAnnual, years }) {
   return present * Math.pow(1 + r, n) + monthly * ((Math.pow(1 + r, n) - 1) / r);
 }
 
-// NIF sensibilité pour la matrice (version paramétrable)
-function calcNIFParam({ ageActuel, ageRetraite, esperanceVie, depensesCibles, revGarantiAnnuel, rendPend }) {
-  const d = Math.max(1, esperanceVie - ageRetraite);
-  const manque = Math.max(0, depensesCibles - revGarantiAnnuel);
-  const capitalNIF_4pct = manque / 0.04;
-  const r = rendPend - INF;
-  const capitalNIF_rente = r > 0.005
-    ? manque * ((1 - Math.pow(1 + r, -d)) / r)
-    : manque * d;
-  return (capitalNIF_4pct + capitalNIF_rente) / 2;
+// NIF sensibilité pour la matrice — dollars FUTURS, version paramétrable
+function calcNIFParam({ ageActuel, ageRetraite, esperanceVie, revBrut, tauxRemplacement, revGarantiAnnuelAuj, rendPend }) {
+  const d              = Math.max(1, esperanceVie - ageRetraite);
+  const anneesAvant    = Math.max(1, ageRetraite - ageActuel);
+  const facteurInfl    = Math.pow(1 + INF, anneesAvant);
+  const cibleFutur     = revBrut * tauxRemplacement * facteurInfl;
+  const garantiFutur   = revGarantiAnnuelAuj * facteurInfl;
+  const manqueFutur    = Math.max(0, cibleFutur - garantiFutur);
+  const nif_4pct       = manqueFutur / 0.04;
+  const r              = rendPend - INF;
+  const nif_rente      = r > 0.005
+    ? manqueFutur * ((1 - Math.pow(1 + r, -d)) / r)
+    : manqueFutur * d;
+  return (nif_4pct + nif_rente) / 2;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -102,44 +106,34 @@ export default function RetirementReport({ profiles }) {
   const nif = useMemo(() => calcNIFFromProfiles(profiles), [profiles]);
 
   const {
-    capitalNIF,
-    capitalProjecte,
-    manqueAnnuel,
-    revGarantiAnnuel,
-    depensesCibles,
-    cotSupp,
-    ageActuel,
-    ageRetraite,
-    esperanceVie,
-    anneesAccum,
-    anneesDecaisse,
-    soldeTotal,
-    cotMensuelle,
-    rrqMensuelTotal,
-    psvMensuelTotal,
+    // NIF fixe
+    capitalNIF, nifResult,
+    // Progression
+    capitalProjecte, cotSupp, progression,
+    // Contexte
+    revGarantiAnnuel, depensesCibles,
+    ageActuel, ageRetraite, esperanceVie,
+    anneesAccum, anneesDecaisse,
+    soldeTotal, cotMensuelle,
+    rrqMensuelTotal, psvMensuelTotal,
+    revBrut, tauxRemplacement,
   } = nif;
 
-  const anneesAvant   = anneesAccum;
-  const anneesPend    = anneesDecaisse;
-  const revenuNetAnnuel = depensesCibles > 0 ? Math.round(depensesCibles / 0.70) : 0;
+  const anneesAvant = anneesAccum;
+  const anneesPend  = anneesDecaisse;
 
-  // Capital projeté avec épargne actuelle
-  const capitalActuelRetraite = useMemo(() => fvCapital({
-    present: soldeTotal || 0, monthly: cotMensuelle || 0,
-    rAnnual: REND_AV, years: anneesAvant,
-  }), [soldeTotal, cotMensuelle, anneesAvant]);
-
+  // capitalProjecte vient déjà de calcAtteintNIF dans calcNIFFromProfiles
+  const capitalActuelRetraite = capitalProjecte;
   const manqueCapital = Math.max(0, capitalNIF - capitalActuelRetraite);
+  const pmtRequis     = cotSupp; // cotSuppNecessaire de calcAtteintNIF
 
-  const pmtRequis = useMemo(() => calcPMT({
-    nif: capitalNIF, epargneActuelle: soldeTotal || 0,
-    rendAvant: REND_AV, anneesAvant,
-  }), [capitalNIF, soldeTotal, anneesAvant]);
+  const revenuBrutAnnuel = revBrut || 0;
+  const revenuMensuelVise   = Math.round(depensesCibles / 12);
+  // Cible en dollars FUTURS (déjà calculée dans nifResult)
+  const revenuMensuelFutur  = Math.round((nifResult?.revenuCibleFutur || depensesCibles) / 12);
 
-  const curPct = revenuNetAnnuel > 0 ? (cotMensuelle || 0) * 12 / revenuNetAnnuel : 0;
-  const pmtPct = revenuNetAnnuel > 0 ? pmtRequis * 12 / revenuNetAnnuel : 0;
-  const revenuMensuelVise = Math.round(depensesCibles / 12);
-  const revenuMensuelFutur = Math.round(depensesCibles * Math.pow(1 + INF, anneesAvant) / 12);
+  const curPct = revenuBrutAnnuel > 0 ? (cotMensuelle || 0) * 12 / revenuBrutAnnuel : 0;
+  const pmtPct = revenuBrutAnnuel > 0 ? pmtRequis * 12 / revenuBrutAnnuel : 0;
 
   // ── Matrice de sensibilité ─────────────────────────────────────────────────
   const SCENARIOS = [
@@ -149,14 +143,22 @@ export default function RetirementReport({ profiles }) {
   ];
   const AGES_MAT = [ageRetraite - 5, ageRetraite, ageRetraite + 5];
 
+  const tauxRemplacementDecimal = (tauxRemplacement || 80) / 100;
+
   const matrice = useMemo(() =>
     AGES_MAT.map(age =>
       SCENARIOS.map(sc => {
-        const nifV = calcNIFParam({ ageActuel, ageRetraite: age, esperanceVie, depensesCibles, revGarantiAnnuel, rendPend: sc.rendPend });
-        const pmt  = calcPMT({ nif: nifV, epargneActuelle: soldeTotal || 0, rendAvant: sc.rendAv, anneesAvant: Math.max(1, age - ageActuel) });
+        const nifV = calcNIFParam({
+          ageActuel, ageRetraite: age, esperanceVie,
+          revBrut:              revBrut || 80000,
+          tauxRemplacement:     tauxRemplacementDecimal,
+          revGarantiAnnuelAuj:  revGarantiAnnuel,
+          rendPend:             sc.rendPend,
+        });
+        const pmt = calcPMT({ nif: nifV, epargneActuelle: soldeTotal || 0, rendAvant: sc.rendAv, anneesAvant: Math.max(1, age - ageActuel) });
         return { nif: nifV, pmt };
       })
-    ), [ageActuel, ageRetraite, esperanceVie, depensesCibles, revGarantiAnnuel, soldeTotal, anneesAvant]
+    ), [ageActuel, ageRetraite, esperanceVie, revBrut, tauxRemplacement, revGarantiAnnuel, soldeTotal]
   );
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -207,38 +209,42 @@ export default function RetirementReport({ profiles }) {
       }}>
         <div style={{ position: "absolute", top: "50%", left: "30%", transform: "translate(-50%,-50%)", width: 400, height: 200, borderRadius: "50%", background: "radial-gradient(ellipse,rgba(201,160,99,0.08) 0%,transparent 70%)", pointerEvents: "none" }} />
 
-        {/* Chiffre principal */}
-        <div style={{ position: "relative", textAlign: "center", minWidth: 200 }}>
-          <p style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.18em", color: GOLD_DIM, marginBottom: 8 }}>
-            Numéro d'Indépendance Financière (NIF)
+        {/* Chiffre principal — NIF FIXE */}
+        <div style={{ position: "relative", textAlign: "center", minWidth: 220 }}>
+          <p style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.18em", color: GOLD_DIM, marginBottom: 4 }}>
+            NIF — Valeur fixe en $ {nifResult?.anneeProjFuture || "futurs"}
           </p>
           <p style={{
             fontFamily: "var(--font-mono)", fontWeight: 900,
-            fontSize: "clamp(2.8rem,6vw,4.5rem)",
+            fontSize: "clamp(2.4rem,5vw,3.8rem)",
             letterSpacing: "-0.04em", lineHeight: 1, color: GOLD,
             textShadow: "0 0 40px rgba(201,160,99,0.6), 0 0 80px rgba(201,160,99,0.25)",
           }}>
             {fmt(capitalNIF)}
           </p>
-          {/* Note explicative : pourquoi le NIF est plus bas que sur d'autres calculateurs */}
-          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.38)", marginTop: 8, lineHeight: 1.55 }}>
-            Capital à accumuler <em>en plus</em> de la RRQ ({fmt(rrqMensuelTotal)}/mois)
-            {psvMensuelTotal > 0 && <> et de la PSV ({fmt(psvMensuelTotal)}/mois)</>}{" "}
-            qui couvrent déjà {fmt(revGarantiAnnuel)}/an.
+          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.38)", marginTop: 8, lineHeight: 1.6 }}>
+            = {fmt(nifResult?.revenuCibleFutur || depensesCibles)}/an cible
+            {revGarantiAnnuel > 0 && <> − {fmt(nifResult?.revenuGarantiFutur || revGarantiAnnuel)}/an garantis</>}
+            {" ÷ 4%"}
           </p>
-          <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.28)", marginTop: 6, lineHeight: 1.45 }}>
-            Objectif : {fmt(revenuMensuelVise)}/mois jusqu'à{" "}
-            <strong style={{ color: "rgba(255,255,255,0.6)" }}>{esperanceVie} ans</strong>.
+          <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.25)", marginTop: 5, lineHeight: 1.45 }}>
+            ({tauxRemplacement}% × {fmt(revBrut)} brut, inflation ×{nifResult?.facteurInflation ?? "?"} sur {anneesAvant} ans)
+          </p>
+          <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.28)", marginTop: 5, lineHeight: 1.45 }}>
+            Revenu visé : {fmt(revenuMensuelVise)}/mois auj. → {fmt(revenuMensuelFutur)}/mois en {nifResult?.anneeProjFuture || ""} jusqu'à{" "}
+            <strong style={{ color: "rgba(255,255,255,0.6)" }}>{esperanceVie} ans</strong>
           </p>
         </div>
 
-        {/* Stats pills */}
+        {/* Stats pills — Progression vers le NIF */}
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", flex: 1, position: "relative" }}>
           {[
-            { l: "Années d'épargne",   v: `${anneesAvant} ans` },
-            { l: "Années de retraite", v: `${anneesPend} ans` },
-            { l: "Revenus garantis",   v: `${fmt(revGarantiAnnuel)}/an` },
-            { l: "Épargne requise",    v: `${fmt(pmtRequis)}/mois`, gold: true },
+            { l: "Années d'épargne",      v: `${anneesAvant} ans` },
+            { l: "Capital projeté",       v: fmt(capitalProjecte), gold: false, color: "#6B8ED6" },
+            { l: "Revenus garantis",      v: `${fmt(revGarantiAnnuel)}/an` },
+            { l: pmtRequis > 0 ? "Cotis. supp. nécessaire" : "Statut progression",
+              v: pmtRequis > 0 ? `${fmt(pmtRequis)}/mois` : `${progression?.score ?? 0}% du NIF`,
+              gold: true },
           ].map(x => (
             <div key={x.l} style={{
               display: "flex", flexDirection: "column", gap: 4,
@@ -247,7 +253,7 @@ export default function RetirementReport({ profiles }) {
               border: x.gold ? "1px solid rgba(201,160,99,0.25)" : "1px solid rgba(255,255,255,0.06)",
             }}>
               <p style={{ fontSize: 9.5, color: "rgba(255,255,255,0.35)" }}>{x.l}</p>
-              <p style={{ fontFamily: "var(--font-mono)", fontSize: 13.5, fontWeight: 700, color: x.gold ? GOLD : "rgba(255,255,255,0.8)" }}>{x.v}</p>
+              <p style={{ fontFamily: "var(--font-mono)", fontSize: 13.5, fontWeight: 700, color: x.color || (x.gold ? GOLD : "rgba(255,255,255,0.8)") }}>{x.v}</p>
             </div>
           ))}
         </div>

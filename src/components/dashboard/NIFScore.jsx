@@ -49,11 +49,34 @@ function GaugeArc({ score }) {
 export default function NIFScore({ profiles }) {
   const nif = useMemo(() => calcNIFFromProfiles(profiles), [profiles]);
   const {
-    scoreNIF, capitalNIF, capitalProjecte, cotSupp, ageRetraite,
-    enCouple, modeNIF, inclureConj, prenomP1, prenomC,
-    ratioConjGaranti, rrqMensuelTotal, psvMensuelTotal,
-    revGarantiAnnuel, depensesCibles, revBrut, tauxRemplacement,
+    // NIF fixe
+    capitalNIF, nifResult,
+    // Progression
+    capitalProjecte, scoreNIF, cotSupp, statut,
+    // Contexte
+    ageRetraite, revGarantiAnnuel, depensesCibles, revBrut, tauxRemplacement,
+    rrqMensuelTotal, psvMensuelTotal, fpMensuelTotal,
+    // Couple
+    enCouple, modeNIF, inclureConj, prenomP1, prenomC, ratioConjGaranti,
+    // Temporel
+    anneesAccum,
   } = nif;
+
+  const statutColors = {
+    depasse:    "#5BC4A0",
+    atteint:    "#5BC4A0",
+    en_voie:    GOLD,
+    insuffisant: "#f59e0b",
+    critique:   "#f87171",
+  };
+  const statutLabels = {
+    depasse:    "Objectif dépassé ✓✓",
+    atteint:    "Objectif atteint ✓",
+    en_voie:    "En voie →",
+    insuffisant: "Insuffisant ⚠",
+    critique:   "Action requise ✗",
+  };
+  const color = statutColors[statut] || GOLD;
 
   const [savingMode, setSavingMode] = useState(false);
 
@@ -80,15 +103,13 @@ export default function NIFScore({ profiles }) {
       : modeNIF === "foyer" ? "Calculé pour le foyer combiné" : "Calculé individuellement"
     : null;
 
-  const color = scoreNIF >= 100 ? "#5BC4A0" : scoreNIF >= 75 ? GOLD : scoreNIF >= 50 ? "#f59e0b" : "#f87171";
-
-  const message = scoreNIF >= 100
-    ? `Vous êtes sur la bonne voie pour l'indépendance financière à ${ageRetraite} ans.`
-    : scoreNIF >= 75
-    ? `Vous êtes à ${scoreNIF}% de votre objectif. Cotisez ${fmt(cotSupp)}/mois de plus pour l'atteindre.`
-    : scoreNIF >= 50
-    ? `Votre plan actuel couvre ${scoreNIF}% de vos besoins à la retraite. Une révision s'impose.`
-    : `Action requise — votre plan de retraite actuel est insuffisant. Consultez un conseiller.`;
+  const message = statut === "depasse" || statut === "atteint"
+    ? `Votre capital projeté couvre ${scoreNIF}% de votre NIF. Vous êtes en bonne posture pour la retraite à ${ageRetraite} ans.`
+    : statut === "en_voie"
+    ? `Vous atteignrez ${scoreNIF}% de votre NIF. Cotisez ${fmt(cotSupp)}/mois de plus pour l'atteindre complètement.`
+    : statut === "insuffisant"
+    ? `Votre plan couvre ${scoreNIF}% du NIF. Une révision de votre épargne s'impose.`
+    : `Action requise — votre capital projeté couvre seulement ${scoreNIF}% du NIF. Consultez un conseiller.`;
 
   const cardStyle = {
     background: "rgba(255,255,255,0.04)",
@@ -162,29 +183,43 @@ export default function NIFScore({ profiles }) {
 
           {/* Métriques + message */}
           <div style={{ flex: 1, minWidth: 0 }}>
-            {/* 3 cartes */}
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 16 }}>
-              <div style={cardStyle}>
-                <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.4)", marginBottom: 5 }}>Capital NIF nécessaire</p>
-                <p style={{ fontFamily: "var(--font-mono)", fontSize: 15, fontWeight: 700, color: GOLD, lineHeight: 1 }}>{fmt(capitalNIF)}</p>
-                <p style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", marginTop: 5, lineHeight: 1.5 }}>
-                  Cible : {tauxRemplacement}% × {fmt(revBrut)} brut = {fmt(depensesCibles)}/an
-                  {revGarantiAnnuel > 0 && ` − ${fmt(revGarantiAnnuel)} garantis`}
-                </p>
-              </div>
+            {/* PARTIE 1 — NIF fixe */}
+            <div style={{ marginBottom: 14, padding: "12px 16px", borderRadius: 14, background: "rgba(201,160,99,0.07)", border: "1px solid rgba(201,160,99,0.2)" }}>
+              <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(201,160,99,0.6)", marginBottom: 6 }}>
+                Votre NIF — valeur fixe en dollars {nifResult?.anneeProjFuture || "futurs"}
+              </p>
+              <p style={{ fontFamily: "var(--font-mono)", fontSize: 22, fontWeight: 900, color: GOLD, lineHeight: 1, marginBottom: 6 }}>
+                {fmt(capitalNIF)}
+              </p>
+              <p style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", lineHeight: 1.6 }}>
+                = {fmt(depensesCibles)}/an cible ({tauxRemplacement}% × {fmt(revBrut)} brut)
+                {revGarantiAnnuel > 0 && <> − {fmt(revGarantiAnnuel)}/an garantis (RRQ+PSV{fpMensuelTotal > 0 ? "+Pension" : ""})</>}
+                {nifResult?.facteurInflation > 1 && <>, ajusté × {nifResult.facteurInflation} inflation sur {anneesAccum} ans</>}
+                {" ÷ 4% (règle des 4%)"}
+              </p>
+            </div>
+
+            {/* PARTIE 2 — Progression */}
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 14 }}>
               <div style={cardStyle}>
                 <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.4)", marginBottom: 5 }}>Capital projeté à {ageRetraite} ans</p>
                 <p style={{ fontFamily: "var(--font-mono)", fontSize: 15, fontWeight: 700, color: "#6B8ED6", lineHeight: 1 }}>{fmt(capitalProjecte)}</p>
+                <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 4 }}>Épargne actuelle + cotisations à 7%/an</p>
               </div>
               <div style={cardStyle}>
-                <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.4)", marginBottom: 5 }}>
-                  {scoreNIF >= 100 ? "Statut" : "Cotisation supp. mensuelle"}
+                <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.4)", marginBottom: 5 }}>Statut</p>
+                <p style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 700, color, lineHeight: 1.3 }}>
+                  {statutLabels[statut]}
                 </p>
-                {scoreNIF >= 100
-                  ? <p style={{ fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 700, color: "#5BC4A0" }}>Objectif atteint ✓</p>
-                  : <p style={{ fontFamily: "var(--font-mono)", fontSize: 15, fontWeight: 700, color: "#f87171", lineHeight: 1 }}>{fmt(cotSupp)}/mois</p>
-                }
+                <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 4 }}>{scoreNIF}% du NIF couvert</p>
               </div>
+              {cotSupp > 0 && (
+                <div style={cardStyle}>
+                  <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.4)", marginBottom: 5 }}>Cotisation supp. nécessaire</p>
+                  <p style={{ fontFamily: "var(--font-mono)", fontSize: 15, fontWeight: 700, color: "#f87171", lineHeight: 1 }}>{fmt(cotSupp)}/mois</p>
+                  <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 4 }}>Pour atteindre le NIF à {ageRetraite} ans</p>
+                </div>
+              )}
             </div>
 
             {/* Message personnalisé */}
