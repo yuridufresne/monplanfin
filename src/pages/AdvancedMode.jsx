@@ -7,6 +7,7 @@ import { ArrowLeft, TrendingUp, Sliders, GitBranch } from "lucide-react";
 import DebtSimulator from "@/components/dashboard/DebtSimulator";
 import ReerLevierSimulator from "@/components/dashboard/ReerLevierSimulator";
 import RetirementReport from "@/components/dashboard/RetirementReport";
+import NIFCalculator from "@/components/dashboard/NIFCalculator";
 
 const fmt = (v) =>
   new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v || 0);
@@ -215,7 +216,7 @@ export default function AdvancedMode() {
   const { data: profiles = [] } = useQuery({ queryKey: ["financialProfiles"], queryFn: () => base44.entities.FinancialProfile.list() });
   const { data: debts = [] } = useQuery({ queryKey: ["debts"], queryFn: () => base44.entities.Debt.list() });
 
-  const [activeTab, setActiveTab] = useState("scenarios");
+  const [activeTab, setActiveTab] = useState("nif");
 
   // Paramètres globaux par défaut
   const [calcParams, setCalcParams] = useState({
@@ -297,11 +298,12 @@ export default function AdvancedMode() {
   }, [profiles, calcParams]);
 
   const tabs = [
-    { key: "scenarios", label: "Scénarios What-If", icon: <GitBranch style={{ width: 14, height: 14 }} /> },
-    { key: "params", label: "Paramètres de calcul", icon: <Sliders style={{ width: 14, height: 14 }} /> },
-    { key: "retraite", label: "Rapport retraite", icon: <TrendingUp style={{ width: 14, height: 14 }} /> },
-    { key: "dettes", label: "Optimisation dettes", icon: <TrendingUp style={{ width: 14, height: 14 }} /> },
-    { key: "reer", label: "Prêt REER levier", icon: <TrendingUp style={{ width: 14, height: 14 }} /> },
+    { key: "nif",       label: "Calculatrice NIF",      icon: <TrendingUp style={{ width: 14, height: 14 }} /> },
+    { key: "scenarios", label: "Scénarios What-If",     icon: <GitBranch  style={{ width: 14, height: 14 }} /> },
+    { key: "params",    label: "Paramètres de calcul",  icon: <Sliders    style={{ width: 14, height: 14 }} /> },
+    { key: "retraite",  label: "Rapport retraite",      icon: <TrendingUp style={{ width: 14, height: 14 }} /> },
+    { key: "dettes",    label: "Optimisation dettes",   icon: <TrendingUp style={{ width: 14, height: 14 }} /> },
+    { key: "reer",      label: "Prêt REER levier",      icon: <TrendingUp style={{ width: 14, height: 14 }} /> },
   ];
 
   return (
@@ -353,6 +355,18 @@ export default function AdvancedMode() {
 
         {/* Content */}
         <motion.div key={activeTab} {...fadeUp(0.05)}>
+
+          {/* Calculatrice NIF */}
+          {activeTab === "nif" && (
+            <div style={{ ...glass, borderRadius: 24, padding: "2rem" }}>
+              <div style={{ marginBottom: 24 }}>
+                <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: GOLD_DIM, marginBottom: 4 }}>Indépendance financière</p>
+                <h2 style={{ fontFamily: "var(--font-urbanist)", fontSize: 20, fontWeight: 700, color: "#fff" }}>Calculatrice NIF — Mode avancé</h2>
+                <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginTop: 4 }}>Simulez différents scénarios et comprenez le détail du calcul de votre Niveau d'Indépendance Financière.</p>
+              </div>
+              <NIFCalculator profiles={profiles} />
+            </div>
+          )}
 
           {/* Scénarios What-If */}
           {activeTab === "scenarios" && (

@@ -10,6 +10,7 @@ import ResetDataModal from "@/components/dashboard/ResetDataModal";
 import RetirementReport from "@/components/dashboard/RetirementReport";
 import DebtSimulator from "@/components/dashboard/DebtSimulator";
 import ReerLevierSimulator from "@/components/dashboard/ReerLevierSimulator";
+import NIFScore from "@/components/dashboard/NIFScore";
 
 const fmt = (v) => new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v || 0);
 const fmtPct = (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)} %`;
@@ -197,6 +198,11 @@ export default function Dashboard() {
           </motion.div>
         ) : (
           <>
+            {/* NIF Score */}
+            <motion.div {...fadeUp(0.06)} className="mb-6">
+              <NIFScore profiles={profiles} />
+            </motion.div>
+
             {/* NIF + Rapport retraite */}
             <motion.div {...fadeUp(0.08)} className="mb-8">
               <RetirementReport profiles={profiles} />
