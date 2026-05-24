@@ -17,27 +17,29 @@ export default function PlacementStrategie({ retraiteABF={}, revenuBrut=0, tauxM
     const total    = reerCot+celiCot;
     const retour   = Math.round(reerCot*tauxMarginal);
     const ans      = Math.max(1, ageRetraite-ageActuel);
-    const r        = 0.07;
-    const proj     = Math.round(FVs(soldeR,r,ans)*0.70+FV(reerCot,r,ans)*0.70+FVs(soldeC,r,ans)+FV(celiCot+retour,r,ans));
+    const rR = 0.07, rC = 0.06;
+    const proj     = Math.round(FVs(soldeR,rR,ans)*0.70+FV(reerCot,rR,ans)*0.70+FVs(soldeC,rC,ans)+FV(celiCot+retour,rC,ans));
     return { reerCot, celiCot, soldeR, soldeC, total, retour, proj, ans };
   }, [reerList, celiList, tauxMarginal, ageActuel, ageRetraite]);
 
-  const [budget,  setBudget]  = useState(actuel.total || 725);
-  const [reerPct, setReerPct] = useState(actuel.total>0?Math.round(actuel.reerCot/actuel.total*100):50);
-  const [mode,    setMode]    = useState("celi");
-  const [advOpen, setAdvOpen] = useState(false);
+  const [budget,   setBudget]   = useState(actuel.total || 725);
+  const [reerPct,  setReerPct]  = useState(actuel.total>0?Math.round(actuel.reerCot/actuel.total*100):50);
+  const [mode,     setMode]     = useState("celi");
+  const [advOpen,  setAdvOpen]  = useState(false);
+  const [rendReer, setRendReer] = useState(7);
+  const [rendCeli, setRendCeli] = useState(6);
 
   const sim = useMemo(() => {
-    const reerMois = Math.round(budget*reerPct/100);
-    const celiMois = budget-reerMois;
-    const retour   = Math.round(reerMois*tauxMarginal);
-    const reerFinal = reerMois+(mode==="reer"?retour:0);
-    const celiFinal = celiMois+(mode==="celi"?retour:0);
-    const r=0.07, ans=actuel.ans;
-    const proj = Math.round(FVs(actuel.soldeR,r,ans)*0.70+FV(reerFinal,r,ans)*0.70+FVs(actuel.soldeC,r,ans)+FV(celiFinal,r,ans));
+    const rM  = Math.round(budget*reerPct/100);
+    const cM  = budget-rM;
+    const ret = Math.round(rM*tauxMarginal);
+    const reerFinal = rM+(mode==="reer"?ret:0);
+    const celiFinal = cM+(mode==="celi"?ret:0);
+    const rR = rendReer/100, rC = rendCeli/100, ans = actuel.ans;
+    const proj = Math.round(FVs(actuel.soldeR,rR,ans)*0.70+FV(reerFinal,rR,ans)*0.70+FVs(actuel.soldeC,rC,ans)+FV(celiFinal,rC,ans));
     const diff = proj-actuel.proj;
-    return { reerMois, celiMois, retour, reerFinal, celiFinal, proj, diff };
-  }, [budget, reerPct, mode, actuel, tauxMarginal]);
+    return { reerMois:rM, celiMois:cM, retour:ret, reerFinal, celiFinal, proj, diff };
+  }, [budget, reerPct, mode, rendReer, rendCeli, actuel, tauxMarginal]);
 
   const S = {
     label: { fontSize:9, fontWeight:600, color:"rgba(255,255,255,0.25)", letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:4 },
@@ -145,15 +147,34 @@ export default function PlacementStrategie({ retraiteABF={}, revenuBrut=0, tauxM
           </div>
 
           {/* Slider répartition */}
-          <div style={{ marginBottom:12 }}>
+          <div style={{ marginBottom:10 }}>
             <div style={{ display:"flex", justifyContent:"space-between", marginBottom:3 }}>
               <span style={{ ...S.muted }}>Part en REER</span>
               <span style={{ fontSize:12, fontWeight:700, color:"#C9A063" }}>{reerPct} %</span>
             </div>
-            <input type="range" min={0} max={100} step={5} value={reerPct}
+            <input type="range" min={0} max={100} step={1} value={reerPct}
               onChange={e=>setReerPct(+e.target.value)}
               style={{ width:"100%", accentColor:"#C9A063" }} />
             <div style={{ ...S.tick }}><span>0% REER</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>
+          </div>
+
+          {/* Sélecteurs de rendement */}
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:12 }}>
+            {[
+              { label:"Rendement REER", value:rendReer, set:setRendReer, color:"#C9A063" },
+              { label:"Rendement CELI", value:rendCeli, set:setRendCeli, color:"#5BC4A0" },
+            ].map(({label, value, set, color}) => (
+              <div key={label}>
+                <div style={{ fontSize:9, fontWeight:600, color:"rgba(255,255,255,0.25)", letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:4 }}>{label}</div>
+                <select value={value} onChange={e=>set(+e.target.value)} style={{ width:"100%", background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:8, padding:"6px 10px", fontSize:12, fontWeight:600, color, cursor:"pointer", appearance:"none", WebkitAppearance:"none" }}>
+                  {[3,4,5,6,7,8,9,10].map(r=>(
+                    <option key={r} value={r} style={{ background:"#0A1628", color:"#fff" }}>
+                      {r} % / an {r===7?"(équilibré)":r>=9?"(agressif)":r<=4?"(prudent)":""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ))}
           </div>
 
           {/* Comptes simulés */}
