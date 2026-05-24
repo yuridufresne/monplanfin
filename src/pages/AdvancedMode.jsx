@@ -242,8 +242,12 @@ export default function AdvancedMode() {
     const revABF   = m.revenu || {};
     const enCouple = ["marie", "conjoint", "union_civile"].includes(profil.situation || "");
     const retraiteC = enCouple ? (retraite.conjoint || {}) : {};
+    const revABFC   = enCouple ? (revABF.conjoint || {}) : {};
     const ageActuel = profil.dob ? Math.floor((new Date() - new Date(profil.dob)) / (365.25 * 24 * 3600 * 1000)) : 35;
-    const revBrut = ((revABF.emplois || []).reduce((a, x) => a + (parseFloat(x.revenu_brut) || 0), 0)) || 80000;
+    const sumBrut = (emplois, sides) =>
+      (emplois || []).reduce((a, x) => a + (parseFloat(x.revenu_brut) || 0), 0)
+      + (sides || []).reduce((a, x) => a + (parseFloat(x.revenu_mensuel_moyen) || 0) * 12, 0);
+    const revBrut = sumBrut(revABF.emplois, revABF.sidehustles) + sumBrut(revABFC.emplois, revABFC.sidehustles) || 80000;
     const revNet = Math.round(revBrut * 0.72);
     const pct = parseInt(retraite.revenu_retraite_pct) || 70;
     const revDesire = parseFloat(retraite.revenu_retraite_mensuel) > 0
@@ -256,15 +260,27 @@ export default function AdvancedMode() {
       return (sv + rrq + fp) * 12;
     };
     const revGaranti = sumGaranti(retraite) + sumGaranti(retraiteC);
-    const comptes = retraite.comptes || {};
-    let epargne = Object.values(comptes).reduce((s, list) => {
-      if (!Array.isArray(list)) return s;
-      return s + list.reduce((a, c) => a + (parseFloat(c.solde) || 0), 0);
-    }, 0) || 25000;
-    let cotis = Object.values(comptes).reduce((s, list) => {
-      if (!Array.isArray(list)) return s;
-      return s + list.reduce((a, c) => a + (parseFloat(c.cotisation_mensuelle) || 0), 0);
-    }, 0) || 500;
+    const sumEpargne = (ret) => {
+      const c = ret.comptes || {};
+      let total = Object.values(c).reduce((s, list) => {
+        if (!Array.isArray(list)) return s;
+        return s + list.reduce((a, x) => a + (parseFloat(x.solde) || 0), 0);
+      }, 0);
+      total += parseFloat((ret.fond_pension || {}).solde) || 0;
+      return total;
+    };
+    const sumCotis = (ret) => {
+      const c = ret.comptes || {};
+      let total = Object.values(c).reduce((s, list) => {
+        if (!Array.isArray(list)) return s;
+        return s + list.reduce((a, x) => a + (parseFloat(x.cotisation_mensuelle) || 0), 0);
+      }, 0);
+      const fp = ret.fond_pension || {};
+      total += (parseFloat(fp.cotisation_salariale) || 0) + (parseFloat(fp.cotisation_patronale) || 0);
+      return total;
+    };
+    let epargne = sumEpargne(retraite) + sumEpargne(retraiteC) || 25000;
+    let cotis = sumCotis(retraite) + sumCotis(retraiteC) || 500;
 
     return {
       ageActuel,
