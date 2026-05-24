@@ -297,7 +297,7 @@ export default function RetirementReport({ profiles }) {
         </div>
         <div style={{ textAlign: "right" }}>
           <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>Analyse personnalisée · Québec 2026</p>
-          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.2)", marginTop: 2 }}>Hypothèses : inflation 2,1 % · Taux de base 6 % / 3 %</p>
+          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.2)", marginTop: 2 }}>Hypothèses : inflation 2,1 % · Taux de base 7 % / 5 %</p>
         </div>
       </div>
 
