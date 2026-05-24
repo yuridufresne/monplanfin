@@ -193,10 +193,20 @@ export default function NIFScore({ profiles }) {
               </p>
               <p style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", lineHeight: 1.6 }}>
                 = {fmt(depensesCibles)}/an cible ({tauxRemplacement}% × {fmt(revBrut)} brut)
-                {revGarantiAnnuel > 0 && <> − {fmt(revGarantiAnnuel)}/an garantis (RRQ+PSV{fpMensuelTotal > 0 ? "+Pension" : ""})</>}
+                {revGarantiAnnuel > 0 && <> − {fmt(revGarantiAnnuel)}/an garantis</>}
                 {nifResult?.facteurInflation > 1 && <>, ajusté × {nifResult.facteurInflation} inflation sur {anneesAccum} ans</>}
                 {" ÷ 4% (règle des 4%)"}
               </p>
+              {/* Décomposition détaillée des revenus garantis */}
+              {revGarantiAnnuel > 0 && (
+                <p style={{ fontSize: 10.5, color: "rgba(91,196,160,0.75)", marginTop: 5, lineHeight: 1.7, padding: "6px 10px", borderRadius: 8, background: "rgba(91,196,160,0.05)", border: "1px solid rgba(91,196,160,0.12)" }}>
+                  Revenus garantis inclus :{" "}
+                  {rrqMensuelTotal > 0 && <><strong style={{ color: "#5BC4A0" }}>RRQ {fmt(rrqMensuelTotal * 12)}/an</strong>{(psvMensuelTotal > 0 || fpMensuelTotal > 0) ? " + " : ""}</>}
+                  {psvMensuelTotal > 0 && <><strong style={{ color: "#5BC4A0" }}>PSV {fmt(psvMensuelTotal * 12)}/an</strong>{fpMensuelTotal > 0 ? " + " : ""}</>}
+                  {fpMensuelTotal > 0 && <><strong style={{ color: "#5BC4A0" }}>Pension PD {fmt(fpMensuelTotal * 12)}/an</strong></>}
+                  {" = "}<strong style={{ color: "#5BC4A0" }}>{fmt(revGarantiAnnuel)}/an</strong>
+                </p>
+              )}
             </div>
 
             {/* PARTIE 2 — Progression */}
