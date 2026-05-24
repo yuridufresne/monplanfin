@@ -75,7 +75,19 @@ export default function Dashboard() {
   const totalAssets = investmentAssets + realEstateAssets;
   const totalDebt = debts.reduce((s, d) => s + (d.balance || 0), 0);
   const netWorth = totalAssets - totalDebt;
-  const debtRatio = totalAssets > 0 ? (totalDebt / totalAssets) * 100 : 0;
+
+  // Ratio d'endettement = paiements mensuels dettes / revenu brut mensuel
+  const totalPaiementsMensuels = debts.reduce((s, d) => s + (parseFloat(d.monthly_payment) || parseFloat(d.minimum_payment) || 0), 0);
+  const revenuBrutMensuel = useMemo(() => {
+    const revProfile = profiles.find(p => p.section === "revenu");
+    const revData = revProfile?.data || {};
+    const emplois = revData.emplois || [];
+    const sides = revData.sidehustles || [];
+    const brutAnnuel = emplois.reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0), 0)
+      + sides.reduce((s, e) => s + (parseFloat(e.revenu_mensuel_moyen) || 0) * 12, 0);
+    return brutAnnuel / 12;
+  }, [profiles]);
+  const debtRatio = revenuBrutMensuel > 0 ? (totalPaiementsMensuels / revenuBrutMensuel) * 100 : 0;
   const highRateDebt = debts.filter(d => d.interest_rate > 15);
   const isEmpty = budgetEntries.length === 0 && investments.length === 0 && debts.length === 0 && profiles.length === 0;
 
@@ -200,7 +212,7 @@ export default function Dashboard() {
                     { label: "Valeur nette", val: fmt(netWorth), sub: "Actifs − Passifs", color: netWorth >= 0 ? "#fff" : "#f87171" },
                     { label: "Actifs totaux", val: fmt(totalAssets), sub: "Placements & épargnes", color: "#5BC4A0" },
                     { label: "Passifs totaux", val: fmt(totalDebt), sub: `${debts.length} obligation(s)`, color: totalDebt > 0 ? "#f87171" : "#5BC4A0" },
-                    { label: "Ratio d'endettement", val: `${debtRatio.toFixed(1)} %`, sub: "Passifs / Actifs", color: debtRatio < 50 ? "#5BC4A0" : debtRatio < 80 ? "#f59e0b" : "#f87171" },
+                    { label: "Ratio d'endettement", val: `${debtRatio.toFixed(1)} %`, sub: "Paiements / Revenu brut", color: debtRatio < 32 ? "#5BC4A0" : debtRatio < 44 ? "#f59e0b" : "#f87171" },
                   ].map((item) => (
                     <div key={item.label}>
                       <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(148,163,184,0.5)", marginBottom: 10 }}>{item.label}</p>
