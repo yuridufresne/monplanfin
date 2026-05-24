@@ -38,14 +38,15 @@ export default function PlacementStrategie({ retraiteABF={}, retraiteConj={}, re
   const sim = useMemo(() => {
     const rM  = Math.round(budget*reerPct/100);
     const cM  = budget-rM;
+    const ret = Math.round(rM*tauxMarginal);
     const rR = rendReer/100, rC = rendCeli/100, ans = actuel.ans;
     const proj = Math.round(
       FVs(actuel.soldeR,rR,ans)*0.70 + FV(rM,rR,ans)*0.70 +
-      FVs(actuel.soldeC,rC,ans) + FV(cM,rC,ans)
+      FVs(actuel.soldeC,rC,ans) + FV(cM+ret,rC,ans)
     );
     const diff = proj-projActuel;
-    return { reerMois:rM, celiMois:cM, proj, diff };
-  }, [budget, reerPct, rendReer, rendCeli, actuel, projActuel]);
+    return { reerMois:rM, celiMois:cM, retour:ret, proj, diff };
+  }, [budget, reerPct, rendReer, rendCeli, actuel, projActuel, tauxMarginal]);
 
   const S = {
     label: { fontSize:9, fontWeight:600, color:"rgba(255,255,255,0.25)", letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:4 },
