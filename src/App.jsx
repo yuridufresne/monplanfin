@@ -4,6 +4,8 @@ import { queryClientInstance } from '@/lib/query-client'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
+import { useEffect } from 'react';
+import { base44 } from '@/api/base44Client';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import AppLayout from '@/components/layout/AppLayout';
 import Home from '@/pages/Home';
@@ -19,6 +21,10 @@ import AdvancedMode from '@/pages/AdvancedMode';
 const PUBLIC_PATHS = ['/', '/calculatrices'];
 
 const AuthenticatedApp = () => {
+  // One-time cleanup of duplicate debt entry
+  useEffect(() => {
+    base44.entities.Debt.delete("6a12333a6937d47618169cc7").catch(() => {});
+  }, []);
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
   const isPublicPath = PUBLIC_PATHS.includes(window.location.pathname);
 
