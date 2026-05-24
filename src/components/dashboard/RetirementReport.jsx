@@ -352,111 +352,104 @@ export default function RetirementReport({ profiles }) {
           </div>
         </div>
 
-        {/* ── COL DROITE : TABLEAU + MATRICE côte à côte ──────────────── */}
-        <div style={{ flex: 1, minWidth: 0, padding: "1.25rem 1.5rem", display: "flex", flexDirection: "row", gap: "1.25rem" }}>
+        {/* ── COL DROITE : deux tableaux côte à côte ───────────────────── */}
+        <div style={{ flex: 1, minWidth: 0, padding: "1.25rem 1.5rem", display: "flex", flexDirection: "row", gap: "1rem", alignItems: "flex-start" }}>
 
-        {/* ── TABLEAU COMPARATIF ──────────────────────────────────────── */}
-        <div style={{ ...cardBase, flex: 1, minWidth: 0 }}>
-          <SectionTitle>📊 Tableau comparatif</SectionTitle>
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
-                  {[
-                    { label: "", align: "left" },
-                    { label: "Votre situation actuelle", align: "right", color: "#94A3B8" },
-                    { label: "Pour atteindre votre objectif", align: "right", color: GOLD },
-                  ].map((h, i) => (
-                    <th key={i} style={{
-                      padding: "9px 14px", fontSize: 10, fontWeight: 800,
-                      textTransform: "uppercase", letterSpacing: "0.08em",
-                      color: h.color || "rgba(255,255,255,0.25)",
-                      textAlign: h.align,
-                    }}>{h.label}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  { label: "Épargnes mensuelles totales", cur: `${fmt(epargneMensActuelle)}/mois`, req: `${fmt(pmtRequis)}/mois`, reqColor: pmtRequis > epargneMensActuelle ? "#f87171" : "#5BC4A0", hl: true },
-                  { label: "Pourcentage du revenu", cur: fmtPct(curPct), req: fmtPct(pmtPct), reqColor: pmtPct > curPct ? "#f87171" : "#5BC4A0" },
-                  { label: "Total des fonds de retraite accumulé", cur: fmt(capitalActuelRetraite), req: fmt(nifCible), reqColor: GOLD, hl: true },
-                  { label: "Manque à gagner", cur: fmt(manqueActuel), req: "0 $", curColor: manqueActuel > 0 ? "#f87171" : "#5BC4A0", reqColor: "#5BC4A0" },
-                  { label: "Objectif de revenu mensuel", cur: `${fmt(revenuDesireAuj / 12)}/mois`, req: `${fmt(revenuDesireFutur / 12)}/mois`, reqColor: GOLD, hl: true },
-                  { label: "Durée prévue des épargnes", cur: `${anneesAvant} ans`, req: `${anneesAvant} ans` },
-                ].map((row, i) => (
-                  <tr key={i} style={{ borderBottom: "1px solid rgba(255,255,255,0.05)", background: row.hl ? "rgba(201,160,99,0.03)" : "transparent" }}>
-                    <td style={{ padding: "10px 14px", fontSize: 12.5, color: "rgba(255,255,255,0.65)" }}>{row.label}</td>
-                    <td style={{ padding: "10px 14px", fontSize: 12.5, fontFamily: "var(--font-mono)", fontWeight: 600, color: row.curColor || "#fff", textAlign: "right" }}>{row.cur}</td>
-                    <td style={{ padding: "10px 14px", fontSize: 12.5, fontFamily: "var(--font-mono)", fontWeight: 700, color: row.reqColor || GOLD, textAlign: "right" }}>{row.req}</td>
+          {/* TABLEAU COMPARATIF */}
+          <div style={{ ...cardBase, flex: 1, minWidth: 0 }}>
+            <SectionTitle>📊 Tableau comparatif</SectionTitle>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+                    {[
+                      { label: "", align: "left" },
+                      { label: "Situation actuelle", align: "right", color: "#94A3B8" },
+                      { label: "Objectif", align: "right", color: GOLD },
+                    ].map((h, i) => (
+                      <th key={i} style={{ padding: "8px 10px", fontSize: 9.5, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", color: h.color || "rgba(255,255,255,0.25)", textAlign: h.align }}>{h.label}</th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* ── MATRICE DE SENSIBILITÉ ───────────────────────────────────── */}
-        <div style={{ ...cardBase, flex: 1, minWidth: 0 }}>
-          <SectionTitle>🔬 Épargne de retraite nécessaire à différents âges et à différents taux de rendement</SectionTitle>
-          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: "1.1rem", lineHeight: 1.6 }}>
-            Chaque cellule présente les besoins en épargnes mensuelles selon l'âge de retraite et le taux de rendement.
-          </p>
-
-          {/* En-têtes colonnes */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8, marginBottom: 8 }}>
-            {SCENARIOS.map(sc => (
-              <div key={sc.rendAv} style={{ textAlign: "center" }}>
-                <span style={{
-                  display: "inline-block", fontSize: 10, fontWeight: 700,
-                  padding: "3px 12px", borderRadius: 99,
-                  background: sc.rendAv === 0.07 ? "rgba(201,160,99,0.18)" : "rgba(255,255,255,0.04)",
-                  border: sc.rendAv === 0.07 ? "1px solid rgba(201,160,99,0.4)" : "1px solid rgba(255,255,255,0.06)",
-                  color: sc.rendAv === 0.07 ? GOLD : "rgba(255,255,255,0.4)",
-                  letterSpacing: "0.05em",
-                }}>
-                  {(sc.rendAv * 100).toFixed(2)} % av. / {(sc.rendPend * 100).toFixed(2)} % pend.
-                </span>
-              </div>
-            ))}
+                </thead>
+                <tbody>
+                  {[
+                    { label: "Épargnes mensuelles", cur: `${fmt(epargneMensActuelle)}/mois`, req: `${fmt(pmtRequis)}/mois`, reqColor: pmtRequis > epargneMensActuelle ? "#f87171" : "#5BC4A0", hl: true },
+                    { label: "% du revenu", cur: fmtPct(curPct), req: fmtPct(pmtPct), reqColor: pmtPct > curPct ? "#f87171" : "#5BC4A0" },
+                    { label: "Fonds accumulé", cur: fmt(capitalActuelRetraite), req: fmt(nifCible), reqColor: GOLD, hl: true },
+                    { label: "Manque à gagner", cur: fmt(manqueActuel), req: "0 $", curColor: manqueActuel > 0 ? "#f87171" : "#5BC4A0", reqColor: "#5BC4A0" },
+                    { label: "Revenu mensuel visé", cur: `${fmt(revenuDesireAuj / 12)}/mois`, req: `${fmt(revenuDesireFutur / 12)}/mois`, reqColor: GOLD, hl: true },
+                    { label: "Durée d'épargne", cur: `${anneesAvant} ans`, req: `${anneesAvant} ans` },
+                  ].map((row, i) => (
+                    <tr key={i} style={{ borderBottom: "1px solid rgba(255,255,255,0.05)", background: row.hl ? "rgba(201,160,99,0.03)" : "transparent" }}>
+                      <td style={{ padding: "9px 10px", fontSize: 11.5, color: "rgba(255,255,255,0.65)" }}>{row.label}</td>
+                      <td style={{ padding: "9px 10px", fontSize: 11.5, fontFamily: "var(--font-mono)", fontWeight: 600, color: row.curColor || "#fff", textAlign: "right" }}>{row.cur}</td>
+                      <td style={{ padding: "9px 10px", fontSize: 11.5, fontFamily: "var(--font-mono)", fontWeight: 700, color: row.reqColor || GOLD, textAlign: "right" }}>{row.req}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
 
-          {/* Grille 3×3 */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {AGES_MAT.map((age, ri) => (
-              <div key={age} style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>
-                {SCENARIOS.map((sc, ci) => (
-                  <MatCell
-                    key={`${age}-${sc.rendAv}`}
-                    nif={matrice[ri]?.[ci]?.nif || 0}
-                    pmt={matrice[ri]?.[ci]?.pmt || 0}
-                    ageRetraite={age}
-                    rendAv={sc.rendAv}
-                    rendPend={sc.rendPend}
-                    isTarget={age === ageRetraite && sc.rendAv === 0.07}
-                  />
-                ))}
-              </div>
-            ))}
+          {/* MATRICE DE SENSIBILITÉ */}
+          <div style={{ ...cardBase, flex: 1, minWidth: 0 }}>
+            <SectionTitle>🔬 Épargne selon l'âge et le rendement</SectionTitle>
+
+            {/* En-têtes colonnes */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 6, marginBottom: 8 }}>
+              {SCENARIOS.map(sc => (
+                <div key={sc.rendAv} style={{ textAlign: "center" }}>
+                  <span style={{
+                    display: "inline-block", fontSize: 9, fontWeight: 700,
+                    padding: "2px 8px", borderRadius: 99,
+                    background: sc.rendAv === 0.07 ? "rgba(201,160,99,0.18)" : "rgba(255,255,255,0.04)",
+                    border: sc.rendAv === 0.07 ? "1px solid rgba(201,160,99,0.4)" : "1px solid rgba(255,255,255,0.06)",
+                    color: sc.rendAv === 0.07 ? GOLD : "rgba(255,255,255,0.4)",
+                    letterSpacing: "0.04em",
+                  }}>
+                    {(sc.rendAv * 100).toFixed(0)} % / {(sc.rendPend * 100).toFixed(0)} %
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* Grille 3×3 */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {AGES_MAT.map((age, ri) => (
+                <div key={age} style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 6 }}>
+                  {SCENARIOS.map((sc, ci) => (
+                    <MatCell
+                      key={`${age}-${sc.rendAv}`}
+                      nif={matrice[ri]?.[ci]?.nif || 0}
+                      pmt={matrice[ri]?.[ci]?.pmt || 0}
+                      ageRetraite={age}
+                      rendAv={sc.rendAv}
+                      rendPend={sc.rendPend}
+                      isTarget={age === ageRetraite && sc.rendAv === 0.07}
+                    />
+                  ))}
+                </div>
+              ))}
+            </div>
+
+            {/* Légende âges */}
+            <div style={{ display: "flex", justifyContent: "space-around", marginTop: 8 }}>
+              {AGES_MAT.map((age, i) => (
+                <p key={age} style={{ fontSize: 9, textAlign: "center", color: age === ageRetraite ? GOLD : "rgba(255,255,255,0.22)", fontWeight: age === ageRetraite ? 700 : 400 }}>
+                  {i === 0 ? "▲ Anticipée" : i === 1 ? "◆ Cible" : "▼ Différée"}
+                </p>
+              ))}
+            </div>
           </div>
 
-          {/* Légende âges */}
-          <div style={{ display: "flex", justifyContent: "space-around", marginTop: 10 }}>
-            {AGES_MAT.map((age, i) => (
-              <p key={age} style={{ fontSize: 9.5, textAlign: "center", color: age === ageRetraite ? GOLD : "rgba(255,255,255,0.22)", fontWeight: age === ageRetraite ? 700 : 400 }}>
-                {i === 0 ? "▲ Retraite anticipée" : i === 1 ? "◆ Scénario cible" : "▼ Retraite différée"}
-              </p>
-            ))}
-          </div>
-        </div>
-
-        {/* ── PIED DE RAPPORT ─────────────────────────────────────────── */}
-        <p style={{ fontSize: 10, color: "rgba(255,255,255,0.15)", textAlign: "center", fontStyle: "italic", paddingTop: 4 }}>
-          MonPlanFin · Québec 2026 · Ces projections sont à titre indicatif uniquement.
-          Inflation : 2,1 % · Rendements : 7,00 % / 5,00 % (scénario de base).
-        </p>
         </div>{/* fin col droite */}
       </div>{/* fin layout côte à côte */}
+
+      {/* ── PIED DE RAPPORT ───────────────────────────────────────────────── */}
+      <p style={{ fontSize: 10, color: "rgba(255,255,255,0.15)", textAlign: "center", fontStyle: "italic", padding: "0.75rem 2rem 1rem" }}>
+        MonPlanFin · Québec 2026 · Ces projections sont à titre indicatif uniquement.
+        Inflation : 2,1 % · Rendements : 7,00 % / 5,00 % (scénario de base).
+      </p>
     </div>
   );
 }
