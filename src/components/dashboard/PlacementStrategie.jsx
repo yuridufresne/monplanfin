@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 
 const fmt = n => Math.round(n).toLocaleString("fr-CA") + " $";
 const FV  = (c, r, n) => { const rM=r/12; return rM>0?c*12*(Math.pow(1+rM,n)-1)/rM:c*12*n; };
@@ -228,6 +229,7 @@ export default function PlacementStrategie({ retraiteABF={}, retraiteConj={}, re
               <div style={{ display:"flex", alignItems:"center", gap:7 }}>
                 <div style={{ width:6, height:6, borderRadius:"50%", background:"#A87DD3", flexShrink:0 }} />
                 <span style={{ fontSize:12, color:"#A87DD3" }}>Retour d'impôt REER</span>
+                <InfoTooltip text="Saviez-vous qu'il est possible de réduire vos retenues à la source si vous cotisez régulièrement à votre REER ? En faisant une demande auprès de l'ARC (formulaire T1213), votre employeur peut ajuster vos retenues mensuellement. Ainsi, pas besoin d'attendre le retour d'impôt en avril — et vous évitez de perdre une année complète de rendement sur ce montant !" />
               </div>
               <div style={{ fontSize:13, fontWeight:700, color:"#A87DD3" }}>≈ {sim.retour.toLocaleString("fr-CA")} $<span style={{ fontSize:10, fontWeight:400, color:"rgba(255,255,255,0.3)" }}>/mois</span></div>
             </div>
