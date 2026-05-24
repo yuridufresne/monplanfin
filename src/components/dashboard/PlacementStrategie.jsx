@@ -56,13 +56,16 @@ export default function PlacementStrategie({ retraiteABF={}, retraiteConj={}, re
     tick:  { display:"flex", justifyContent:"space-between", fontSize:8, color:"rgba(255,255,255,0.18)", marginTop:3 },
   };
 
-  const SplitBar = ({ pctR, pctC }) => {
+  const SplitBar = ({ pctR, pctC, retour=0 }) => {
     const total = pctR + pctC;
     const r = total > 0 ? Math.round(pctR/total*100) : 0;
     const c = 100 - r;
+    // Barre retour d'impôt : proportionnelle par rapport au total REER+CELI
+    const retPct = total > 0 ? Math.min(100, Math.round(retour/total*100)) : 0;
     return (
       <div>
-        <div style={{ height:5, borderRadius:3, display:"flex", overflow:"hidden", margin:"5px 0" }}>
+        {/* Barre REER + CELI */}
+        <div style={{ height:5, borderRadius:3, display:"flex", overflow:"hidden", margin:"5px 0 2px" }}>
           <div style={{ width:`${r}%`, background:"#C9A063", opacity:.7  }} />
           <div style={{ width:`${c}%`, background:"#5BC4A0", opacity:.55 }} />
         </div>
@@ -70,6 +73,18 @@ export default function PlacementStrategie({ retraiteABF={}, retraiteConj={}, re
           <span>REER {r}%</span>
           <span>CELI {c}%</span>
         </div>
+        {/* Barre retour d'impôt */}
+        {retour > 0 && (
+          <>
+            <div style={{ height:4, borderRadius:3, overflow:"hidden", margin:"5px 0 2px", background:"rgba(255,255,255,0.06)" }}>
+              <div style={{ width:`${retPct}%`, height:"100%", background:"#A87DD3", opacity:.8 }} />
+            </div>
+            <div style={{ display:"flex", alignItems:"center", gap:6, ...S.muted }}>
+              <div style={{ width:6, height:6, borderRadius:"50%", background:"#A87DD3", flexShrink:0 }} />
+              <span style={{ color:"#A87DD3", fontWeight:600 }}>Retour d'impôt réinvesti ≈ {retour.toLocaleString("fr-CA")} $/mois</span>
+            </div>
+          </>
+        )}
       </div>
     );
   };
@@ -200,16 +215,26 @@ export default function PlacementStrategie({ retraiteABF={}, retraiteConj={}, re
             <div style={{ fontSize:13, fontWeight:700, color:"#C9A063" }}>{sim.reerMois.toLocaleString("fr-CA")} $<span style={{ fontSize:10, fontWeight:400, color:"rgba(255,255,255,0.3)" }}>/mois</span></div>
           </div>
           {/* Ligne CELI sim */}
-          <div style={{ ...S.row, borderBottom:"none" }}>
+          <div style={{ ...S.row }}>
             <div style={{ display:"flex", alignItems:"center", gap:7 }}>
               <div style={{ width:6, height:6, borderRadius:"50%", background:"#5BC4A0", flexShrink:0 }} />
               <span style={{ fontSize:12 }}>CELI</span>
             </div>
             <div style={{ fontSize:13, fontWeight:700, color:"#5BC4A0" }}>{sim.celiMois.toLocaleString("fr-CA")} $<span style={{ fontSize:10, fontWeight:400, color:"rgba(255,255,255,0.3)" }}>/mois</span></div>
           </div>
+          {/* Ligne retour d'impôt */}
+          {sim.retour > 0 && (
+            <div style={{ ...S.row, borderBottom:"none" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:7 }}>
+                <div style={{ width:6, height:6, borderRadius:"50%", background:"#A87DD3", flexShrink:0 }} />
+                <span style={{ fontSize:12, color:"#A87DD3" }}>Retour d'impôt REER</span>
+              </div>
+              <div style={{ fontSize:13, fontWeight:700, color:"#A87DD3" }}>≈ {sim.retour.toLocaleString("fr-CA")} $<span style={{ fontSize:10, fontWeight:400, color:"rgba(255,255,255,0.3)" }}>/mois</span></div>
+            </div>
+          )}
 
           <div style={{ marginTop:6 }}>
-            <SplitBar pctR={sim.reerMois} pctC={sim.celiMois} />
+            <SplitBar pctR={sim.reerMois} pctC={sim.celiMois} retour={sim.retour} />
           </div>
 
           <div style={{ ...S.sep }} />
