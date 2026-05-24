@@ -424,21 +424,26 @@ export default function ModelisationRetraite({ profiles }) {
     const profil   = m.profil_personnel || {};
     const retraite = m.retraite || {};
     const comptes  = retraite.comptes || {};
+    const retraiteConj = retraite.conjoint || {};
 
     const ageActuel = profil.dob
       ? Math.floor((Date.now() - new Date(profil.dob)) / (365.25 * 24 * 3600 * 1000))
       : 45;
 
-    const soldeReer = Object.values(comptes).flat().filter(Boolean).reduce((s, c) => {
-      if (c && typeof c === "object" && !Array.isArray(c)) return s + (parseFloat(c.solde) || 0);
-      return s;
-    }, 0);
-    const reerList  = comptes.reer || [];
-    const celiList  = comptes.celi || [];
-    const ferrList  = comptes.ferr || [];
+    // Âge du conjoint pour optimisation FERR (réduit le minimum si conjoint plus jeune)
+    const dobConj = retraiteConj.dob || profil.conjoint?.dob;
+    const ageConjoint = dobConj
+      ? Math.floor((Date.now() - new Date(dobConj)) / (365.25 * 24 * 3600 * 1000))
+      : null;
+
+    const reerList  = (comptes.reer || []);
+    const celiList  = (comptes.celi || []);
+    const ferrList  = (comptes.ferr || []);
     const reerSolde = reerList.reduce((s, c) => s + (parseFloat(c.solde) || 0), 0);
     const celiSolde = celiList.reduce((s, c) => s + (parseFloat(c.solde) || 0), 0);
     const ferrSolde = ferrList.reduce((s, c) => s + (parseFloat(c.solde) || 0), 0);
+
+    const enCouple = ["marie", "conjoint", "union_civile"].includes(profil.situation || "");
 
     return {
       ageRetraite: parseInt(retraite.age_retraite) || 65,
@@ -449,11 +454,13 @@ export default function ModelisationRetraite({ profiles }) {
       renteRRQ: parseFloat(retraite.rrq) || 900,
       ageDebutRRQ: 65,
       ageDebutPSV: 65,
-      pension: parseFloat((retraite.fond_pension || {}).rente_mensuelle_estimee) || 0,
+      pension: parseFloat((retraite.fond_pension || {}).rente_mensuelle_estimee)
+            || parseFloat((retraite.fond_pension || {}).prestation_mensuelle) || 0,
       revenuCibleAnnuel: 60000,
       rendement: 0.05,
       inflation: 0.025,
-      ageBaseConjoint: null,
+      ageBaseConjoint: ageConjoint, // Réduit le minimum FERR si conjoint plus jeune
+      enCouple,
     };
   }, [profiles]);
 

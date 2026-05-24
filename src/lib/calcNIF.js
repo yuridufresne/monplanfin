@@ -5,6 +5,7 @@
  * FORMULE :
  * 1. Dépenses cibles = revenuRetraite (ABF) ou 70% du revenu net
  * 2. Revenus garantis = (RRQ + PSV + Pension) × 12  ← soustraits AVANT la règle des 4%
+ *    PSV : 715$/mois par personne (si mode foyer + couple → 715×2)
  * 3. Manque annuel = max(0, dépensesCibles − revenusGarantis)
  * 4. Capital NIF règle 4% = manqueAnnuel / 0.04
  * 5. Capital NIF rente actuarielle = manque × ((1−(1+r)^−N)/r)  r=rendement−inflation, N=espVie−ageRetraite
@@ -12,12 +13,13 @@
  * 7. Score NIF = capitalProjeté / capitalNIF × 100
  */
 
-const RENDEMENT  = 0.07;   // taux de rendement avant retraite
-const INFLATION  = 0.025;  // inflation retenue
+const RENDEMENT = 0.07;
+const INFLATION = 0.025;
+const PSV_MENSUEL = 715; // PSV 2026 par personne
 
 function unwrapSection(raw) {
   if (!raw || typeof raw !== "object") return {};
-  if (raw.emplois || raw.sv || raw.dob || raw.revenu_retraite_mensuel || raw.comptes || raw.rrq) return raw;
+  if (raw.emplois || raw.sv || raw.dob || raw.revenu_retraite_mensuel || raw.comptes || raw.rrq || raw.age_retraite) return raw;
   if (raw.data && typeof raw.data === "object") return unwrapSection(raw.data);
   return raw;
 }
@@ -27,16 +29,32 @@ export function calcNIFFromProfiles(profiles) {
   (profiles || []).forEach(p => { m[p.section] = unwrapSection(p.data); });
 
   const profil    = m.profil_personnel || {};
-  const retraite  = m.retraite || {};
-  const revABF    = m.revenu   || {};
+  const retraite  = m.retraite   || {};
+  const revABF    = m.revenu     || {};
+
   const enCouple  = ["marie", "conjoint", "union_civile"].includes(profil.situation || "");
-  const retraiteC = enCouple ? (retraite.conjoint || {}) : {};
-  const revABFC   = enCouple ? (revABF.conjoint   || {}) : {};
+  // Mode foyer vs individuel (défaut : foyer si en couple)
+  const modeNIF   = enCouple ? (profil.calcul_nif_mode || "foyer") : "individuel";
+  const inclureConj = enCouple && modeNIF === "foyer";
+
+  const retraiteC = inclureConj ? (retraite.conjoint || {}) : {};
+  const revABFC   = inclureConj ? (revABF.conjoint   || {}) : {};
+
+  // ── Prénoms pour affichage ───────────────────────────────────────────────────
+  const prenomP1  = profil.nom    ? profil.nom.split(" ")[0]    : null;
+  const prenomC   = (profil.conjoint?.nom) ? profil.conjoint.nom.split(" ")[0] : null;
 
   // ── Âges ────────────────────────────────────────────────────────────────────
   const ageActuel = profil.dob
     ? Math.floor((Date.now() - new Date(profil.dob)) / (365.25 * 24 * 3600 * 1000))
     : 38;
+
+  // Âge conjoint (pour FERR et fractionnement)
+  const dobConj     = retraite.conjoint?.dob || profil.conjoint?.dob;
+  const ageConjoint = dobConj
+    ? Math.floor((Date.now() - new Date(dobConj)) / (365.25 * 24 * 3600 * 1000))
+    : null;
+
   const ageRetraite    = parseInt(retraite.age_retraite)  || 65;
   const esperanceVie   = parseInt(retraite.esperance_vie) || 90;
   const anneesAccum    = Math.max(0, ageRetraite - ageActuel);
@@ -46,8 +64,10 @@ export function calcNIFFromProfiles(profiles) {
   const sumBrut = (emplois, sides) =>
     (emplois || []).reduce((a, x) => a + (parseFloat(x.revenu_brut) || 0), 0)
     + (sides || []).reduce((a, x) => a + (parseFloat(x.revenu_mensuel_moyen) || 0) * 12, 0);
-  const revBrut = (sumBrut(revABF.emplois, revABF.sidehustles)
-                + sumBrut(revABFC.emplois, revABFC.sidehustles)) || 80000;
+
+  const brutP1 = sumBrut(revABF.emplois, revABF.sidehustles);
+  const brutP2 = inclureConj ? sumBrut(revABFC.emplois, revABFC.sidehustles) : 0;
+  const revBrut = (brutP1 + brutP2) || 80000;
 
   // ── Dépenses cibles (revenu net visé à la retraite) ─────────────────────────
   const revNet = Math.round(revBrut * 0.72);
@@ -57,18 +77,29 @@ export function calcNIFFromProfiles(profiles) {
     : Math.round(revNet * pct / 100);
 
   // ── Revenus garantis (RRQ + PSV + Pension PD) ───────────────────────────────
-  const sumGaranti = (ret) => {
-    const sv  = parseFloat(ret.sv)  || 0;
-    const rrq = parseFloat(ret.rrq) || 0;
-    const fp  = parseFloat((ret.fond_pension || {}).rente_mensuelle_estimee) || 0;
-    return { sv, rrq, fp, total: (sv + rrq + fp) * 12 };
-  };
-  const g1 = sumGaranti(retraite);
-  const g2 = sumGaranti(retraiteC);
-  const revGarantiAnnuel = g1.total + g2.total;
-  // Détail pour note explicative
-  const rrqMensuelTotal = g1.rrq + g2.rrq;
-  const psvMensuelTotal = g1.sv  + g2.sv;
+  // RRQ — champ "rrq" dans la section retraite ($/mois)
+  const rrqP1 = parseFloat(retraite.rrq) || 0;
+  const rrqP2 = inclureConj ? (parseFloat(retraiteC.rrq) || 0) : 0;
+  const rrqMensuelTotal = rrqP1 + rrqP2;
+
+  // PSV — 715$/mois par personne éligible
+  const psvMensuelTotal = inclureConj ? PSV_MENSUEL * 2 : PSV_MENSUEL;
+
+  // Pension PD/fond_pension
+  const fp1 = parseFloat((retraite.fond_pension || {}).rente_mensuelle_estimee)
+           || parseFloat((retraite.fond_pension || {}).prestation_mensuelle) || 0;
+  const fp2 = inclureConj
+    ? (parseFloat((retraiteC.fond_pension || {}).rente_mensuelle_estimee)
+    || parseFloat((retraiteC.fond_pension || {}).prestation_mensuelle) || 0)
+    : 0;
+  const fpMensuelTotal = fp1 + fp2;
+
+  const revGarantiMensuel = rrqMensuelTotal + psvMensuelTotal + fpMensuelTotal;
+  const revGarantiAnnuel  = revGarantiMensuel * 12;
+
+  // Détail PSV par P2 — pour note si P2 couvre > 50%
+  const revGarantiC = (rrqP2 + (inclureConj ? PSV_MENSUEL : 0) + fp2) * 12;
+  const ratioConjGaranti = revGarantiAnnuel > 0 ? revGarantiC / revGarantiAnnuel : 0;
 
   // ── Manque annuel ─────────────────────────────────────────────────────────────
   const manqueAnnuel = Math.max(0, depensesCibles - revGarantiAnnuel);
@@ -101,8 +132,9 @@ export function calcNIFFromProfiles(profiles) {
     total += (parseFloat(fp.cotisation_salariale) || 0) + (parseFloat(fp.cotisation_patronale) || 0);
     return total;
   };
-  const soldeTotal  = (sumEpargne(retraite) + sumEpargne(retraiteC)) || 0;
-  const cotMensuelle = (sumCotis(retraite) + sumCotis(retraiteC)) || 0;
+
+  const soldeTotal   = (sumEpargne(retraite) + (inclureConj ? sumEpargne(retraiteC) : 0)) || 0;
+  const cotMensuelle = (sumCotis(retraite)   + (inclureConj ? sumCotis(retraiteC)   : 0)) || 0;
 
   // ── Capital projeté ──────────────────────────────────────────────────────────
   const rM = RENDEMENT / 12;
@@ -123,18 +155,27 @@ export function calcNIFFromProfiles(profiles) {
 
   return {
     // Chiffres principaux
-    scoreNIF:         Math.round(scoreNIF),
-    capitalNIF:       Math.round(capitalNIF),
-    capitalProjecte:  Math.round(capitalProjecte),
-    capitalNIF_4pct:  Math.round(capitalNIF_4pct),
-    capitalNIF_rente: Math.round(capitalNIF_rente),
-    manqueAnnuel:     Math.round(manqueAnnuel),
-    revGarantiAnnuel: Math.round(revGarantiAnnuel),
-    depensesCibles:   Math.round(depensesCibles),
-    cotSupp:          Math.round(cotSupp),
-    // Détails pour note explicative
+    scoreNIF:          Math.round(scoreNIF),
+    capitalNIF:        Math.round(capitalNIF),
+    capitalProjecte:   Math.round(capitalProjecte),
+    capitalNIF_4pct:   Math.round(capitalNIF_4pct),
+    capitalNIF_rente:  Math.round(capitalNIF_rente),
+    manqueAnnuel:      Math.round(manqueAnnuel),
+    revGarantiAnnuel:  Math.round(revGarantiAnnuel),
+    depensesCibles:    Math.round(depensesCibles),
+    cotSupp:           Math.round(cotSupp),
+    // Détails revenus garantis pour note explicative
     rrqMensuelTotal,
     psvMensuelTotal,
+    fpMensuelTotal,
+    // Mode couple
+    enCouple,
+    modeNIF,
+    inclureConj,
+    prenomP1,
+    prenomC,
+    ratioConjGaranti,
+    ageConjoint,
     // Contexte temporel
     ageActuel,
     ageRetraite,

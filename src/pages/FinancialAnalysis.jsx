@@ -109,6 +109,33 @@ function StepProfilPersonnel({ data, setData }) {
             <Field label="Téléphone"><Input value={conjoint.cell} onChange={fc("cell")} placeholder="514-555-0001" /></Field>
           </div>
 
+          {/* Mode de calcul NIF */}
+          <div className="space-y-2">
+            <p className="text-[12.5px] font-semibold" style={{ color: "#94A3B8" }}>Mode de calcul NIF</p>
+            <div className="flex flex-col gap-2">
+              {[
+                { value: "foyer", label: "Foyer complet (recommandé)", desc: "Combine les données des deux conjoints" },
+                { value: "individuel", label: "Individuel seulement", desc: `Calcule pour ${data.nom ? data.nom.split(" ")[0] : "vous"} uniquement — les données du conjoint restent utilisées pour la modélisation FERR` },
+              ].map(opt => (
+                <button key={opt.value} onClick={() => f("calcul_nif_mode")(opt.value)}
+                  className="flex items-start gap-3 px-4 py-3 rounded-xl text-left transition-all"
+                  style={(data.calcul_nif_mode || "foyer") === opt.value
+                    ? { background: "rgba(201,160,99,0.12)", border: "1px solid rgba(201,160,99,0.4)" }
+                    : { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }
+                  }>
+                  <div className="w-4 h-4 rounded-full border-2 mt-0.5 flex-shrink-0 flex items-center justify-center"
+                    style={{ borderColor: (data.calcul_nif_mode || "foyer") === opt.value ? "#C9A063" : "rgba(255,255,255,0.3)" }}>
+                    {(data.calcul_nif_mode || "foyer") === opt.value && <div className="w-2 h-2 rounded-full" style={{ background: "#C9A063" }} />}
+                  </div>
+                  <div>
+                    <p className="text-[13px] font-semibold" style={{ color: (data.calcul_nif_mode || "foyer") === opt.value ? "#C9A063" : "#fff" }}>{opt.label}</p>
+                    <p className="text-[11px] mt-0.5" style={{ color: "rgba(148,163,184,0.7)" }}>{opt.desc}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Case à cocher même adresse */}
           <button
             onClick={() => fc("meme_adresse")(!memeAdresse)}

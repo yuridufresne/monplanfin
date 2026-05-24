@@ -1,7 +1,8 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ExternalLink } from "lucide-react";
 import { calcNIFFromProfiles } from "@/lib/calcNIF";
+import { base44 } from "@/api/base44Client";
 
 export { calcNIFFromProfiles };
 
@@ -47,7 +48,37 @@ function GaugeArc({ score }) {
 // ── Composant principal NIFScore ──────────────────────────────────────────────
 export default function NIFScore({ profiles }) {
   const nif = useMemo(() => calcNIFFromProfiles(profiles), [profiles]);
-  const { scoreNIF, capitalNIF, capitalProjecte, cotSupp, ageRetraite } = nif;
+  const {
+    scoreNIF, capitalNIF, capitalProjecte, cotSupp, ageRetraite,
+    enCouple, modeNIF, inclureConj, prenomP1, prenomC,
+    ratioConjGaranti, rrqMensuelTotal, psvMensuelTotal,
+    revGarantiAnnuel,
+  } = nif;
+
+  const [savingMode, setSavingMode] = useState(false);
+
+  // Sauvegarde du mode NIF choisi dans l'ABF
+  const saveMode = async (mode) => {
+    setSavingMode(true);
+    const existing = await base44.entities.FinancialProfile.filter({ section: "profil_personnel" });
+    if (existing.length > 0) {
+      const data = existing[0].data || {};
+      await base44.entities.FinancialProfile.update(existing[0].id, {
+        data: { ...data, calcul_nif_mode: mode },
+      });
+    }
+    setSavingMode(false);
+    window.location.reload();
+  };
+
+  // Note mode
+  const noteMode = enCouple
+    ? modeNIF === "foyer" && prenomP1 && prenomC
+      ? `Calculé pour le foyer — ${prenomP1} & ${prenomC} combinés`
+      : modeNIF === "individuel" && prenomP1
+      ? `Calculé pour ${prenomP1} seulement`
+      : modeNIF === "foyer" ? "Calculé pour le foyer combiné" : "Calculé individuellement"
+    : null;
 
   const color = scoreNIF >= 100 ? "#5BC4A0" : scoreNIF >= 75 ? GOLD : scoreNIF >= 50 ? "#f59e0b" : "#f87171";
 
@@ -100,6 +131,25 @@ export default function NIFScore({ profiles }) {
         </Link>
       </div>
 
+      {/* Bandeau couple — mode non encore défini */}
+      {enCouple && !profiles?.find(p => p.section === "profil_personnel")?.data?.calcul_nif_mode && (
+        <div style={{ padding: "10px 20px", background: "rgba(107,142,214,0.1)", borderBottom: "1px solid rgba(107,142,214,0.2)", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <p style={{ fontSize: 12.5, color: "rgba(107,142,214,0.9)", flex: 1, minWidth: 200 }}>
+            💑 Vous êtes en couple — voulez-vous calculer le NIF pour le foyer ou individuellement ?
+          </p>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={() => saveMode("foyer")} disabled={savingMode}
+              style={{ padding: "5px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700, background: "rgba(201,160,99,0.15)", border: "1px solid rgba(201,160,99,0.4)", color: "#C9A063", cursor: "pointer" }}>
+              Foyer ✓
+            </button>
+            <button onClick={() => saveMode("individuel")} disabled={savingMode}
+              style={{ padding: "5px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.6)", cursor: "pointer" }}>
+              Individuel
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Body */}
       <div style={{ padding: "1.5rem 2rem" }}>
         <div style={{ display: "flex", gap: "2rem", flexWrap: "wrap", alignItems: "center" }}>
@@ -139,6 +189,26 @@ export default function NIFScore({ profiles }) {
                 {scoreNIF >= 100 ? "✓ " : scoreNIF >= 50 ? "→ " : "⚠ "}{message}
               </p>
             </div>
+
+            {/* Note mode foyer/individuel */}
+            {noteMode && (
+              <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 6 }}>
+                👥 {noteMode}
+                {enCouple && (
+                  <button onClick={() => saveMode(modeNIF === "foyer" ? "individuel" : "foyer")} disabled={savingMode}
+                    style={{ marginLeft: 10, fontSize: 10.5, color: "#C9A063", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
+                    Changer → {modeNIF === "foyer" ? "Individuel" : "Foyer"}
+                  </button>
+                )}
+              </p>
+            )}
+
+            {/* Note pension conjoint > 50% revenus garantis */}
+            {inclureConj && ratioConjGaranti > 0.5 && prenomC && (
+              <p style={{ fontSize: 11.5, color: "#5BC4A0", marginTop: 6, padding: "8px 12px", borderRadius: 10, background: "rgba(91,196,160,0.07)", border: "1px solid rgba(91,196,160,0.2)" }}>
+                ✦ La pension de {prenomC} couvre une grande partie ({Math.round(ratioConjGaranti * 100)}%) des revenus garantis du foyer à la retraite.
+              </p>
+            )}
           </div>
         </div>
       </div>
