@@ -188,10 +188,7 @@ export default function Dashboard() {
               </div>
             </motion.div>
 
-            {/* NIF personnalisé */}
-            <motion.div {...fadeUp(0.12)} className="mb-8">
-              <RetirementReport profiles={profiles} />
-            </motion.div>
+
 
             {/* Second row — 4 KPI cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
