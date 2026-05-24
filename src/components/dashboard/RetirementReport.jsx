@@ -297,63 +297,58 @@ export default function RetirementReport({ profiles }) {
         </div>
       </div>
 
-      {/* ── LAYOUT CÔTE À CÔTE ──────────────────────────────────────────── */}
-      <div style={{ display: "flex", gap: 0 }}>
+      {/* ── NIF HERO — pleine largeur en haut ───────────────────────────── */}
+      <div style={{
+        padding: "1.75rem 2rem",
+        borderBottom: "1px solid rgba(201,160,99,0.1)",
+        background: "linear-gradient(135deg, rgba(201,160,99,0.07) 0%, transparent 100%)",
+        position: "relative", overflow: "hidden",
+        display: "flex", alignItems: "center", gap: "2.5rem", flexWrap: "wrap",
+      }}>
+        <div style={{ position: "absolute", top: "50%", left: "30%", transform: "translate(-50%,-50%)", width: 400, height: 200, borderRadius: "50%", background: "radial-gradient(ellipse,rgba(201,160,99,0.08) 0%,transparent 70%)", pointerEvents: "none" }} />
 
-        {/* ── COL GAUCHE : NIF HERO ───────────────────────────────────── */}
-        <div style={{
-          width: "280px", flexShrink: 0,
-          padding: "2rem 1.5rem",
-          borderRight: "1px solid rgba(201,160,99,0.1)",
-          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-          textAlign: "center",
-          background: "linear-gradient(180deg, rgba(201,160,99,0.06) 0%, transparent 100%)",
-          position: "relative", overflow: "hidden",
-        }}>
-          <div style={{ position: "absolute", top: "30%", left: "50%", transform: "translate(-50%,-50%)", width: 300, height: 150, borderRadius: "50%", background: "radial-gradient(ellipse,rgba(201,160,99,0.1) 0%,transparent 70%)", pointerEvents: "none" }} />
-
-          <p style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.18em", color: GOLD_DIM, marginBottom: 10, position: "relative" }}>
-            Numéro d'Indépendance<br/>Financière (NIF)
+        {/* Chiffre principal */}
+        <div style={{ position: "relative", textAlign: "center", minWidth: 200 }}>
+          <p style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.18em", color: GOLD_DIM, marginBottom: 8 }}>
+            Numéro d'Indépendance Financière (NIF)
           </p>
-
           <p style={{
             fontFamily: "var(--font-mono)", fontWeight: 900,
-            fontSize: "clamp(1.6rem,3.5vw,2.4rem)",
+            fontSize: "clamp(2rem,4vw,3rem)",
             letterSpacing: "-0.04em", lineHeight: 1, color: GOLD,
-            textShadow: "0 0 30px rgba(201,160,99,0.5), 0 0 60px rgba(201,160,99,0.2)",
-            position: "relative", marginBottom: 10,
+            textShadow: "0 0 40px rgba(201,160,99,0.6), 0 0 80px rgba(201,160,99,0.25)",
           }}>
             {fmt(nifCible)}
           </p>
-
-          <p style={{ fontSize: 11.5, color: "rgba(255,255,255,0.55)", lineHeight: 1.6, position: "relative", marginBottom: 18 }}>
-            Pour {fmt(revenuDesireAuj / 12)}/mois jusqu'à <strong style={{ color: "rgba(255,255,255,0.8)" }}>{esperanceVie} ans</strong>,<br/>
+          <p style={{ fontSize: 11.5, color: "rgba(255,255,255,0.45)", marginTop: 8, lineHeight: 1.5 }}>
+            Pour {fmt(revenuDesireAuj / 12)}/mois jusqu'à <strong style={{ color: "rgba(255,255,255,0.7)" }}>{esperanceVie} ans</strong>,
             capital à accumuler à <strong style={{ color: GOLD }}>{ageRetraite} ans</strong>.
           </p>
-
-          {/* Stats pills */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 6, width: "100%", position: "relative" }}>
-            {[
-              { l: "Années d'épargne",         v: `${anneesAvant} ans` },
-              { l: "Années de retraite",        v: `${anneesPend} ans` },
-              { l: "Revenus garantis",          v: `${fmt(revenuGarantiAuj)}/an` },
-              { l: "Épargne requise",           v: `${fmt(pmtRequis)}/mois`, gold: true },
-            ].map(x => (
-              <div key={x.l} style={{
-                display: "flex", justifyContent: "space-between", alignItems: "center",
-                padding: "6px 10px", borderRadius: 8,
-                background: x.gold ? "rgba(201,160,99,0.1)" : "rgba(255,255,255,0.03)",
-                border: x.gold ? "1px solid rgba(201,160,99,0.25)" : "1px solid rgba(255,255,255,0.06)",
-              }}>
-                <p style={{ fontSize: 9.5, color: "rgba(255,255,255,0.35)", textAlign: "left" }}>{x.l}</p>
-                <p style={{ fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 700, color: x.gold ? GOLD : "rgba(255,255,255,0.7)" }}>{x.v}</p>
-              </div>
-            ))}
-          </div>
         </div>
 
-        {/* ── COL DROITE : deux tableaux côte à côte ───────────────────── */}
-        <div style={{ flex: 1, minWidth: 0, padding: "1.25rem 1.5rem", display: "flex", flexDirection: "row", gap: "1rem", alignItems: "flex-start" }}>
+        {/* Stats pills en ligne */}
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", flex: 1, position: "relative" }}>
+          {[
+            { l: "Années d'épargne",    v: `${anneesAvant} ans` },
+            { l: "Années de retraite",  v: `${anneesPend} ans` },
+            { l: "Revenus garantis",    v: `${fmt(revenuGarantiAuj)}/an` },
+            { l: "Épargne requise",     v: `${fmt(pmtRequis)}/mois`, gold: true },
+          ].map(x => (
+            <div key={x.l} style={{
+              display: "flex", flexDirection: "column", gap: 4,
+              padding: "10px 16px", borderRadius: 12, flex: "1 1 120px",
+              background: x.gold ? "rgba(201,160,99,0.1)" : "rgba(255,255,255,0.03)",
+              border: x.gold ? "1px solid rgba(201,160,99,0.25)" : "1px solid rgba(255,255,255,0.06)",
+            }}>
+              <p style={{ fontSize: 9.5, color: "rgba(255,255,255,0.35)" }}>{x.l}</p>
+              <p style={{ fontFamily: "var(--font-mono)", fontSize: 13.5, fontWeight: 700, color: x.gold ? GOLD : "rgba(255,255,255,0.8)" }}>{x.v}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── DEUX TABLEAUX CÔTE À CÔTE ────────────────────────────────────── */}
+      <div style={{ padding: "1.25rem 1.5rem", display: "flex", flexDirection: "row", gap: "1rem", alignItems: "flex-start" }}>
 
           {/* TABLEAU COMPARATIF */}
           <div style={{ ...cardBase, flex: 1, minWidth: 0 }}>
@@ -442,8 +437,7 @@ export default function RetirementReport({ profiles }) {
             </div>
           </div>
 
-        </div>{/* fin col droite */}
-      </div>{/* fin layout côte à côte */}
+      </div>{/* fin deux tableaux */}
 
       {/* ── PIED DE RAPPORT ───────────────────────────────────────────────── */}
       <p style={{ fontSize: 10, color: "rgba(255,255,255,0.15)", textAlign: "center", fontStyle: "italic", padding: "0.75rem 2rem 1rem" }}>
