@@ -27,6 +27,7 @@ export default function Dashboard() {
   const [user, setUser] = useState(null);
   const [synced, setSynced] = useState(false);
   const [showReset, setShowReset] = useState(false);
+  const [modeAvance, setModeAvance] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(setUser);
@@ -130,13 +131,27 @@ export default function Dashboard() {
           <h1 style={{ fontFamily: "var(--font-urbanist)", fontSize: "clamp(2rem,4vw,2.75rem)", fontWeight: 800, color: "#fff", letterSpacing: "-0.03em", lineHeight: 1.1 }}>
             {user?.full_name ? `Bonjour, ${user.full_name.split(" ")[0]}.` : "Bonjour."}
           </h1>
-          <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 8, flexWrap: "wrap" }}>
-            <p style={{ fontSize: 15, fontWeight: 300, color: "#94A3B8" }}>
-              Voici votre synthèse financière.{" "}
-              <Link to="/analyse" style={{ color: "#C9A063", fontWeight: 500, textDecoration: "none" }}>
-                Modifier l'ABF →
-              </Link>
-            </p>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8, flexWrap: "wrap", gap: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+              <p style={{ fontSize: 15, fontWeight: 300, color: "#94A3B8" }}>
+                Voici votre synthèse financière.{" "}
+                <Link to="/analyse" style={{ color: "#C9A063", fontWeight: 500, textDecoration: "none" }}>
+                  Modifier l'ABF →
+                </Link>
+              </p>
+              <button
+                onClick={() => setModeAvance(v => !v)}
+                style={{
+                  fontSize: 12, fontWeight: 600, cursor: "pointer", borderRadius: 9, padding: "5px 14px",
+                  background: modeAvance ? "rgba(201,160,99,0.15)" : "rgba(255,255,255,0.05)",
+                  border: modeAvance ? "1px solid rgba(201,160,99,0.4)" : "1px solid rgba(255,255,255,0.12)",
+                  color: modeAvance ? "#C9A063" : "rgba(255,255,255,0.45)",
+                  transition: "all 0.2s",
+                }}
+              >
+                {modeAvance ? "⚙ Mode avancé · actif" : "⚙ Mode avancé"}
+              </button>
+            </div>
             <button
               onClick={() => setShowReset(true)}
               style={{ fontSize: 12, fontWeight: 600, color: "rgba(248,113,113,0.7)", background: "rgba(248,113,113,0.07)", border: "1px solid rgba(248,113,113,0.15)", padding: "5px 12px", borderRadius: 9, cursor: "pointer" }}
@@ -287,14 +302,18 @@ export default function Dashboard() {
             </div>
 
             {/* Simulateur de remboursement */}
-            <motion.div {...fadeUp(0.33)} className="mb-6">
-              <DebtSimulator debts={debts} />
-            </motion.div>
+            {modeAvance && (
+              <motion.div {...fadeUp(0.33)} className="mb-6">
+                <DebtSimulator debts={debts} />
+              </motion.div>
+            )}
 
             {/* Simulateur prêt REER en levier */}
-            <motion.div {...fadeUp(0.36)} className="mb-6">
-              <ReerLevierSimulator />
-            </motion.div>
+            {modeAvance && (
+              <motion.div {...fadeUp(0.36)} className="mb-6">
+                <ReerLevierSimulator />
+              </motion.div>
+            )}
 
             {/* Observations financières */}
             <motion.div {...fadeUp(0.39)}>
