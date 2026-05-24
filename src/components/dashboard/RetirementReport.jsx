@@ -99,10 +99,6 @@ function MatCell({ nif, pmt, isTarget, ageRetraite, rendAv, rendPend }) {
       <p style={{ fontFamily: "var(--font-mono)", fontSize: isTarget ? "0.88rem" : "0.78rem", fontWeight: 800, color: isTarget ? GOLD : "#fff", lineHeight: 1.15 }}>
         {fmt(pmt)}<span style={{ fontSize: 9, fontWeight: 500, color: isTarget ? GOLD_DIM : "rgba(255,255,255,0.4)", marginLeft: 2 }}>/mois</span>
       </p>
-      {/* Ligne 2 : NIF */}
-      <p style={{ fontFamily: "var(--font-mono)", fontSize: isTarget ? "0.78rem" : "0.68rem", fontWeight: 600, color: isTarget ? "rgba(201,160,99,0.75)" : "rgba(255,255,255,0.4)", marginTop: 4 }}>
-        {fmt(nif)}
-      </p>
     </div>
   );
 }
