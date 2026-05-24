@@ -124,7 +124,7 @@ export default function PlacementStrategie({ retraiteABF={}, revenuBrut=0, tauxM
           </div>
 
           <div style={{ ...S.label, marginBottom:4 }}>Projection à {ageRetraite} ans (7%/an)</div>
-          <div style={{ fontSize:18, fontWeight:700 }}>{fmt(actuel.proj)}</div>
+          <div style={{ fontSize:18, fontWeight:700, color:"#fff" }}>{fmt(actuel.proj)}</div>
         </div>
 
         {/* DROITE — Simulation (read/write) */}
