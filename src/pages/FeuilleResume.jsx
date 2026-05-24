@@ -253,7 +253,7 @@ export default function FeuilleResume() {
   // Chaque conjoint calcule son propre impôt de façon totalement isolée.
   // Les cotisations sociales (RRQ/RQAP/AE) s'appliquent à TOUS les travailleurs,
   // pas seulement aux travailleurs autonomes.
-  function calcPersonneRevenu(emploisP, sidesP, inscritAEP) {
+  function calcPersonneRevenu(emploisP, sidesP, inscritAEP, reerAnnuel = 0) {
     const brut = emploisP.reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0), 0)
       + sidesP.reduce((s, sh) => s + (parseFloat(sh.revenu_mensuel_moyen) || 0) * 12, 0);
     const deductibles = sidesP.reduce((s, sh) => s + (parseFloat(sh.depenses_deductibles) || 0), 0);
@@ -267,7 +267,7 @@ export default function FeuilleResume() {
     // TA : déduit ½ RRQ + ½ RQAP (part patronale fictive)
     // Salarié : aucune déduction sur cotisations (employeur les a déjà déduites)
     const deductionCotis = isTAP ? cotis.rrq / 2 + cotis.rqap / 2 : 0;
-    const imposable = Math.max(0, revAvantCotis - deductionCotis);
+    const imposable = Math.max(0, revAvantCotis - deductionCotis - reerAnnuel);
 
     // Impôt INDIVIDUEL avec crédits de base appliqués sur CE contribuable seulement
     const impFedBrut = calcImpotPaliers(imposable, PALIERS_FED);
@@ -296,9 +296,11 @@ export default function FeuilleResume() {
   const emploisConjoint = revenuABFConjoint.emplois || [];
   const sidesConjoint = revenuABFConjoint.sidehustles || [];
 
-  const p1 = calcPersonneRevenu(emplois, sides, inscritAE);
+  const reerP1Annuel = ((retraiteABF.comptes?.reer) || []).reduce((s, c) => s + (parseFloat(c.cotisation_mensuelle) || 0), 0) * 12;
+  const reerP2Annuel = ((retraiteABF.conjoint?.comptes?.reer) || []).reduce((s, c) => s + (parseFloat(c.cotisation_mensuelle) || 0), 0) * 12;
+  const p1 = calcPersonneRevenu(emplois, sides, inscritAE, reerP1Annuel);
   const p2 = enCouple
-    ? calcPersonneRevenu(emploisConjoint, sidesConjoint, false)
+    ? calcPersonneRevenu(emploisConjoint, sidesConjoint, false, reerP2Annuel)
     : { brut: 0, net: 0, impFed: 0, impQc: 0, impFedBrut: 0, impQcBrut: 0, imposable: 0, cotis: { rrq: 0, rqap: 0, ae: 0, fss: 0, total: 0 }, isTAP: false, deductibles: 0, creditBaseFedInutilise: 0, creditQcInutilise: 0 };
 
   // ── RÈGLE 3 : Transfert des crédits inutilisés (montant personnel de base) ─
@@ -356,7 +358,7 @@ export default function FeuilleResume() {
   // ── RÈGLE 2 : RFNR = somme des revenus nets INDIVIDUELS ──────────────
   // Le RFNR pour les allocations familiales utilise les vrais revenus nets calculés
   // pour chaque personne séparément, puis additionnés.
-  const rfnrCalcule = p1.net + p2.net;
+  const rfnrCalcule = p1.imposable + p2.imposable;
 
   // ── RÈGLE 4 : Opportunités d'optimisation fiscale conjugale ──────────
   const optimisations = enCouple ? (() => {
