@@ -218,7 +218,7 @@ export default function PlacementStrategie({ retraiteABF={}, retraiteConj={}, re
           <div style={{ ...S.row }}>
             <div style={{ display:"flex", alignItems:"center", gap:7 }}>
               <div style={{ width:6, height:6, borderRadius:"50%", background:"#5BC4A0", flexShrink:0 }} />
-              <span style={{ fontSize:12 }}>CELI</span>
+              <span style={{ fontSize:12, color:"#5BC4A0", fontWeight:700 }}>CELI</span>
             </div>
             <div style={{ fontSize:13, fontWeight:700, color:"#5BC4A0" }}>{sim.celiMois.toLocaleString("fr-CA")} $<span style={{ fontSize:10, fontWeight:400, color:"rgba(255,255,255,0.3)" }}>/mois</span></div>
           </div>
