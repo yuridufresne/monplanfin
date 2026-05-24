@@ -18,7 +18,7 @@ export default function DebtSimulator({ debts = [] }) {
     : 500;
 
   const [budget, setBudget] = useState(defaultBudget);
-  const [strategie, setStrategie] = useState("avalanche");
+  const [strategie, setStrategie] = useState("bouleNeige");
 
   const dettesFormatted = useMemo(() => debts.map(d => ({
     nom:         d.name || "Dette",
