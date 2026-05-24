@@ -12,7 +12,7 @@ export default function InfoTooltip({ text, explanation, size = "sm" }) {
   const show = useCallback(() => {
     if (!btnRef.current) return;
     const r = btnRef.current.getBoundingClientRect();
-    const TIP_W = 230;
+    const TIP_W = 300;
     const wouldOverflow = r.left + TIP_W > window.innerWidth - 12;
     setCoords({
       top:  r.bottom + 6,
@@ -76,7 +76,7 @@ export default function InfoTooltip({ text, explanation, size = "sm" }) {
             position: "fixed",
             top:  coords.top,
             left: coords.left,
-            width: 230,
+            width: 300,
             maxWidth: "calc(100vw - 24px)",
             background: "#0C1525",
             border: "1px solid rgba(201,160,99,0.22)",
@@ -88,7 +88,7 @@ export default function InfoTooltip({ text, explanation, size = "sm" }) {
             zIndex: 99999,
             boxShadow: "0 8px 28px rgba(0,0,0,0.55)",
             wordBreak: "break-word",
-            whiteSpace: "normal",
+            whiteSpace: "pre-line",
           }}
         >{content}</div>,
         document.body
