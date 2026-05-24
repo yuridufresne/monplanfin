@@ -149,8 +149,11 @@ export default function PlacementStrategie({ retraiteABF={}, revenuBrut=0, tauxM
           {/* Slider répartition */}
           <div style={{ marginBottom:10 }}>
             <div style={{ display:"flex", justifyContent:"space-between", marginBottom:3 }}>
-              <span style={{ ...S.muted }}>Part en REER</span>
-              <span style={{ fontSize:12, fontWeight:700, color:"#C9A063" }}>{reerPct} %</span>
+              <span style={{ ...S.muted }}>Répartition épargne</span>
+              <div style={{ display:"flex", gap:10 }}>
+                <span style={{ fontSize:12, fontWeight:700, color:"#C9A063" }}>REER {reerPct}%</span>
+                <span style={{ fontSize:12, fontWeight:700, color:"#5BC4A0" }}>CELI {100-reerPct}%</span>
+              </div>
             </div>
             <input type="range" min={0} max={100} step={1} value={reerPct}
               onChange={e=>setReerPct(+e.target.value)}
