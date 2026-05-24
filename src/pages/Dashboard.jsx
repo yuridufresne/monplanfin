@@ -8,7 +8,6 @@ import { syncABFToEntities } from "@/hooks/useABFSync";
 import { calcRevenuDisponible } from "@/lib/calcRevenuNet";
 import ResetDataModal from "@/components/dashboard/ResetDataModal";
 import RetirementReport from "@/components/dashboard/RetirementReport";
-import NIFHeroBanner from "@/components/dashboard/NIFHeroBanner";
 import DebtSimulator from "@/components/dashboard/DebtSimulator";
 import ReerLevierSimulator from "@/components/dashboard/ReerLevierSimulator";
 
@@ -162,13 +161,8 @@ export default function Dashboard() {
           </motion.div>
         ) : (
           <>
-            {/* NIF Hero Banner — grand bloc en top */}
-            <motion.div {...fadeUp(0.04)} className="mb-8">
-              <NIFHeroBanner profiles={profiles} />
-            </motion.div>
-
-            {/* NIF personnalisé */}
-            <motion.div {...fadeUp(0.12)} className="mb-8">
+            {/* NIF + Rapport retraite */}
+            <motion.div {...fadeUp(0.08)} className="mb-8">
               <RetirementReport profiles={profiles} />
             </motion.div>
 

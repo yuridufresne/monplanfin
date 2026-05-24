@@ -276,65 +276,11 @@ export default function RetirementReport({ profiles }) {
       boxShadow: "0 20px 60px rgba(0,0,0,0.45), inset 0 1px 0 rgba(201,160,99,0.07)",
     }}>
 
-      {/* ── BLOC 1 : NIF HERO ───────────────────────────────────────────── */}
+      {/* ── EN-TÊTE ─────────────────────────────────────────────────────── */}
       <div style={{
-        padding: "2.5rem 2rem 2rem",
-        background: "linear-gradient(180deg, rgba(201,160,99,0.07) 0%, transparent 100%)",
+        padding: "1.25rem 2rem",
         borderBottom: "1px solid rgba(201,160,99,0.1)",
-        textAlign: "center",
-        position: "relative",
-        overflow: "hidden",
-      }}>
-        {/* Ambient glow */}
-        <div style={{ position: "absolute", top: "40%", left: "50%", transform: "translate(-50%,-50%)", width: 600, height: 200, borderRadius: "50%", background: "radial-gradient(ellipse,rgba(201,160,99,0.12) 0%,transparent 70%)", pointerEvents: "none" }} />
-
-        <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.2em", color: GOLD_DIM, marginBottom: 12, position: "relative" }}>
-          Numéro d'Indépendance Financière (NIF)
-        </p>
-
-        <p style={{
-          fontFamily: "var(--font-mono)", fontWeight: 900,
-          fontSize: "clamp(2.2rem,6vw,4rem)",
-          letterSpacing: "-0.04em", lineHeight: 1, color: GOLD,
-          textShadow: "0 0 40px rgba(201,160,99,0.5), 0 0 80px rgba(201,160,99,0.2)",
-          position: "relative", marginBottom: 10,
-        }}>
-          {fmt(nifCible)}
-        </p>
-
-        <p style={{ fontSize: 13.5, color: "rgba(255,255,255,0.7)", fontFamily: "var(--font-urbanist)", fontWeight: 500, lineHeight: 1.5, position: "relative", marginBottom: 4 }}>
-          Votre numéro d'indépendance financière est{" "}
-          <span style={{ color: GOLD, fontWeight: 700 }}>{fmt(nifCible)}</span>
-        </p>
-        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.38)", lineHeight: 1.65, position: "relative", marginBottom: 20 }}>
-          Pour vous verser l'équivalent de <strong style={{ color: "rgba(255,255,255,0.7)" }}>{fmt(revenuDesireAuj / 12)}/mois</strong> jusqu'à{" "}
-          <strong style={{ color: "rgba(255,255,255,0.7)" }}>{esperanceVie} ans</strong>, vous devrez avoir accumulé ce capital à{" "}
-          <strong style={{ color: "rgba(255,255,255,0.7)" }}>{ageRetraite} ans</strong>.
-        </p>
-
-        {/* 4 stats pills */}
-        <div style={{ display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap", position: "relative" }}>
-          {[
-            { l: "Années d'épargne",         v: `${anneesAvant} ans` },
-            { l: "Années de retraite",        v: `${anneesPend} ans` },
-            { l: "Revenus garantis",          v: `${fmt(revenuGarantiAuj)}/an` },
-            { l: "Épargne mensuelle requise", v: `${fmt(pmtRequis)}/mois`, gold: true },
-          ].map(x => (
-            <div key={x.l} style={{
-              textAlign: "center", padding: "8px 16px", borderRadius: 10,
-              background: x.gold ? "rgba(201,160,99,0.1)" : "rgba(255,255,255,0.04)",
-              border: x.gold ? "1px solid rgba(201,160,99,0.3)" : "1px solid rgba(255,255,255,0.07)",
-            }}>
-              <p style={{ fontSize: 9, color: "rgba(255,255,255,0.28)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 3 }}>{x.l}</p>
-              <p style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 700, color: x.gold ? GOLD : "rgba(255,255,255,0.75)" }}>{x.v}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── BLOC 2 : EN-TÊTE RAPPORT + TABLEAU ─────────────────────────── */}
-      <div style={{
-        padding: "1.25rem 2rem 0",
+        background: "rgba(201,160,99,0.03)",
         display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8,
       }}>
         <div>
@@ -351,7 +297,63 @@ export default function RetirementReport({ profiles }) {
         </div>
       </div>
 
-      <div style={{ padding: "1.25rem 2rem", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+      {/* ── LAYOUT CÔTE À CÔTE ──────────────────────────────────────────── */}
+      <div style={{ display: "flex", gap: 0 }}>
+
+        {/* ── COL GAUCHE : NIF HERO ───────────────────────────────────── */}
+        <div style={{
+          width: "280px", flexShrink: 0,
+          padding: "2rem 1.5rem",
+          borderRight: "1px solid rgba(201,160,99,0.1)",
+          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+          textAlign: "center",
+          background: "linear-gradient(180deg, rgba(201,160,99,0.06) 0%, transparent 100%)",
+          position: "relative", overflow: "hidden",
+        }}>
+          <div style={{ position: "absolute", top: "30%", left: "50%", transform: "translate(-50%,-50%)", width: 300, height: 150, borderRadius: "50%", background: "radial-gradient(ellipse,rgba(201,160,99,0.1) 0%,transparent 70%)", pointerEvents: "none" }} />
+
+          <p style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.18em", color: GOLD_DIM, marginBottom: 10, position: "relative" }}>
+            Numéro d'Indépendance<br/>Financière (NIF)
+          </p>
+
+          <p style={{
+            fontFamily: "var(--font-mono)", fontWeight: 900,
+            fontSize: "clamp(1.6rem,3.5vw,2.4rem)",
+            letterSpacing: "-0.04em", lineHeight: 1, color: GOLD,
+            textShadow: "0 0 30px rgba(201,160,99,0.5), 0 0 60px rgba(201,160,99,0.2)",
+            position: "relative", marginBottom: 10,
+          }}>
+            {fmt(nifCible)}
+          </p>
+
+          <p style={{ fontSize: 11.5, color: "rgba(255,255,255,0.55)", lineHeight: 1.6, position: "relative", marginBottom: 18 }}>
+            Pour {fmt(revenuDesireAuj / 12)}/mois jusqu'à <strong style={{ color: "rgba(255,255,255,0.8)" }}>{esperanceVie} ans</strong>,<br/>
+            capital à accumuler à <strong style={{ color: GOLD }}>{ageRetraite} ans</strong>.
+          </p>
+
+          {/* Stats pills */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, width: "100%", position: "relative" }}>
+            {[
+              { l: "Années d'épargne",         v: `${anneesAvant} ans` },
+              { l: "Années de retraite",        v: `${anneesPend} ans` },
+              { l: "Revenus garantis",          v: `${fmt(revenuGarantiAuj)}/an` },
+              { l: "Épargne requise",           v: `${fmt(pmtRequis)}/mois`, gold: true },
+            ].map(x => (
+              <div key={x.l} style={{
+                display: "flex", justifyContent: "space-between", alignItems: "center",
+                padding: "6px 10px", borderRadius: 8,
+                background: x.gold ? "rgba(201,160,99,0.1)" : "rgba(255,255,255,0.03)",
+                border: x.gold ? "1px solid rgba(201,160,99,0.25)" : "1px solid rgba(255,255,255,0.06)",
+              }}>
+                <p style={{ fontSize: 9.5, color: "rgba(255,255,255,0.35)", textAlign: "left" }}>{x.l}</p>
+                <p style={{ fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 700, color: x.gold ? GOLD : "rgba(255,255,255,0.7)" }}>{x.v}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── COL DROITE : TABLEAU + MATRICE ──────────────────────────── */}
+        <div style={{ flex: 1, minWidth: 0, padding: "1.25rem 1.5rem", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
 
         {/* ── TABLEAU COMPARATIF ──────────────────────────────────────── */}
         <div style={cardBase}>
@@ -450,10 +452,11 @@ export default function RetirementReport({ profiles }) {
 
         {/* ── PIED DE RAPPORT ─────────────────────────────────────────── */}
         <p style={{ fontSize: 10, color: "rgba(255,255,255,0.15)", textAlign: "center", fontStyle: "italic", paddingTop: 4 }}>
-          MonPlanFin · Rapport d'indépendance financière · Québec 2026 · Ces projections sont à titre indicatif uniquement et ne constituent pas un conseil financier réglementé.
+          MonPlanFin · Québec 2026 · Ces projections sont à titre indicatif uniquement.
           Inflation : 2,1 % · Rendements : 7,00 % / 5,00 % (scénario de base).
         </p>
-      </div>
+        </div>{/* fin col droite */}
+      </div>{/* fin layout côte à côte */}
     </div>
   );
 }
