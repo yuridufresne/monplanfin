@@ -185,15 +185,16 @@ export default function Dashboard() {
               <div style={{ ...glass.hero, borderRadius: 24, padding: "clamp(1.5rem,4vw,2.5rem)", position: "relative", overflow: "hidden" }}>
                 <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: "linear-gradient(90deg, transparent, #C9A063, transparent)" }} />
                 <div style={{ position: "absolute", top: -60, right: -60, width: 240, height: 240, borderRadius: "50%", background: "radial-gradient(circle, rgba(201,160,99,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
-                <div className="relative grid grid-cols-1 sm:grid-cols-3 gap-8">
+                <div className="relative grid grid-cols-2 sm:grid-cols-4 gap-8">
                   {[
-                    { label: "Valeur nette", val: fmt(netWorth), sub: "Actifs − Passifs", color: "#fff" },
+                    { label: "Valeur nette", val: fmt(netWorth), sub: "Actifs − Passifs", color: netWorth >= 0 ? "#fff" : "#f87171" },
+                    { label: "Actifs totaux", val: fmt(totalAssets), sub: "Placements & épargnes", color: "#5BC4A0" },
+                    { label: "Passifs totaux", val: fmt(totalDebt), sub: `${debts.length} obligation(s)`, color: totalDebt > 0 ? "#f87171" : "#5BC4A0" },
                     { label: "Ratio d'endettement", val: `${debtRatio.toFixed(1)} %`, sub: "Passifs / Actifs", color: debtRatio < 50 ? "#5BC4A0" : debtRatio < 80 ? "#f59e0b" : "#f87171" },
-                    { label: "Revenu net mensuel", val: fmt(totalRevenue), sub: allocMensuel > 0 ? `dont ${fmt(allocMensuel)}/mois alloc.` : "Net après impôts", color: "#C9A063" },
                   ].map((item) => (
                     <div key={item.label}>
                       <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(148,163,184,0.5)", marginBottom: 10 }}>{item.label}</p>
-                      <p style={{ fontFamily: "var(--font-mono)", fontSize: "clamp(1.5rem,3vw,2rem)", fontWeight: 700, color: item.color, letterSpacing: "-0.02em", lineHeight: 1, marginBottom: 6 }}>{item.val}</p>
+                      <p style={{ fontFamily: "var(--font-mono)", fontSize: "clamp(1.25rem,2.5vw,1.75rem)", fontWeight: 700, color: item.color, letterSpacing: "-0.02em", lineHeight: 1, marginBottom: 6 }}>{item.val}</p>
                       <p style={{ fontSize: 13, fontWeight: 300, color: "rgba(148,163,184,0.5)" }}>{item.sub}</p>
                     </div>
                   ))}
