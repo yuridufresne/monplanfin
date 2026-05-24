@@ -17,10 +17,17 @@ export default function PlacementStrategie({ retraiteABF={}, revenuBrut=0, tauxM
     const total    = reerCot+celiCot;
     const retour   = Math.round(reerCot*tauxMarginal);
     const ans      = Math.max(1, ageRetraite-ageActuel);
-    const rR = 0.07, rC = 0.06;
-    const proj     = Math.round(FVs(soldeR,rR,ans)*0.70+FV(reerCot,rR,ans)*0.70+FVs(soldeC,rC,ans)+FV(celiCot+retour,rC,ans));
-    return { reerCot, celiCot, soldeR, soldeC, total, retour, proj, ans };
+    return { reerCot, celiCot, soldeR, soldeC, total, retour, ans };
   }, [reerList, celiList, tauxMarginal, ageActuel, ageRetraite]);
+
+  // Projection plan actuel — recalculée quand les rendements changent
+  const projActuel = useMemo(() => {
+    const rR = rendReer/100, rC = rendCeli/100;
+    return Math.round(
+      FVs(actuel.soldeR,rR,actuel.ans)*0.70 + FV(actuel.reerCot,rR,actuel.ans)*0.70 +
+      FVs(actuel.soldeC,rC,actuel.ans) + FV(actuel.celiCot+actuel.retour,rC,actuel.ans)
+    );
+  }, [actuel, rendReer, rendCeli]);
 
   const [budget,   setBudget]   = useState(actuel.total || 725);
   const [reerPct,  setReerPct]  = useState(actuel.total>0?Math.round(actuel.reerCot/actuel.total*100):50);
@@ -37,9 +44,9 @@ export default function PlacementStrategie({ retraiteABF={}, revenuBrut=0, tauxM
       FVs(actuel.soldeR,rR,ans)*0.70 + FV(rM,rR,ans)*0.70 +
       FVs(actuel.soldeC,rC,ans) + FV(cM,rC,ans) + FV(ret,rC,ans)
     );
-    const diff = proj-actuel.proj;
+    const diff = proj-projActuel;
     return { reerMois:rM, celiMois:cM, retour:ret, proj, diff };
-  }, [budget, reerPct, rendReer, rendCeli, actuel, tauxMarginal]);
+  }, [budget, reerPct, rendReer, rendCeli, actuel, projActuel, tauxMarginal]);
 
   const S = {
     label: { fontSize:9, fontWeight:600, color:"rgba(255,255,255,0.25)", letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:4 },
@@ -131,8 +138,13 @@ export default function PlacementStrategie({ retraiteABF={}, revenuBrut=0, tauxM
           </div>
           <div style={{ ...S.sep }} />
 
-          <div style={{ ...S.label, marginBottom:4 }}>Projection à {ageRetraite} ans (7%/an)</div>
-          <div style={{ fontSize:18, fontWeight:700, color:"#fff" }}>{fmt(actuel.proj)}</div>
+          <div style={{ ...S.label, marginBottom:4 }}>
+            Projection à {ageRetraite} ans —{" "}
+            <span style={{ color:"#C9A063" }}>REER {rendReer}%</span>
+            {" · "}
+            <span style={{ color:"#5BC4A0" }}>CELI {rendCeli}%</span>
+          </div>
+          <div style={{ fontSize:18, fontWeight:700, color:"#fff" }}>{fmt(projActuel)}</div>
         </div>
 
         {/* DROITE — Simulation (read/write) */}
