@@ -59,10 +59,20 @@ export default function Dashboard() {
   }, 0);
   const balance = totalRevenue - totalExpenses;
   const savingsRate = totalRevenue > 0 ? (balance / totalRevenue) * 100 : 0;
-  const totalAssets = investments.reduce((s, i) => s + (i.current_value || 0), 0);
+  const investmentAssets = investments.reduce((s, i) => s + (i.current_value || 0), 0);
   const totalCost = investments.reduce((s, i) => s + (i.quantity || 0) * (i.purchase_price || 0), 0);
-  const investmentGain = totalAssets - totalCost;
+  const investmentGain = investmentAssets - totalCost;
   const investmentGainPct = totalCost > 0 ? (investmentGain / totalCost) * 100 : 0;
+
+  // Valeur des propriétés immobilières (prix d'achat des hypothèques dans l'ABF)
+  const realEstateAssets = useMemo(() => {
+    const dettesProfile = profiles.find(p => p.section === "dettes");
+    const dettesData = dettesProfile?.data || {};
+    const hypotheques = dettesData.hypotheques || [];
+    return hypotheques.reduce((s, h) => s + (parseFloat(h.valeur_marchande || h.prix_achat) || 0), 0);
+  }, [profiles]);
+
+  const totalAssets = investmentAssets + realEstateAssets;
   const totalDebt = debts.reduce((s, d) => s + (d.balance || 0), 0);
   const netWorth = totalAssets - totalDebt;
   const debtRatio = totalAssets > 0 ? (totalDebt / totalAssets) * 100 : 0;
