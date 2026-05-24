@@ -68,6 +68,51 @@ export default function Dashboard() {
   const highRateDebt = debts.filter(d => d.interest_rate > 15);
   const isEmpty = budgetEntries.length === 0 && investments.length === 0 && debts.length === 0 && profiles.length === 0;
 
+  // ── NIF calculé depuis les profils ABF ──────────────────────────────────
+  const nifCible = useMemo(() => {
+    const unwrap = (raw) => {
+      if (!raw || typeof raw !== "object") return {};
+      if (raw.emplois || raw.sv || raw.dob || raw.revenu_retraite_mensuel) return raw;
+      if (raw.data && typeof raw.data === "object") return unwrap(raw.data);
+      return raw;
+    };
+    const m = {};
+    profiles.forEach(p => { m[p.section] = unwrap(p.data); });
+    const profil   = m.profil_personnel || {};
+    const retraite = m.retraite || {};
+    const revABF   = m.revenu || {};
+    const enCouple = ["marie", "conjoint", "union_civile"].includes(profil.situation || "");
+    const retraiteC = enCouple ? (retraite.conjoint || {}) : {};
+    const revABFC   = enCouple ? (revABF.conjoint || {}) : {};
+    const INF = 0.021;
+    const REND_AV = 0.06;
+    const REND_PEND = 0.04;
+    const ageActuel = profil.dob ? Math.floor((new Date() - new Date(profil.dob)) / (365.25 * 24 * 3600 * 1000)) : 35;
+    const ageRetraite = parseInt(retraite.age_retraite) || 65;
+    const esperanceVie = parseInt(retraite.esperance_vie) || 88;
+    const anneesAvant = Math.max(1, ageRetraite - ageActuel);
+    const anneesPend = Math.max(1, esperanceVie - ageRetraite);
+    const sumBrut = (emplois, sides) =>
+      (emplois || []).reduce((a, x) => a + (parseFloat(x.revenu_brut) || 0), 0)
+      + (sides || []).reduce((a, x) => a + (parseFloat(x.revenu_mensuel_moyen) || 0) * 12, 0);
+    const revBrut = sumBrut(revABF.emplois, revABF.sidehustles) + sumBrut(revABFC.emplois, revABFC.sidehustles) || 80000;
+    const revNet = Math.round(revBrut * 0.72);
+    const pct = parseInt(retraite.revenu_retraite_pct) || 70;
+    const revDesire = parseFloat(retraite.revenu_retraite_mensuel) > 0
+      ? parseFloat(retraite.revenu_retraite_mensuel) * 12
+      : Math.round(revNet * pct / 100);
+    const sumGaranti = (ret) => {
+      const sv = parseFloat(ret.sv) || 0;
+      const rrq = parseFloat(ret.rrq) || 0;
+      const fp = parseFloat((ret.fond_pension || {}).rente_mensuelle_estimee) || 0;
+      return (sv + rrq + fp) * 12;
+    };
+    const revGaranti = sumGaranti(retraite) + sumGaranti(retraiteC);
+    const manqueFutur = Math.max(0, revDesire * Math.pow(1 + INF, anneesAvant) - revGaranti * Math.pow(1 + INF, anneesAvant));
+    const rReel = ((1 + REND_PEND) / (1 + INF)) - 1;
+    return rReel <= 0 ? manqueFutur * anneesPend : manqueFutur * ((1 - Math.pow(1 + rReel, -anneesPend)) / rReel);
+  }, [profiles]);
+
   return (
     <div style={{ background: "linear-gradient(135deg, #050810 0%, #080d1a 60%, #050810 100%)", minHeight: "100vh", position: "relative", overflow: "hidden" }}>
       {/* Ambient orbs */}
@@ -108,7 +153,7 @@ export default function Dashboard() {
             <div style={{ position: "absolute", top: -60, right: -60, width: 240, height: 240, borderRadius: "50%", background: "radial-gradient(circle, rgba(201,160,99,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
             <div className="relative grid grid-cols-1 sm:grid-cols-3 gap-8">
               {[
-                { label: "Valeur nette", val: fmt(netWorth), sub: "Actifs − Passifs", color: "#fff" },
+                { label: "NIF Cible", val: fmt(nifCible), sub: "Numéro d'indépendance financière", color: "#C9A063" },
                 { label: "Ratio d'endettement", val: `${debtRatio.toFixed(1)} %`, sub: "Passifs / Actifs", color: debtRatio < 50 ? "#5BC4A0" : debtRatio < 80 ? "#f59e0b" : "#f87171" },
                 { label: "Revenu net mensuel", val: fmt(totalRevenue), sub: allocMensuel > 0 ? `dont ${fmt(allocMensuel)}/mois alloc.` : "Net après impôts", color: "#C9A063" },
               ].map((item) => (
