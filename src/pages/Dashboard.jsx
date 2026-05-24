@@ -65,8 +65,6 @@ export default function Dashboard() {
   const totalDebt = debts.reduce((s, d) => s + (d.balance || 0), 0);
   const netWorth = totalAssets - totalDebt;
   const debtRatio = totalAssets > 0 ? (totalDebt / totalAssets) * 100 : 0;
-  const annualExpenses = totalExpenses * 12;
-  const nifTarget = annualExpenses * 25;
   const highRateDebt = debts.filter(d => d.interest_rate > 15);
   const isEmpty = budgetEntries.length === 0 && investments.length === 0 && debts.length === 0 && profiles.length === 0;
 
@@ -103,14 +101,13 @@ export default function Dashboard() {
           </div>
         </motion.div>
 
-        {/* Hero Grid — 4 KPIs */}
+        {/* Hero Grid — 3 KPIs */}
         <motion.div {...fadeUp(0.06)} className="mb-8">
           <div style={{ ...glass.hero, borderRadius: 24, padding: "clamp(1.5rem,4vw,2.5rem)", position: "relative", overflow: "hidden" }}>
             <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: "linear-gradient(90deg, transparent, #C9A063, transparent)" }} />
             <div style={{ position: "absolute", top: -60, right: -60, width: 240, height: 240, borderRadius: "50%", background: "radial-gradient(circle, rgba(201,160,99,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
-            <div className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="relative grid grid-cols-1 sm:grid-cols-3 gap-8">
               {[
-                { label: "NIF (Cible)", val: fmt(nifTarget), sub: "Dépenses annuelles × 25", color: "#5BC4A0" },
                 { label: "Valeur nette", val: fmt(netWorth), sub: "Actifs − Passifs", color: "#fff" },
                 { label: "Ratio d'endettement", val: `${debtRatio.toFixed(1)} %`, sub: "Passifs / Actifs", color: debtRatio < 50 ? "#5BC4A0" : debtRatio < 80 ? "#f59e0b" : "#f87171" },
                 { label: "Revenu net mensuel", val: fmt(totalRevenue), sub: allocMensuel > 0 ? `dont ${fmt(allocMensuel)}/mois alloc.` : "Net après impôts", color: "#C9A063" },
@@ -140,6 +137,11 @@ export default function Dashboard() {
           </motion.div>
         ) : (
           <>
+            {/* NIF personnalisé — en tête d'affiche */}
+            <motion.div {...fadeUp(0.12)} className="mb-8">
+              <RetirementReport profiles={profiles} />
+            </motion.div>
+
             {/* Second row — 4 KPI cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
               {[
@@ -148,7 +150,7 @@ export default function Dashboard() {
                 { label: "Total des dettes", value: fmt(totalDebt), sub: `${debts.length} obligation(s)`, color: totalDebt > 0 ? "#f87171" : "#5BC4A0" },
                 { label: "Placements", value: fmt(totalAssets), sub: `${fmtPct(investmentGainPct)} vs coût`, color: "#DEFF9A" },
               ].map((card, i) => (
-                <motion.div key={card.label} {...fadeUp(0.12 + i * 0.06)}>
+                <motion.div key={card.label} {...fadeUp(0.20 + i * 0.06)}>
                   <div style={{ ...glass.card, borderRadius: 20, padding: "1.4rem", position: "relative", overflow: "hidden" }}>
                     <div style={{ position: "absolute", top: -16, right: -16, width: 60, height: 60, borderRadius: "50%", background: `radial-gradient(ellipse, ${card.color}20 0%, transparent 70%)` }} />
                     <p style={{ fontSize: 11.5, fontWeight: 500, color: "#94A3B8", marginBottom: 14 }}>{card.label}</p>
@@ -158,11 +160,6 @@ export default function Dashboard() {
                 </motion.div>
               ))}
             </div>
-
-            {/* Retirement Report — lecture seule */}
-            <motion.div {...fadeUp(0.20)} className="mb-8">
-              <RetirementReport profiles={profiles} />
-            </motion.div>
 
             {/* Lower grid — Dettes + Objectifs */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
