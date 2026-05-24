@@ -101,6 +101,7 @@ export default function Dashboard() {
   const [user, setUser] = useState(null);
   const [synced, setSynced] = useState(false);
   const [showReset, setShowReset] = useState(false);
+  const [detteFlipped, setDetteFlipped] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(setUser);
@@ -426,12 +427,13 @@ export default function Dashboard() {
             </div>
 
             {/* ── ZONE 3 — Dettes + Placements ────────────────────────── */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-5">
+            <div style={{ display:"grid", gridTemplateColumns: detteFlipped ? "1fr" : "repeat(2,1fr)", gap:16, marginBottom:20, transition:"grid-template-columns 0.3s ease" }}>
 
               {/* Dettes */}
               <motion.div {...fadeUp(0.16)}>
                 <FlipCard
                   expandedHeight={560}
+                  onFlip={setDetteFlipped}
                   front={
                     <>
                       <SectionHeader
