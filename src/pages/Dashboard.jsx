@@ -161,31 +161,9 @@ export default function Dashboard() {
           </motion.div>
         ) : (
           <>
-            {/* NIF Banner — mini compact */}
-            <motion.div {...fadeUp(0.04)} className="mb-4">
-              <div style={{
-                background: "linear-gradient(135deg, rgba(201,160,99,0.12) 0%, rgba(201,160,99,0.03) 100%)",
-                border: "1px solid rgba(201,160,99,0.25)",
-                borderRadius: 20,
-                padding: "1.1rem 1.75rem",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                flexWrap: "wrap",
-                gap: 12,
-                position: "relative",
-                overflow: "hidden",
-              }}>
-                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: "linear-gradient(90deg, transparent, rgba(201,160,99,0.5), transparent)" }} />
-                <div>
-                  <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(201,160,99,0.55)", marginBottom: 2 }}>
-                    Numéro d'indépendance financière (NIF)
-                  </p>
-                  <p style={{ fontFamily: "var(--font-mono)", fontSize: "clamp(1.6rem,3.5vw,2.4rem)", fontWeight: 900, color: "#C9A063", letterSpacing: "-0.04em", lineHeight: 1, textShadow: "0 0 30px rgba(201,160,99,0.4)" }}>
-                    {fmt(nifCible)}
-                  </p>
-                </div>
-              </div>
+            {/* NIF personnalisé — grand bloc */}
+            <motion.div {...fadeUp(0.04)} className="mb-8">
+              <RetirementReport profiles={profiles} />
             </motion.div>
 
             {/* Hero Grid — 3 KPIs */}
