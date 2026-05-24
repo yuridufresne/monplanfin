@@ -15,6 +15,7 @@ import { calcNIFFromProfiles } from "@/lib/calcNIF";
 import InfoTooltip from "@/components/ui/InfoTooltip";
 import FlipCard from "@/components/ui/FlipCard";
 import DetteStrategie from "@/components/dashboard/DetteStrategie";
+import PlacementStrategie from "@/components/dashboard/PlacementStrategie";
 
 // ── Formatters ────────────────────────────────────────────────────────────────
 const fmt = (v) => new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v || 0);
@@ -102,6 +103,7 @@ export default function Dashboard() {
   const [synced, setSynced] = useState(false);
   const [showReset, setShowReset] = useState(false);
   const [detteFlipped, setDetteFlipped] = useState(false);
+  const [placementFlipped, setPlacementFlipped] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(setUser);
@@ -427,7 +429,7 @@ export default function Dashboard() {
             </div>
 
             {/* ── ZONE 3 — Dettes + Placements ────────────────────────── */}
-            <div style={{ display:"grid", gridTemplateColumns: detteFlipped ? "1fr" : "repeat(2,1fr)", gap:16, marginBottom:20, transition:"grid-template-columns 0.3s ease" }}>
+            <div style={{ display:"grid", gridTemplateColumns: (detteFlipped || placementFlipped) ? "1fr" : "repeat(2,1fr)", gap:16, marginBottom:20, transition:"grid-template-columns 0.3s ease" }}>
 
               {/* Dettes */}
               <motion.div {...fadeUp(0.16)}>
@@ -474,31 +476,44 @@ export default function Dashboard() {
 
               {/* Placements */}
               <motion.div {...fadeUp(0.18)}>
-                <div style={{ ...G.card, padding: "1.25rem 1.4rem", height: "100%" }}>
-                  <SectionHeader
-                    title="Placements & épargne"
-                    info="Soldes actuels de vos comptes enregistrés (REER, CELI, REEE). Les cotisations mensuelles indiquées sont prélevées de vos revenus."
-                    link
-                  />
-                  {reerSolde > 0 && <Row left="REER" right={fmt(reerSolde)} sub={reerCot > 0 ? `+${fmt(reerCot)}/mois` : undefined} dot="#5BC4A0" />}
-                  {celiSolde > 0 && <Row left="CELI" right={fmt(celiSolde)} sub={celiCot > 0 ? `+${fmt(celiCot)}/mois` : undefined} dot="#6B8ED6" />}
-                  {reee > 0      && <Row left="REEE" right={fmt(reee)} sub={reee_cot > 0 ? `+${fmt(reee_cot)}/mois · SCEE+IQEE` : "SCEE+IQEE"} dot="#A87DD3" />}
-                  {investments.length > 0 && (
-                    <Row left={`Placements (${investments.length})`} right={fmt(investmentAssets)} dot="#C9A063" />
-                  )}
-                  {reerSolde === 0 && celiSolde === 0 && reee === 0 && investments.length === 0 && (
-                    <p style={{ ...MUTED, padding: "12px 0" }}>Aucun compte enregistré</p>
-                  )}
-                  {(reerSolde + celiSolde + reee + investmentAssets) > 0 && (
-                    <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 8, marginTop: 4, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                      <div>
-                        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", fontWeight: 600 }}>Total</p>
-                        {totalCotMensuelle > 0 && <p style={{ ...MUTED }}>{fmt(totalCotMensuelle)}/mois</p>}
-                      </div>
-                      <p style={{ fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 800, color: "#5BC4A0" }}>{fmt(reerSolde + celiSolde + reee + investmentAssets)}</p>
-                    </div>
-                  )}
-                </div>
+                <FlipCard
+                  expandedHeight={600}
+                  onFlip={setPlacementFlipped}
+                  front={
+                    <>
+                      <SectionHeader
+                        title="Placements & épargne"
+                        info="Soldes actuels de vos comptes enregistrés (REER, CELI, REEE). Les cotisations mensuelles indiquées sont prélevées de vos revenus."
+                        link
+                      />
+                      {reerSolde > 0 && <Row left="REER" right={fmt(reerSolde)} sub={reerCot > 0 ? `+${fmt(reerCot)}/mois` : undefined} dot="#5BC4A0" />}
+                      {celiSolde > 0 && <Row left="CELI" right={fmt(celiSolde)} sub={celiCot > 0 ? `+${fmt(celiCot)}/mois` : undefined} dot="#6B8ED6" />}
+                      {reee > 0      && <Row left="REEE" right={fmt(reee)} sub={reee_cot > 0 ? `+${fmt(reee_cot)}/mois · SCEE+IQEE` : "SCEE+IQEE"} dot="#A87DD3" />}
+                      {investments.length > 0 && (
+                        <Row left={`Placements (${investments.length})`} right={fmt(investmentAssets)} dot="#C9A063" />
+                      )}
+                      {reerSolde === 0 && celiSolde === 0 && reee === 0 && investments.length === 0 && (
+                        <p style={{ ...MUTED, padding: "12px 0" }}>Aucun compte enregistré</p>
+                      )}
+                      {(reerSolde + celiSolde + reee + investmentAssets) > 0 && (
+                        <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 8, marginTop: 4, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                          <div>
+                            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", fontWeight: 600 }}>Total</p>
+                            {totalCotMensuelle > 0 && <p style={{ ...MUTED }}>{fmt(totalCotMensuelle)}/mois</p>}
+                          </div>
+                          <p style={{ fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 800, color: "#5BC4A0" }}>{fmt(reerSolde + celiSolde + reee + investmentAssets)}</p>
+                        </div>
+                      )}
+                    </>
+                  }
+                  back={
+                    <PlacementStrategie
+                      retraiteABF={retraiteABF}
+                      revenuBrut={revBrut}
+                      tauxMarginal={0.475}
+                    />
+                  }
+                />
               </motion.div>
             </div>
 
