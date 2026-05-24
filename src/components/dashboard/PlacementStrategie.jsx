@@ -8,22 +8,19 @@ export default function PlacementStrategie({ retraiteABF={}, revenuBrut=0, tauxM
   const comptes = retraiteABF.comptes || {};
   const reerList = comptes.reer || [];
   const celiList = comptes.celi || [];
-  const reeeList = comptes.reee || [];
 
   const actuel = useMemo(() => {
     const reerCot  = reerList.reduce((s,c)=>s+(parseFloat(c.cotisation_mensuelle)||0),0);
     const celiCot  = celiList.reduce((s,c)=>s+(parseFloat(c.cotisation_mensuelle)||0),0);
-    const reeeCot  = reeeList.reduce((s,c)=>s+(parseFloat(c.cotisation_mensuelle)||0),0);
     const soldeR   = reerList.reduce((s,c)=>s+(parseFloat(c.solde)||0),0);
     const soldeC   = celiList.reduce((s,c)=>s+(parseFloat(c.solde)||0),0);
-    const soldeRE  = reeeList.reduce((s,c)=>s+(parseFloat(c.solde)||0),0);
-    const total    = reerCot+celiCot+reeeCot;
+    const total    = reerCot+celiCot;
     const retour   = Math.round(reerCot*tauxMarginal);
     const ans      = Math.max(1, ageRetraite-ageActuel);
     const r        = 0.07;
     const proj     = Math.round(FVs(soldeR,r,ans)*0.70+FV(reerCot,r,ans)*0.70+FVs(soldeC,r,ans)+FV(celiCot+retour,r,ans));
-    return { reerCot, celiCot, reeeCot, soldeR, soldeC, soldeRE, total, retour, proj, ans };
-  }, [reerList, celiList, reeeList, tauxMarginal, ageActuel, ageRetraite]);
+    return { reerCot, celiCot, soldeR, soldeC, total, retour, proj, ans };
+  }, [reerList, celiList, tauxMarginal, ageActuel, ageRetraite]);
 
   const [budget,  setBudget]  = useState(actuel.total || 725);
   const [reerPct, setReerPct] = useState(actuel.total>0?Math.round(actuel.reerCot/actuel.total*100):50);
@@ -50,23 +47,21 @@ export default function PlacementStrategie({ retraiteABF={}, revenuBrut=0, tauxM
     tick:  { display:"flex", justifyContent:"space-between", fontSize:8, color:"rgba(255,255,255,0.18)", marginTop:3 },
   };
 
-  const SplitBar = ({ pctR, pctC, pctRE=0 }) => (
+  const SplitBar = ({ pctR, pctC }) => (
     <div>
       <div style={{ height:5, borderRadius:3, display:"flex", overflow:"hidden", margin:"5px 0" }}>
         <div style={{ width:`${pctR}%`, background:"#C9A063", opacity:.7 }} />
         <div style={{ width:`${pctC}%`, background:"#5BC4A0", opacity:.55 }} />
-        {pctRE>0&&<div style={{ width:`${pctRE}%`, background:"#7F77DD", opacity:.6 }} />}
       </div>
       <div style={{ display:"flex", gap:8, ...S.muted }}>
-        <span>REER {pctR}%</span><span>CELI {pctC}%</span>{pctRE>0&&<span>REEE {pctRE}%</span>}
+        <span>REER {pctR}%</span><span>CELI {pctC}%</span>
       </div>
     </div>
   );
 
-  const pctR_act  = actuel.total>0?Math.round(actuel.reerCot/actuel.total*100):0;
-  const pctC_act  = actuel.total>0?Math.round(actuel.celiCot/actuel.total*100):0;
-  const pctRE_act = actuel.total>0?Math.round(actuel.reeeCot/actuel.total*100):0;
-  const tot_sim   = sim.reerFinal+sim.celiFinal;
+  const pctR_act = actuel.total>0?Math.round(actuel.reerCot/actuel.total*100):0;
+  const pctC_act = actuel.total>0?Math.round(actuel.celiCot/actuel.total*100):0;
+  const tot_sim  = sim.reerFinal+sim.celiFinal;
 
   return (
     <div>
@@ -99,7 +94,7 @@ export default function PlacementStrategie({ retraiteABF={}, revenuBrut=0, tauxM
             <span style={{ fontSize:9, color:"rgba(255,255,255,0.2)", background:"rgba(255,255,255,0.05)", padding:"2px 7px", borderRadius:4 }}>Depuis ABF</span>
           </div>
 
-          {[[actuel.reerCot,"#C9A063","REER",actuel.soldeR],[actuel.celiCot,"#5BC4A0","CELI",actuel.soldeC],[actuel.reeeCot,"#7F77DD","REEE",actuel.soldeRE]].filter(([c])=>c>0).map(([c,col,nom,solde],i)=>(
+          {[[actuel.reerCot,"#C9A063","REER",actuel.soldeR],[actuel.celiCot,"#5BC4A0","CELI",actuel.soldeC]].filter(([c])=>c>0).map(([c,col,nom,solde],i)=>(
             <div key={i} style={{ ...S.row, ...(i===2?{borderBottom:"none"}:{}) }}>
               <div style={{ display:"flex", alignItems:"center", gap:7 }}>
                 <div style={{ width:6, height:6, borderRadius:"50%", background:col, flexShrink:0 }} />
@@ -117,7 +112,7 @@ export default function PlacementStrategie({ retraiteABF={}, revenuBrut=0, tauxM
             <span style={{ ...S.muted }}>Total mensuel</span>
             <span style={{ fontSize:14, fontWeight:700 }}>{actuel.total.toLocaleString("fr-CA")} $</span>
           </div>
-          <SplitBar pctR={pctR_act} pctC={pctC_act} pctRE={pctRE_act} />
+          <SplitBar pctR={pctR_act} pctC={pctC_act} />
           <div style={{ ...S.sep }} />
 
           <div style={{ background:"rgba(91,196,160,0.05)", border:"1px solid rgba(91,196,160,0.12)", borderRadius:8, padding:"8px 10px", marginBottom:10 }}>
