@@ -138,7 +138,10 @@ export default function PlacementStrategie({ retraiteABF={}, revenuBrut=0, tauxM
           <div style={{ marginBottom:10 }}>
             <div style={{ display:"flex", justifyContent:"space-between", marginBottom:3 }}>
               <span style={{ ...S.muted }}>Budget mensuel épargne</span>
-              <span style={{ fontSize:12, fontWeight:700, color:"#fff" }}>{budget.toLocaleString("fr-CA")} $</span>
+              <div style={{ display:"flex", gap:10 }}>
+                <span style={{ fontSize:12, fontWeight:700, color:"#C9A063" }}>REER {Math.round(budget*reerPct/100).toLocaleString("fr-CA")} $</span>
+                <span style={{ fontSize:12, fontWeight:700, color:"#5BC4A0" }}>CELI {Math.round(budget*(100-reerPct)/100).toLocaleString("fr-CA")} $</span>
+              </div>
             </div>
             <input type="range" min={0} max={2000} step={25} value={budget}
               onChange={e=>setBudget(+e.target.value)}
