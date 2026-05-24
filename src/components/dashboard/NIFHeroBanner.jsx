@@ -102,12 +102,12 @@ export default function NIFHeroBanner({ profiles }) {
 
   const nifCible = useMemo(() => calcNIF({
     ageActuel, ageRetraite, esperanceVie,
-    revenuDesireAuj, rendAvant: 0.06, rendPend: 0.04,
+    revenuDesireAuj, rendAvant: 0.07, rendPend: 0.05,
     revenuGarantiAuj,
   }), [ageActuel, ageRetraite, esperanceVie, revenuDesireAuj, revenuGarantiAuj]);
 
   const pmtRequis = useMemo(() => calcPMT({
-    nif: nifCible, epargneActuelle, rendAvant: 0.06, anneesAvant,
+    nif: nifCible, epargneActuelle, rendAvant: 0.07, anneesAvant,
   }), [nifCible, epargneActuelle, anneesAvant]);
 
   return (
