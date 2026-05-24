@@ -26,12 +26,12 @@ export default function PlacementStrategie({ retraiteABF={}, revenuBrut=0, tauxM
   const [rendReer, setRendReer] = useState(7);
   const [rendCeli, setRendCeli] = useState(6);
 
-  // Projection plan actuel — recalculée quand les rendements changent
+  // Projection plan actuel — sans retour d'impôt réinvesti (plan de base, pas optimisé)
   const projActuel = useMemo(() => {
     const rR = rendReer/100, rC = rendCeli/100;
     return Math.round(
       FVs(actuel.soldeR,rR,actuel.ans)*0.70 + FV(actuel.reerCot,rR,actuel.ans)*0.70 +
-      FVs(actuel.soldeC,rC,actuel.ans) + FV(actuel.celiCot+actuel.retour,rC,actuel.ans)
+      FVs(actuel.soldeC,rC,actuel.ans) + FV(actuel.celiCot,rC,actuel.ans)
     );
   }, [actuel, rendReer, rendCeli]);
 
