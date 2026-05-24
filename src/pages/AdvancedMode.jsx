@@ -8,6 +8,7 @@ import DebtSimulator from "@/components/dashboard/DebtSimulator";
 import ReerLevierSimulator from "@/components/dashboard/ReerLevierSimulator";
 import RetirementReport from "@/components/dashboard/RetirementReport";
 import NIFCalculator from "@/components/dashboard/NIFCalculator";
+import ModelisationRetraite from "@/pages/ModelisationRetraite";
 
 const fmt = (v) =>
   new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v || 0);
@@ -298,7 +299,8 @@ export default function AdvancedMode() {
   }, [profiles, calcParams]);
 
   const tabs = [
-    { key: "nif",       label: "Calculatrice NIF",      icon: <TrendingUp style={{ width: 14, height: 14 }} /> },
+    { key: "nif",          label: "Calculatrice NIF",           icon: <TrendingUp style={{ width: 14, height: 14 }} /> },
+    { key: "modelisation", label: "Modélisation retraite",      icon: <TrendingUp style={{ width: 14, height: 14 }} /> },
     { key: "scenarios", label: "Scénarios What-If",     icon: <GitBranch  style={{ width: 14, height: 14 }} /> },
     { key: "params",    label: "Paramètres de calcul",  icon: <Sliders    style={{ width: 14, height: 14 }} /> },
     { key: "retraite",  label: "Rapport retraite",      icon: <TrendingUp style={{ width: 14, height: 14 }} /> },
@@ -365,6 +367,18 @@ export default function AdvancedMode() {
                 <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginTop: 4 }}>Simulez différents scénarios et comprenez le détail du calcul de votre Niveau d'Indépendance Financière.</p>
               </div>
               <NIFCalculator profiles={profiles} />
+            </div>
+          )}
+
+          {/* Modélisation retraite */}
+          {activeTab === "modelisation" && (
+            <div style={{ ...glass, borderRadius: 24, padding: "2rem" }}>
+              <div style={{ marginBottom: 24 }}>
+                <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: GOLD_DIM, marginBottom: 4 }}>Décaissement · Québec 2026</p>
+                <h2 style={{ fontFamily: "var(--font-urbanist)", fontSize: 20, fontWeight: 700, color: "#fff" }}>Modélisation détaillée de la retraite</h2>
+                <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginTop: 4 }}>Simulez le décaissement année par année : FERR, PSV, RRQ, impôts, clawback et patrimoine à la succession.</p>
+              </div>
+              <ModelisationRetraite profiles={profiles} />
             </div>
           )}
 
