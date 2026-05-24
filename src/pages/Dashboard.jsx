@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ExternalLink } from "lucide-react";
 import { syncABFToEntities } from "@/hooks/useABFSync";
 import { calcRevenuDisponible } from "@/lib/calcRevenuNet";
 import ResetDataModal from "@/components/dashboard/ResetDataModal";
@@ -27,7 +27,7 @@ export default function Dashboard() {
   const [user, setUser] = useState(null);
   const [synced, setSynced] = useState(false);
   const [showReset, setShowReset] = useState(false);
-  const [modeAvance, setModeAvance] = useState(false);
+
 
   useEffect(() => {
     base44.auth.me().then(setUser);
@@ -139,18 +139,17 @@ export default function Dashboard() {
                   Modifier l'ABF →
                 </Link>
               </p>
-              <button
-                onClick={() => setModeAvance(v => !v)}
+              <Link
+                to="/avance"
                 style={{
+                  display: "inline-flex", alignItems: "center", gap: 6,
                   fontSize: 12, fontWeight: 600, cursor: "pointer", borderRadius: 9, padding: "5px 14px",
-                  background: modeAvance ? "rgba(201,160,99,0.15)" : "rgba(255,255,255,0.05)",
-                  border: modeAvance ? "1px solid rgba(201,160,99,0.4)" : "1px solid rgba(255,255,255,0.12)",
-                  color: modeAvance ? "#C9A063" : "rgba(255,255,255,0.45)",
-                  transition: "all 0.2s",
+                  background: "rgba(201,160,99,0.1)", border: "1px solid rgba(201,160,99,0.3)",
+                  color: "#C9A063", textDecoration: "none", transition: "all 0.2s",
                 }}
               >
-                {modeAvance ? "⚙ Mode avancé · actif" : "⚙ Mode avancé"}
-              </button>
+                <ExternalLink style={{ width: 12, height: 12 }} /> Mode avancé
+              </Link>
             </div>
             <button
               onClick={() => setShowReset(true)}
@@ -301,19 +300,7 @@ export default function Dashboard() {
               </motion.div>
             </div>
 
-            {/* Simulateur de remboursement */}
-            {modeAvance && (
-              <motion.div {...fadeUp(0.33)} className="mb-6">
-                <DebtSimulator debts={debts} />
-              </motion.div>
-            )}
 
-            {/* Simulateur prêt REER en levier */}
-            {modeAvance && (
-              <motion.div {...fadeUp(0.36)} className="mb-6">
-                <ReerLevierSimulator />
-              </motion.div>
-            )}
 
             {/* Observations financières */}
             <motion.div {...fadeUp(0.39)}>
