@@ -3,6 +3,8 @@
 // ============================================================
 
 import { calculateFullTax, PALIERS_FED, PALIERS_QC } from '@/lib/moteurFiscal2026';
+import { calcPSV, calcRRQ, calcSRG } from '@/lib/prestationsGouvernementales';
+export { calcPSV, calcRRQ, calcSRG };
 
 // Table FERR minimums par âge (ARC 2026)
 export const TAUX_FERR_MIN = {
@@ -22,43 +24,6 @@ export function getMinFERR(age, solde, ageBaseConjoint = null) {
   const ageCap = Math.min(Math.max(ageBase, 55), 95);
   const taux = ageBase < 71 ? 1 / (90 - ageBase) : (TAUX_FERR_MIN[ageCap] ?? 0.20);
   return { taux: +taux.toFixed(5), montant: Math.round(solde * taux) };
-}
-
-export function calcPSV({ ageDebutPSV = 65, revenuNetAnnuel = 0 }) {
-  const moisReport = Math.max(0, Math.min(ageDebutPSV - 65, 5) * 12);
-  const psvBrut = 715 * (1 + moisReport * 0.006) * 12;
-  const clawback = revenuNetAnnuel > 90997 ? Math.min((revenuNetAnnuel - 90997) * 0.15, psvBrut) : 0;
-  return {
-    brut: Math.round(psvBrut),
-    clawback: Math.round(clawback),
-    net: Math.round(psvBrut - clawback),
-    mensuelNet: Math.round((psvBrut - clawback) / 12),
-    ageOptimal: revenuNetAnnuel > 65000 ? 70 : 65,
-    alerte: clawback > 0 ? `Récupération PSV ${Math.round(clawback).toLocaleString('fr-CA')} $/an` : null,
-  };
-}
-
-export function calcRRQ({ renteBase65 = 1229, ageDebutRRQ = 65 }) {
-  let facteur = 1;
-  if (ageDebutRRQ < 65) facteur = Math.max(0.64, 1 - (65 - ageDebutRRQ) * 12 * 0.006);
-  else if (ageDebutRRQ > 65) facteur = 1 + Math.min((ageDebutRRQ - 65) * 12, 60) * 0.007;
-  return {
-    renteAjustee: Math.round(renteBase65 * facteur),
-    annuel: Math.round(renteBase65 * facteur * 12),
-    facteur: +(facteur * 100).toFixed(1) + '%',
-    gainReport65a70: Math.round((renteBase65 * 1.42 - renteBase65) * 12),
-    alerte: ageDebutRRQ !== 65 ? `Facteur ${+(facteur * 100).toFixed(1)}% pour début à ${ageDebutRRQ} ans` : null,
-  };
-}
-
-export function calcSRG({ revenuSansPSV = 0, enCouple = false }) {
-  const max = enCouple ? 654 : 1087;
-  const srg = Math.max(0, max - revenuSansPSV * 0.5 / 12);
-  return {
-    mensuel: Math.round(srg),
-    annuel: Math.round(srg * 12),
-    admissible: revenuSansPSV <= (enCouple ? 29040 : 21952),
-  };
 }
 
 function calcCreditAge(revNet, prov) {

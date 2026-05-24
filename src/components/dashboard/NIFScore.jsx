@@ -56,6 +56,7 @@ export default function NIFScore({ profiles }) {
     // Contexte
     ageRetraite, revGarantiAnnuel, depensesCibles, revBrut, tauxRemplacement,
     rrqMensuelTotal, psvMensuelTotal, fpMensuelTotal,
+    revenusGarantis, indexationDetail,
     // Couple
     enCouple, modeNIF, inclureConj, prenomP1, prenomC, ratioConjGaranti,
     // Temporel
@@ -197,15 +198,26 @@ export default function NIFScore({ profiles }) {
                 {nifResult?.facteurInflation > 1 && <>, ajusté × {nifResult.facteurInflation} inflation sur {anneesAccum} ans</>}
                 {" ÷ 4% (règle des 4%)"}
               </p>
-              {/* Décomposition détaillée des revenus garantis */}
+              {/* Décomposition revenus garantis — aujourd'hui et en dollars futurs */}
               {revGarantiAnnuel > 0 && (
-                <p style={{ fontSize: 10.5, color: "rgba(91,196,160,0.75)", marginTop: 5, lineHeight: 1.7, padding: "6px 10px", borderRadius: 8, background: "rgba(91,196,160,0.05)", border: "1px solid rgba(91,196,160,0.12)" }}>
-                  Revenus garantis inclus :{" "}
-                  {rrqMensuelTotal > 0 && <><strong style={{ color: "#5BC4A0" }}>RRQ {fmt(rrqMensuelTotal * 12)}/an</strong>{(psvMensuelTotal > 0 || fpMensuelTotal > 0) ? " + " : ""}</>}
-                  {psvMensuelTotal > 0 && <><strong style={{ color: "#5BC4A0" }}>PSV {fmt(psvMensuelTotal * 12)}/an</strong>{fpMensuelTotal > 0 ? " + " : ""}</>}
-                  {fpMensuelTotal > 0 && <><strong style={{ color: "#5BC4A0" }}>Pension PD {fmt(fpMensuelTotal * 12)}/an</strong></>}
-                  {" = "}<strong style={{ color: "#5BC4A0" }}>{fmt(revGarantiAnnuel)}/an</strong>
-                </p>
+                <div style={{ marginTop: 6, padding: "8px 12px", borderRadius: 10, background: "rgba(91,196,160,0.05)", border: "1px solid rgba(91,196,160,0.12)" }}>
+                  <p style={{ fontSize: 10.5, color: "rgba(91,196,160,0.85)", lineHeight: 1.8 }}>
+                    <strong style={{ color: "#5BC4A0" }}>Revenus garantis aujourd'hui : {fmt(revGarantiAnnuel)}/an</strong>
+                    {rrqMensuelTotal > 0 && <><br />· RRQ foyer : {fmt(revenusGarantis?.decomposition?.rrqFoyer || rrqMensuelTotal * 12)}/an</>}
+                    {psvMensuelTotal > 0 && <><br />· PSV foyer : {fmt(revenusGarantis?.decomposition?.psvFoyer || psvMensuelTotal * 12)}/an</>}
+                    {fpMensuelTotal  > 0 && <><br />· Pension PD : {fmt(revenusGarantis?.decomposition?.pensionFoyer || fpMensuelTotal * 12)}/an</>}
+                  </p>
+                  {indexationDetail?.decompositionFuture && (
+                    <p style={{ fontSize: 10.5, color: "rgba(91,196,160,0.6)", lineHeight: 1.8, marginTop: 5, paddingTop: 5, borderTop: "1px solid rgba(91,196,160,0.1)" }}>
+                      <strong style={{ color: "rgba(91,196,160,0.8)" }}>
+                        En {nifResult?.anneeProjFuture} (×{indexationDetail.facteur}) : {fmt(indexationDetail.totalFutur || indexationDetail.decompositionFuture.rrqFutur + indexationDetail.decompositionFuture.psvFutur + indexationDetail.decompositionFuture.pensionFutur)}/an
+                      </strong>
+                      {indexationDetail.decompositionFuture.rrqFutur > 0 && <><br />· RRQ futur : {fmt(indexationDetail.decompositionFuture.rrqFutur)}/an</>}
+                      {indexationDetail.decompositionFuture.psvFutur > 0 && <><br />· PSV futur : {fmt(indexationDetail.decompositionFuture.psvFutur)}/an</>}
+                      {indexationDetail.decompositionFuture.pensionFutur > 0 && <><br />· Pension futur : {fmt(indexationDetail.decompositionFuture.pensionFutur)}/an</>}
+                    </p>
+                  )}
+                </div>
               )}
             </div>
 

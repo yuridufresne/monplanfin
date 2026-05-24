@@ -13,10 +13,12 @@
  * 3. calcNIFFromProfiles() → orchestrateur qui lit les profils ABF et appelle les deux fonctions
  */
 
-const RENDEMENT_ACCUM  = 0.07;  // Rendement pendant l'accumulation
-const RENDEMENT_DECAISS = 0.05; // Rendement pendant le décaissement
-const INFLATION        = 0.025;
-const PSV_MENSUEL      = 715;   // PSV 2026 par personne ($/mois)
+import { getRevenusGarantisABF, indexerRevenusGarantis, PRESTATIONS_2026 } from '@/lib/prestationsGouvernementales';
+
+const RENDEMENT_ACCUM   = 0.07;
+const RENDEMENT_DECAISS = 0.05;
+const INFLATION         = 0.025;
+const PSV_MENSUEL       = PRESTATIONS_2026.psv.mensuel65; // 713.34 $/mois — source unique
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FONCTION 1 : Calculer le NIF (valeur FIXE — ne change pas avec l'épargne)
@@ -197,23 +199,14 @@ export function calcNIFFromProfiles(profiles) {
   // Priorité : montant mensuel saisi dans l'ABF
   const montantMensuelSaisi = parseFloat(retraite.revenu_retraite_mensuel) || 0;
 
-  // ── Revenus garantis (en $ d'aujourd'hui) ────────────────────────────────────
-  const rrqP1 = parseFloat(retraite.rrq) || 0;
-  const rrqP2 = inclureConj ? (parseFloat(retraiteC.rrq) || 0) : 0;
-  const rrqMensuelTotal = rrqP1 + rrqP2;
+  // ── Revenus garantis — source unique : getRevenusGarantisABF ─────────────────
+  const revenusGarantis = getRevenusGarantisABF(retraite, retraiteC, inclureConj);
 
-  const psvMensuelTotal = inclureConj ? PSV_MENSUEL * 2 : PSV_MENSUEL;
+  const rrqMensuelTotal  = revenusGarantis.p1.rrq + revenusGarantis.p2.rrq;
+  const psvMensuelTotal  = revenusGarantis.p1.psv + revenusGarantis.p2.psv;
+  const fpMensuelTotal   = revenusGarantis.p1.pension + revenusGarantis.p2.pension;
 
-  const fp1 = parseFloat((retraite.fond_pension  || {}).rente_mensuelle_estimee)
-           || parseFloat((retraite.fond_pension  || {}).prestation_mensuelle) || 0;
-  const fp2 = inclureConj
-    ? (parseFloat((retraiteC.fond_pension || {}).rente_mensuelle_estimee)
-    || parseFloat((retraiteC.fond_pension || {}).prestation_mensuelle) || 0)
-    : 0;
-  const fpMensuelTotal = fp1 + fp2;
-
-  const revGarantiMensuelAuj = rrqMensuelTotal + psvMensuelTotal + fpMensuelTotal;
-  const revGarantiAnnuelAuj  = revGarantiMensuelAuj * 12;
+  const revGarantiAnnuelAuj = revenusGarantis.totalAnnuel;
 
   // ── NIF (valeur FIXE) ─────────────────────────────────────────────────────────
   // Si montant mensuel saisi, on l'utilise comme cible; sinon 80% du brut
@@ -222,12 +215,20 @@ export function calcNIFFromProfiles(profiles) {
     : revBrut;
 
   const nifResult = calcNIF({
-    revenuBrutFoyer:          revenuBrutEffectif,
-    tauxRemplacement:         montantMensuelSaisi > 0 ? tauxRemplacement : tauxRemplacement,
-    revenuGarantiAujourdhui:  revGarantiAnnuelAuj,
+    revenuBrutFoyer:         revenuBrutEffectif,
+    tauxRemplacement,
+    revenuGarantiAujourdhui: revGarantiAnnuelAuj,
     ageActuel,
     ageRetraite,
     esperanceVie,
+  });
+
+  // Décomposition indexée pour affichage
+  const { anneesAvant: anneesNIF } = nifResult;
+  const indexationDetail = indexerRevenusGarantis({
+    garantisAujourdhui: revGarantiAnnuelAuj,
+    decomposition:      revenusGarantis.decomposition,
+    anneesAvant:        anneesNIF,
   });
 
   // Pour compatibilité, si montant mensuel saisi, remplacer la cible
@@ -267,7 +268,7 @@ export function calcNIFFromProfiles(profiles) {
   });
 
   // Note : ratioConjGaranti pour affichage
-  const revGarantiC = (rrqP2 + (inclureConj ? PSV_MENSUEL : 0) + fp2) * 12;
+  const revGarantiC = revenusGarantis.p2.totalMensuel * 12;
   const ratioConjGaranti = revGarantiAnnuelAuj > 0 ? revGarantiC / revGarantiAnnuelAuj : 0;
 
   return {
@@ -295,6 +296,8 @@ export function calcNIFFromProfiles(profiles) {
     rrqMensuelTotal,
     psvMensuelTotal,
     fpMensuelTotal,
+    revenusGarantis,         // objet complet (p1, p2, decomposition, alertes)
+    indexationDetail,        // decompositionFuture + facteur
     ratioConjGaranti,
 
     // Mode couple

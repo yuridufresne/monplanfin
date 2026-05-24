@@ -2,13 +2,15 @@ import React, { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import InfoTooltip from "@/components/ui/InfoTooltip";
 
-// ── Constantes SV 2026 ────────────────────────────────────────────────────────
-const SV_MAX_MENSUEL = 713;          // pension de base maximale
-const SRS_SEUIL_SEUL = 22000;       // Supplément de revenu garanti (SRG) seuil célibataire
-const SRS_SEUIL_COUPLE = 29000;     // seuil couple
+import { PRESTATIONS_2026 } from "@/lib/prestationsGouvernementales";
+
+// ── Constantes 2026 — source : prestationsGouvernementales.js ─────────────────
+const SV_MAX_MENSUEL   = PRESTATIONS_2026.psv.mensuel65;      // 713.34 $/mois
+const SRS_SEUIL_SEUL   = PRESTATIONS_2026.srg.seuilSeul;      // 21 952 $
+const SRS_SEUIL_COUPLE = PRESTATIONS_2026.srg.seuilCouple;    // 29 040 $
 
 // ── Constantes RRQ ────────────────────────────────────────────────────────────
-const RRQ_MAX = 1365;
+const RRQ_MAX = Math.round(PRESTATIONS_2026.rrq.renteMax65);  // 1 365 $/mois
 
 const RRQ_PROFILS = [
   { value: "eleve",   label: "Revenus élevés et carrière continue",           sublabel: "Souvent au-dessus de 70 000 $/an — cotisations maximales", facteur: 0.90 },

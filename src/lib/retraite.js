@@ -3,20 +3,22 @@
 // Couvre : RRQ, PSV, SRG, pension PD/CD, REER/FERR, CELI
 // ============================================================
 
-// ---- PARAMÈTRES PSV / SRG 2025 ----
+import { PRESTATIONS_2026 } from '@/lib/prestationsGouvernementales';
+
+// ---- PARAMÈTRES PSV / SRG 2026 — source : prestationsGouvernementales.js ----
 export const PSV = {
-  maxMensuel65:        715.00,
-  clawbackSeuil:       90997,
-  clawbackTaux:        0.15,
-  bonificationDepart:  0.007,
+  maxMensuel65:        PRESTATIONS_2026.psv.mensuel65,
+  clawbackSeuil:       PRESTATIONS_2026.psv.clawbackSeuil,
+  clawbackTaux:        PRESTATIONS_2026.psv.clawbackTaux,
+  bonificationDepart:  PRESTATIONS_2026.psv.bonifParMois,
   reductionAvant65:    null,
-  max70:               Math.round(715 * (1 + 0.007 * 60)),
+  max70:               Math.round(PRESTATIONS_2026.psv.mensuel65 * (1 + PRESTATIONS_2026.psv.bonifParMois * 60)),
 };
 
 export const SRG = {
-  maxSeul:    1086.88,
-  maxCouple:   654.23,
-  seuilSeul:  21952,
+  maxSeul:    PRESTATIONS_2026.srg.mensuelSeul,
+  maxCouple:  PRESTATIONS_2026.srg.mensuelCouple,
+  seuilSeul:  PRESTATIONS_2026.srg.seuilSeul,
 };
 
 // ---- ESTIMATION RRQ ----

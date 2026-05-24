@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { calcNIFFromProfiles } from "@/lib/calcNIF";
+import { PRESTATIONS_2026 } from "@/lib/prestationsGouvernementales";
 
 const fmt = (v) =>
   new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v || 0);
@@ -96,7 +97,7 @@ function TabCalculateur({ defaults }) {
     depensesCibles: defaults.depensesCibles || 55000,
     tauxRetrait: 4,
     rrqMensuel: defaults.rrqMensuel || 900,
-    psvMensuel: 715,
+    psvMensuel: PRESTATIONS_2026.psv.mensuel65,
     fpMensuel: defaults.fpMensuel || 0,
     soldeReer: defaults.soldeReer || 0,
     soldeCeli: defaults.soldeCeli || 0,
@@ -127,7 +128,7 @@ function TabCalculateur({ defaults }) {
         <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: GOLD_DIM, marginBottom: 16 }}>Profil & Revenus</p>
         <Slider label="Dépenses annuelles cibles" min={20000} max={150000} step={2500} value={p.depensesCibles} onChange={v => set("depensesCibles", v)} fmtFn={fmt} />
         <Slider label="Rente RRQ mensuelle" min={0} max={1500} step={50} value={p.rrqMensuel} onChange={v => set("rrqMensuel", v)} fmtFn={v => `${fmt(v)}/mois`} />
-        <Slider label="PSV mensuelle" min={0} max={1100} step={25} value={p.psvMensuel} onChange={v => set("psvMensuel", v)} fmtFn={v => `${fmt(v)}/mois`} note="PSV 2026 : ~715 $/mois" />
+        <Slider label="PSV mensuelle" min={0} max={1100} step={25} value={p.psvMensuel} onChange={v => set("psvMensuel", v)} fmtFn={v => `${fmt(v)}/mois`} note={`PSV 2026 : ${PRESTATIONS_2026.psv.mensuel65.toFixed(2)} $/mois`} />
         <Slider label="Pension PD / FRV mensuel" min={0} max={5000} step={100} value={p.fpMensuel} onChange={v => set("fpMensuel", v)} fmtFn={v => `${fmt(v)}/mois`} />
 
         <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: GOLD_DIM, margin: "20px 0 16px" }}>Épargne accumulée</p>
@@ -210,7 +211,7 @@ function TabFormule({ defaults }) {
     depensesCibles: defaults.depensesCibles || 55000,
     tauxRetrait: 4,
     rrqMensuel: defaults.rrqMensuel || 900,
-    psvMensuel: 715,
+    psvMensuel: PRESTATIONS_2026.psv.mensuel65,
     fpMensuel: defaults.fpMensuel || 0,
     soldeReer: defaults.soldeReer || 0,
     soldeCeli: defaults.soldeCeli || 0,
@@ -372,7 +373,7 @@ export default function NIFCalculator({ profiles }) {
     return {
       depensesCibles: base.depensesCibles || 55000,
       rrqMensuel: parseFloat(retraite.rrq) || 900,
-      psvMensuel: 715,
+      psvMensuel: PRESTATIONS_2026.psv.mensuel65,
       fpMensuel: parseFloat((retraite.fond_pension || {}).rente_mensuelle_estimee) || 0,
       soldeReer,
       soldeCeli,
