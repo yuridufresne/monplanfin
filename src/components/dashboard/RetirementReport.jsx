@@ -1,41 +1,21 @@
 import React, { useMemo } from "react";
+import { calcNIFFromProfiles } from "@/lib/calcNIF";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONSTANTES & UTILITAIRES
 // ─────────────────────────────────────────────────────────────────────────────
-const INF = 0.021;
-const GOLD = "#C9A063";
+const GOLD     = "#C9A063";
 const GOLD_DIM = "rgba(201,160,99,0.6)";
-const GOLD_BG  = "rgba(201,160,99,0.08)";
 
 const fmt = (v) =>
   new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v || 0);
 const fmtPct = (v) => `${(v * 100).toFixed(1)} %`;
 
-// Valeur future d'un capital + cotisations mensuelles
-function fvCapital({ present, monthly, rAnnual, years }) {
-  if (years <= 0) return present;
-  const r = rAnnual / 12;
-  const n = years * 12;
-  if (r === 0) return present + monthly * n;
-  return present * Math.pow(1 + r, n) + monthly * ((Math.pow(1 + r, n) - 1) / r);
-}
+const INF       = 0.025;
+const REND_AV   = 0.07;
+const REND_PEND = 0.05;
 
-// NIF requis (dollars futurs) pour financer le manque annuel pendant la retraite
-function calcNIF({ ageActuel, ageRetraite, esperanceVie, revenuDesireAuj, rendAvant, rendPend, revenuGarantiAuj }) {
-  const n = Math.max(1, ageRetraite - ageActuel);
-  const d = Math.max(1, esperanceVie - ageRetraite);
-  // Projeter revenus en dollars futurs
-  const manqueFutur = Math.max(0,
-    revenuDesireAuj * Math.pow(1 + INF, n) - revenuGarantiAuj * Math.pow(1 + INF, n)
-  );
-  // Rente viagère : taux réel pendant la retraite
-  const rReel = ((1 + rendPend) / (1 + INF)) - 1;
-  if (rReel <= 0) return manqueFutur * d;
-  return manqueFutur * ((1 - Math.pow(1 + rReel, -d)) / rReel);
-}
-
-// PMT mensuel pour atteindre le NIF cible
+// PMT mensuel pour atteindre un capital cible depuis un solde initial
 function calcPMT({ nif, epargneActuelle, rendAvant, anneesAvant }) {
   if (anneesAvant <= 0) return nif;
   const r = rendAvant / 12;
@@ -47,8 +27,29 @@ function calcPMT({ nif, epargneActuelle, rendAvant, anneesAvant }) {
   return besoin * r / (Math.pow(1 + r, n) - 1);
 }
 
+// Capital futur depuis solde + cotisations mensuelles
+function fvCapital({ present, monthly, rAnnual, years }) {
+  if (years <= 0) return present;
+  const r = rAnnual / 12;
+  const n = years * 12;
+  if (r === 0) return present + monthly * n;
+  return present * Math.pow(1 + r, n) + monthly * ((Math.pow(1 + r, n) - 1) / r);
+}
+
+// NIF sensibilité pour la matrice (version paramétrable)
+function calcNIFParam({ ageActuel, ageRetraite, esperanceVie, depensesCibles, revGarantiAnnuel, rendPend }) {
+  const d = Math.max(1, esperanceVie - ageRetraite);
+  const manque = Math.max(0, depensesCibles - revGarantiAnnuel);
+  const capitalNIF_4pct = manque / 0.04;
+  const r = rendPend - INF;
+  const capitalNIF_rente = r > 0.005
+    ? manque * ((1 - Math.pow(1 + r, -d)) / r)
+    : manque * d;
+  return (capitalNIF_4pct + capitalNIF_rente) / 2;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
-// SOUS-COMPOSANTS LECTURE SEULE
+// SOUS-COMPOSANTS
 // ─────────────────────────────────────────────────────────────────────────────
 function SectionTitle({ children }) {
   return (
@@ -63,16 +64,7 @@ function SectionTitle({ children }) {
   );
 }
 
-function KVRow({ label, value, valueColor = "#fff", mono = true }) {
-  return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-      <span style={{ fontSize: 12.5, color: "rgba(255,255,255,0.55)", flexShrink: 0, marginRight: 12 }}>{label}</span>
-      <span style={{ fontSize: 13, fontWeight: 700, color: valueColor, fontFamily: mono ? "var(--font-mono)" : "inherit", textAlign: "right" }}>{value}</span>
-    </div>
-  );
-}
-
-function MatCell({ nif, pmt, isTarget, ageRetraite, rendAv, rendPend }) {
+function MatCell({ pmt, isTarget, ageRetraite }) {
   return (
     <div style={{
       borderRadius: 14, padding: "0.85rem 0.7rem", textAlign: "center",
@@ -95,7 +87,6 @@ function MatCell({ nif, pmt, isTarget, ageRetraite, rendAv, rendPend }) {
       <p style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: isTarget ? GOLD_DIM : "rgba(255,255,255,0.3)", marginBottom: 5 }}>
         {ageRetraite} ans
       </p>
-      {/* Ligne 1 : PMT mensuel */}
       <p style={{ fontFamily: "var(--font-mono)", fontSize: isTarget ? "0.88rem" : "0.78rem", fontWeight: 800, color: isTarget ? GOLD : "#fff", lineHeight: 1.15 }}>
         {fmt(pmt)}<span style={{ fontSize: 9, fontWeight: 500, color: isTarget ? GOLD_DIM : "rgba(255,255,255,0.4)", marginLeft: 2 }}>/mois</span>
       </p>
@@ -104,142 +95,53 @@ function MatCell({ nif, pmt, isTarget, ageRetraite, rendAv, rendPend }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// COMPOSANT PRINCIPAL — RAPPORT EN LECTURE SEULE
+// COMPOSANT PRINCIPAL — même source de vérité que NIFScore
 // ─────────────────────────────────────────────────────────────────────────────
 export default function RetirementReport({ profiles }) {
+  // ── Source unique : calcNIFFromProfiles ──────────────────────────────────────
+  const nif = useMemo(() => calcNIFFromProfiles(profiles), [profiles]);
 
-  // ── 1. Extraction données ABF ─────────────────────────────────────────────
-  const abf = useMemo(() => {
-    const unwrap = (raw) => {
-      if (!raw || typeof raw !== "object") return {};
-      if (raw.emplois || raw.revenu_retraite_mensuel || raw.sv || raw.dob) return raw;
-      if (raw.data && typeof raw.data === "object") return unwrap(raw.data);
-      return raw;
-    };
-    const m = {};
-    (profiles || []).forEach(p => { m[p.section] = unwrap(p.data); });
-    return m;
-  }, [profiles]);
+  const {
+    capitalNIF,
+    capitalProjecte,
+    manqueAnnuel,
+    revGarantiAnnuel,
+    depensesCibles,
+    cotSupp,
+    ageActuel,
+    ageRetraite,
+    esperanceVie,
+    anneesAccum,
+    anneesDecaisse,
+    soldeTotal,
+    cotMensuelle,
+    rrqMensuelTotal,
+    psvMensuelTotal,
+  } = nif;
 
-  const profil   = abf.profil_personnel || {};
-  const retraite = abf.retraite || {};
-  const revABF   = abf.revenu || {};
+  const anneesAvant   = anneesAccum;
+  const anneesPend    = anneesDecaisse;
+  const revenuNetAnnuel = depensesCibles > 0 ? Math.round(depensesCibles / 0.70) : 0;
 
-  const enCouple = ["marie", "conjoint", "union_civile"].includes(profil.situation || "");
-  const retraiteConjoint = enCouple ? (retraite.conjoint || {}) : {};
-  const revABFConjoint   = enCouple ? (revABF.conjoint || {}) : {};
+  // Capital projeté avec épargne actuelle
+  const capitalActuelRetraite = useMemo(() => fvCapital({
+    present: soldeTotal || 0, monthly: cotMensuelle || 0,
+    rAnnual: REND_AV, years: anneesAvant,
+  }), [soldeTotal, cotMensuelle, anneesAvant]);
 
-  // ── 2. Paramètres calculés depuis l'ABF ───────────────────────────────────
-  const ageActuel = useMemo(() => {
-    const dob = profil.dob;
-    if (!dob) return 35;
-    return Math.floor((new Date() - new Date(dob)) / (365.25 * 24 * 3600 * 1000));
-  }, [profil.dob]);
-
-  const ageRetraite   = parseInt(retraite.age_retraite)   || 65;
-  const esperanceVie  = parseInt(retraite.esperance_vie)  || 88;
-  const anneesAvant   = Math.max(1, ageRetraite - ageActuel);
-  const anneesPend    = Math.max(1, esperanceVie - ageRetraite);
-
-  // Revenus bruts du foyer complet
-  const revenuBrutAnnuel = useMemo(() => {
-    const sumEmplois = (emplois) => (emplois || []).reduce((a, x) => a + (parseFloat(x.revenu_brut) || 0), 0);
-    const sumSides   = (sides)   => (sides   || []).reduce((a, x) => a + (parseFloat(x.revenu_mensuel_moyen) || 0) * 12, 0);
-    const total = sumEmplois(revABF.emplois) + sumSides(revABF.sidehustles)
-                + sumEmplois(revABFConjoint.emplois) + sumSides(revABFConjoint.sidehustles);
-    return total || 80000;
-  }, [revABF, revABFConjoint]);
-
-  const revenuNetAnnuel = Math.round(revenuBrutAnnuel * 0.72);
-
-  // Objectif de revenu à la retraite
-  const pctRevenuVise = parseInt(retraite.revenu_retraite_pct) || 70;
-  const revenuDesireAuj = useMemo(() => {
-    const m = parseFloat(retraite.revenu_retraite_mensuel) || 0;
-    return m > 0 ? m * 12 : Math.round(revenuNetAnnuel * pctRevenuVise / 100);
-  }, [retraite.revenu_retraite_mensuel, revenuNetAnnuel, pctRevenuVise]);
-
-  const revenuDesireFutur = Math.round(revenuDesireAuj * Math.pow(1 + INF, anneesAvant));
-
-  // Revenus garantis foyer (SV + RRQ + fonds pension des deux)
-  function sumGaranti(ret) {
-    const sv  = parseFloat(ret.sv)  || 0;
-    const rrq = parseFloat(ret.rrq) || 0;
-    const fp  = parseFloat((ret.fond_pension || {}).rente_mensuelle_estimee) || 0;
-    return (sv + rrq + fp) * 12;
-  }
-  const revenuGarantiAuj = sumGaranti(retraite) + sumGaranti(retraiteConjoint);
-
-  // Épargne actuelle totale — foyer
-  function sumEpargne(ret) {
-    const comptes = ret.comptes || {};
-    let total = Object.values(comptes).reduce((s, list) => {
-      if (!Array.isArray(list)) return s;
-      return s + list.reduce((a, c) => a + (parseFloat(c.solde) || 0), 0);
-    }, 0);
-    total += parseFloat((ret.fond_pension || {}).solde) || 0;
-    return total;
-  }
-  const epargneActuelle = useMemo(() => {
-    const total = sumEpargne(retraite) + sumEpargne(retraiteConjoint);
-    return total || 25000;
-  }, [retraite, retraiteConjoint]);
-
-  // Épargne mensuelle actuelle — foyer
-  function sumCotisations(ret) {
-    const comptes = ret.comptes || {};
-    let total = Object.values(comptes).reduce((s, list) => {
-      if (!Array.isArray(list)) return s;
-      return s + list.reduce((a, c) => a + (parseFloat(c.cotisation_mensuelle) || 0), 0);
-    }, 0);
-    const fp = ret.fond_pension || {};
-    total += (parseFloat(fp.cotisation_salariale) || 0) + (parseFloat(fp.cotisation_patronale) || 0);
-    return total;
-  }
-  const epargneMensActuelle = useMemo(() => {
-    const total = sumCotisations(retraite) + sumCotisations(retraiteConjoint);
-    return total || 500;
-  }, [retraite, retraiteConjoint]);
-
-  // ── 3. Taux de rendement ──────────────────────────────────────────────────
-  const REND_AV   = 0.07; // avant retraite (7%)
-  const REND_PEND = 0.05; // pendant retraite (5%)
-
-  // ── 4. NIF cible & PMT requis ─────────────────────────────────────────────
-  const nifCible = useMemo(() => calcNIF({
-    ageActuel, ageRetraite, esperanceVie,
-    revenuDesireAuj, rendAvant: REND_AV, rendPend: REND_PEND,
-    revenuGarantiAuj,
-  }), [ageActuel, ageRetraite, esperanceVie, revenuDesireAuj, revenuGarantiAuj]);
+  const manqueCapital = Math.max(0, capitalNIF - capitalActuelRetraite);
 
   const pmtRequis = useMemo(() => calcPMT({
-    nif: nifCible, epargneActuelle, rendAvant: REND_AV, anneesAvant,
-  }), [nifCible, epargneActuelle, anneesAvant]);
+    nif: capitalNIF, epargneActuelle: soldeTotal || 0,
+    rendAvant: REND_AV, anneesAvant,
+  }), [capitalNIF, soldeTotal, anneesAvant]);
 
-  // PMT si on commence 5 ans plus tard
-  const nifAvec5ans = useMemo(() => calcNIF({
-    ageActuel: ageActuel + 5, ageRetraite, esperanceVie,
-    revenuDesireAuj, rendAvant: REND_AV, rendPend: REND_PEND,
-    revenuGarantiAuj,
-  }), [ageActuel, ageRetraite, esperanceVie, revenuDesireAuj, revenuGarantiAuj]);
+  const curPct = revenuNetAnnuel > 0 ? (cotMensuelle || 0) * 12 / revenuNetAnnuel : 0;
+  const pmtPct = revenuNetAnnuel > 0 ? pmtRequis * 12 / revenuNetAnnuel : 0;
+  const revenuMensuelVise = Math.round(depensesCibles / 12);
+  const revenuMensuelFutur = Math.round(depensesCibles * Math.pow(1 + INF, anneesAvant) / 12);
 
-  const pmtAvec5ans = useMemo(() => calcPMT({
-    nif: nifAvec5ans, epargneActuelle, rendAvant: REND_AV,
-    anneesAvant: Math.max(1, anneesAvant - 5),
-  }), [nifAvec5ans, epargneActuelle, anneesAvant]);
-
-  // ── 5. Projections situation actuelle ─────────────────────────────────────
-  const capitalActuelRetraite = useMemo(() => fvCapital({
-    present: epargneActuelle, monthly: epargneMensActuelle,
-    rAnnual: REND_AV, years: anneesAvant,
-  }), [epargneActuelle, epargneMensActuelle, anneesAvant]);
-
-  const manqueActuel = Math.max(0, nifCible - capitalActuelRetraite);
-
-  const pmtPct   = revenuNetAnnuel > 0 ? pmtRequis * 12 / revenuNetAnnuel : 0;
-  const curPct   = revenuNetAnnuel > 0 ? epargneMensActuelle * 12 / revenuNetAnnuel : 0;
-
-  // ── 6. Matrice de sensibilité ─────────────────────────────────────────────
+  // ── Matrice de sensibilité ─────────────────────────────────────────────────
   const SCENARIOS = [
     { rendAv: 0.05, rendPend: 0.03 },
     { rendAv: 0.07, rendPend: 0.05 },
@@ -250,15 +152,13 @@ export default function RetirementReport({ profiles }) {
   const matrice = useMemo(() =>
     AGES_MAT.map(age =>
       SCENARIOS.map(sc => {
-        const nif = calcNIF({ ageActuel, ageRetraite: age, esperanceVie, revenuDesireAuj, rendAvant: sc.rendAv, rendPend: sc.rendPend, revenuGarantiAuj });
-        const pmt = calcPMT({ nif, epargneActuelle, rendAvant: sc.rendAv, anneesAvant: Math.max(1, age - ageActuel) });
-        return { nif, pmt };
+        const nifV = calcNIFParam({ ageActuel, ageRetraite: age, esperanceVie, depensesCibles, revGarantiAnnuel, rendPend: sc.rendPend });
+        const pmt  = calcPMT({ nif: nifV, epargneActuelle: soldeTotal || 0, rendAvant: sc.rendAv, anneesAvant: Math.max(1, age - ageActuel) });
+        return { nif: nifV, pmt };
       })
-    ), [ageActuel, ageRetraite, esperanceVie, revenuDesireAuj, revenuGarantiAuj, epargneActuelle, anneesAvant]
+    ), [ageActuel, ageRetraite, esperanceVie, depensesCibles, revGarantiAnnuel, soldeTotal, anneesAvant]
   );
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // RENDU
   // ─────────────────────────────────────────────────────────────────────────
   const cardBase = {
     background: "rgba(255,255,255,0.03)",
@@ -276,7 +176,7 @@ export default function RetirementReport({ profiles }) {
       boxShadow: "0 20px 60px rgba(0,0,0,0.45), inset 0 1px 0 rgba(201,160,99,0.07)",
     }}>
 
-      {/* ── EN-TÊTE ─────────────────────────────────────────────────────── */}
+      {/* EN-TÊTE */}
       <div style={{
         padding: "1.25rem 2rem",
         borderBottom: "1px solid rgba(201,160,99,0.1)",
@@ -293,11 +193,11 @@ export default function RetirementReport({ profiles }) {
         </div>
         <div style={{ textAlign: "right" }}>
           <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.25)" }}>Analyse personnalisée · Québec 2026</p>
-          <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.18)", marginTop: 1 }}>Hypothèses : inflation 2,1 % · Taux de base 7 % / 5 %</p>
+          <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.18)", marginTop: 1 }}>Hypothèses : inflation 2,5 % · Taux de base 7 % / 5 %</p>
         </div>
       </div>
 
-      {/* ── NIF HERO — pleine largeur en haut ───────────────────────────── */}
+      {/* NIF HERO */}
       <div style={{
         padding: "1.75rem 2rem",
         borderBottom: "1px solid rgba(201,160,99,0.1)",
@@ -318,21 +218,27 @@ export default function RetirementReport({ profiles }) {
             letterSpacing: "-0.04em", lineHeight: 1, color: GOLD,
             textShadow: "0 0 40px rgba(201,160,99,0.6), 0 0 80px rgba(201,160,99,0.25)",
           }}>
-            {fmt(nifCible)}
+            {fmt(capitalNIF)}
           </p>
-          <p style={{ fontSize: 11.5, color: "rgba(255,255,255,0.45)", marginTop: 8, lineHeight: 1.5 }}>
-            Pour {fmt(revenuDesireAuj / 12)}/mois jusqu'à <strong style={{ color: "rgba(255,255,255,0.7)" }}>{esperanceVie} ans</strong>,
-            capital à accumuler à <strong style={{ color: GOLD }}>{ageRetraite} ans</strong>.
+          {/* Note explicative : pourquoi le NIF est plus bas que sur d'autres calculateurs */}
+          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.38)", marginTop: 8, lineHeight: 1.55 }}>
+            Capital à accumuler <em>en plus</em> de la RRQ ({fmt(rrqMensuelTotal)}/mois)
+            {psvMensuelTotal > 0 && <> et de la PSV ({fmt(psvMensuelTotal)}/mois)</>}{" "}
+            qui couvrent déjà {fmt(revGarantiAnnuel)}/an.
+          </p>
+          <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.28)", marginTop: 6, lineHeight: 1.45 }}>
+            Objectif : {fmt(revenuMensuelVise)}/mois jusqu'à{" "}
+            <strong style={{ color: "rgba(255,255,255,0.6)" }}>{esperanceVie} ans</strong>.
           </p>
         </div>
 
-        {/* Stats pills en ligne */}
+        {/* Stats pills */}
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", flex: 1, position: "relative" }}>
           {[
-            { l: "Années d'épargne",    v: `${anneesAvant} ans` },
-            { l: "Années de retraite",  v: `${anneesPend} ans` },
-            { l: "Revenus garantis",    v: `${fmt(revenuGarantiAuj)}/an` },
-            { l: "Épargne requise",     v: `${fmt(pmtRequis)}/mois`, gold: true },
+            { l: "Années d'épargne",   v: `${anneesAvant} ans` },
+            { l: "Années de retraite", v: `${anneesPend} ans` },
+            { l: "Revenus garantis",   v: `${fmt(revGarantiAnnuel)}/an` },
+            { l: "Épargne requise",    v: `${fmt(pmtRequis)}/mois`, gold: true },
           ].map(x => (
             <div key={x.l} style={{
               display: "flex", flexDirection: "column", gap: 4,
@@ -347,102 +253,99 @@ export default function RetirementReport({ profiles }) {
         </div>
       </div>
 
-      {/* ── DEUX TABLEAUX CÔTE À CÔTE ────────────────────────────────────── */}
+      {/* DEUX TABLEAUX CÔTE À CÔTE */}
       <div style={{ padding: "1.25rem 1.5rem", display: "flex", flexDirection: "row", gap: "1rem", alignItems: "flex-start" }}>
 
-          {/* TABLEAU COMPARATIF */}
-          <div style={{ ...cardBase, flex: 1, minWidth: 0 }}>
-            <SectionTitle>📊 Tableau comparatif</SectionTitle>
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead>
-                  <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
-                    {[
-                      { label: "", align: "left" },
-                      { label: "Situation actuelle", align: "right", color: "#94A3B8" },
-                      { label: "Objectif", align: "right", color: GOLD },
-                    ].map((h, i) => (
-                      <th key={i} style={{ padding: "8px 10px", fontSize: 9.5, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", color: h.color || "rgba(255,255,255,0.25)", textAlign: h.align }}>{h.label}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
+        {/* TABLEAU COMPARATIF */}
+        <div style={{ ...cardBase, flex: 1, minWidth: 0 }}>
+          <SectionTitle>📊 Tableau comparatif</SectionTitle>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
                   {[
-                    { label: "Épargnes mensuelles", cur: `${fmt(epargneMensActuelle)}/mois`, req: `${fmt(pmtRequis)}/mois`, reqColor: pmtRequis > epargneMensActuelle ? "#f87171" : "#5BC4A0", hl: true },
-                    { label: "% du revenu", cur: fmtPct(curPct), req: fmtPct(pmtPct), reqColor: pmtPct > curPct ? "#f87171" : "#5BC4A0" },
-                    { label: "Fonds accumulé", cur: fmt(capitalActuelRetraite), req: fmt(nifCible), reqColor: GOLD, hl: true },
-                    { label: "Manque à gagner", cur: fmt(manqueActuel), req: "0 $", curColor: manqueActuel > 0 ? "#f87171" : "#5BC4A0", reqColor: "#5BC4A0" },
-                    { label: "Revenu mensuel visé", cur: `${fmt(revenuDesireAuj / 12)}/mois`, req: `${fmt(revenuDesireFutur / 12)}/mois`, reqColor: GOLD, hl: true },
-                    { label: "Durée d'épargne", cur: `${anneesAvant} ans`, req: `${anneesAvant} ans` },
-                  ].map((row, i) => (
-                    <tr key={i} style={{ borderBottom: "1px solid rgba(255,255,255,0.05)", background: row.hl ? "rgba(201,160,99,0.03)" : "transparent" }}>
-                      <td style={{ padding: "9px 10px", fontSize: 11.5, color: "rgba(255,255,255,0.65)" }}>{row.label}</td>
-                      <td style={{ padding: "9px 10px", fontSize: 11.5, fontFamily: "var(--font-mono)", fontWeight: 600, color: row.curColor || "#fff", textAlign: "right" }}>{row.cur}</td>
-                      <td style={{ padding: "9px 10px", fontSize: 11.5, fontFamily: "var(--font-mono)", fontWeight: 700, color: row.reqColor || GOLD, textAlign: "right" }}>{row.req}</td>
-                    </tr>
+                    { label: "", align: "left" },
+                    { label: "Situation actuelle", align: "right", color: "#94A3B8" },
+                    { label: "Objectif", align: "right", color: GOLD },
+                  ].map((h, i) => (
+                    <th key={i} style={{ padding: "8px 10px", fontSize: 9.5, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", color: h.color || "rgba(255,255,255,0.25)", textAlign: h.align }}>{h.label}</th>
                   ))}
-                </tbody>
-              </table>
-            </div>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  { label: "Épargnes mensuelles", cur: `${fmt(cotMensuelle)}/mois`, req: `${fmt(pmtRequis)}/mois`, reqColor: pmtRequis > cotMensuelle ? "#f87171" : "#5BC4A0", hl: true },
+                  { label: "% du revenu", cur: fmtPct(curPct), req: fmtPct(pmtPct), reqColor: pmtPct > curPct ? "#f87171" : "#5BC4A0" },
+                  { label: "Capital NIF nécessaire", cur: fmt(capitalActuelRetraite), req: fmt(capitalNIF), reqColor: GOLD, hl: true },
+                  { label: "Manque de capital", cur: fmt(manqueCapital), req: "0 $", curColor: manqueCapital > 0 ? "#f87171" : "#5BC4A0", reqColor: "#5BC4A0" },
+                  { label: "Revenu mensuel visé", cur: `${fmt(revenuMensuelVise)}/mois`, req: `${fmt(revenuMensuelFutur)}/mois ($ futurs)`, reqColor: GOLD, hl: true },
+                  { label: "Revenus garantis", cur: fmt(revGarantiAnnuel) + "/an", req: fmt(revGarantiAnnuel) + "/an" },
+                  { label: "Durée d'épargne", cur: `${anneesAvant} ans`, req: `${anneesAvant} ans` },
+                ].map((row, i) => (
+                  <tr key={i} style={{ borderBottom: "1px solid rgba(255,255,255,0.05)", background: row.hl ? "rgba(201,160,99,0.03)" : "transparent" }}>
+                    <td style={{ padding: "9px 10px", fontSize: 11.5, color: "rgba(255,255,255,0.65)" }}>{row.label}</td>
+                    <td style={{ padding: "9px 10px", fontSize: 11.5, fontFamily: "var(--font-mono)", fontWeight: 600, color: row.curColor || "#fff", textAlign: "right" }}>{row.cur}</td>
+                    <td style={{ padding: "9px 10px", fontSize: 11.5, fontFamily: "var(--font-mono)", fontWeight: 700, color: row.reqColor || GOLD, textAlign: "right" }}>{row.req}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* MATRICE DE SENSIBILITÉ */}
+        <div style={{ ...cardBase, flex: 1, minWidth: 0 }}>
+          <SectionTitle>🔬 Épargne selon l'âge et le rendement</SectionTitle>
+
+          {/* En-têtes colonnes */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 6, marginBottom: 8 }}>
+            {SCENARIOS.map(sc => (
+              <div key={sc.rendAv} style={{ textAlign: "center" }}>
+                <span style={{
+                  display: "inline-block", fontSize: 9, fontWeight: 700,
+                  padding: "2px 8px", borderRadius: 99,
+                  background: sc.rendAv === 0.07 ? "rgba(201,160,99,0.18)" : "rgba(255,255,255,0.04)",
+                  border: sc.rendAv === 0.07 ? "1px solid rgba(201,160,99,0.4)" : "1px solid rgba(255,255,255,0.06)",
+                  color: sc.rendAv === 0.07 ? GOLD : "rgba(255,255,255,0.4)",
+                  letterSpacing: "0.04em",
+                }}>
+                  {(sc.rendAv * 100).toFixed(0)} % / {(sc.rendPend * 100).toFixed(0)} %
+                </span>
+              </div>
+            ))}
           </div>
 
-          {/* MATRICE DE SENSIBILITÉ */}
-          <div style={{ ...cardBase, flex: 1, minWidth: 0 }}>
-            <SectionTitle>🔬 Épargne selon l'âge et le rendement</SectionTitle>
-
-            {/* En-têtes colonnes */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 6, marginBottom: 8 }}>
-              {SCENARIOS.map(sc => (
-                <div key={sc.rendAv} style={{ textAlign: "center" }}>
-                  <span style={{
-                    display: "inline-block", fontSize: 9, fontWeight: 700,
-                    padding: "2px 8px", borderRadius: 99,
-                    background: sc.rendAv === 0.07 ? "rgba(201,160,99,0.18)" : "rgba(255,255,255,0.04)",
-                    border: sc.rendAv === 0.07 ? "1px solid rgba(201,160,99,0.4)" : "1px solid rgba(255,255,255,0.06)",
-                    color: sc.rendAv === 0.07 ? GOLD : "rgba(255,255,255,0.4)",
-                    letterSpacing: "0.04em",
-                  }}>
-                    {(sc.rendAv * 100).toFixed(0)} % / {(sc.rendPend * 100).toFixed(0)} %
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            {/* Grille 3×3 */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {AGES_MAT.map((age, ri) => (
-                <div key={age} style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 6 }}>
-                  {SCENARIOS.map((sc, ci) => (
-                    <MatCell
-                      key={`${age}-${sc.rendAv}`}
-                      nif={matrice[ri]?.[ci]?.nif || 0}
-                      pmt={matrice[ri]?.[ci]?.pmt || 0}
-                      ageRetraite={age}
-                      rendAv={sc.rendAv}
-                      rendPend={sc.rendPend}
-                      isTarget={age === ageRetraite && sc.rendAv === 0.07}
-                    />
-                  ))}
-                </div>
-              ))}
-            </div>
-
-            {/* Légende âges */}
-            <div style={{ display: "flex", justifyContent: "space-around", marginTop: 8 }}>
-              {AGES_MAT.map((age, i) => (
-                <p key={age} style={{ fontSize: 9, textAlign: "center", color: age === ageRetraite ? GOLD : "rgba(255,255,255,0.22)", fontWeight: age === ageRetraite ? 700 : 400 }}>
-                  {i === 0 ? "▲ Anticipée" : i === 1 ? "◆ Cible" : "▼ Différée"}
-                </p>
-              ))}
-            </div>
+          {/* Grille 3×3 */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {AGES_MAT.map((age, ri) => (
+              <div key={age} style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 6 }}>
+                {SCENARIOS.map((sc, ci) => (
+                  <MatCell
+                    key={`${age}-${sc.rendAv}`}
+                    pmt={matrice[ri]?.[ci]?.pmt || 0}
+                    ageRetraite={age}
+                    isTarget={age === ageRetraite && sc.rendAv === 0.07}
+                  />
+                ))}
+              </div>
+            ))}
           </div>
 
-      </div>{/* fin deux tableaux */}
+          {/* Légende âges */}
+          <div style={{ display: "flex", justifyContent: "space-around", marginTop: 8 }}>
+            {AGES_MAT.map((age, i) => (
+              <p key={age} style={{ fontSize: 9, textAlign: "center", color: age === ageRetraite ? GOLD : "rgba(255,255,255,0.22)", fontWeight: age === ageRetraite ? 700 : 400 }}>
+                {i === 0 ? "▲ Anticipée" : i === 1 ? "◆ Cible" : "▼ Différée"}
+              </p>
+            ))}
+          </div>
+        </div>
+      </div>
 
-      {/* ── PIED DE RAPPORT ───────────────────────────────────────────────── */}
+      {/* PIED DE RAPPORT */}
       <p style={{ fontSize: 10, color: "rgba(255,255,255,0.15)", textAlign: "center", fontStyle: "italic", padding: "0.75rem 2rem 1rem" }}>
         MonPlanFin · Québec 2026 · Ces projections sont à titre indicatif uniquement.
-        Inflation : 2,1 % · Rendements : 7,00 % / 5,00 % (scénario de base).
+        Inflation : 2,5 % · Rendements : 7,00 % / 5,00 % (scénario de base). RRQ et PSV soustraits du capital NIF.
       </p>
     </div>
   );

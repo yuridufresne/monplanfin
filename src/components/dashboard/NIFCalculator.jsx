@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
-import { calcNIFFromProfiles } from "./NIFScore";
+import { calcNIFFromProfiles } from "@/lib/calcNIF";
 
 const fmt = (v) =>
   new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v || 0);
