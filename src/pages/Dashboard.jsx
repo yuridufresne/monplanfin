@@ -9,6 +9,7 @@ import { calcRevenuDisponible } from "@/lib/calcRevenuNet";
 import ResetDataModal from "@/components/dashboard/ResetDataModal";
 import RetirementReport from "@/components/dashboard/RetirementReport";
 import DebtSimulator from "@/components/dashboard/DebtSimulator";
+import ReerLevierSimulator from "@/components/dashboard/ReerLevierSimulator";
 
 const fmt = (v) => new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v || 0);
 const fmtPct = (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)} %`;
@@ -246,8 +247,13 @@ export default function Dashboard() {
               <DebtSimulator debts={debts} />
             </motion.div>
 
+            {/* Simulateur prêt REER en levier */}
+            <motion.div {...fadeUp(0.36)} className="mb-6">
+              <ReerLevierSimulator />
+            </motion.div>
+
             {/* Observations financières */}
-            <motion.div {...fadeUp(0.36)}>
+            <motion.div {...fadeUp(0.39)}>
               <div style={{ ...glass.card, borderRadius: 24, overflow: "hidden" }}>
                 <div style={{ padding: "1.5rem 2rem", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
                   <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(201,160,99,0.5)", marginBottom: 4 }}>Analyse</p>
