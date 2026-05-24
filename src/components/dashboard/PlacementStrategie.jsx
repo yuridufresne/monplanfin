@@ -24,7 +24,6 @@ export default function PlacementStrategie({ retraiteABF={}, revenuBrut=0, tauxM
 
   const [budget,   setBudget]   = useState(actuel.total || 725);
   const [reerPct,  setReerPct]  = useState(actuel.total>0?Math.round(actuel.reerCot/actuel.total*100):50);
-  const [mode,     setMode]     = useState("celi");
   const [advOpen,  setAdvOpen]  = useState(false);
   const [rendReer, setRendReer] = useState(7);
   const [rendCeli, setRendCeli] = useState(6);
@@ -33,13 +32,14 @@ export default function PlacementStrategie({ retraiteABF={}, revenuBrut=0, tauxM
     const rM  = Math.round(budget*reerPct/100);
     const cM  = budget-rM;
     const ret = Math.round(rM*tauxMarginal);
-    const reerFinal = rM+(mode==="reer"?ret:0);
-    const celiFinal = cM+(mode==="celi"?ret:0);
     const rR = rendReer/100, rC = rendCeli/100, ans = actuel.ans;
-    const proj = Math.round(FVs(actuel.soldeR,rR,ans)*0.70+FV(reerFinal,rR,ans)*0.70+FVs(actuel.soldeC,rC,ans)+FV(celiFinal,rC,ans));
+    const proj = Math.round(
+      FVs(actuel.soldeR,rR,ans)*0.70 + FV(rM,rR,ans)*0.70 +
+      FVs(actuel.soldeC,rC,ans) + FV(cM,rC,ans) + FV(ret,rC,ans)
+    );
     const diff = proj-actuel.proj;
-    return { reerMois:rM, celiMois:cM, retour:ret, reerFinal, celiFinal, proj, diff };
-  }, [budget, reerPct, mode, rendReer, rendCeli, actuel, tauxMarginal]);
+    return { reerMois:rM, celiMois:cM, retour:ret, proj, diff };
+  }, [budget, reerPct, rendReer, rendCeli, actuel, tauxMarginal]);
 
   const S = {
     label: { fontSize:9, fontWeight:600, color:"rgba(255,255,255,0.25)", letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:4 },
@@ -49,21 +49,30 @@ export default function PlacementStrategie({ retraiteABF={}, revenuBrut=0, tauxM
     tick:  { display:"flex", justifyContent:"space-between", fontSize:8, color:"rgba(255,255,255,0.18)", marginTop:3 },
   };
 
-  const SplitBar = ({ pctR, pctC }) => (
-    <div>
-      <div style={{ height:5, borderRadius:3, display:"flex", overflow:"hidden", margin:"5px 0" }}>
-        <div style={{ width:`${pctR}%`, background:"#C9A063", opacity:.7 }} />
-        <div style={{ width:`${pctC}%`, background:"#5BC4A0", opacity:.55 }} />
+  const SplitBar = ({ pctR, pctC, pctRetour }) => {
+    const total = pctR + pctC + pctRetour;
+    const r   = total > 0 ? Math.round(pctR/total*100)      : 0;
+    const c   = total > 0 ? Math.round(pctC/total*100)      : 0;
+    const ret = 100 - r - c;
+    return (
+      <div>
+        <div style={{ height:5, borderRadius:3, display:"flex", overflow:"hidden", margin:"5px 0" }}>
+          <div style={{ width:`${r}%`,   background:"#C9A063", opacity:.7  }} />
+          <div style={{ width:`${c}%`,   background:"#5BC4A0", opacity:.55 }} />
+          <div style={{ width:`${ret}%`, background:"#5BC4A0", opacity:.25 }} />
+        </div>
+        <div style={{ display:"flex", gap:8, ...S.muted }}>
+          <span>REER {r}%</span>
+          <span>CELI {c}%</span>
+          <span style={{ color:"rgba(91,196,160,0.4)" }}>+ retour {ret}%</span>
+        </div>
       </div>
-      <div style={{ display:"flex", gap:8, ...S.muted }}>
-        <span>REER {pctR}%</span><span>CELI {pctC}%</span>
-      </div>
-    </div>
-  );
+    );
+  };
 
-  const pctR_act = actuel.total>0?Math.round(actuel.reerCot/actuel.total*100):0;
-  const pctC_act = actuel.total>0?Math.round(actuel.celiCot/actuel.total*100):0;
-  const tot_sim  = sim.reerFinal+sim.celiFinal;
+  const pctR_act = actuel.reerCot;
+  const pctC_act = actuel.celiCot;
+  const pctRetour_act = actuel.retour;
 
   return (
     <div>
@@ -73,18 +82,7 @@ export default function PlacementStrategie({ retraiteABF={}, revenuBrut=0, tauxM
         <div style={{ fontSize:11, color:"rgba(255,255,255,0.35)" }}>Impact du retour d'impôt REER selon la stratégie choisie</div>
       </div>
 
-      {/* Toggle */}
-      <div style={{ ...S.label, marginBottom:6 }}>Le retour d'impôt REER est réinvesti en…</div>
-      <div style={{ display:"flex", background:"rgba(255,255,255,0.04)", borderRadius:8, padding:2, gap:2, marginBottom:14 }}>
-        {[{k:"celi",l:"CELI (recommandé)"},{k:"reer",l:"REER (double levier)"}].map(({k,l})=>(
-          <button key={k} onClick={()=>setMode(k)} style={{
-            flex:1, padding:"5px 0", borderRadius:6, fontSize:10, fontWeight:600,
-            cursor:"pointer", border:"none", transition:"all .2s", textAlign:"center",
-            background: mode===k?"rgba(201,160,99,0.18)":"transparent",
-            color: mode===k?"#C9A063":"rgba(255,255,255,0.3)",
-          }}>{l}</button>
-        ))}
-      </div>
+
 
       {/* Deux rectangles */}
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:14 }}>
@@ -96,32 +94,42 @@ export default function PlacementStrategie({ retraiteABF={}, revenuBrut=0, tauxM
             <span style={{ fontSize:9, color:"rgba(255,255,255,0.2)", background:"rgba(255,255,255,0.05)", padding:"2px 7px", borderRadius:4 }}>Depuis ABF</span>
           </div>
 
-          {[[actuel.reerCot,"#C9A063","REER",actuel.soldeR],[actuel.celiCot,"#5BC4A0","CELI",actuel.soldeC]].filter(([c])=>c>0).map(([c,col,nom,solde],i)=>(
-            <div key={i} style={{ ...S.row, ...(i===2?{borderBottom:"none"}:{}) }}>
-              <div style={{ display:"flex", alignItems:"center", gap:7 }}>
-                <div style={{ width:6, height:6, borderRadius:"50%", background:col, flexShrink:0 }} />
-                <span style={{ fontSize:12 }}>{nom}</span>
-              </div>
-              <div style={{ textAlign:"right" }}>
-                <div style={{ fontSize:13, fontWeight:700, color:col }}>{c.toLocaleString("fr-CA")} $<span style={{ fontSize:10, fontWeight:400, color:"rgba(255,255,255,0.3)" }}>/mois</span></div>
-                <div style={{ ...S.muted }}>Solde {fmt(solde)}</div>
-              </div>
+          {/* Ligne REER */}
+          <div style={{ ...S.row }}>
+            <div style={{ display:"flex", alignItems:"center", gap:7 }}>
+              <div style={{ width:6, height:6, borderRadius:"50%", background:"#C9A063", flexShrink:0 }} />
+              <span style={{ fontSize:12 }}>REER</span>
             </div>
-          ))}
-
-          <div style={{ ...S.sep }} />
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
-            <span style={{ ...S.muted }}>Total mensuel</span>
-            <span style={{ fontSize:14, fontWeight:700 }}>{actuel.total.toLocaleString("fr-CA")} $</span>
+            <div style={{ textAlign:"right" }}>
+              <div style={{ fontSize:13, fontWeight:700, color:"#C9A063" }}>{actuel.reerCot.toLocaleString("fr-CA")} $<span style={{ fontSize:10, fontWeight:400, color:"rgba(255,255,255,0.3)" }}>/mois</span></div>
+              <div style={{ ...S.muted }}>Solde {fmt(actuel.soldeR)}</div>
+            </div>
           </div>
-          <SplitBar pctR={pctR_act} pctC={pctC_act} />
-          <div style={{ ...S.sep }} />
-
-          <div style={{ background:"rgba(91,196,160,0.05)", border:"1px solid rgba(91,196,160,0.12)", borderRadius:8, padding:"8px 10px", marginBottom:10 }}>
-            <div style={{ fontSize:10, color:"rgba(91,196,160,0.7)", fontWeight:600, marginBottom:2 }}>Retour d'impôt REER actuel</div>
-            <div style={{ fontSize:16, fontWeight:700, color:"#5BC4A0" }}>+{actuel.retour.toLocaleString("fr-CA")} $<span style={{ fontSize:10, fontWeight:400, color:"rgba(91,196,160,0.45)" }}>/mois</span></div>
-            <div style={{ ...S.muted }}>{actuel.reerCot}$ × {Math.round(tauxMarginal*100)}% ÷ 12</div>
+          {/* Ligne CELI */}
+          <div style={{ ...S.row }}>
+            <div style={{ display:"flex", alignItems:"center", gap:7 }}>
+              <div style={{ width:6, height:6, borderRadius:"50%", background:"#5BC4A0", flexShrink:0 }} />
+              <span style={{ fontSize:12 }}>CELI</span>
+            </div>
+            <div style={{ textAlign:"right" }}>
+              <div style={{ fontSize:13, fontWeight:700, color:"#5BC4A0" }}>{actuel.celiCot.toLocaleString("fr-CA")} $<span style={{ fontSize:10, fontWeight:400, color:"rgba(255,255,255,0.3)" }}>/mois</span></div>
+              <div style={{ ...S.muted }}>Solde {fmt(actuel.soldeC)}</div>
+            </div>
           </div>
+          {/* Ligne retour d'impôt — read-only */}
+          <div style={{ ...S.row, borderBottom:"none" }}>
+            <div style={{ display:"flex", alignItems:"center", gap:7 }}>
+              <div style={{ width:6, height:6, borderRadius:"50%", background:"transparent", border:"1px dashed rgba(91,196,160,0.4)", flexShrink:0 }} />
+              <span style={{ fontSize:12, color:"rgba(255,255,255,0.55)" }}>Retour d'impôt → CELI</span>
+              <span style={{ fontSize:9, background:"rgba(255,255,255,0.05)", color:"rgba(255,255,255,0.3)", border:"1px solid rgba(255,255,255,0.1)", padding:"1px 6px", borderRadius:4, fontWeight:600 }}>auto</span>
+            </div>
+            <div style={{ fontSize:13, fontWeight:700, color:"rgba(91,196,160,0.7)" }}>+{actuel.retour.toLocaleString("fr-CA")} $<span style={{ fontSize:10, fontWeight:400, color:"rgba(255,255,255,0.3)" }}>/mois</span></div>
+          </div>
+
+          <div style={{ marginTop:6 }}>
+            <SplitBar pctR={pctR_act} pctC={pctC_act} pctRetour={pctRetour_act} />
+          </div>
+          <div style={{ ...S.sep }} />
 
           <div style={{ ...S.label, marginBottom:4 }}>Projection à {ageRetraite} ans (7%/an)</div>
           <div style={{ fontSize:18, fontWeight:700, color:"#fff" }}>{fmt(actuel.proj)}</div>
@@ -183,32 +191,38 @@ export default function PlacementStrategie({ retraiteABF={}, revenuBrut=0, tauxM
             ))}
           </div>
 
-          {/* Comptes simulés */}
-          {[[sim.reerFinal,"#C9A063","REER",mode==="reer"&&sim.retour>0],[sim.celiFinal,"#5BC4A0","CELI",mode==="celi"&&sim.retour>0]].map(([c,col,nom,hasRetour],i)=>(
-            <div key={i} style={{ ...S.row, ...(i===1?{borderBottom:"none"}:{}) }}>
-              <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-                <div style={{ width:6, height:6, borderRadius:"50%", background:col, flexShrink:0 }} />
-                <span style={{ fontSize:12 }}>{nom}</span>
-                {hasRetour&&<span style={{ fontSize:9, background:"rgba(91,196,160,0.1)", color:"#5BC4A0", padding:"1px 5px", borderRadius:4, fontWeight:600 }}>+{sim.retour}$ retour</span>}
-              </div>
-              <div style={{ fontSize:13, fontWeight:700, color:col }}>{c.toLocaleString("fr-CA")} $<span style={{ fontSize:10, fontWeight:400, color:"rgba(255,255,255,0.3)" }}>/mois</span></div>
+          {/* Ligne REER sim */}
+          <div style={{ ...S.row }}>
+            <div style={{ display:"flex", alignItems:"center", gap:7 }}>
+              <div style={{ width:6, height:6, borderRadius:"50%", background:"#C9A063", flexShrink:0 }} />
+              <span style={{ fontSize:12 }}>REER</span>
             </div>
-          ))}
+            <div style={{ fontSize:13, fontWeight:700, color:"#C9A063" }}>{sim.reerMois.toLocaleString("fr-CA")} $<span style={{ fontSize:10, fontWeight:400, color:"rgba(255,255,255,0.3)" }}>/mois</span></div>
+          </div>
+          {/* Ligne CELI sim */}
+          <div style={{ ...S.row }}>
+            <div style={{ display:"flex", alignItems:"center", gap:7 }}>
+              <div style={{ width:6, height:6, borderRadius:"50%", background:"#5BC4A0", flexShrink:0 }} />
+              <span style={{ fontSize:12 }}>CELI</span>
+            </div>
+            <div style={{ fontSize:13, fontWeight:700, color:"#5BC4A0" }}>{sim.celiMois.toLocaleString("fr-CA")} $<span style={{ fontSize:10, fontWeight:400, color:"rgba(255,255,255,0.3)" }}>/mois</span></div>
+          </div>
+          {/* Ligne retour d'impôt sim — read-only */}
+          <div style={{ ...S.row, borderBottom:"none" }}>
+            <div style={{ display:"flex", alignItems:"center", gap:7 }}>
+              <div style={{ width:6, height:6, borderRadius:"50%", background:"transparent", border:"1px dashed rgba(91,196,160,0.5)", flexShrink:0 }} />
+              <span style={{ fontSize:12, color:"rgba(255,255,255,0.6)" }}>Retour d'impôt → CELI</span>
+              <span style={{ fontSize:9, background:"rgba(91,196,160,0.1)", color:"#5BC4A0", border:"1px solid rgba(91,196,160,0.2)", padding:"1px 6px", borderRadius:4, fontWeight:600 }}>auto</span>
+            </div>
+            <div style={{ fontSize:13, fontWeight:700, color:"#5BC4A0" }}>+{sim.retour.toLocaleString("fr-CA")} $<span style={{ fontSize:10, fontWeight:400, color:"rgba(255,255,255,0.3)" }}>/mois</span></div>
+          </div>
           <div style={{ marginTop:6 }}>
-            <SplitBar pctR={tot_sim>0?Math.round(sim.reerFinal/tot_sim*100):0} pctC={tot_sim>0?Math.round(sim.celiFinal/tot_sim*100):0} />
+            <SplitBar pctR={sim.reerMois} pctC={sim.celiMois} pctRetour={sim.retour} />
           </div>
 
           <div style={{ ...S.sep }} />
 
-          <div style={{ background:"rgba(91,196,160,0.06)", border:"1px solid rgba(91,196,160,0.15)", borderRadius:8, padding:"8px 10px", marginBottom:10 }}>
-            <div style={{ fontSize:10, color:"rgba(91,196,160,0.7)", fontWeight:600, marginBottom:2 }}>
-              Retour d'impôt simulé → réinvesti en {mode==="celi"?"CELI":"REER"}
-            </div>
-            <div style={{ fontSize:16, fontWeight:700, color:"#5BC4A0" }}>+{sim.retour.toLocaleString("fr-CA")} $<span style={{ fontSize:10, fontWeight:400, color:"rgba(91,196,160,0.45)" }}>/mois</span></div>
-            <div style={{ ...S.muted }}>{sim.reerMois}$ × {Math.round(tauxMarginal*100)}% ÷ 12</div>
-          </div>
-
-          <div style={{ ...S.label, marginBottom:4 }}>Projection à {ageRetraite} ans (7%/an)</div>
+          <div style={{ ...S.label, marginBottom:4 }}>Projection à {ageRetraite} ans</div>
           <div style={{ fontSize:18, fontWeight:700, color:"#C9A063" }}>{fmt(sim.proj)}</div>
           <div style={{ fontSize:11, fontWeight:600, marginTop:3, color:sim.diff>=0?"#5BC4A0":"#f87171" }}>
             {sim.diff>=0?"+":""}{fmt(sim.diff)} vs plan actuel
@@ -222,7 +236,7 @@ export default function PlacementStrategie({ retraiteABF={}, revenuBrut=0, tauxM
         <strong style={{ color:"#fff" }}>{sim.reerMois.toLocaleString("fr-CA")} $/mois</strong> en REER,
         votre retour d'impôt de{" "}
         <strong style={{ color:"#5BC4A0" }}>+{sim.retour.toLocaleString("fr-CA")} $/mois</strong>{" "}
-        est réinvesti en {mode==="celi"?"CELI":"REER"} — argent du gouvernement qui travaille pour vous.
+        est réinvesti en CELI — argent du gouvernement qui travaille pour vous.
         {sim.diff>0?` Cette simulation vous donne ${fmt(sim.diff)} de plus que votre plan actuel sur ${actuel.ans} ans.`
                   :` Votre plan actuel est déjà bien optimisé — explorez les sliders pour d'autres scénarios.`}
       </div>
