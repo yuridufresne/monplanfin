@@ -11,6 +11,64 @@ const fmt = (v) =>
 
 const GOLD = "#C9A063";
 
+// ── Grille de scénarios ───────────────────────────────────────────────────────
+const RENDEMENTS = [
+  { label: "Conservateur", accum: 0.05, decaisse: 0.03 },
+  { label: "Équilibré",    accum: 0.07, decaisse: 0.05, defaut: true },
+  { label: "Croissance",   accum: 0.09, decaisse: 0.07 },
+];
+const AGES = [60, 65, 70];
+
+function calcCellule({ ageRetraite, rendAccum, rendDecaisse, profilData }) {
+  const { ageActuel, revenuBrutFoyer, revenusGarantis, soldeActuel, cotMensuelle, esperanceVie = 90, inflation = 0.025 } = profilData;
+  const anneesAvant    = Math.max(1, ageRetraite - ageActuel);
+  const anneesDecaisse = Math.max(1, esperanceVie - ageRetraite);
+  const facteurInflation = Math.pow(1 + inflation, anneesAvant);
+
+  const rrqBase = (revenusGarantis?.p1?.rrq || 0) + (revenusGarantis?.p2?.rrq || 0);
+  let facteurRRQ = 1;
+  if (ageRetraite < 65) facteurRRQ = Math.max(0.64, 1 - (65 - ageRetraite) * 12 * 0.006);
+  else if (ageRetraite > 65) facteurRRQ = 1 + Math.min((ageRetraite - 65) * 12, 60) * 0.007;
+  const rrqAjuste = rrqBase * facteurRRQ;
+
+  const pensionMensuelle = (revenusGarantis?.p1?.pension || 0) + (revenusGarantis?.p2?.pension || 0);
+  const psvAnnuelle = ((revenusGarantis?.p1?.psv || 0) + (revenusGarantis?.p2?.psv || 0)) * 12;
+
+  const garantisAnnuels = (rrqAjuste + pensionMensuelle) * 12;
+  const garantisFuturs  = garantisAnnuels * facteurInflation;
+
+  const anneesPSVdelay   = Math.max(0, 65 - ageRetraite);
+  const facteurInflPSV   = Math.pow(1 + inflation, anneesAvant + anneesPSVdelay);
+  // PSV est ignorée dans le manque car elle arrivera à 65 — on l'intègre dans garantis futurs (simplification)
+  const totalGarantiFutur = garantisFuturs + psvAnnuelle * facteurInflation;
+
+  const cibleFuture = revenuBrutFoyer * 0.80 * facteurInflation;
+  const manqueFutur = Math.max(0, cibleFuture - totalGarantiFutur);
+
+  const tauxReel = rendDecaisse - inflation;
+  const nif_4pct  = manqueFutur / 0.04;
+  const nif_rente = tauxReel > 0.005
+    ? manqueFutur * ((1 - Math.pow(1 + tauxReel, -anneesDecaisse)) / tauxReel)
+    : manqueFutur * anneesDecaisse;
+  const nif = (nif_4pct + nif_rente) / 2;
+
+  const rM = rendAccum / 12;
+  const n  = anneesAvant * 12;
+  const capitalProjecte = soldeActuel * Math.pow(1 + rM, n)
+    + (rM > 0 ? cotMensuelle * (Math.pow(1 + rM, n) - 1) / rM : cotMensuelle * n);
+
+  const score = nif > 0 ? Math.min(Math.round(capitalProjecte / nif * 100), 999) : 100;
+
+  return { nif: Math.round(nif), capitalProjecte: Math.round(capitalProjecte), score, facteurRRQ: +(facteurRRQ * 100).toFixed(0) };
+}
+
+function couleurScore(score) {
+  if (score >= 100) return { bg: "rgba(91,196,160,0.10)",  border: "rgba(91,196,160,0.25)",  text: "#5BC4A0", label: "Atteint" };
+  if (score >= 80)  return { bg: "rgba(201,160,99,0.10)",  border: "rgba(201,160,99,0.22)",  text: "#C9A063", label: "En voie" };
+  if (score >= 60)  return { bg: "rgba(248,163,50,0.08)",  border: "rgba(248,163,50,0.20)",  text: "#F8A332", label: "Insuffisant" };
+  return               { bg: "rgba(248,113,113,0.09)", border: "rgba(248,113,113,0.22)", text: "#f87171", label: "Critique" };
+}
+
 // ── Jauge circulaire SVG ──────────────────────────────────────────────────────
 function GaugeArc({ score }) {
   const clampedScore = Math.min(score, 100);
@@ -60,8 +118,19 @@ export default function NIFScore({ profiles }) {
     // Couple
     enCouple, modeNIF, inclureConj, prenomP1, prenomC, ratioConjGaranti,
     // Temporel
-    anneesAccum,
+    ageActuel, esperanceVie, anneesAccum,
+    // Épargne
+    soldeTotal, cotMensuelle,
   } = nif;
+
+  const profilData = {
+    ageActuel,
+    revenuBrutFoyer: revBrut,
+    revenusGarantis,
+    soldeActuel: soldeTotal,
+    cotMensuelle,
+    esperanceVie,
+  };
 
   const statutColors = {
     depasse:    "#5BC4A0",
@@ -271,6 +340,70 @@ export default function NIFScore({ profiles }) {
               </p>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* ── Grille 3×3 scénarios ───────────────────────────────────── */}
+      <div style={{ padding: "0 2rem 1.75rem" }}>
+        <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 20 }}>
+          <p style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.25)", letterSpacing: "0.07em", textTransform: "uppercase", marginBottom: 12 }}>
+            Scénarios — Âge de retraite × Rendement
+          </p>
+
+          {/* En-têtes colonnes */}
+          <div style={{ display: "grid", gridTemplateColumns: "80px 1fr 1fr 1fr", gap: 6, marginBottom: 6, alignItems: "end" }}>
+            <div />
+            {RENDEMENTS.map(r => (
+              <div key={r.label} style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 9, fontWeight: 600, color: r.defaut ? "#C9A063" : "rgba(255,255,255,0.28)", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 2 }}>
+                  {r.label}{r.defaut ? " ★" : ""}
+                </div>
+                <div style={{ fontSize: 9, color: "rgba(255,255,255,0.22)" }}>
+                  {r.accum * 100}% / {r.decaisse * 100}%
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Lignes */}
+          {AGES.map(age => (
+            <div key={age} style={{ display: "grid", gridTemplateColumns: "80px 1fr 1fr 1fr", gap: 6, marginBottom: 6, alignItems: "stretch" }}>
+              {/* Label âge */}
+              <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{age} ans</div>
+                <div style={{ fontSize: 9, color: "rgba(255,255,255,0.28)", marginTop: 1 }}>
+                  {age === 60 ? "RRQ −36% · PSV à 65" : age === 65 ? "RRQ base · PSV à 65" : "RRQ +42% · PSV à 65"}
+                </div>
+              </div>
+              {/* Cellules */}
+              {RENDEMENTS.map(r => {
+                const cell = calcCellule({ ageRetraite: age, rendAccum: r.accum, rendDecaisse: r.decaisse, profilData });
+                const c = couleurScore(cell.score);
+                const isDefaut = r.defaut && age === ageRetraite;
+                return (
+                  <div key={r.label} style={{
+                    background: c.bg,
+                    border: `1px solid ${isDefaut ? "rgba(201,160,99,0.4)" : c.border}`,
+                    borderRadius: 10,
+                    padding: "9px 10px",
+                    textAlign: "center",
+                    position: "relative",
+                  }}>
+                    {isDefaut && (
+                      <div style={{ position: "absolute", top: -8, left: "50%", transform: "translateX(-50%)", fontSize: 8, fontWeight: 700, color: "#C9A063", background: "#0A1628", padding: "1px 6px", borderRadius: 4, border: "1px solid rgba(201,160,99,0.35)", whiteSpace: "nowrap" }}>
+                        Actuel
+                      </div>
+                    )}
+                    <div style={{ fontSize: 16, fontWeight: 700, color: c.text }}>{cell.score}%</div>
+                    <div style={{ fontSize: 9, fontWeight: 600, color: c.text, opacity: 0.8, marginTop: 1 }}>{c.label}</div>
+                    <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", marginTop: 3 }}>
+                      NIF {(cell.nif / 1000000).toFixed(1)}M$
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
         </div>
       </div>
     </div>
