@@ -20,6 +20,12 @@ export default function PlacementStrategie({ retraiteABF={}, revenuBrut=0, tauxM
     return { reerCot, celiCot, soldeR, soldeC, total, retour, ans };
   }, [reerList, celiList, tauxMarginal, ageActuel, ageRetraite]);
 
+  const [budget,   setBudget]   = useState(actuel.total || 725);
+  const [reerPct,  setReerPct]  = useState(actuel.total>0?Math.round(actuel.reerCot/actuel.total*100):50);
+  const [advOpen,  setAdvOpen]  = useState(false);
+  const [rendReer, setRendReer] = useState(7);
+  const [rendCeli, setRendCeli] = useState(6);
+
   // Projection plan actuel — recalculée quand les rendements changent
   const projActuel = useMemo(() => {
     const rR = rendReer/100, rC = rendCeli/100;
@@ -28,12 +34,6 @@ export default function PlacementStrategie({ retraiteABF={}, revenuBrut=0, tauxM
       FVs(actuel.soldeC,rC,actuel.ans) + FV(actuel.celiCot+actuel.retour,rC,actuel.ans)
     );
   }, [actuel, rendReer, rendCeli]);
-
-  const [budget,   setBudget]   = useState(actuel.total || 725);
-  const [reerPct,  setReerPct]  = useState(actuel.total>0?Math.round(actuel.reerCot/actuel.total*100):50);
-  const [advOpen,  setAdvOpen]  = useState(false);
-  const [rendReer, setRendReer] = useState(7);
-  const [rendCeli, setRendCeli] = useState(6);
 
   const sim = useMemo(() => {
     const rM  = Math.round(budget*reerPct/100);
