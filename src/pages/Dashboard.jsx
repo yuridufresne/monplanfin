@@ -509,6 +509,7 @@ export default function Dashboard() {
                   back={
                     <PlacementStrategie
                       retraiteABF={retraiteABF}
+                      retraiteConj={retraiteConj}
                       revenuBrut={revBrut}
                       tauxMarginal={0.475}
                     />

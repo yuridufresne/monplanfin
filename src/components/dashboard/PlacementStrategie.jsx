@@ -4,10 +4,12 @@ const fmt = n => Math.round(n).toLocaleString("fr-CA") + " $";
 const FV  = (c, r, n) => { const rM=r/12; return rM>0?c*12*(Math.pow(1+rM,n)-1)/rM:c*12*n; };
 const FVs = (s, r, n) => s * Math.pow(1+r, n);
 
-export default function PlacementStrategie({ retraiteABF={}, revenuBrut=0, tauxMarginal=0.475, ageActuel=38, ageRetraite=65 }) {
-  const comptes = retraiteABF.comptes || {};
-  const reerList = comptes.reer || [];
-  const celiList = comptes.celi || [];
+export default function PlacementStrategie({ retraiteABF={}, retraiteConj={}, revenuBrut=0, tauxMarginal=0.475, ageActuel=38, ageRetraite=65 }) {
+  const comptes     = retraiteABF.comptes || {};
+  const comptesConj = retraiteConj.comptes || {};
+
+  const reerList = [...(comptes.reer || []), ...(comptesConj.reer || [])];
+  const celiList = [...(comptes.celi || []), ...(comptesConj.celi || [])];
 
   const actuel = useMemo(() => {
     const reerCot  = reerList.reduce((s,c)=>s+(parseFloat(c.cotisation_mensuelle)||0),0);
