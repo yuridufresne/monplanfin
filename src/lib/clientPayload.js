@@ -106,10 +106,12 @@ export function buildPayload(profiles = []) {
   const epargneTotal = pA.soldeReer + pA.soldeCeli + (pB ? pB.soldeReer + pB.soldeCeli : 0);
   const cotTotale = pA.cotReer + pA.cotCeli + (pB ? pB.cotReer + pB.cotCeli : 0);
 
-  const rrqFoyer = pA.rrqAjuste + (pB?.rrqAjuste || 0);
-  const svFoyer = pA.sv + (pB?.sv || 0);
-  const pensionFoyer = pA.pensionPD + (pB?.pensionPD || 0);
-  const garantisTotal = rrqFoyer + svFoyer + pensionFoyer;
+  // rrqAjuste et sv sont en $/mois → ×12 pour annualiser
+  // pensionPD est déjà en $/an (rente_mensuelle_estimee × 12 dans readPersonne)
+  const rrqFoyer     = (pA.rrqAjuste + (pB?.rrqAjuste || 0)) * 12;
+  const svFoyer      = (pA.sv        + (pB?.sv        || 0)) * 12;
+  const pensionFoyer = pA.pensionPD  + (pB?.pensionPD  || 0);
+  const garantisTotal = rrqFoyer + svFoyer + pensionFoyer; // $/an
 
   const revenuRetMensABF = parseFloat(ret.revenu_retraite_mensuel) || 0;
   const pctABF = parseFloat(ret.revenu_retraite_pct) || IQPF.TAUX_REMPLACEMENT * 100;
@@ -159,9 +161,9 @@ export function buildPayload(profiles = []) {
     conjoint_a: pA,
     conjoint_b: pB,
     revenus_garantis: {
-      rrq_foyer: rrqFoyer, sv_foyer: svFoyer, pension_foyer: pensionFoyer, total: garantisTotal,
-      rrq_a: pA.rrqAjuste, sv_a: pA.sv, pension_a: pA.pensionPD,
-      rrq_b: pB?.rrqAjuste || 0, sv_b: pB?.sv || 0, pension_b: pB?.pensionPD || 0,
+      rrq_foyer: rrqFoyer, sv_foyer: svFoyer, pension_foyer: pensionFoyer, total: garantisTotal, // tous en $/an
+      rrq_a: pA.rrqAjuste * 12, sv_a: pA.sv * 12, pension_a: pA.pensionPD,
+      rrq_b: (pB?.rrqAjuste || 0) * 12, sv_b: (pB?.sv || 0) * 12, pension_b: pB?.pensionPD || 0,
     },
     epargne: {
       solde_reer_a: pA.soldeReer, cot_reer_a: pA.cotReer,
