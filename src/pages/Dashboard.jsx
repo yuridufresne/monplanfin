@@ -416,7 +416,13 @@ export default function Dashboard() {
                       const n  = annesAv * 12;
                       const cap = epargneActuelle * Math.pow(1 + rM, n) + (rM > 0 ? cotM * (Math.pow(1 + rM, n) - 1) / rM : cotM * n);
                       const score = nifV > 0 ? Math.min(Math.round(cap / nifV * 100), 999) : 100;
-                      return { score, nif: Math.round(nifV) };
+                      let cotSupp = 0;
+                      if (cap < nifV && annesAv > 0 && rM > 0) {
+                        const facteur = (Math.pow(1 + rM, n) - 1) / rM;
+                        const manqueCapital = nifV - epargneActuelle * Math.pow(1 + rM, n);
+                        cotSupp = Math.max(0, manqueCapital / facteur);
+                      }
+                      return { score, nif: Math.round(nifV), cap: Math.round(cap), cotSupp: Math.round(cotSupp) };
                     };
 
                     const getColor = (score) => {
@@ -429,7 +435,7 @@ export default function Dashboard() {
                     return (
                       <div style={{ marginTop: 18, borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 16 }}>
                         <p style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.25)", letterSpacing: "0.07em", textTransform: "uppercase", marginBottom: 10 }}>
-                          Scénarios — Âge de retraite × Rendement
+                          Scénarios retraite — cotisation mensuelle requise
                         </p>
                         {/* En-têtes colonnes */}
                         <div style={{ display: "grid", gridTemplateColumns: "90px 1fr 1fr 1fr", gap: 5, marginBottom: 5 }}>
@@ -437,7 +443,7 @@ export default function Dashboard() {
                           {SCENARIOS_REND.map(r => (
                             <div key={r.label} style={{ textAlign: "center" }}>
                               <div style={{ fontSize: 9, fontWeight: 700, color: r.defaut ? "#C9A063" : "rgba(255,255,255,0.28)", letterSpacing: "0.05em", textTransform: "uppercase" }}>{r.label}</div>
-                              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.20)", marginTop: 1 }}>{r.accum*100}% / {r.decaisse*100}%</div>
+                              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.20)", marginTop: 1 }}>{(r.accum*100).toFixed(0)}% / {(r.decaisse*100).toFixed(0)}%</div>
                             </div>
                           ))}
                         </div>
@@ -459,17 +465,29 @@ export default function Dashboard() {
                                   {isActuel && (
                                     <div style={{ position: "absolute", top: -8, left: "50%", transform: "translateX(-50%)", fontSize: 8, fontWeight: 700, color: "#C9A063", background: "#0A1628", padding: "1px 5px", borderRadius: 4, border: "1px solid rgba(201,160,99,0.35)", whiteSpace: "nowrap" }}>Actuel</div>
                                   )}
-                                  <div style={{ fontSize: 16, fontWeight: 800, color: c.text, lineHeight: 1 }}>{cell.score}%</div>
-                                  <div style={{ fontSize: 9, fontWeight: 600, color: c.text, opacity: 0.8, marginTop: 2 }}>{c.label}</div>
-                                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.28)", marginTop: 3 }}>{(cell.nif / 1000000).toFixed(1)}M$</div>
+                                  <div style={{ fontSize: 17, fontWeight: 800, color: c.text, lineHeight: 1 }}>{cell.score}%</div>
+                                    <div style={{ fontSize: 9, fontWeight: 600, color: c.text, opacity: 0.8, marginTop: 2 }}>{c.label}</div>
+                                    <div style={{ fontSize: 9, color: "rgba(255,255,255,0.28)", marginTop: 4 }}>NIF {(cell.nif / 1000000).toFixed(1)}M$</div>
+                                    <div style={{ height: 1, background: "rgba(255,255,255,0.07)", margin: "5px 0" }} />
+                                    {cell.cotSupp > 0 ? (
+                                      <div>
+                                        <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", marginBottom: 1 }}>+ à cotiser</div>
+                                        <div style={{ fontSize: 11, fontWeight: 700, color: "#f87171" }}>{Math.round(cell.cotSupp).toLocaleString("fr-CA")} $/mois</div>
+                                      </div>
+                                    ) : (
+                                      <div>
+                                        <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", marginBottom: 1 }}>surplus</div>
+                                        <div style={{ fontSize: 11, fontWeight: 700, color: "#5BC4A0" }}>+{Math.round((cell.cap - cell.nif) / 1000).toLocaleString("fr-CA")}k$</div>
+                                      </div>
+                                    )}
                                 </div>
                               );
                             })}
                           </div>
                         ))}
-                        <p style={{ fontSize: 10, color: "rgba(255,255,255,0.18)", marginTop: 6, fontStyle: "italic" }}>
-                          * PSV toujours à 65 ans. RRQ ajustée selon l'âge de début.
-                        </p>
+                        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.18)", marginTop: 8 }}>
+                          * Cotisation additionnelle mensuelle requise au-delà de votre épargne actuelle ({(cotM || 0).toLocaleString("fr-CA")} $/mois). PSV toujours à 65 ans. RRQ ajustée selon l'âge de début.
+                        </div>
                       </div>
                     );
                   })()}
