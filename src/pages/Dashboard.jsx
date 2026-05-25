@@ -321,10 +321,10 @@ export default function Dashboard() {
             </motion.div>
 
             {/* ── ZONE 2 — NIF + Protection ───────────────────────────── */}
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-5">
+            <div style={{ display: "grid", gridTemplateColumns: nifFlipped ? "1fr" : "3fr 2fr", gap: 16, marginBottom: 20, transition: "grid-template-columns 0.3s ease" }}>
 
               {/* NIF — 3 cols */}
-              <motion.div {...fadeUp(0.1)} style={{ gridColumn: "span 3 / span 3" }}>
+              <motion.div {...fadeUp(0.1)}>
                 <FlipCard
                   expandedHeight={720}
                   onFlip={setNifFlipped}
@@ -655,7 +655,7 @@ export default function Dashboard() {
               </motion.div>
 
               {/* Protection + Revenus garantis — 2 cols */}
-              <div style={{ gridColumn: "span 2 / span 2", display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ display: nifFlipped ? "none" : "flex", flexDirection: "column", gap: 12 }}>
 
                 {/* Protection */}
                 <motion.div {...fadeUp(0.12)}>
