@@ -105,14 +105,27 @@ export default function NIFScenarioGrid({
     };
   };
 
-  const renderMarkdown = (text) => {
+  const renderExplication = (text) => {
     if (!text) return null;
-    const parts = text.split(/(\*\*[^*]+\*\*)/g);
-    return parts.map((part, i) => {
-      if (part.startsWith("**") && part.endsWith("**")) {
-        return <strong key={i} style={{ color: "#C9A063", fontWeight: 700 }}>{part.slice(2, -2)}</strong>;
+    const lines = text.split('\n').filter(l => l.trim());
+    return lines.map((line, i) => {
+      if (line.startsWith('**') && line.endsWith('**')) {
+        return (
+          <div key={i} style={{ fontSize: 11, fontWeight: 700, color: "#C9A063", textTransform: "uppercase", letterSpacing: "0.06em", marginTop: i > 0 ? 12 : 0, marginBottom: 4 }}>
+            {line.replace(/\*\*/g, '')}
+          </div>
+        );
       }
-      return <span key={i}>{part}</span>;
+      const parts = line.split(/(\*\*[^*]+\*\*)/g);
+      return (
+        <div key={i} style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", lineHeight: 1.6, marginBottom: 3 }}>
+          {parts.map((p, j) =>
+            p.startsWith('**') && p.endsWith('**')
+              ? <strong key={j} style={{ color: "#C9A063", fontWeight: 700 }}>{p.slice(2, -2)}</strong>
+              : <span key={j}>{p}</span>
+          )}
+        </div>
+      );
     });
   };
 
@@ -121,16 +134,22 @@ export default function NIFScenarioGrid({
     setLoadingIA(true);
     const nifEquilibre = calcScenario(ageRetraite || 65, 0.07, 0.05);
     const revGarantiAnnuel = (rrqMensuelP1 + rrqMensuelP2 + psvMensuelP1 + psvMensuelP2 + pensionPDMensuel) * 12;
-    const manqueAnnuel = Math.max(0, revenuBrutAnnuel * 0.80 - revGarantiAnnuel);
-    const prompt = `Tu es un planificateur financier québécois. En 3-4 phrases maximum, explique pourquoi le NIF de ce client est ${(nifEquilibre.nif / 1000000).toFixed(2)}M$. Sois concret avec les chiffres.
+    const prompt = `Tu es un planificateur financier québécois. Explique en 4-5 phrases le NIF de ce client puis donne un plan de décaissement à la retraite. Sois concret, utilise **gras** pour les chiffres clés.
 
-- Revenu brut foyer : ${revenuBrutAnnuel.toLocaleString("fr-CA")} $/an → cible retraite : ${(revenuBrutAnnuel * 0.80).toLocaleString("fr-CA")} $/an
-- Revenus garantis : ${revGarantiAnnuel.toLocaleString("fr-CA")} $/an (RRQ + PSV + pension PD)
-- Manque annuel : ${manqueAnnuel.toLocaleString("fr-CA")} $/an à financer par l'épargne
-- Score actuel : ${nifEquilibre.score}% du NIF atteint
-${pensionPDMensuel > 0 ? `- Pension PD conjoint : ${pensionPDMensuel.toLocaleString("fr-CA")} $/mois (disponible à la retraite)` : ""}
+DONNÉES :
+- Revenu brut foyer : **${revenuBrutAnnuel.toLocaleString("fr-CA")} $/an** → cible retraite 80% : **${Math.round(revenuBrutAnnuel * 0.80).toLocaleString("fr-CA")} $/an**
+- Revenus garantis à la retraite : **${revGarantiAnnuel.toLocaleString("fr-CA")} $/an** (RRQ ${Math.round(rrqMensuelP1 + rrqMensuelP2)}$/mois + PSV ${enCouple ? "2×713" : "713"}$/mois${pensionPDMensuel > 0 ? ` + Pension PD ${Math.round(pensionPDMensuel)}$/mois` : ""})
+- NIF nécessaire : **${(nifEquilibre.nif / 1000000).toFixed(2)}M$** | Score actuel : **${nifEquilibre.score}%**
+- Épargne actuelle : **${epargneActuelle.toLocaleString("fr-CA")} $** (REER + CELI)
+${pensionPDMensuel > 0 ? `- Pension PD conjoint : ${Math.round(pensionPDMensuel)}$/mois disponible à la retraite (réduit drastiquement l'épargne requise)` : ""}
 
-Commence directement par l'explication. Pas de salutation. Utilise **gras** pour les chiffres clés.`;
+STRUCTURE DE TA RÉPONSE (2 sections) :
+
+**Pourquoi ce NIF**
+[2-3 phrases expliquant le calcul : cible − revenus garantis = manque → NIF]
+
+**Plan de décaissement recommandé**
+[3-4 phrases sur l'ordre de retrait optimal à la retraite : CELI d'abord (non imposable), puis REER/FERR progressivement, en évitant le clawback PSV à 90 997$. Mentionner la pension PD si applicable.]`;
 
     const res = await base44.integrations.Core.InvokeLLM({ prompt, model: "claude_sonnet_4_6" });
     setExplication(typeof res === "string" ? res : res?.text || res?.content || "Analyse générée.");
@@ -138,7 +157,7 @@ Commence directement par l'explication. Pas de salutation. Utilise **gras** pour
   };
 
   useEffect(() => {
-    if (isVisible) genererExplication();
+    if (isVisible && !explication && !loadingIA) genererExplication();
   }, [isVisible]);
 
   const ageBase  = ageRetraite || 65;
@@ -167,8 +186,8 @@ Commence directement par l'explication. Pas de salutation. Utilise **gras** pour
             Analyse IA en cours…
           </div>
         ) : (
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", lineHeight: 1.65 }}>
-            {explication ? renderMarkdown(explication) : "Retournez la carte pour générer l'analyse personnalisée."}
+          <div>
+            {explication ? renderExplication(explication) : <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>Génération de l'analyse en cours…</span>}
           </div>
         )}
       </div>
@@ -177,26 +196,17 @@ Commence directement par l'explication. Pas de salutation. Utilise **gras** pour
         Scénarios autour de votre objectif de retraite à {ageBase} ans
       </div>
       <div style={{ borderRadius: 12, overflow: "hidden", border: "1px solid rgba(255,255,255,0.08)" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr 1fr", background: "rgba(255,255,255,0.04)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-          <div style={{ padding: "10px 14px", fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.07em" }}>Rendement</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1.4fr", background: "rgba(255,255,255,0.04)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
           {AGES_RET.map(age => (
-            <div key={age} style={{ padding: "10px 12px", textAlign: "center", borderLeft: "1px solid rgba(255,255,255,0.06)" }}>
+            <div key={age} style={{ padding: "10px 12px", textAlign: "center", borderRight: "1px solid rgba(255,255,255,0.06)" }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: age === ageBase ? "#C9A063" : "#fff" }}>Retraite à {age} ans</div>
               <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>{getRRQLabel(age)}</div>
             </div>
           ))}
+          <div style={{ padding: "10px 14px", fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.07em", display: "flex", alignItems: "center" }}>Rendement</div>
         </div>
         {RENDEMENTS.map((rend, ri) => (
-          <div key={rend.label} style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr 1fr", background: rend.defaut ? "rgba(201,160,99,0.06)" : ri % 2 === 0 ? "transparent" : "rgba(255,255,255,0.015)", borderBottom: ri < 2 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
-            <div style={{ padding: "12px 14px", borderRight: "1px solid rgba(255,255,255,0.06)" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: rend.defaut ? "#C9A063" : "rgba(255,255,255,0.8)" }}>{rend.label}</div>
-                {rend.defaut && <span style={{ fontSize: 8, fontWeight: 700, background: "rgba(201,160,99,0.2)", color: "#C9A063", border: "1px solid rgba(201,160,99,0.35)", padding: "1px 5px", borderRadius: 4 }}>★</span>}
-              </div>
-              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", lineHeight: 1.4 }}>
-                {(rend.accum * 100).toFixed(0)}% accum.<br />{(rend.decaisse * 100).toFixed(0)}% décaisse
-              </div>
-            </div>
+          <div key={rend.label} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1.4fr", background: rend.defaut ? "rgba(201,160,99,0.06)" : ri % 2 === 0 ? "transparent" : "rgba(255,255,255,0.015)", borderBottom: ri < 2 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
             {AGES_RET.map(age => {
               const cell = calcScenario(age, rend.accum, rend.decaisse);
               const c = getColor(cell.score);
@@ -224,9 +234,18 @@ Commence directement par l'explication. Pas de salutation. Utilise **gras** pour
                   )}
                 </div>
               );
-            })}
-          </div>
-        ))}
+              })}
+              {/* Label rendement à droite */}
+              <div style={{ padding: "12px 14px", borderLeft: "1px solid rgba(255,255,255,0.06)", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: rend.defaut ? "#C9A063" : "rgba(255,255,255,0.8)" }}>{rend.label}{rend.defaut && " ★"}</div>
+              </div>
+              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", lineHeight: 1.4 }}>
+              {(rend.accum * 100).toFixed(0)}% accum.<br />{(rend.decaisse * 100).toFixed(0)}% décaisse
+              </div>
+              </div>
+              </div>
+              ))}
       </div>
 
       <div style={{ display: "flex", gap: 16, marginTop: 10, flexWrap: "wrap" }}>
