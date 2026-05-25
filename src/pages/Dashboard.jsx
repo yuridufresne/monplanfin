@@ -822,6 +822,7 @@ export default function Dashboard() {
                   }
                   back={
                     <PlacementStrategie
+                      profiles={profiles}
                       retraiteABF={retraiteABF}
                       retraiteConj={retraiteConj}
                       revenuBrut={revBrut}
