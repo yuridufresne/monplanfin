@@ -426,9 +426,7 @@ export default function Dashboard() {
                     };
 
                     const getColor = (score) => {
-                      if (score >= 100) return { bg: "rgba(91,196,160,0.10)",  border: "rgba(91,196,160,0.25)",  text: "#5BC4A0", label: "Atteint ✓" };
-                      if (score >= 80)  return { bg: "rgba(201,160,99,0.10)",  border: "rgba(201,160,99,0.22)",  text: "#C9A063", label: "En voie" };
-                      if (score >= 100) return { bg: "rgba(59,130,246,0.10)", border: "rgba(59,130,246,0.35)", text: "#60A5FA" };
+                      if (score >= 100) return { bg: "rgba(59,130,246,0.10)",  border: "rgba(59,130,246,0.35)",  text: "#60A5FA" };
                       if (score >= 90)  return { bg: "rgba(91,196,160,0.08)",  border: "rgba(91,196,160,0.25)",  text: "#5BC4A0" };
                       if (score >= 50)  return { bg: "rgba(234,179,8,0.08)",   border: "rgba(234,179,8,0.25)",   text: "#EAB308" };
                       return               { bg: "rgba(248,113,113,0.08)", border: "rgba(248,113,113,0.25)", text: "#f87171" };
