@@ -17,6 +17,7 @@ import FlipCard from "@/components/ui/FlipCard";
 import DetteStrategie from "@/components/dashboard/DetteStrategie";
 import PlacementStrategie from "@/components/dashboard/PlacementStrategie";
 import NIFScenarioGrid from "@/components/dashboard/NIFScenarioGrid.jsx";
+import NIFScenarioTable from "@/components/dashboard/NIFScenarioTable.jsx";
 
 // ── Formatters ────────────────────────────────────────────────────────────────
 const fmt = (v) => new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v || 0);
@@ -384,6 +385,22 @@ export default function Dashboard() {
                         <div style={{ height: 5, borderRadius: 99, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
                           <div style={{ height: "100%", width: `${Math.min(scoreNIF, 100)}%`, background: `linear-gradient(90deg, ${nifColor}, ${nifColor}cc)`, borderRadius: 99, transition: "width 1s ease" }} />
                         </div>
+                      </div>
+
+                      {/* Tableau 3×3 scénarios */}
+                      <div style={{ marginTop: 16 }}>
+                        <NIFScenarioTable
+                          ageRetraite={ageRetraite}
+                          ageActuel={ageActuel}
+                          esperanceVie={esperanceVie}
+                          soldeTotal={soldeTotal}
+                          nifCotMensuelle={nifCotMensuelle}
+                          revBrut={revBrut}
+                          revenusGarantis={revenusGarantis}
+                          enCouple={enCouple}
+                          fpMensuelTotal={fpMensuelTotal}
+                          profil={profil}
+                        />
                       </div>
                     </>
                   }

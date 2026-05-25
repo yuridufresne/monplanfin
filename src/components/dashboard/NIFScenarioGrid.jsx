@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import NIFScenarioTable from "@/components/dashboard/NIFScenarioTable.jsx";
 
 const getColor = (score) => {
   if (score >= 100) return { bg: "rgba(59,130,246,0.10)",  border: "rgba(59,130,246,0.35)",  text: "#60A5FA" };
@@ -160,13 +161,7 @@ STRUCTURE DE TA RÉPONSE (2 sections) :
     if (isVisible && !explication && !loadingIA) genererExplication();
   }, [isVisible]);
 
-  const ageBase  = ageRetraite || 65;
-  const AGES_RET = [ageBase - 5, ageBase, ageBase + 5];
-  const RENDEMENTS = [
-    { label: "Conservateur", accum: 0.05, decaisse: 0.03, defaut: false },
-    { label: "Équilibré",    accum: 0.07, decaisse: 0.05, defaut: true  },
-    { label: "Croissance",   accum: 0.09, decaisse: 0.07, defaut: false },
-  ];
+  const ageBase = ageRetraite || 65;
 
   return (
     <div style={{ padding: "18px 20px" }}>
@@ -192,75 +187,18 @@ STRUCTURE DE TA RÉPONSE (2 sections) :
         )}
       </div>
 
-      <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.5)", marginBottom: 10 }}>
-        Scénarios autour de votre objectif de retraite à {ageBase} ans
-      </div>
-      <div style={{ borderRadius: 12, overflow: "hidden", border: "1px solid rgba(255,255,255,0.08)" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1.4fr", background: "rgba(255,255,255,0.04)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-          {AGES_RET.map(age => (
-            <div key={age} style={{ padding: "10px 12px", textAlign: "center", borderRight: "1px solid rgba(255,255,255,0.06)" }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: age === ageBase ? "#C9A063" : "#fff" }}>Retraite à {age} ans</div>
-              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>{getRRQLabel(age)}</div>
-            </div>
-          ))}
-          <div style={{ padding: "10px 14px", fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.07em", display: "flex", alignItems: "center" }}>Rendement</div>
-        </div>
-        {RENDEMENTS.map((rend, ri) => (
-          <div key={rend.label} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1.4fr", background: rend.defaut ? "rgba(201,160,99,0.06)" : ri % 2 === 0 ? "transparent" : "rgba(255,255,255,0.015)", borderBottom: ri < 2 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
-            {AGES_RET.map(age => {
-              const cell = calcScenario(age, rend.accum, rend.decaisse);
-              const c = getColor(cell.score);
-              const isActuel = rend.defaut && age === ageBase;
-              return (
-                <div key={age} style={{ padding: "14px 10px", borderLeft: `1px solid ${c.border}`, textAlign: "center", position: "relative", background: c.bg, outline: isActuel ? `2px solid ${c.text}` : "none", outlineOffset: -2 }}>
-                  <div style={{ position: "absolute", top: 5, left: 5, fontSize: 9, fontWeight: 700, color: c.text, background: c.bg, border: `1px solid ${c.border}`, borderRadius: 4, padding: "1px 5px", lineHeight: 1.4, opacity: 0.85 }}>{cell.score}%</div>
-                  {isActuel && <div style={{ position: "absolute", top: -9, left: "50%", transform: "translateX(-50%)", fontSize: 8, fontWeight: 700, color: c.text, background: "#0A1628", padding: "1px 6px", borderRadius: 4, border: `1px solid ${c.border}`, whiteSpace: "nowrap" }}>Actuel</div>}
-                  <div style={{ fontSize: 14, fontWeight: 800, color: c.text, letterSpacing: "-0.3px", marginBottom: 8, lineHeight: 1 }}>
-                    {cell.nif >= 1000000 ? (cell.nif / 1000000).toFixed(2) + "M $" : Math.round(cell.nif / 1000) + "k $"}
-                  </div>
-                  <div style={{ height: 1, background: c.border, margin: "0 0 8px 0", opacity: 0.5 }} />
-                  <div style={{ fontSize: cell.cotRequise === 0 ? 12 : 13, fontWeight: 700, color: cell.cotRequise === 0 ? "#5BC4A0" : c.text, lineHeight: 1 }}>
-                    {cell.cotRequise === 0
-                      ? "Atteint ✓"
-                      : cell.cotRequise.toLocaleString("fr-CA") + " $"}
-                    {cell.cotRequise > 0 && (
-                      <span style={{ fontSize: 9, fontWeight: 400, color: "rgba(255,255,255,0.3)", display: "block", marginTop: 1 }}>/mois requis</span>
-                    )}
-                  </div>
-                  {cell.cotRequise > cotM && cell.cotRequise > 0 && (
-                    <div style={{ fontSize: 9, color: "rgba(248,113,113,0.6)", marginTop: 2 }}>
-                      +{(cell.cotRequise - cotM).toLocaleString("fr-CA")} $ vs actuel
-                    </div>
-                  )}
-                </div>
-              );
-              })}
-              {/* Label rendement à droite */}
-              <div style={{ padding: "12px 14px", borderLeft: "1px solid rgba(255,255,255,0.06)", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: rend.defaut ? "#C9A063" : "rgba(255,255,255,0.8)" }}>{rend.label}{rend.defaut && " ★"}</div>
-              </div>
-              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", lineHeight: 1.4 }}>
-              {(rend.accum * 100).toFixed(0)}% accum.<br />{(rend.decaisse * 100).toFixed(0)}% décaisse
-              </div>
-              </div>
-              </div>
-              ))}
-      </div>
-
-      <div style={{ display: "flex", gap: 16, marginTop: 10, flexWrap: "wrap" }}>
-        {[
-          { color: "#f87171", bg: "rgba(248,113,113,0.08)", label: "< 50% du NIF" },
-          { color: "#EAB308", bg: "rgba(234,179,8,0.08)",   label: "50% à 89%" },
-          { color: "#5BC4A0", bg: "rgba(91,196,160,0.08)",  label: "90% à 99%" },
-          { color: "#60A5FA", bg: "rgba(59,130,246,0.10)",  label: "100% + ✓" },
-        ].map(l => (
-          <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
-            <div style={{ width: 10, height: 10, borderRadius: 3, background: l.bg, border: `1px solid ${l.color}`, flexShrink: 0 }} />
-            <span style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>{l.label}</span>
-          </div>
-        ))}
-      </div>
+      <NIFScenarioTable
+        ageRetraite={ageRetraite}
+        ageActuel={ageActuel}
+        esperanceVie={esperanceVie}
+        soldeTotal={soldeTotal}
+        nifCotMensuelle={nifCotMensuelle}
+        revBrut={revBrut}
+        revenusGarantis={revenusGarantis}
+        enCouple={enCouple}
+        fpMensuelTotal={fpMensuelTotal}
+        profil={profil}
+      />
 
       <style>{`@keyframes nif-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </div>
