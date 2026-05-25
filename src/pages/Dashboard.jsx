@@ -428,8 +428,10 @@ export default function Dashboard() {
                     const getColor = (score) => {
                       if (score >= 100) return { bg: "rgba(91,196,160,0.10)",  border: "rgba(91,196,160,0.25)",  text: "#5BC4A0", label: "Atteint ✓" };
                       if (score >= 80)  return { bg: "rgba(201,160,99,0.10)",  border: "rgba(201,160,99,0.22)",  text: "#C9A063", label: "En voie" };
-                      if (score >= 60)  return { bg: "rgba(248,163,50,0.08)",  border: "rgba(248,163,50,0.20)",  text: "#F8A332", label: "Insuffisant" };
-                      return               { bg: "rgba(248,113,113,0.09)", border: "rgba(248,113,113,0.22)", text: "#f87171", label: "Critique" };
+                      if (score >= 100) return { bg: "rgba(201,160,99,0.12)", border: "rgba(201,160,99,0.40)", text: "#C9A063" };
+                      if (score >= 90)  return { bg: "rgba(91,196,160,0.08)",  border: "rgba(91,196,160,0.25)",  text: "#5BC4A0" };
+                      if (score >= 50)  return { bg: "rgba(234,179,8,0.08)",   border: "rgba(234,179,8,0.25)",   text: "#EAB308" };
+                      return               { bg: "rgba(248,113,113,0.08)", border: "rgba(248,113,113,0.25)", text: "#f87171" };
                     };
 
                     return (
@@ -480,28 +482,20 @@ export default function Dashboard() {
                               {/* Cellules par âge */}
                               {[60, 65, 70].map(age => {
                                 const cell = calcScenario(age, rend.accum, rend.decaisse);
+                                const c = getColor(cell.score);
                                 const isActuel = rend.defaut && age === (ageRetraite || 65);
-                                const cotTotale = cotM + cell.cotSupp;
                                 return (
-                                  <div key={age} style={{ padding: "12px 12px", borderLeft: "1px solid rgba(255,255,255,0.06)", textAlign: "center", position: "relative", background: isActuel ? "rgba(201,160,99,0.08)" : "transparent" }}>
+                                  <div key={age} style={{ padding: "14px 10px", borderLeft: `1px solid ${c.border}`, textAlign: "center", position: "relative", background: c.bg, transition: "all .2s", outline: isActuel ? `2px solid ${c.text}` : "none", outlineOffset: -2 }}>
                                     {isActuel && (
-                                      <div style={{ position: "absolute", top: 6, right: 6, fontSize: 8, fontWeight: 700, color: "#C9A063", background: "rgba(201,160,99,0.15)", padding: "1px 5px", borderRadius: 4, border: "1px solid rgba(201,160,99,0.3)" }}>Actuel</div>
+                                      <div style={{ position: "absolute", top: -9, left: "50%", transform: "translateX(-50%)", fontSize: 8, fontWeight: 700, color: c.text, background: "#0A1628", padding: "1px 6px", borderRadius: 4, border: `1px solid ${c.border}`, whiteSpace: "nowrap" }}>Actuel</div>
                                     )}
-                                    <div style={{ fontSize: 9, color: "rgba(255,255,255,0.28)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 3 }}>Épargne nécessaire</div>
-                                    <div style={{ fontSize: 15, fontWeight: 800, color: isActuel ? "#C9A063" : "rgba(255,255,255,0.9)", letterSpacing: "-0.3px", marginBottom: 6 }}>
+                                    <div style={{ fontSize: 14, fontWeight: 800, color: c.text, letterSpacing: "-0.3px", marginBottom: 8, lineHeight: 1 }}>
                                       {cell.nif >= 1000000 ? (cell.nif / 1000000).toFixed(2) + "M $" : Math.round(cell.nif / 1000) + "k $"}
                                     </div>
-                                    <div style={{ fontSize: 9, color: "rgba(255,255,255,0.28)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 3 }}>Besoin mensuel</div>
-                                    <div style={{ fontSize: 14, fontWeight: 700, color: cell.cotSupp > 0 ? "#f87171" : "#5BC4A0" }}>
-                                      {cotTotale.toLocaleString("fr-CA")} $
-                                    </div>
-                                    {cell.cotSupp > 0 && (
-                                      <div style={{ fontSize: 9, color: "rgba(248,113,113,0.6)", marginTop: 1 }}>+{cell.cotSupp.toLocaleString("fr-CA")} $ de plus</div>
-                                    )}
-                                    <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "6px 0" }} />
-                                    <div style={{ fontSize: 9, color: "rgba(255,255,255,0.28)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2 }}>Trajectoire actuelle</div>
-                                    <div style={{ fontSize: 14, fontWeight: 800, color: cell.score >= 100 ? "#5BC4A0" : cell.score >= 75 ? "#C9A063" : cell.score >= 50 ? "#F8A332" : "#f87171" }}>
-                                      {cell.score}%
+                                    <div style={{ height: 1, background: c.border, margin: "0 0 8px 0", opacity: 0.5 }} />
+                                    <div style={{ fontSize: 13, fontWeight: 700, color: c.text, lineHeight: 1 }}>
+                                      {(cotM + cell.cotSupp).toLocaleString("fr-CA")} $
+                                      <span style={{ fontSize: 9, fontWeight: 400, color: "rgba(255,255,255,0.3)", display: "block", marginTop: 2 }}>/mois</span>
                                     </div>
                                   </div>
                                 );
@@ -509,8 +503,18 @@ export default function Dashboard() {
                             </div>
                           ))}
                         </div>
-                        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.18)", marginTop: 8, fontStyle: "italic" }}>
-                          * Épargne en dollars futurs. Besoin mensuel = cotisation totale requise (actuelle + supplémentaire). PSV toujours à 65 ans. RRQ ajustée selon l'âge de début.
+                        <div style={{ display: "flex", gap: 16, marginTop: 10, flexWrap: "wrap" }}>
+                          {[
+                            { color: "#f87171", bg: "rgba(248,113,113,0.08)", label: "< 50% du NIF atteint" },
+                            { color: "#EAB308", bg: "rgba(234,179,8,0.08)",   label: "50% à 89%" },
+                            { color: "#5BC4A0", bg: "rgba(91,196,160,0.08)",  label: "90% à 99%" },
+                            { color: "#C9A063", bg: "rgba(201,160,99,0.12)",  label: "100% et plus ✓" },
+                          ].map(l => (
+                            <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                              <div style={{ width: 10, height: 10, borderRadius: 3, background: l.bg, border: `1px solid ${l.color}`, flexShrink: 0 }} />
+                              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>{l.label}</span>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     );
