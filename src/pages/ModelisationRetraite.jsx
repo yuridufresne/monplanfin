@@ -278,10 +278,20 @@ export default function ModelisationRetraite() {
     return r>0.001?manque*((1-Math.pow(1+r,-n))/r):manque*n;
   }
 
+  // Plan de base — même projection que le plan avancé (projeterSoldesRetraite à 7%)
+  const projBase = useMemo(()=>projeterSoldesRetraite({
+    ageActuelA:ageA, ageRetraiteA:retA,
+    reerA, celiA, cotReerA, cotCeliA,
+    ageActuelB:enCouple?ageB:null, ageRetraiteB:enCouple?retB:null,
+    reerB:enCouple?reerB:0, celiB:enCouple?soldeCeliB:0,
+    cotReerB:enCouple?cotReerB:0, cotCeliB:enCouple?cotCeliB:0,
+    rendement:RA,
+  }),[ageA,ageB,retA,retB,reerA,celiA,reerB,soldeCeliB,cotReerA,cotCeliA,cotReerB,cotCeliB,enCouple]);
+
   const donneesGraphique = useMemo(()=>{
-    const nA=Math.max(0,retA-ageA), nB=Math.max(0,retB-ageB);
-    const rAp=fv(reerA,cotReerA,RA,nA), cAp=fv(celiA,cotCeliA,RA,nA);
-    const rBp=fv(reerB,cotReerB,RA,nB), cBp=fv(soldeCeliB,cotCeliB,RA,nB);
+    const nA=Math.max(0,retA-ageA);
+    const rAp=projBase.reerA, cAp=projBase.celiA;
+    const rBp=projBase.reerB, cBp=projBase.celiB;
     const capR=rAp+cAp+rBp+cBp;
     const ratioA=capR>0?(rAp+cAp)/capR:0.5;
     const cibleSim=Math.round(cibleABF*(taux/tauxABF));
@@ -299,7 +309,7 @@ export default function ModelisationRetraite() {
 
       if(age<retA){
         const anAv=retA-age;
-        const capAct=fv(reerA+celiA+reerB+soldeCeliB,(cotReerA+cotCeliA+cotReerB+cotCeliB),RA,nA-anAv);
+        const capAct=fv(reerA+celiA+reerB+soldeCeliB,(cotReerA+cotCeliA+cotReerB+cotCeliB),RA,Math.max(0,nA-anAv));
         const rv=Math.round(capAct*RD);
         const salM=ageM<retB?Math.round(brutB*0.63*fi):0;
         jC.push(Math.round(rv*ratioA));
@@ -329,7 +339,7 @@ export default function ModelisationRetraite() {
       }
     }
     return{ages,cible,foyer,jC,mC,nifCurve,nif,capR,cibleSim,gar65,tauxABF};
-  },[taux,espVie,profiles,ageA,ageB,retA,retB,reerA,celiA,reerB,soldeCeliB,cotReerA,cotCeliA,cotReerB,cotCeliB,rrqA,rrqB,svA,svB,pensA,pensB,cibleABF,tauxABF]);
+  },[taux,espVie,projBase,ageA,ageB,retA,retB,reerA,celiA,reerB,soldeCeliB,cotReerA,cotCeliA,cotReerB,cotCeliB,rrqA,rrqB,svA,svB,pensA,pensB,cibleABF,tauxABF]);
 
   const fmtCA = n => Math.round(Math.abs(n)).toLocaleString('fr-CA')+' $';
   const fmtK  = n => {
