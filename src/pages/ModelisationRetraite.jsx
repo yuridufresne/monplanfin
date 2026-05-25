@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { simulerDecaissement, projeterSoldesRetraite } from "@/lib/moteurDecaissement";
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine, ComposedChart } from "recharts";
+import { ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { Link } from "react-router-dom";
 
 const fmt  = n => Math.round(n).toLocaleString("fr-CA") + " $";
@@ -11,21 +11,27 @@ const fmtk = n => { const v=Math.abs(Math.round(n)); return (n<0?"-":"")+(v>=100
 // ── Composant verrou payant ───────────────────────────────────────────────────
 function PaywallBanner({ onUnlock }) {
   return (
-    <div style={{ background:"linear-gradient(135deg,rgba(201,160,99,.08),rgba(127,119,221,.08))", border:"1px solid rgba(201,160,99,.25)", borderRadius:16, padding:"28px 24px", textAlign:"center" }}>
-      <div style={{ fontSize:32, marginBottom:12 }}>🔒</div>
-      <div style={{ fontSize:16, fontWeight:700, color:"#C9A063", marginBottom:8 }}>Modélisation avancée — Plan conseiller</div>
-      <div style={{ fontSize:12, color:"rgba(255,255,255,.5)", lineHeight:1.6, maxWidth:480, margin:"0 auto 20px" }}>
-        Personnalisez chaque paramètre : âge de retraite, taux RRQ, fractionnement de pension,
-        taux de rendement par compte, espérance de vie, et comparez jusqu'à 3 scénarios côte à côte.
+    <div style={{background:"linear-gradient(135deg,rgba(201,160,99,.08),rgba(127,119,221,.08))",border:"1px solid rgba(201,160,99,.25)",borderRadius:16,padding:"28px 24px",textAlign:"center"}}>
+      <div style={{fontSize:32,marginBottom:12}}>🔒</div>
+      <div style={{fontSize:16,fontWeight:700,color:"#C9A063",marginBottom:8}}>Modélisation complète — Plan conseiller</div>
+      <div style={{fontSize:12,color:"rgba(255,255,255,.5)",lineHeight:1.6,maxWidth:480,margin:"0 auto 20px"}}>
+        Tableau de décaissement année par année avec sources détaillées par personne, optimisation fiscale, fractionnement de pension et comparaison de scénarios.
       </div>
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:8, maxWidth:400, margin:"0 auto 20px", textAlign:"left" }}>
-        {["Comparaison 3 scénarios simultanés","REER conjoint — optimisation fiscale","Fractionnement pension PD","Clawback PSV — stratégie d'évitement","Graphiques interactifs détaillés","Export PDF du plan personnalisé"].map(f=>(
-          <div key={f} style={{ fontSize:11, color:"rgba(255,255,255,.5)", display:"flex", gap:6 }}>
-            <span style={{ color:"#C9A063" }}>✓</span>{f}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8,maxWidth:440,margin:"0 auto 20px",textAlign:"left"}}>
+        {[
+          "Tableau année par année (65→95 ans)",
+          "Sources détaillées : RRQ, PSV, FERR, CELI",
+          "Colonnes Jean et Marie séparées",
+          "Optimisation âge début RRQ",
+          "Clawback PSV — stratégie d'évitement",
+          "Export PDF du plan personnalisé",
+        ].map(f=>(
+          <div key={f} style={{fontSize:11,color:"rgba(255,255,255,.5)",display:"flex",gap:6}}>
+            <span style={{color:"#C9A063"}}>✓</span>{f}
           </div>
         ))}
       </div>
-      <button onClick={onUnlock} style={{ background:"linear-gradient(135deg,rgba(201,160,99,.25),rgba(127,119,221,.2))", border:"1px solid rgba(201,160,99,.4)", color:"#C9A063", fontSize:13, fontWeight:700, padding:"11px 28px", borderRadius:24, cursor:"pointer" }}>
+      <button onClick={onUnlock} style={{background:"linear-gradient(135deg,rgba(201,160,99,.25),rgba(127,119,221,.2))",border:"1px solid rgba(201,160,99,.4)",color:"#C9A063",fontSize:13,fontWeight:700,padding:"11px 28px",borderRadius:24,cursor:"pointer"}}>
         Contacter un conseiller AMF →
       </button>
     </div>
@@ -490,40 +496,70 @@ export default function ModelisationRetraite() {
             <PaywallBanner onUnlock={()=>setUnlocked(true)} />
           ) : (
             <div>
-              <div style={{ marginBottom:14, padding:"10px 14px", background:"rgba(201,160,99,.07)", border:"1px solid rgba(201,160,99,.2)", borderRadius:10, fontSize:11, color:"rgba(201,160,99,.8)" }}>
-                ✓ Mode avancé activé — tous les paramètres sont personnalisables
+              {/* Badge activé */}
+              <div style={{marginBottom:14,padding:"10px 14px",background:"rgba(201,160,99,.07)",border:"1px solid rgba(201,160,99,.2)",borderRadius:10,fontSize:11,color:"rgba(201,160,99,.8)"}}>
+                ✓ Mode avancé activé — modélisation complète année par année
               </div>
 
-              <div style={{ display:"grid", gridTemplateColumns:enCouple?"1fr 1fr":"1fr", gap:12, marginBottom:14 }}>
+              {/* Soldes projetés à la retraite */}
+              <div style={{background:"rgba(201,160,99,.05)",border:"1px solid rgba(201,160,99,.15)",borderRadius:12,padding:"12px 16px",marginBottom:14}}>
+                <div style={{fontSize:10,fontWeight:600,color:"rgba(201,160,99,.7)",textTransform:"uppercase",letterSpacing:".06em",marginBottom:8}}>
+                  Soldes projetés à {ageRetA} ans — point de départ du décaissement
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
+                  {[
+                    {l:"REER total",v:projection.totalReer,c:"#C9A063"},
+                    {l:"CELI total",v:projection.totalCeli,c:"#5BC4A0"},
+                    {l:"Total épargne",v:projection.total,c:"#fff"},
+                    {l:"Années d'accumulation",v:`${Math.max(0,ageRetA-ageA)} ans`,c:"rgba(255,255,255,.5)"},
+                  ].map(s=>(
+                    <div key={s.l} style={{background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.07)",borderRadius:8,padding:"8px 10px"}}>
+                      <div style={{fontSize:9,color:"rgba(255,255,255,.28)",textTransform:"uppercase",letterSpacing:".06em",marginBottom:3}}>{s.l}</div>
+                      <div style={{fontSize:14,fontWeight:700,color:s.c}}>{typeof s.v==="string"?s.v:s.v.toLocaleString("fr-CA")+" $"}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Paramètres avancés par personne */}
+              <div style={{display:"grid",gridTemplateColumns:enCouple?"1fr 1fr":"1fr",gap:12,marginBottom:14}}>
                 {[
-                  {label:prenomA, age:ageRetA, setAge:setAgeRetA, rrqAge:rrqAp, setRrqAge:setRrqAp, reer:reerAv, setReer:setReerAv, celi:celiAv, setCeli:setCeliAv, rrqBase:rrqA},
-                  ...(enCouple?[{label:prenomB, age:ageRetB, setAge:setAgeRetB, rrqAge:rrqBp, setRrqAge:setRrqBp, reer:reerBv, setReer:setReerBv, celi:celiBv, setCeli:setCeliBv, rrqBase:rrqB}]:[]),
+                  {label:prenomA,age:ageRetA,setAge:setAgeRetA,rrqAge:rrqAp,setRrqAge:setRrqAp,reer:reerAv,setReer:setReerAv,celi:celiAv,setCeli:setCeliAv,rrqBase:rrqA/12},
+                  ...(enCouple?[{label:prenomB,age:ageRetB,setAge:setAgeRetB,rrqAge:rrqBp,setRrqAge:setRrqBp,reer:reerBv,setReer:setReerBv,celi:celiBv,setCeli:setCeliBv,rrqBase:rrqB/12}]:[]),
                 ].map(({label,age,setAge,rrqAge,setRrqAge,reer,setReer,celi,setCeli,rrqBase})=>(
-                  <div key={label} style={{ background:"rgba(255,255,255,.03)", border:"1px solid rgba(255,255,255,.08)", borderRadius:12, padding:"14px 16px" }}>
-                    <div style={{ fontSize:11, fontWeight:700, color:"#C9A063", marginBottom:12 }}>{label}</div>
+                  <div key={label} style={{background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.08)",borderRadius:12,padding:"14px 16px"}}>
+                    <div style={{fontSize:12,fontWeight:700,color:"#C9A063",marginBottom:12}}>{label}</div>
                     {[
-                      ["Âge de retraite", <select key="ar" value={age} onChange={e=>setAge(+e.target.value)} style={S.select}>{Array.from({length:21},(_,i)=>55+i).map(v=><option key={v} value={v} style={{background:"#0D1628"}}>{v} ans</option>)}</select>],
-                      ["Âge début RRQ", <select key="rrq" value={rrqAge} onChange={e=>setRrqAge(+e.target.value)} style={S.select}>{[60,61,62,63,64,65,66,67,68,69,70].map(v=><option key={v} value={v} style={{background:"#0D1628"}}>{v} ans {v===65?"(base)":v<65?`(−${Math.round((65-v)*12*.6)}%)`:`(+${Math.round((v-65)*12*.7)}%)`}</option>)}</select>],
+                      ["Âge de retraite",
+                        <select key="ar" value={age} onChange={e=>setAge(+e.target.value)} style={S.select}>
+                          {Array.from({length:21},(_,i)=>55+i).map(v=><option key={v} value={v} style={{background:"#0D1628"}}>{v} ans</option>)}
+                        </select>],
+                      ["Âge début RRQ",
+                        <select key="rrq" value={rrqAge} onChange={e=>setRrqAge(+e.target.value)} style={S.select}>
+                          {[60,61,62,63,64,65,66,67,68,69,70].map(v=><option key={v} value={v} style={{background:"#0D1628"}}>{v} ans {v===65?"(base)":v<65?`(−${Math.round((65-v)*12*.6)}%)`:` (+${Math.round((v-65)*12*.7)}%)`}</option>)}
+                        </select>],
                       ["Solde REER ($)", <input key="reer" type="number" value={reer} onChange={e=>setReer(+e.target.value)} style={S.input}/>],
                       ["Solde CELI ($)", <input key="celi" type="number" value={celi} onChange={e=>setCeli(+e.target.value)} style={S.input}/>],
                     ].map(([l,ctrl])=>(
-                      <div key={l} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"6px 0", borderBottom:"1px solid rgba(255,255,255,.05)" }}>
-                        <span style={S.label}>{l}</span><div style={{width:160}}>{ctrl}</div>
+                      <div key={l} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:"1px solid rgba(255,255,255,.05)"}}>
+                        <span style={S.label}>{l}</span>
+                        <div style={{width:160}}>{ctrl}</div>
                       </div>
                     ))}
-                    <div style={{ marginTop:8, fontSize:10, color:"rgba(255,255,255,.3)" }}>
+                    <div style={{marginTop:8,fontSize:10,color:"rgba(255,255,255,.3)"}}>
                       RRQ ajustée à {rrqAge} ans : <strong style={{color:"#C9A063"}}>{adjRRQ(rrqBase,rrqAge).toLocaleString("fr-CA")} $/mois</strong>
                     </div>
                   </div>
                 ))}
               </div>
 
-              <div style={{ background:"rgba(255,255,255,.03)", border:"1px solid rgba(255,255,255,.08)", borderRadius:12, padding:"14px 16px", marginBottom:14 }}>
-                <div style={{ fontSize:11, fontWeight:700, color:"#C9A063", marginBottom:10 }}>Paramètres globaux</div>
-                <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10 }}>
+              {/* Paramètres globaux */}
+              <div style={{background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.08)",borderRadius:12,padding:"14px 16px",marginBottom:14}}>
+                <div style={{fontSize:11,fontWeight:700,color:"#C9A063",marginBottom:10}}>Paramètres globaux</div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
                   {[
                     ["Revenu cible ($/an)", <input key="c" type="number" value={cible} onChange={e=>setCible(+e.target.value)} style={S.input}/>],
-                    ["Rendement", <select key="r" value={rend} onChange={e=>setRend(+e.target.value)} style={S.select}>{[3,4,5,6,7,8,9,10].map(v=><option key={v} value={v} style={{background:"#0D1628"}}>{v}%/an</option>)}</select>],
+                    ["Rendement", <select key="r" value={rend} onChange={e=>setRend(+e.target.value)} style={S.select}>{[3,4,5,6,7,8,9,10].map(v=><option key={v} value={v} style={{background:"#0D1628"}}>{v} %/an</option>)}</select>],
                     ["Espérance de vie", <select key="e" value={espVie} onChange={e=>setEspVie(+e.target.value)} style={S.select}>{[80,83,85,88,90,93,95,98,100].map(v=><option key={v} value={v} style={{background:"#0D1628"}}>{v} ans{v===95?" (IQPF)":""}</option>)}</select>],
                   ].map(([l,ctrl])=>(
                     <div key={l}><div style={{...S.label,marginBottom:5}}>{l}</div>{ctrl}</div>
@@ -531,20 +567,22 @@ export default function ModelisationRetraite() {
                 </div>
               </div>
 
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8, marginBottom:14 }}>
+              {/* Stats synthèse */}
+              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:14}}>
                 {[
-                  {l:"Impôt total",v:fmt(totalImpot),c:"#f87171"},
-                  {l:"Clawback PSV",v:totalClaw>0?fmt(totalClaw):"Aucun ✓",c:totalClaw>0?"#EAB308":"#5BC4A0"},
-                  {l:"Patrimoine final",v:fmtk(last.actifs||0),c:"#5BC4A0"},
+                  {l:"Impôt total",v:fmt(rows.reduce((s,r)=>s+r.impot,0)),c:"#f87171"},
+                  {l:"Clawback PSV",v:rows.reduce((s,r)=>s+(r.clawbackPSV||0),0)>0?fmt(rows.reduce((s,r)=>s+(r.clawbackPSV||0),0)):"Aucun ✓",c:rows.reduce((s,r)=>s+(r.clawbackPSV||0),0)>0?"#EAB308":"#5BC4A0"},
+                  {l:"Patrimoine final",v:fmtk(rows[rows.length-1]?.actifs||0),c:"#5BC4A0"},
                   {l:"Années en déficit",v:rows.filter(r=>r.ecart<-500).length+" ans",c:rows.filter(r=>r.ecart<-500).length>0?"#EAB308":"#5BC4A0"},
                 ].map(s=>(
                   <div key={s.l} style={S.card}>
-                    <div style={{ fontSize:9, fontWeight:600, color:"rgba(255,255,255,.28)", textTransform:"uppercase", letterSpacing:".06em", marginBottom:3 }}>{s.l}</div>
-                    <div style={{ fontSize:14, fontWeight:700, color:s.c }}>{s.v}</div>
+                    <div style={{fontSize:9,fontWeight:600,color:"rgba(255,255,255,.28)",textTransform:"uppercase",letterSpacing:".06em",marginBottom:3}}>{s.l}</div>
+                    <div style={{fontSize:14,fontWeight:700,color:s.c}}>{s.v}</div>
                   </div>
                 ))}
               </div>
 
+              {/* Tableau détaillé */}
               <TableauResultats rows={rows} prenomA={prenomA} prenomB={prenomB} />
             </div>
           )}
