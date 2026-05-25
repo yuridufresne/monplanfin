@@ -214,16 +214,18 @@ export default function ModelisationRetraite() {
   const brutA = (rev.emplois||[]).reduce((s,e)=>s+(parseFloat(e.revenu_brut)||0),0);
   const brutB = enCouple ? (rev.conjoint?.emplois||[]).reduce((s,e)=>s+(parseFloat(e.revenu_brut)||0),0) : 0;
 
+  // cotisations stockées en mensuel dans l'ABF — on garde en mensuel pour fv()
   const reerA    = (ret.comptes?.reer||[]).reduce((s,c)=>s+(parseFloat(c.solde)||0),0);
-  const cotReerA = (ret.comptes?.reer||[]).reduce((s,c)=>s+(parseFloat(c.cotisation_mensuelle)||0),0)*12;
+  const cotReerA = (ret.comptes?.reer||[]).reduce((s,c)=>s+(parseFloat(c.cotisation_mensuelle)||0),0);
   const celiA    = (ret.comptes?.celi||[]).reduce((s,c)=>s+(parseFloat(c.solde)||0),0);
-  const cotCeliA = (ret.comptes?.celi||[]).reduce((s,c)=>s+(parseFloat(c.cotisation_mensuelle)||0),0)*12;
+  const cotCeliA = (ret.comptes?.celi||[]).reduce((s,c)=>s+(parseFloat(c.cotisation_mensuelle)||0),0);
 
   const reerB      = enCouple ? (retCj.comptes?.reer||[]).reduce((s,c)=>s+(parseFloat(c.solde)||0),0) : 0;
-  const cotReerB   = enCouple ? (retCj.comptes?.reer||[]).reduce((s,c)=>s+(parseFloat(c.cotisation_mensuelle)||0),0)*12 : 0;
+  const cotReerB   = enCouple ? (retCj.comptes?.reer||[]).reduce((s,c)=>s+(parseFloat(c.cotisation_mensuelle)||0),0) : 0;
   const soldeCeliB = enCouple ? (retCj.comptes?.celi||[]).reduce((s,c)=>s+(parseFloat(c.solde)||0),0) : 0;
-  const cotCeliB   = enCouple ? (retCj.comptes?.celi||[]).reduce((s,c)=>s+(parseFloat(c.cotisation_mensuelle)||0),0)*12 : 0;
+  const cotCeliB   = enCouple ? (retCj.comptes?.celi||[]).reduce((s,c)=>s+(parseFloat(c.cotisation_mensuelle)||0),0) : 0;
 
+  // cotReerA/cotCeliA sont maintenant en mensuel — annualiser pour rrq seulement
   const rrqA  = (parseFloat(ret.rrq)  || 0) * 12;
   const rrqB  = enCouple ? (parseFloat(retCj.rrq) || 0) * 12 : 0;
   const svA   = (parseFloat(ret.sv)   || 713.34) * 12;
@@ -297,7 +299,7 @@ export default function ModelisationRetraite() {
 
       if(age<retA){
         const anAv=retA-age;
-        const capAct=fv(reerA+celiA+reerB+soldeCeliB,(cotReerA+cotCeliA+cotReerB+cotCeliB)/12,RA,nA-anAv);
+        const capAct=fv(reerA+celiA+reerB+soldeCeliB,(cotReerA+cotCeliA+cotReerB+cotCeliB),RA,nA-anAv);
         const rv=Math.round(capAct*RD);
         const salM=ageM<retB?Math.round(brutB*0.63*fi):0;
         jC.push(Math.round(rv*ratioA));
@@ -341,10 +343,10 @@ export default function ModelisationRetraite() {
   // Onglet avancé — projection et simulation décaissement
   const projection = useMemo(()=>projeterSoldesRetraite({
     ageActuelA:ageA, ageRetraiteA:ageRetA,
-    reerA:reerAv, celiA:celiAv, cotReerA:cotReerA/12, cotCeliA:cotCeliA/12,
+    reerA:reerAv, celiA:celiAv, cotReerA:cotReerA, cotCeliA:cotCeliA,
     ageActuelB:enCouple?ageB:null, ageRetraiteB:enCouple?ageRetB:null,
     reerB:enCouple?reerBv:0, celiB:enCouple?celiBv:0,
-    cotReerB:enCouple?cotReerB/12:0, cotCeliB:enCouple?cotCeliB/12:0,
+    cotReerB:enCouple?cotReerB:0, cotCeliB:enCouple?cotCeliB:0,
     rendement:rend/100,
   }),[ageA,ageB,ageRetA,ageRetB,reerAv,celiAv,reerBv,celiBv,cotReerA,cotCeliA,cotReerB,cotCeliB,rend,enCouple]);
 
