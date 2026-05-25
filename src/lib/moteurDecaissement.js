@@ -186,9 +186,9 @@ export function simulerDecaissement({
         if (er > 0.01 && eFA > 0 && aa >= 71) {
           const ferrDispA = Math.max(0, eFA - fmA);
           if (ferrDispA > 0) {
-            const tmA = Math.min(0.55, Math.max(0.15, tauxMarg(rbaRaw + ferrDispA, pFed, pQC)));
+            const tmA = Math.min(0.55, Math.max(0.15, tauxMarg(rbaRaw + Math.min(er, ferrDispA), pFed, pQC)));
             ferrSuppA = Math.min(er / (1 - tmA), ferrDispA);
-            er -= ferrSuppA * (1 - tmA);
+            er = Math.max(0, er - ferrSuppA * (1 - tmA));
           }
         }
         // 3. REER de Jean (avant 71)
@@ -219,13 +219,14 @@ export function simulerDecaissement({
             if (ferrDispA > 0) {
               const partA = er * (ferrDispA / totFerr);
               const tmA = Math.min(0.55, Math.max(0.15, tauxMarg(rbaRaw + partA, pFed, pQC)));
-              ferrSuppA = Math.min(partA / (1 - tmA), ferrDispA);
-              er -= ferrSuppA * (1 - tmA);
+              // Limiter le brut retiré : net reçu = ferrSuppA*(1-tmA) ≤ er
+              ferrSuppA = Math.min(partA / (1 - tmA), ferrDispA, er / (1 - tmA));
+              er = Math.max(0, er - ferrSuppA * (1 - tmA));
             }
             if (er > 0.01 && ferrDispB > 0) {
               const tmB = Math.min(0.55, Math.max(0.15, tauxMarg(rbbRaw + er, pFed, pQC)));
               ferrSuppB = Math.min(er / (1 - tmB), ferrDispB);
-              er -= ferrSuppB * (1 - tmB);
+              er = Math.max(0, er - ferrSuppB * (1 - tmB));
             }
           }
         }
@@ -264,6 +265,12 @@ export function simulerDecaissement({
     const cla2 = clawback(rfA, svA*fi, cr.seuilPSV);
     const clb2 = clawback(rfB, svB*fi, cr.seuilPSV);
     const netFinal = (rfA-ia2-cla2) + (rfB-ib2-clb2) + rc;
+
+    // Snapshot soldes AVANT rendement (pour affichage fin d'année)
+    const ferrA_snap = Math.round(eFA);
+    const celiA_snap = Math.round(eCA);
+    const ferrB_snap = Math.round(eFB);
+    const celiB_snap = Math.round(eCB);
 
     // Rendements (appliqués après retraits)
     const r = rendement;
@@ -321,8 +328,8 @@ export function simulerDecaissement({
       ecart:       Math.round(netFinal - cible),
       // Patrimoine
       actifs: Math.round(actifs),
-      ferrA:  Math.round(eFA), celiA: Math.round(eCA),
-      ferrB:  Math.round(eFB), celiB: Math.round(eCB),
+      ferrA:  ferrA_snap, celiA: celiA_snap,
+      ferrB:  ferrB_snap, celiB: celiB_snap,
       _debug: { eRA:Math.round(eRA), eFA:Math.round(eFA), eCA:Math.round(eCA), eRB:Math.round(eRB), eFB:Math.round(eFB), eCB:Math.round(eCB), aa, ab },
     });
 
