@@ -323,62 +323,111 @@ export default function Dashboard() {
               {/* NIF — 3 cols */}
               <motion.div {...fadeUp(0.1)} style={{ gridColumn: "span 3 / span 3" }}>
                 <div style={{ ...G.cardGold, padding: "1.4rem 1.5rem", height: "100%" }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <p style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>Indépendance financière</p>
-                      <Badge color={nifBadge}>{statutLabels[statut]}</Badge>
-                    </div>
-                    <Link to="/avance" style={{ fontSize: 11, color: "#C9A063", textDecoration: "none", display: "flex", alignItems: "center", gap: 4 }}>
-                      <ExternalLink style={{ width: 10, height: 10 }} /> Avancé
-                    </Link>
-                  </div>
+                  {/* Métriques — alimentées par calcScenario(ageBase, 0.07, 0.05) */}
+                  {(() => {
+                    const ageBase0 = ageRetraite || 65;
+                    const INF0 = 0.025;
+                    const espVie0 = esperanceVie || 90;
+                    const epargneActuelle0 = soldeTotal || 0;
+                    const cotM0 = nifCotMensuelle || 0;
+                    const revenuBrutAnnuel0 = revBrut || 80000;
+                    const retraiteData0 = bySection.retraite || {};
+                    const retraiteP10 = retraiteData0.prestations_gouvernementales || retraiteData0 || {};
+                    const retraiteP20 = enCouple ? (retraiteData0.conjoint?.prestations_gouvernementales || retraiteData0.conjoint || {}) : {};
+                    const rrqMensuelP10 = parseFloat(revenusGarantis?.p1?.rrq || retraiteP10.rrq || 0);
+                    const rrqMensuelP20 = parseFloat(revenusGarantis?.p2?.rrq || retraiteP20.rrq || 0);
+                    const psvMensuelP10 = parseFloat(revenusGarantis?.p1?.psv || retraiteP10.psv || 713.34);
+                    const psvMensuelP20 = enCouple ? parseFloat(revenusGarantis?.p2?.psv || retraiteP20.psv || 713.34) : 0;
+                    const pensionPDMensuel0 = parseFloat(revenusGarantis?.p1?.pension || revenusGarantis?.p2?.pension || fpMensuelTotal || 0);
+                    const conjointAgeVal0 = parseInt(profil.age_conjoint || profil.conjoint_age || 0);
 
-                  <div style={{ display: "flex", gap: "1.5rem", alignItems: "center", flexWrap: "wrap" }}>
-                    <div style={{ flexShrink: 0 }}>
-                      <ScoreArc score={scoreNIF} />
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 10 }}>
-                      {[
-                        {
-                          label: "NIF cible",
-                          value: fmt(capitalNIF),
-                          color: "#C9A063",
-                          info: "Capital à accumuler d'ici " + ageRetraite + " ans en dollars futurs. Calculé sur 80% du revenu brut du foyer moins les revenus garantis (RRQ+PSV+Pension) indexés à l'inflation.",
-                        },
-                        {
-                          label: "Capital projeté",
-                          value: fmt(capitalProjecte),
-                          color: "#6B8ED6",
-                          info: "Valeur projetée de vos épargnes actuelles + cotisations mensuelles à 7%/an jusqu'à " + ageRetraite + " ans.",
-                        },
-                        ...(cotSupp > 0 ? [{
-                          label: "Cotisation supp.",
-                          value: `${fmt(cotSupp)}/mois`,
-                          color: "#f87171",
-                          info: "Montant mensuel additionnel en REER+CELI pour atteindre le NIF à " + ageRetraite + " ans à 7%/an.",
-                        }] : []),
-                      ].map(m => (
-                        <div key={m.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "7px 10px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                            <p style={{ ...MUTED }}>{m.label}</p>
-                            <InfoTooltip text={m.info} />
+                    const calcMeta = (ageRet, rendAccum, rendDecaisse) => {
+                      const annesAv = Math.max(1, ageRet - (ageActuel || 38));
+                      const cibleBase = revenuBrutAnnuel0 * 0.80;
+                      const ageDebutRRQ = Math.max(60, ageRet);
+                      let factRRQ0 = 1;
+                      if (ageDebutRRQ < 65) factRRQ0 = Math.max(0.64, 1 - (65 - ageDebutRRQ) * 12 * 0.006);
+                      else if (ageDebutRRQ > 65) factRRQ0 = 1 + Math.min((ageDebutRRQ - 65) * 12, 60) * 0.007;
+                      const rrqAnnuelP1c = rrqMensuelP10 * factRRQ0 * 12;
+                      const rrqAnnuelP2c = rrqMensuelP20 * 12;
+                      const simuler = (capitalInitial) => {
+                        let capital = capitalInitial;
+                        for (let age = ageRet; age <= espVie0; age++) {
+                          const ann = age - ageRet;
+                          const fi = Math.pow(1 + INF0, ann);
+                          let revenus = 0;
+                          if (age >= ageDebutRRQ) revenus += rrqAnnuelP1c * fi;
+                          if (age >= 65) revenus += psvMensuelP10 * 12 * fi;
+                          if (enCouple) {
+                            const ageConj = conjointAgeVal0 > 0 ? conjointAgeVal0 + ann : age;
+                            if (ageConj >= 65) { revenus += rrqAnnuelP2c * fi; revenus += psvMensuelP20 * 12 * fi; }
+                          }
+                          if (pensionPDMensuel0 > 0) {
+                            const ageConj = conjointAgeVal0 > 0 ? conjointAgeVal0 + ann : age;
+                            if (ageConj >= 65) revenus += pensionPDMensuel0 * 12 * fi;
+                          }
+                          capital = capital * (1 + rendDecaisse) - Math.max(0, cibleBase * fi - revenus);
+                          if (capital <= 0) return false;
+                        }
+                        return true;
+                      };
+                      let lo = 0, hi = 15000000, nifV = 0;
+                      for (let i = 0; i < 40; i++) { const mid = (lo + hi) / 2; if (simuler(mid)) { nifV = mid; hi = mid; } else lo = mid; }
+                      const rM = rendAccum / 12, n = annesAv * 12;
+                      const cap = epargneActuelle0 * Math.pow(1 + rM, n) + (rM > 0 ? cotM0 * (Math.pow(1 + rM, n) - 1) / rM : cotM0 * n);
+                      const score = nifV > 0 ? Math.min(Math.round(cap / nifV * 100), 999) : 100;
+                      let cotS = 0;
+                      if (cap < nifV && annesAv > 0 && rM > 0) { const f = (Math.pow(1 + rM, n) - 1) / rM; cotS = Math.max(0, (nifV - epargneActuelle0 * Math.pow(1 + rM, n)) / f); }
+                      return { score, nif: Math.round(nifV), cap: Math.round(cap), cotSupp: Math.round(cotS) };
+                    };
+
+                    const cell0 = calcMeta(ageBase0, 0.07, 0.05);
+                    const scoreC = cell0.score;
+                    const colorC = scoreC >= 100 ? "#5BC4A0" : scoreC >= 75 ? "#C9A063" : scoreC >= 50 ? "#f59e0b" : "#f87171";
+                    const badgeC = scoreC >= 90 ? "green" : scoreC >= 50 ? "gold" : "red";
+                    const statutC = scoreC >= 100 ? "depasse" : scoreC >= 90 ? "atteint" : scoreC >= 60 ? "en_voie" : scoreC >= 30 ? "insuffisant" : "critique";
+
+                    return (
+                      <>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <p style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>Indépendance financière</p>
+                            <Badge color={badgeC}>{statutLabels[statutC]}</Badge>
                           </div>
-                          <p style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 700, color: m.color }}>{m.value}</p>
+                          <Link to="/avance" style={{ fontSize: 11, color: "#C9A063", textDecoration: "none", display: "flex", alignItems: "center", gap: 4 }}>
+                            <ExternalLink style={{ width: 10, height: 10 }} /> Avancé
+                          </Link>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Barre de progression */}
-                  <div style={{ marginTop: 14 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                      <p style={MUTED}>Progression vers le NIF</p>
-                      <p style={{ ...MUTED, color: nifColor }}>{scoreNIF}%</p>
-                    </div>
-                    <div style={{ height: 5, borderRadius: 99, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
-                      <div style={{ height: "100%", width: `${Math.min(scoreNIF, 100)}%`, background: `linear-gradient(90deg, ${nifColor}, ${nifColor}cc)`, borderRadius: 99, transition: "width 1s ease" }} />
-                    </div>
-                  </div>
+                        <div style={{ display: "flex", gap: "1.5rem", alignItems: "center", flexWrap: "wrap" }}>
+                          <div style={{ flexShrink: 0 }}><ScoreArc score={scoreC} /></div>
+                          <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+                            {[
+                              { label: "NIF cible", value: fmt(cell0.nif), color: "#C9A063", info: "Capital initial nécessaire pour que l'épargne ne tombe jamais à 0 jusqu'à 90 ans. Simulation année par année avec RRQ, PSV, Pension PD selon l'âge réel." },
+                              { label: "Capital projeté", value: fmt(cell0.cap), color: "#6B8ED6", info: "Valeur projetée de vos épargnes actuelles + cotisations mensuelles à 7%/an jusqu'à " + ageBase0 + " ans." },
+                              ...(cell0.cotSupp > 0 ? [{ label: "Cotisation supp.", value: `${fmt(cell0.cotSupp)}/mois`, color: "#f87171", info: "Montant mensuel additionnel en REER+CELI pour atteindre le NIF à " + ageBase0 + " ans à 7%/an." }] : []),
+                            ].map(m => (
+                              <div key={m.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "7px 10px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                  <p style={{ ...MUTED }}>{m.label}</p>
+                                  <InfoTooltip text={m.info} />
+                                </div>
+                                <p style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 700, color: m.color }}>{m.value}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <div style={{ marginTop: 14 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                            <p style={MUTED}>Progression vers le NIF</p>
+                            <p style={{ ...MUTED, color: colorC }}>{scoreC}%</p>
+                          </div>
+                          <div style={{ height: 5, borderRadius: 99, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+                            <div style={{ height: "100%", width: `${Math.min(scoreC, 100)}%`, background: `linear-gradient(90deg, ${colorC}, ${colorC}cc)`, borderRadius: 99, transition: "width 1s ease" }} />
+                          </div>
+                        </div>
+                      </>
+                    );
+                  })()}
 
                   {/* Grille 3×3 — Scénarios âge × rendement */}
                   {(() => {
@@ -484,25 +533,33 @@ export default function Dashboard() {
                       return `RRQ +${Math.round((age - 65) * 12 * 0.7)}% · PSV à 65`;
                     };
 
+                    // Cellule "Actuel" — source unique pour les métriques du haut
+                    const celluleActuelle = calcScenario(ageBase, 0.07, 0.05);
+                    const nifCibleCalc     = celluleActuelle.nif;
+                    const capitalProjecteCalc = celluleActuelle.cap;
+                    const cotSuppCalc      = celluleActuelle.cotSupp;
+                    const scoreNIFCalc     = celluleActuelle.score;
+                    const nifColorCalc     = scoreNIFCalc >= 100 ? "#5BC4A0" : scoreNIFCalc >= 75 ? "#C9A063" : scoreNIFCalc >= 50 ? "#f59e0b" : "#f87171";
+
                     return (
                       <div style={{ marginTop: 20 }}>
                         <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.5)", marginBottom: 12 }}>
                           Scénarios autour de votre objectif de retraite à {ageBase} ans
                         </div>
                         <div style={{ borderRadius: 12, overflow: "hidden", border: "1px solid rgba(255,255,255,0.08)" }}>
-                          {/* En-tête */}
-                          <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr 1fr", background: "rgba(255,255,255,0.04)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-                            <div style={{ padding: "10px 14px", fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.07em" }}>
-                              Taux de rendement
-                            </div>
+                          {/* En-tête — ages à gauche, label à droite */}
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1.4fr", background: "rgba(255,255,255,0.04)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
                             {AGES_RET.map(age => (
-                              <div key={age} style={{ padding: "10px 12px", textAlign: "center", borderLeft: "1px solid rgba(255,255,255,0.06)" }}>
+                              <div key={age} style={{ padding: "10px 12px", textAlign: "center", borderRight: "1px solid rgba(255,255,255,0.06)" }}>
                                 <div style={{ fontSize: 12, fontWeight: 700, color: age === ageBase ? "#C9A063" : "#fff" }}>Retraite à {age} ans</div>
                                 <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>
                                   {getRRQLabel(age)}
                                 </div>
                               </div>
                             ))}
+                            <div style={{ padding: "10px 14px", fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.07em", display: "flex", alignItems: "center" }}>
+                              Taux de rendement
+                            </div>
                           </div>
                           {/* Lignes */}
                           {[
@@ -512,30 +569,17 @@ export default function Dashboard() {
                           ].map((rend, ri) => (
                             <div key={rend.label} style={{
                               display: "grid",
-                              gridTemplateColumns: "1.4fr 1fr 1fr 1fr",
+                              gridTemplateColumns: "1fr 1fr 1fr 1.4fr",
                               background: rend.defaut ? "rgba(201,160,99,0.06)" : ri % 2 === 0 ? "transparent" : "rgba(255,255,255,0.015)",
                               borderBottom: ri < 2 ? "1px solid rgba(255,255,255,0.06)" : "none",
                             }}>
-                              {/* Label ligne */}
-                              <div style={{ padding: "12px 14px", borderRight: "1px solid rgba(255,255,255,0.06)" }}>
-                                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
-                                  <div style={{ fontSize: 12, fontWeight: 700, color: rend.defaut ? "#C9A063" : "rgba(255,255,255,0.8)" }}>{rend.label}</div>
-                                  {rend.defaut && (
-                                    <span style={{ fontSize: 8, fontWeight: 700, background: "rgba(201,160,99,0.2)", color: "#C9A063", border: "1px solid rgba(201,160,99,0.35)", padding: "1px 5px", borderRadius: 4 }}>recommandé</span>
-                                  )}
-                                </div>
-                                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", lineHeight: 1.4 }}>
-                                  {(rend.accum * 100).toFixed(0)}% avant retraite<br/>
-                                  {(rend.decaisse * 100).toFixed(0)}% pendant retraite
-                                </div>
-                              </div>
-                              {/* Cellules par âge */}
+                              {/* Cellules par âge — en premier */}
                               {AGES_RET.map(age => {
                                 const cell = calcScenario(age, rend.accum, rend.decaisse);
                                 const c = getColor(cell.score);
                                 const isActuel = rend.defaut && age === ageBase;
                                 return (
-                                  <div key={age} style={{ padding: "14px 10px", borderLeft: `1px solid ${c.border}`, textAlign: "center", position: "relative", background: c.bg, transition: "all .2s", outline: isActuel ? `2px solid ${c.text}` : "none", outlineOffset: -2 }}>
+                                  <div key={age} style={{ padding: "14px 10px", borderRight: `1px solid ${c.border}`, textAlign: "center", position: "relative", background: c.bg, transition: "all .2s", outline: isActuel ? `2px solid ${c.text}` : "none", outlineOffset: -2 }}>
                                     <div style={{ position: "absolute", top: 5, left: 5, fontSize: 9, fontWeight: 700, color: c.text, background: c.bg, border: `1px solid ${c.border}`, borderRadius: 4, padding: "1px 5px", lineHeight: 1.4, opacity: 0.85 }}>
                                       {cell.score}%
                                     </div>
@@ -552,9 +596,22 @@ export default function Dashboard() {
                                     </div>
                                   </div>
                                 );
-                              })}
-                            </div>
-                          ))}
+                                })}
+                                {/* Label ligne — à droite */}
+                                <div style={{ padding: "12px 14px", borderLeft: "1px solid rgba(255,255,255,0.06)" }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
+                                  <div style={{ fontSize: 12, fontWeight: 700, color: rend.defaut ? "#C9A063" : "rgba(255,255,255,0.8)" }}>{rend.label}</div>
+                                  {rend.defaut && (
+                                    <span style={{ fontSize: 8, fontWeight: 700, background: "rgba(201,160,99,0.2)", color: "#C9A063", border: "1px solid rgba(201,160,99,0.35)", padding: "1px 5px", borderRadius: 4 }}>★</span>
+                                  )}
+                                </div>
+                                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", lineHeight: 1.4 }}>
+                                  {(rend.accum * 100).toFixed(0)}% accum.<br/>
+                                  {(rend.decaisse * 100).toFixed(0)}% décaiss.
+                                </div>
+                                </div>
+                                </div>
+                                ))}
                         </div>
                         <div style={{ display: "flex", gap: 16, marginTop: 10, flexWrap: "wrap" }}>
                           {[
