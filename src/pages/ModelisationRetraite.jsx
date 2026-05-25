@@ -33,6 +33,7 @@ function PaywallBanner({ onUnlock }) {
 }
 
 // ── Tableau de résultats ──────────────────────────────────────────────────────
+// Structure : Âge | [Jean: Sal RRQ SV Pen FERRmin CELI REER/FERR] | [Marie: idem] | Bilan | Patrimoine
 function TableauResultats({ rows, prenomA = "A", prenomB = "B" }) {
   const SHOW = [0,1,2,4,6,8,10,12,15,18,21,24,27];
   const vis  = rows.filter((_,i)=>SHOW.includes(i)||i===rows.length-1);
@@ -46,61 +47,54 @@ function TableauResultats({ rows, prenomA = "A", prenomB = "B" }) {
   return (
     <div>
       <div style={{ overflowX:"auto", borderRadius:10, border:"1px solid rgba(255,255,255,.09)" }}>
-        <table style={{ width:"100%", borderCollapse:"collapse", minWidth:1200 }}>
+        {/* Colonnes par personne : Sal | RRQ | SV | Pension | FERR min | CELI | REER/FERR = 7 cols × 2 = 14 */}
+        {/* + Bilan 5 cols + Patrimoine 4 cols + Âge 1 = 24 cols total */}
+        <table style={{ width:"100%", borderCollapse:"collapse", minWidth:1100 }}>
           <thead>
+            {/* Ligne 1 — groupes principaux */}
             <tr>
               <th style={S.th} rowSpan={3}>Âge</th>
-              <th colSpan={5} style={gh("#C9A063","rgba(201,160,99,.06)")}>{prenomA}</th>
-              <th colSpan={5} style={gh("#5BC4A0","rgba(91,196,160,.05)")}>{prenomB}</th>
-              <th colSpan={6} style={gh("#7F77DD","rgba(127,119,221,.06)")}>Retraits épargne</th>
+              <th colSpan={7} style={gh("#C9A063","rgba(201,160,99,.06)")}>{prenomA}</th>
+              <th colSpan={7} style={gh("#5BC4A0","rgba(91,196,160,.05)")}>{prenomB}</th>
               <th colSpan={5} style={gh("#6B8ED6","rgba(100,149,237,.06)")}>Bilan annuel</th>
               <th colSpan={4} style={gh("#fff","rgba(255,255,255,.03)")}>Patrimoine restant</th>
             </tr>
+            {/* Ligne 2 — sous-groupes */}
             <tr>
-              {/* A revenues */}
-              <th colSpan={5} style={{...S.th, textAlign:"center", color:"rgba(201,160,99,.5)", borderRight:"1px solid rgba(255,255,255,.08)"}}>Revenus</th>
-              {/* B revenues */}
-              <th colSpan={5} style={{...S.th, textAlign:"center", color:"rgba(91,196,160,.5)", borderRight:"1px solid rgba(255,255,255,.08)"}}>Revenus</th>
-              {/* Retraits — sous-titres par personne */}
-              <th colSpan={3} style={{...S.th, textAlign:"center", color:"rgba(201,160,99,.6)", borderRight:"1px solid rgba(255,255,255,.06)"}}>{prenomA}</th>
-              <th colSpan={3} style={{...S.th, textAlign:"center", color:"rgba(91,196,160,.6)", borderRight:"1px solid rgba(255,255,255,.08)"}}>{prenomB}</th>
-              {/* Bilan */}
+              <th colSpan={7} style={{...S.th, textAlign:"center", color:"rgba(201,160,99,.5)", borderRight:"1px solid rgba(255,255,255,.08)"}}>Revenus &amp; décaissements</th>
+              <th colSpan={7} style={{...S.th, textAlign:"center", color:"rgba(91,196,160,.5)", borderRight:"1px solid rgba(255,255,255,.08)"}}>Revenus &amp; décaissements</th>
               <th colSpan={5} style={{...S.th, textAlign:"center", color:"rgba(107,142,214,.5)", borderRight:"1px solid rgba(255,255,255,.08)"}}>&nbsp;</th>
-              {/* Patrimoine — sous-titres par personne */}
               <th colSpan={2} style={{...S.th, textAlign:"center", color:"rgba(201,160,99,.5)", borderRight:"1px solid rgba(255,255,255,.06)"}}>{prenomA}</th>
               <th colSpan={2} style={{...S.th, textAlign:"center", color:"rgba(91,196,160,.5)"}}>{prenomB}</th>
             </tr>
+            {/* Ligne 3 — colonnes feuille */}
             <tr>
-              {/* A */}
+              {/* Jean — 7 cols */}
               <th style={S.th}>Salaire</th>
               <th style={S.th}>RRQ</th>
               <th style={S.th}>SV</th>
               <th style={S.th}>Pension</th>
-              <th style={{...S.th,...sep}}>FERR min</th>
-              {/* B */}
+              <th style={S.th}>FERR min</th>
+              <th style={{...S.th,color:"rgba(91,196,160,.85)"}}>🟢 CELI</th>
+              <th style={{...S.th,color:"rgba(251,146,60,.9)",...sep}}>🟠 REER/FERR</th>
+              {/* Marie — 7 cols */}
               <th style={S.th}>Salaire</th>
               <th style={S.th}>RRQ</th>
               <th style={S.th}>SV</th>
               <th style={S.th}>Pension</th>
-              <th style={{...S.th,...sep}}>FERR min</th>
-              {/* Retraits A */}
-              <th style={{...S.th,color:"rgba(91,196,160,.8)",fontSize:8}}>🟢 CELI</th>
-              <th style={{...S.th,color:"rgba(234,179,8,.8)",fontSize:8}}>🟡 REER</th>
-              <th style={{...S.th,color:"rgba(248,113,113,.8)",fontSize:8,...sep}}>🟠 FERR+</th>
-              {/* Retraits B */}
-              <th style={{...S.th,color:"rgba(91,196,160,.7)",fontSize:8}}>🟢 CELI</th>
-              <th style={{...S.th,color:"rgba(234,179,8,.7)",fontSize:8}}>🟡 REER</th>
-              <th style={{...S.th,color:"rgba(248,113,113,.7)",fontSize:8,...sep}}>🟠 FERR+</th>
-              {/* Bilan */}
+              <th style={S.th}>FERR min</th>
+              <th style={{...S.th,color:"rgba(91,196,160,.75)"}}>🟢 CELI</th>
+              <th style={{...S.th,color:"rgba(251,146,60,.8)",...sep}}>🟠 REER/FERR</th>
+              {/* Bilan — 5 cols */}
               <th style={{...S.th,color:"rgba(255,255,255,.4)"}}>Cible</th>
               <th style={{...S.th,color:"#C9A063"}}>Retiré</th>
               <th style={{...S.th,color:"#f87171"}}>Impôt</th>
               <th style={{...S.th,fontWeight:700,color:"#fff"}}>Net</th>
               <th style={{...S.th,...sep}}>Écart</th>
-              {/* Patrimoine A */}
+              {/* Patrimoine A — 2 cols */}
               <th style={{...S.th,color:"rgba(201,160,99,.6)",fontSize:8}}>REER/FERR</th>
               <th style={{...S.th,color:"rgba(91,196,160,.7)",fontSize:8,...sep}}>CELI</th>
-              {/* Patrimoine B */}
+              {/* Patrimoine B — 2 cols */}
               <th style={{...S.th,color:"rgba(201,160,99,.5)",fontSize:8}}>REER/FERR</th>
               <th style={{...S.th,color:"rgba(91,196,160,.6)",fontSize:8}}>CELI</th>
             </tr>
@@ -110,37 +104,40 @@ function TableauResultats({ rows, prenomA = "A", prenomB = "B" }) {
               const ec  = r.ecart>=0 ? "#5BC4A0" : "#f87171";
               const hasFerr = r.ferrMinA>0 || r.ferrMinB>0;
               const isTransition = r.phase === "transition";
-              const bg  = isTransition
+              const isLissage = r.lissage === true;
+              const bg = isTransition
                 ? "rgba(107,142,214,.07)"
+                : isLissage ? "rgba(201,160,99,.04)"
                 : hasFerr ? "rgba(201,160,99,.06)"
                 : i%2 ? "rgba(255,255,255,.015)" : "transparent";
-              const d   = (v) => v>0 ? fmtk(v) : "—";
-              const dc  = (v,yes,no="rgba(255,255,255,.2)") => ({...S.td, color: v>0 ? yes : no});
+              const d  = (v) => v>0 ? fmtk(v) : "—";
+              const dc = (v,yes,no="rgba(255,255,255,.2)") => ({...S.td, color: v>0 ? yes : no});
+              // REER/FERR fusionné : retraitREER + ferrSupp par personne
+              const reerFerrA = (r.retraitREER_A||0) + (r.ferrSupp_A||0);
+              const reerFerrB = (r.retraitREER_B||0) + (r.ferrSupp_B||0);
               return (
                 <tr key={r.ages+i} style={{background:bg}}>
                   <td style={{...S.td,textAlign:"left",fontWeight:700,color:isTransition?"#6B8ED6":hasFerr?"#C9A063":"#fff"}}>
                     {r.ages}{hasFerr?" ★":""}{isTransition?" 🔄":""}
                   </td>
-                  {/* A revenus */}
+                  {/* Jean — revenus garantis */}
                   <td style={dc(r.salaireA,"#6B8ED6")}>{d(r.salaireA)}</td>
                   <td style={dc(r.rrqA,"#5BC4A0")}>{d(r.rrqA)}</td>
                   <td style={dc(r.svA,"#6B8ED6")}>{d(r.svA)}</td>
                   <td style={dc(r.pensionA,"#C9A063")}>{d(r.pensionA)}</td>
-                  <td style={{...dc(r.ferrMinA,"#EAB308"),...sep}}>{d(r.ferrMinA)}</td>
-                  {/* B revenus */}
+                  <td style={dc(r.ferrMinA,"#EAB308")}>{d(r.ferrMinA)}</td>
+                  {/* Jean — décaissements intégrés */}
+                  <td style={dc(r.retraitCELI_A,"rgba(91,196,160,.9)")}>{d(r.retraitCELI_A)}</td>
+                  <td style={{...dc(reerFerrA,"rgba(251,146,60,.9)"),...sep}}>{d(reerFerrA)}</td>
+                  {/* Marie — revenus garantis */}
                   <td style={dc(r.salaireB,"#6B8ED6")}>{d(r.salaireB)}</td>
                   <td style={dc(r.rrqB,"rgba(91,196,160,.7)")}>{d(r.rrqB)}</td>
                   <td style={dc(r.svB,"rgba(100,149,237,.7)")}>{d(r.svB)}</td>
                   <td style={dc(r.pensionB,"rgba(201,160,99,.7)")}>{d(r.pensionB)}</td>
-                  <td style={{...dc(r.ferrMinB,"rgba(234,179,8,.7)"),...sep}}>{d(r.ferrMinB)}</td>
-                  {/* Retraits A */}
-                  <td style={dc(r.retraitCELI_A,"rgba(91,196,160,.9)")}>{d(r.retraitCELI_A)}</td>
-                  <td style={dc(r.retraitREER_A,"#EAB308")}>{d(r.retraitREER_A)}</td>
-                  <td style={{...dc(r.ferrSupp_A,"#f87171"),...sep}}>{d(r.ferrSupp_A)}</td>
-                  {/* Retraits B */}
-                  <td style={dc(r.retraitCELI_B,"rgba(91,196,160,.7)")}>{d(r.retraitCELI_B)}</td>
-                  <td style={dc(r.retraitREER_B,"rgba(234,179,8,.8)")}>{d(r.retraitREER_B)}</td>
-                  <td style={{...dc(r.ferrSupp_B,"rgba(248,113,113,.8)"),...sep}}>{d(r.ferrSupp_B)}</td>
+                  <td style={dc(r.ferrMinB,"rgba(234,179,8,.7)")}>{d(r.ferrMinB)}</td>
+                  {/* Marie — décaissements intégrés */}
+                  <td style={dc(r.retraitCELI_B,"rgba(91,196,160,.75)")}>{d(r.retraitCELI_B)}</td>
+                  <td style={{...dc(reerFerrB,"rgba(251,146,60,.8)"),...sep}}>{d(reerFerrB)}</td>
                   {/* Bilan */}
                   <td style={{...S.td,color:"rgba(255,255,255,.35)",fontSize:10}}>{fmtk(r.cible)}</td>
                   <td style={{...S.td,color:"#C9A063",fontWeight:600}}>{r.totalRetire>0?fmtk(r.totalRetire):"—"}</td>
@@ -162,8 +159,7 @@ function TableauResultats({ rows, prenomA = "A", prenomB = "B" }) {
       {/* Légende */}
       <div style={{ display:"flex", gap:14, flexWrap:"wrap", marginTop:8, fontSize:10, color:"rgba(255,255,255,.3)" }}>
         <span>🟢 CELI — non imposable</span>
-        <span>🟡 REER — imposable, avant 71 ans</span>
-        <span>🟠 FERR+ — FERR au-delà du minimum légal</span>
+        <span>🟠 REER/FERR — imposable (REER avant 71 ans + FERR au-delà du minimum)</span>
         <span>★ Conversion REER→FERR à 71 ans</span>
       </div>
     </div>
