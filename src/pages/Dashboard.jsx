@@ -433,66 +433,84 @@ export default function Dashboard() {
                     };
 
                     return (
-                      <div style={{ marginTop: 18, borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 16 }}>
-                        <p style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.25)", letterSpacing: "0.07em", textTransform: "uppercase", marginBottom: 10 }}>
-                          Scénarios retraite — cotisation mensuelle requise
-                        </p>
-                        {/* En-têtes colonnes */}
-                        <div style={{ display: "grid", gridTemplateColumns: "90px 1fr 1fr 1fr", gap: 5, marginBottom: 5 }}>
-                          <div />
-                          {SCENARIOS_REND.map(r => (
-                            <div key={r.label} style={{ textAlign: "center" }}>
-                              <div style={{ fontSize: 9, fontWeight: 700, color: r.defaut ? "#C9A063" : "rgba(255,255,255,0.28)", letterSpacing: "0.05em", textTransform: "uppercase" }}>{r.label}</div>
-                              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.20)", marginTop: 1 }}>{(r.accum*100).toFixed(0)}% / {(r.decaisse*100).toFixed(0)}%</div>
+                      <div style={{ marginTop: 20 }}>
+                        <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.5)", marginBottom: 12 }}>
+                          Épargne nécessaire selon l'âge de retraite et le rendement
+                        </div>
+                        <div style={{ borderRadius: 12, overflow: "hidden", border: "1px solid rgba(255,255,255,0.08)" }}>
+                          {/* En-tête */}
+                          <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr 1fr", background: "rgba(255,255,255,0.04)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                            <div style={{ padding: "10px 14px", fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.07em" }}>
+                              Taux de rendement
+                            </div>
+                            {[60, 65, 70].map(age => (
+                              <div key={age} style={{ padding: "10px 12px", textAlign: "center", borderLeft: "1px solid rgba(255,255,255,0.06)" }}>
+                                <div style={{ fontSize: 12, fontWeight: 700, color: "#fff" }}>Retraite à {age} ans</div>
+                                <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>
+                                  {age === 60 ? "RRQ −36% · PSV à 65" : age === 65 ? "RRQ base · PSV à 65" : "RRQ +42% · PSV à 65"}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          {/* Lignes */}
+                          {[
+                            { label: "Conservateur", accum: 0.05, decaisse: 0.03, defaut: false },
+                            { label: "Équilibré",    accum: 0.07, decaisse: 0.05, defaut: true  },
+                            { label: "Croissance",   accum: 0.09, decaisse: 0.07, defaut: false },
+                          ].map((rend, ri) => (
+                            <div key={rend.label} style={{
+                              display: "grid",
+                              gridTemplateColumns: "1.4fr 1fr 1fr 1fr",
+                              background: rend.defaut ? "rgba(201,160,99,0.06)" : ri % 2 === 0 ? "transparent" : "rgba(255,255,255,0.015)",
+                              borderBottom: ri < 2 ? "1px solid rgba(255,255,255,0.06)" : "none",
+                            }}>
+                              {/* Label ligne */}
+                              <div style={{ padding: "12px 14px", borderRight: "1px solid rgba(255,255,255,0.06)" }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
+                                  <div style={{ fontSize: 12, fontWeight: 700, color: rend.defaut ? "#C9A063" : "rgba(255,255,255,0.8)" }}>{rend.label}</div>
+                                  {rend.defaut && (
+                                    <span style={{ fontSize: 8, fontWeight: 700, background: "rgba(201,160,99,0.2)", color: "#C9A063", border: "1px solid rgba(201,160,99,0.35)", padding: "1px 5px", borderRadius: 4 }}>recommandé</span>
+                                  )}
+                                </div>
+                                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", lineHeight: 1.4 }}>
+                                  {(rend.accum * 100).toFixed(0)}% avant retraite<br/>
+                                  {(rend.decaisse * 100).toFixed(0)}% pendant retraite
+                                </div>
+                              </div>
+                              {/* Cellules par âge */}
+                              {[60, 65, 70].map(age => {
+                                const cell = calcScenario(age, rend.accum, rend.decaisse);
+                                const isActuel = rend.defaut && age === (ageRetraite || 65);
+                                const cotTotale = cotM + cell.cotSupp;
+                                return (
+                                  <div key={age} style={{ padding: "12px 12px", borderLeft: "1px solid rgba(255,255,255,0.06)", textAlign: "center", position: "relative", background: isActuel ? "rgba(201,160,99,0.08)" : "transparent" }}>
+                                    {isActuel && (
+                                      <div style={{ position: "absolute", top: 6, right: 6, fontSize: 8, fontWeight: 700, color: "#C9A063", background: "rgba(201,160,99,0.15)", padding: "1px 5px", borderRadius: 4, border: "1px solid rgba(201,160,99,0.3)" }}>Actuel</div>
+                                    )}
+                                    <div style={{ fontSize: 9, color: "rgba(255,255,255,0.28)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 3 }}>Épargne nécessaire</div>
+                                    <div style={{ fontSize: 15, fontWeight: 800, color: isActuel ? "#C9A063" : "rgba(255,255,255,0.9)", letterSpacing: "-0.3px", marginBottom: 6 }}>
+                                      {cell.nif >= 1000000 ? (cell.nif / 1000000).toFixed(2) + "M $" : Math.round(cell.nif / 1000) + "k $"}
+                                    </div>
+                                    <div style={{ fontSize: 9, color: "rgba(255,255,255,0.28)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 3 }}>Besoin mensuel</div>
+                                    <div style={{ fontSize: 14, fontWeight: 700, color: cell.cotSupp > 0 ? "#f87171" : "#5BC4A0" }}>
+                                      {cotTotale.toLocaleString("fr-CA")} $
+                                    </div>
+                                    {cell.cotSupp > 0 && (
+                                      <div style={{ fontSize: 9, color: "rgba(248,113,113,0.6)", marginTop: 1 }}>+{cell.cotSupp.toLocaleString("fr-CA")} $ de plus</div>
+                                    )}
+                                    <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "6px 0" }} />
+                                    <div style={{ fontSize: 9, color: "rgba(255,255,255,0.28)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2 }}>Trajectoire actuelle</div>
+                                    <div style={{ fontSize: 14, fontWeight: 800, color: cell.score >= 100 ? "#5BC4A0" : cell.score >= 75 ? "#C9A063" : cell.score >= 50 ? "#F8A332" : "#f87171" }}>
+                                      {cell.score}%
+                                    </div>
+                                  </div>
+                                );
+                              })}
                             </div>
                           ))}
                         </div>
-                        {/* Lignes */}
-                        {AGES_RET.map(age => (
-                          <div key={age} style={{ display: "grid", gridTemplateColumns: "90px 1fr 1fr 1fr", gap: 5, marginBottom: 5, alignItems: "stretch" }}>
-                            <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                              <div style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{age} ans</div>
-                              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.28)", lineHeight: 1.4, marginTop: 1 }}>
-                                {age === 60 ? "RRQ −36% · PSV à 65" : age === 65 ? "RRQ base · PSV à 65" : "RRQ +42% · PSV à 65"}
-                              </div>
-                            </div>
-                            {SCENARIOS_REND.map(r => {
-                              const cell = calcScenario(age, r.accum, r.decaisse);
-                              const c = getColor(cell.score);
-                              const isActuel = r.defaut && age === (ageRetraite || 65);
-                              return (
-                                <div key={r.label} style={{ background: c.bg, border: `1px solid ${isActuel ? "rgba(201,160,99,0.45)" : c.border}`, borderRadius: 10, padding: "8px 6px", textAlign: "center", position: "relative" }}>
-                                  {isActuel && (
-                                    <div style={{ position: "absolute", top: -8, left: "50%", transform: "translateX(-50%)", fontSize: 8, fontWeight: 700, color: "#C9A063", background: "#0A1628", padding: "1px 5px", borderRadius: 4, border: "1px solid rgba(201,160,99,0.35)", whiteSpace: "nowrap" }}>Actuel</div>
-                                  )}
-                                  {/* 1. Somme à cumuler */}
-                                    <div style={{ fontSize: 8, fontWeight: 600, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>À cumuler</div>
-                                    <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", letterSpacing: "-0.3px" }}>
-                                      {cell.nif >= 1000000 ? (cell.nif / 1000000).toFixed(1) + "M$" : Math.round(cell.nif / 1000) + "k$"}
-                                    </div>
-                                    <div style={{ height: 1, background: "rgba(255,255,255,0.07)", margin: "6px 0" }} />
-                                    {/* 2. Cotisation mensuelle requise */}
-                                    <div style={{ fontSize: 8, fontWeight: 600, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>
-                                      {cell.cotSupp > 0 ? "Cotisation requise" : "Cotisation actuelle"}
-                                    </div>
-                                    <div style={{ fontSize: 13, fontWeight: 700, color: cell.cotSupp > 0 ? "#f87171" : "#5BC4A0" }}>
-                                      {(cotM + cell.cotSupp).toLocaleString("fr-CA")} $<span style={{ fontSize: 9, fontWeight: 400, color: "rgba(255,255,255,0.3)" }}>/mois</span>
-                                    </div>
-                                    {cell.cotSupp > 0 && (
-                                      <div style={{ fontSize: 9, color: "rgba(248,113,113,0.7)", marginTop: 1 }}>+{cell.cotSupp.toLocaleString("fr-CA")} $ supp.</div>
-                                    )}
-                                    <div style={{ height: 1, background: "rgba(255,255,255,0.07)", margin: "6px 0" }} />
-                                    {/* 3. Score trajectoire actuelle */}
-                                    <div style={{ fontSize: 8, fontWeight: 600, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>Trajectoire actuelle</div>
-                                    <div style={{ fontSize: 16, fontWeight: 800, color: c.text }}>{cell.score}%</div>
-                                    <div style={{ fontSize: 9, fontWeight: 600, color: c.text, opacity: 0.75 }}>{c.label}</div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        ))}
-                        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.18)", marginTop: 8 }}>
-                          * Cotisation additionnelle mensuelle requise au-delà de votre épargne actuelle ({(cotM || 0).toLocaleString("fr-CA")} $/mois). PSV toujours à 65 ans. RRQ ajustée selon l'âge de début.
+                        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.18)", marginTop: 8, fontStyle: "italic" }}>
+                          * Épargne en dollars futurs. Besoin mensuel = cotisation totale requise (actuelle + supplémentaire). PSV toujours à 65 ans. RRQ ajustée selon l'âge de début.
                         </div>
                       </div>
                     );
