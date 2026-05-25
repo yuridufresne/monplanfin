@@ -201,8 +201,8 @@ export default function ModelisationRetraite() {
   const prenomA = profil.prenom || profil.nom?.split(" ")[0] || "Client";
   const prenomB = profil.conjoint?.prenom || profil.conjoint?.nom?.split(" ")[0] || "Conjoint(e)";
 
-  const dobA  = profil.date_naissance;
-  const dobB  = profil.conjoint?.date_naissance;
+  const dobA  = profil.dob || profil.date_naissance;
+  const dobB  = profil.conjoint?.dob || profil.conjoint?.date_naissance;
   const ageA  = dobA ? Math.floor((Date.now()-new Date(dobA))/(365.25*24*3600*1000)) : 38;
   const ageB  = dobB ? Math.floor((Date.now()-new Date(dobB))/(365.25*24*3600*1000)) : (enCouple ? ageA-2 : ageA);
 
