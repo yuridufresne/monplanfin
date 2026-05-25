@@ -494,11 +494,11 @@ export default function Dashboard() {
                       // Score : ratio nominal/nominal (cohérent)
                       const score = nifNom > 0 ? Math.min(Math.round(capNom / nifNom * 100), 999) : 100;
 
-                      // Cotisation supplémentaire
+                      // Cotisation supplémentaire = manque réel ÷ facteur annuité
                       let cotSupp = 0;
                       if (capNom < nifNom && annesAv > 0 && rM > 0) {
                         const facteur = (Math.pow(1 + rM, n) - 1) / rM;
-                        cotSupp = Math.max(0, Math.round((nifNom - epargne * Math.pow(1 + rM, n)) / facteur));
+                        cotSupp = Math.max(0, Math.round((nifNom - capNom) / facteur));
                       }
                       return { score, nif: nifNom, cap: capNom, cotSupp };
                     };
@@ -596,7 +596,7 @@ export default function Dashboard() {
                               <span style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>{l.label}</span>
                             </div>
                           ))}
-                          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", marginLeft: "auto" }}>Valeurs nominales · Formule identique au NIF affiché</span>
+                          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", marginLeft: "auto" }}>Valeurs nominales · inflation IQPF {(INF * 100).toFixed(1)}% · Revenus garantis foyer déduits</span>
                         </div>
                       </div>
                     );
