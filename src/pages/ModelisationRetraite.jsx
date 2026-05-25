@@ -33,7 +33,7 @@ function PaywallBanner({ onUnlock }) {
 }
 
 // ── Tableau de résultats ──────────────────────────────────────────────────────
-function TableauResultats({ rows }) {
+function TableauResultats({ rows, prenomA = "A", prenomB = "B" }) {
   const SHOW = [0,1,2,4,6,8,10,12,15,18,21,24,27];
   const vis  = rows.filter((_,i)=>SHOW.includes(i)||i===rows.length-1);
   const S = {
@@ -41,45 +41,81 @@ function TableauResultats({ rows }) {
     td:{ padding:"7px 8px", textAlign:"right", borderBottom:"1px solid rgba(255,255,255,.04)", fontSize:11, fontVariantNumeric:"tabular-nums", whiteSpace:"nowrap" },
   };
   const gh=(c,bg)=>({ fontSize:9, fontWeight:700, textTransform:"uppercase", letterSpacing:".06em", padding:"5px 8px", textAlign:"center", borderBottom:"1px solid rgba(255,255,255,.07)", color:c, background:bg });
+  const sep = { borderRight:"1px solid rgba(255,255,255,.08)" };
 
   return (
     <div style={{ overflowX:"auto", borderRadius:10, border:"1px solid rgba(255,255,255,.09)" }}>
-      <table style={{ width:"100%", borderCollapse:"collapse", minWidth:680 }}>
+      <table style={{ width:"100%", borderCollapse:"collapse", minWidth:900 }}>
         <thead>
           <tr>
             <th style={S.th} rowSpan={2}>Âge</th>
-            <th colSpan={3} style={gh("#5BC4A0","rgba(91,196,160,.07)")}>Revenus garantis</th>
-            <th colSpan={2} style={gh("#C9A063","rgba(201,160,99,.06)")}>Retraits</th>
+            <th colSpan={5} style={gh("#C9A063","rgba(201,160,99,.06)")}>{prenomA}</th>
+            <th colSpan={5} style={gh("#5BC4A0","rgba(91,196,160,.05)")}>{prenomB}</th>
+            <th colSpan={2} style={gh("#7F77DD","rgba(127,119,221,.06)")}>Retraits épargne</th>
             <th colSpan={5} style={gh("#6B8ED6","rgba(100,149,237,.06)")}>Bilan annuel</th>
-            <th colSpan={1} style={gh("#7F77DD","rgba(127,119,221,.06)")}>Patrimoine</th>
+            <th colSpan={1} style={gh("#fff","rgba(255,255,255,.03)")}>Patrimoine</th>
           </tr>
           <tr>
-           <th style={S.th}>RRQ+PSV</th><th style={{...S.th,color:"#6B8ED6"}}>Salaire actif</th><th style={{...S.th,borderRight:"1px solid rgba(255,255,255,.07)"}}>FERR min</th>
-           <th style={{...S.th,color:"rgba(91,196,160,.8)"}}>🟢 CELI</th><th style={{...S.th,color:"#EAB308",borderRight:"1px solid rgba(255,255,255,.07)"}}>🟡 FERR</th>
-           <th style={S.th}>Cible</th>
-           <th style={{...S.th,color:"#C9A063"}}>Total retiré</th>
-           <th style={{...S.th,color:"#f87171"}}>Impôt</th><th style={{...S.th,fontWeight:700,color:"#fff"}}>Revenu net</th><th style={{...S.th,borderRight:"1px solid rgba(255,255,255,.07)"}}>Écart</th>
-           <th style={S.th}>Total</th>
+            {/* A */}
+            <th style={S.th}>Salaire</th>
+            <th style={S.th}>RRQ</th>
+            <th style={S.th}>SV</th>
+            <th style={S.th}>Pension</th>
+            <th style={{...S.th,...sep}}>FERR</th>
+            {/* B */}
+            <th style={S.th}>Salaire</th>
+            <th style={S.th}>RRQ</th>
+            <th style={S.th}>SV</th>
+            <th style={S.th}>Pension</th>
+            <th style={{...S.th,...sep}}>FERR</th>
+            {/* Retraits */}
+            <th style={{...S.th,color:"rgba(91,196,160,.8)"}}>🟢 CELI</th>
+            <th style={{...S.th,color:"#EAB308",...sep}}>🟡 REER</th>
+            {/* Bilan */}
+            <th style={{...S.th,color:"rgba(255,255,255,.4)"}}>Cible</th>
+            <th style={{...S.th,color:"#C9A063"}}>Retiré</th>
+            <th style={{...S.th,color:"#f87171"}}>Impôt</th>
+            <th style={{...S.th,fontWeight:700,color:"#fff"}}>Net</th>
+            <th style={{...S.th,...sep}}>Écart</th>
+            {/* Patrimoine */}
+            <th style={S.th}>Total</th>
           </tr>
         </thead>
         <tbody>
           {vis.map((r,i)=>{
-            const ec=r.ecart>=0?"#5BC4A0":"#f87171";
-            const pc=r.actifs>400000?"#5BC4A0":r.actifs>150000?"#C9A063":r.actifs>30000?"#EAB308":"#f87171";
-            const bg=r.ages.split("/")[0]==="71"?"rgba(201,160,99,.06)":i%2?"rgba(255,255,255,.015)":"transparent";
+            const ec  = r.ecart>=0 ? "#5BC4A0" : "#f87171";
+            const pc  = r.actifs>300000?"#5BC4A0":r.actifs>100000?"#C9A063":r.actifs>20000?"#EAB308":"#f87171";
+            const hasFerr = r.ferrMinA>0 || r.ferrMinB>0;
+            const bg  = hasFerr ? "rgba(201,160,99,.06)" : i%2 ? "rgba(255,255,255,.015)" : "transparent";
+            const d   = (v,c="rgba(255,255,255,.2)") => v>0 ? fmtk(v) : "—";
+            const dc  = (v,yes,no="rgba(255,255,255,.2)") => ({...S.td, color: v>0 ? yes : no});
             return (
               <tr key={r.ages+i} style={{background:bg}}>
-                <td style={{...S.td,textAlign:"left",fontWeight:700,color:r.ages.split("/")[0]==="71"?"#C9A063":"#fff"}}>{r.ages}{r.ages.split("/")[0]==="71"?" ★":""}</td>
-                <td style={{...S.td,color:"#5BC4A0"}}>{r.rrqSvPension>0?fmtk(r.rrqSvPension):"—"}</td>
-                <td style={{...S.td,color:r.salaireActif>0?"#6B8ED6":"rgba(255,255,255,.2)"}}>{r.salaireActif>0?fmtk(r.salaireActif):"—"}</td>
-                <td style={{...S.td,color:r.ferrMin>0?"#EAB308":"rgba(255,255,255,.2)",borderRight:"1px solid rgba(255,255,255,.07)"}}>{r.ferrMin>0?fmtk(r.ferrMin):"—"}</td>
-                <td style={{...S.td,color:r.retraitCELI>0?"rgba(91,196,160,.9)":"rgba(255,255,255,.2)"}}>{r.retraitCELI>0?fmtk(r.retraitCELI):"—"}</td>
-                <td style={{...S.td,color:r.retraitREER>0?"#EAB308":"rgba(255,255,255,.2)",borderRight:"1px solid rgba(255,255,255,.07)"}}>{r.retraitREER>0?fmtk(r.retraitREER):"—"}</td>
-                <td style={{...S.td,color:"rgba(255,255,255,.4)",fontSize:10}}>{fmtk(r.cible)}</td>
+                <td style={{...S.td,textAlign:"left",fontWeight:700,color:hasFerr?"#C9A063":"#fff"}}>
+                  {r.ages}{hasFerr?" ★":""}
+                </td>
+                {/* A */}
+                <td style={dc(r.salaireA,"#6B8ED6")}>{d(r.salaireA)}</td>
+                <td style={dc(r.rrqA,"#5BC4A0")}>{d(r.rrqA)}</td>
+                <td style={dc(r.svA,"#6B8ED6")}>{d(r.svA)}</td>
+                <td style={dc(r.pensionA,"#C9A063")}>{d(r.pensionA)}</td>
+                <td style={{...dc(r.ferrMinA,"#EAB308"),...sep}}>{d(r.ferrMinA)}</td>
+                {/* B */}
+                <td style={dc(r.salaireB,"#6B8ED6")}>{d(r.salaireB)}</td>
+                <td style={dc(r.rrqB,"rgba(91,196,160,.7)")}>{d(r.rrqB)}</td>
+                <td style={dc(r.svB,"rgba(100,149,237,.7)")}>{d(r.svB)}</td>
+                <td style={dc(r.pensionB,"rgba(201,160,99,.7)")}>{d(r.pensionB)}</td>
+                <td style={{...dc(r.ferrMinB,"rgba(234,179,8,.7)"),...sep}}>{d(r.ferrMinB)}</td>
+                {/* Retraits */}
+                <td style={dc(r.retraitCELI,"rgba(91,196,160,.9)")}>{d(r.retraitCELI)}</td>
+                <td style={{...dc(r.retraitREER,"#EAB308"),...sep}}>{d(r.retraitREER)}</td>
+                {/* Bilan */}
+                <td style={{...S.td,color:"rgba(255,255,255,.35)",fontSize:10}}>{fmtk(r.cible)}</td>
                 <td style={{...S.td,color:"#C9A063",fontWeight:600}}>{r.totalRetire>0?fmtk(r.totalRetire):"—"}</td>
                 <td style={{...S.td,color:"#f87171"}}>−{fmtk(r.impot)}</td>
                 <td style={{...S.td,fontWeight:700}}>{fmtk(r.netRealise)}</td>
-                <td style={{...S.td,color:ec,fontWeight:600,borderRight:"1px solid rgba(255,255,255,.07)"}}>{r.ecart>=0?"+":""}{fmtk(r.ecart)}</td>
+                <td style={{...S.td,color:ec,fontWeight:600,...sep}}>{r.ecart>=0?"+":""}{fmtk(r.ecart)}</td>
+                {/* Patrimoine */}
                 <td style={{...S.td,color:pc,fontWeight:600}}>{fmtk(r.actifs)}</td>
               </tr>
             );
@@ -114,6 +150,8 @@ export default function ModelisationRetraite() {
   const rev  = abf.revenu || {};
   const ret  = abf.retraite || {};
   const prof = abf.profil_personnel || {};
+  const prenomA = prof.prenom || "Personne A";
+  const prenomB = prof.conjoint?.prenom || "Conjoint(e)";
   const enCouple = ["marie","conjoint","union_civile"].includes(prof.situation||"");
   const retCj = ret.conjoint || {};
 
@@ -277,7 +315,7 @@ export default function ModelisationRetraite() {
             </div>
           </div>
 
-          <TableauResultats rows={rows} />
+          <TableauResultats rows={rows} prenomA={prenomA} prenomB={prenomB} />
 
           {/* Graphique patrimoine */}
           <div style={{ marginTop:14, background:"rgba(255,255,255,.03)", border:"1px solid rgba(255,255,255,.07)", borderRadius:12, padding:"14px 16px" }}>
@@ -369,7 +407,7 @@ export default function ModelisationRetraite() {
                 ))}
               </div>
 
-              <TableauResultats rows={rows} />
+              <TableauResultats rows={rows} prenomA={prenomA} prenomB={prenomB} />
             </div>
           )}
         </div>

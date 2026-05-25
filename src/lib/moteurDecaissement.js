@@ -224,33 +224,46 @@ export function simulerDecaissement({
 
     const actifs = eRA+eFA+eCA+eRB+eFB+eCB;
 
-    // Séparer salaire actif vs revenus de retraite pour l'affichage
-    const salaireActif = Math.round(
-      (aa < ageRetraiteA ? revGA : 0) * fi +
-      (ab < ageRetraiteB ? revGB : 0) * fi
-    );
-    const revenusRetraite = Math.round(
-      (aa >= ageRetraiteA ? revGA : 0) * fi +
-      (ab >= ageRetraiteB ? revGB : 0) * fi
-    );
+    // Détail par source et par personne (indexés)
+    const salA_an  = aa < ageRetraiteA  ? salaireA  : 0;
+    const rrqA_an  = aa >= ageRetraiteA ? rrqA      : 0;
+    const svA_an   = aa >= 65           ? svA       : 0;
+    const pensA_an = aa >= ageRetraiteA ? pensionA  : 0;
+
+    const salB_an  = ab < ageRetraiteB  ? salaireB  : 0;
+    const rrqB_an  = ab >= ageRetraiteB ? rrqB      : 0;
+    const svB_an   = ab >= 65           ? svB       : 0;
+    const pensB_an = ab >= ageRetraiteB ? pensionB  : 0;
 
     rows.push({
       ages:`${aa}/${ab}`, annee:an,
       bTravaille: ab < ageRetraiteB,
-      totalRetire: Math.round(rc + rra + rrb + (fmA||0) + (fmB||0)),
-      cible:Math.round(cible),
-      salaireActif,
-      rrqSvPension: revenusRetraite,
-      ferrMin:Math.round(fmA+fmB),
-      retraitCELI:Math.round(rc),
-      retraitREER:Math.round(rra+rrb),
-      impot:Math.round(ia2+ib2),
-      clawbackPSV:Math.round(cla2+clb2),
-      netRealise:Math.round(netFinal),
-      ecart:Math.round(netFinal-cible),
-      actifs:Math.round(actifs),
-      ferrA:Math.round(eFA), celiA:Math.round(eCA),
-      ferrB:Math.round(eFB), celiB:Math.round(eCB),
+      cible: Math.round(cible),
+      // Revenus A
+      salaireA:  Math.round(salA_an  * fi),
+      rrqA:      Math.round(rrqA_an  * fi),
+      svA:       Math.round(svA_an   * fi),
+      pensionA:  Math.round(pensA_an * fi),
+      ferrMinA:  Math.round(fmA),
+      // Revenus B
+      salaireB:  Math.round(salB_an  * fi),
+      rrqB:      Math.round(rrqB_an  * fi),
+      svB:       Math.round(svB_an   * fi),
+      pensionB:  Math.round(pensB_an * fi),
+      ferrMinB:  Math.round(fmB),
+      // Retraits épargne
+      retraitCELI:  Math.round(rc),
+      retraitREER:  Math.round(rra + rrb),
+      totalRetire:  Math.round(rc + rra + rrb + fmA + fmB),
+      // Bilan
+      impot:       Math.round(ia2 + ib2),
+      clawbackPSV: Math.round(cla2 + clb2),
+      netRealise:  Math.round(netFinal),
+      ecart:       Math.round(netFinal - cible),
+      // Patrimoine
+      actifs: Math.round(actifs),
+      ferrA:  Math.round(eFA), celiA: Math.round(eCA),
+      ferrB:  Math.round(eFB), celiB: Math.round(eCB),
     });
 
     // Indexation cible + paliers
