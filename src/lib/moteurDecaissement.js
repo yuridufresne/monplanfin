@@ -66,11 +66,12 @@ export function simulerDecaissement({
   let cible = cibleNette;
   const rows = [];
 
-  const espVieMax = Math.max(esperanceVie - ageA, esperanceVie - (ageB || ageA));
+  const ageDepart = ageRetraiteA;
+  const nbAnnees  = esperanceVie - ageDepart;
 
-  for (let an = 0; an <= espVieMax; an++) {
-    const aa = ageA + an;
-    const ab = (ageB || ageA) + an;
+  for (let an = 0; an <= nbAnnees; an++) {
+    const aa = ageDepart + an;
+    const ab = (ageB || ageA) + (aa - ageA);
 
     // Conversion REER→FERR à 71 ans
     if (aa===71 && eRA>0) { eFA+=eRA; eRA=0; }
