@@ -382,41 +382,91 @@ export default function Dashboard() {
 
                   {/* Grille 3×3 — Scénarios âge × rendement */}
                   {(() => {
-                    const inf = 0.025;
+                    const INF = 0.025;
                     const espVie = esperanceVie || 90;
                     const epargneActuelle = soldeTotal || 0;
                     const cotM = nifCotMensuelle || 0;
                     const revenuBrutAnnuel = revBrut || 80000;
 
+                    // Variables revenus garantis
+                    const retraiteData = bySection.retraite || {};
+                    const retraiteP1   = retraiteData.prestations_gouvernementales || retraiteData || {};
+                    const retraiteP2   = enCouple ? (retraiteData.conjoint?.prestations_gouvernementales || retraiteData.conjoint || {}) : {};
+                    const rrqMensuelP1 = parseFloat(revenusGarantis?.p1?.rrq || retraiteP1.rrq || 0);
+                    const rrqMensuelP2 = parseFloat(revenusGarantis?.p2?.rrq || retraiteP2.rrq || 0);
+                    const psvMensuelP1 = parseFloat(revenusGarantis?.p1?.psv || retraiteP1.psv || 713.34);
+                    const psvMensuelP2 = enCouple ? parseFloat(revenusGarantis?.p2?.psv || retraiteP2.psv || 713.34) : 0;
+                    const pensionPDMensuel = parseFloat(revenusGarantis?.p1?.pension || revenusGarantis?.p2?.pension || fpMensuelTotal || 0);
+                    const conjointAgeVal = parseInt(profil.age_conjoint || profil.conjoint_age || 0);
+
                     const calcScenario = (ageRet, rendAccum, rendDecaisse) => {
-                      const annesAv  = Math.max(1, ageRet - (ageActuel || 38));
-                      const annesDec = Math.max(1, espVie - ageRet);
-                      const factInf  = Math.pow(1 + inf, annesAv);
-                      const rrqBase  = rrqMensuelTotal || 0;
+                      const annesAv = Math.max(1, ageRet - (ageActuel || 38));
+                      const cibleBase = revenuBrutAnnuel * 0.80;
+
+                      // RRQ — facteur selon l'âge de début (min 60)
+                      const ageDebutRRQ = Math.max(60, ageRet);
                       let factRRQ = 1;
-                      if (ageRet < 65) factRRQ = Math.max(0.64, 1 - (65 - ageRet) * 12 * 0.006);
-                      else if (ageRet > 65) factRRQ = 1 + Math.min((ageRet - 65) * 12, 60) * 0.007;
-                      const psvAnnuelle    = psvMensuelTotal * 12;
-                      const fpMensuel      = fpMensuelTotal || 0;
-                      const garantisAnnuels = (rrqBase * factRRQ + fpMensuel) * 12;
-                      const garantisFuturs  = garantisAnnuels * factInf + psvAnnuelle * Math.pow(1 + inf, annesAv + Math.max(0, 65 - ageRet));
-                      const cibleFuture    = revenuBrutAnnuel * 0.80 * factInf;
-                      const manqueFutur    = Math.max(0, cibleFuture - garantisFuturs);
-                      const nif4   = manqueFutur / 0.04;
-                      const rR     = rendDecaisse - inf;
-                      const nifRente = rR > 0.005 ? manqueFutur * ((1 - Math.pow(1 + rR, -annesDec)) / rR) : manqueFutur * annesDec;
-                      const nifV   = (nif4 + nifRente) / 2;
+                      if (ageDebutRRQ < 65) factRRQ = Math.max(0.64, 1 - (65 - ageDebutRRQ) * 12 * 0.006);
+                      else if (ageDebutRRQ > 65) factRRQ = 1 + Math.min((ageDebutRRQ - 65) * 12, 60) * 0.007;
+                      const rrqAnnuelP1 = rrqMensuelP1 * factRRQ * 12;
+                      const rrqAnnuelP2 = rrqMensuelP2 * 12; // conjoint assume 65 ans
+
+                      // Simulation année par année
+                      const simuler = (capitalInitial) => {
+                        let capital = capitalInitial;
+                        for (let age = ageRet; age <= espVie; age++) {
+                          const ann = age - ageRet;
+                          const fi = Math.pow(1 + INF, ann);
+                          const cible = cibleBase * fi;
+                          let revenus = 0;
+                          // RRQ p1
+                          if (age >= ageDebutRRQ) revenus += rrqAnnuelP1 * fi;
+                          // PSV p1
+                          if (age >= 65) revenus += psvMensuelP1 * 12 * fi;
+                          // RRQ + PSV conjoint
+                          if (enCouple) {
+                            const ageConj = conjointAgeVal > 0 ? conjointAgeVal + ann : age;
+                            if (ageConj >= 65) {
+                              revenus += rrqAnnuelP2 * fi;
+                              revenus += psvMensuelP2 * 12 * fi;
+                            }
+                          }
+                          // Pension PD (conjoint, débute quand conjoint a 65 ans)
+                          if (pensionPDMensuel > 0) {
+                            const ageConj = conjointAgeVal > 0 ? conjointAgeVal + ann : age;
+                            if (ageConj >= 65) revenus += pensionPDMensuel * 12 * fi;
+                          }
+                          const manque = Math.max(0, cible - revenus);
+                          capital = capital * (1 + rendDecaisse) - manque;
+                          if (capital <= 0) return false;
+                        }
+                        return true;
+                      };
+
+                      // Recherche binaire du NIF
+                      let lo = 0, hi = 15000000, nifV = 0;
+                      for (let i = 0; i < 40; i++) {
+                        const mid = (lo + hi) / 2;
+                        if (simuler(mid)) { nifV = mid; hi = mid; }
+                        else lo = mid;
+                      }
+
+                      // Capital projeté
                       const rM = rendAccum / 12;
                       const n  = annesAv * 12;
-                      const cap = epargneActuelle * Math.pow(1 + rM, n) + (rM > 0 ? cotM * (Math.pow(1 + rM, n) - 1) / rM : cotM * n);
+                      const cap = epargneActuelle * Math.pow(1 + rM, n)
+                        + (rM > 0 ? cotM * (Math.pow(1 + rM, n) - 1) / rM : cotM * n);
+
                       const score = nifV > 0 ? Math.min(Math.round(cap / nifV * 100), 999) : 100;
+
                       let cotSupp = 0;
                       if (cap < nifV && annesAv > 0 && rM > 0) {
                         const facteur = (Math.pow(1 + rM, n) - 1) / rM;
                         const manqueCapital = nifV - epargneActuelle * Math.pow(1 + rM, n);
                         cotSupp = Math.max(0, manqueCapital / facteur);
                       }
-                      return { score, nif: Math.round(nifV), cap: Math.round(cap), cotSupp: Math.round(cotSupp) };
+
+                      return { score, nif: Math.round(nifV), cap: Math.round(cap), cotSupp: Math.round(cotSupp), factRRQ: Math.round(factRRQ * 100) };
                     };
 
                     const getColor = (score) => {
