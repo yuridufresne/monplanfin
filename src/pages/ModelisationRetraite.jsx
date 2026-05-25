@@ -109,13 +109,17 @@ function TableauResultats({ rows, prenomA = "A", prenomB = "B" }) {
             {vis.map((r,i)=>{
               const ec  = r.ecart>=0 ? "#5BC4A0" : "#f87171";
               const hasFerr = r.ferrMinA>0 || r.ferrMinB>0;
-              const bg  = hasFerr ? "rgba(201,160,99,.06)" : i%2 ? "rgba(255,255,255,.015)" : "transparent";
+              const isTransition = r.phase === "transition";
+              const bg  = isTransition
+                ? "rgba(107,142,214,.07)"
+                : hasFerr ? "rgba(201,160,99,.06)"
+                : i%2 ? "rgba(255,255,255,.015)" : "transparent";
               const d   = (v) => v>0 ? fmtk(v) : "—";
               const dc  = (v,yes,no="rgba(255,255,255,.2)") => ({...S.td, color: v>0 ? yes : no});
               return (
                 <tr key={r.ages+i} style={{background:bg}}>
-                  <td style={{...S.td,textAlign:"left",fontWeight:700,color:hasFerr?"#C9A063":"#fff"}}>
-                    {r.ages}{hasFerr?" ★":""}
+                  <td style={{...S.td,textAlign:"left",fontWeight:700,color:isTransition?"#6B8ED6":hasFerr?"#C9A063":"#fff"}}>
+                    {r.ages}{hasFerr?" ★":""}{isTransition?" 🔄":""}
                   </td>
                   {/* A revenus */}
                   <td style={dc(r.salaireA,"#6B8ED6")}>{d(r.salaireA)}</td>

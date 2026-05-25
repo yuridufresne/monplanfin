@@ -163,69 +163,94 @@ export function simulerDecaissement({
     const clb = clawback(rbbRaw, svB*fi, cr.seuilPSV);
     const netAvecFerrMin = (rbaRaw-ia-cla) + (rbbRaw-ib-clb);
 
-    // Décaissement pour combler le déficit
+    // ── 5. Décaissement si déficit ─────────────────────────────────
     const ecart = cible - netAvecFerrMin;
     let rc=0, rra=0, rrb=0, ferrSuppA=0, ferrSuppB=0;
-    let eCA_avant = eCA, eCB_avant = eCB;
+    const marieEncoreActive = ab < ageRetraiteB;
+    // Snapshot CELI avant retrait (pour calcul proportionnel dans rows.push)
+    const eCA_avant = eCA, eCB_avant = eCB;
 
     if (ecart > 0) {
       let er = ecart;
 
-      // 1. CELI en priorité (non imposable)
-      const totC = eCA+eCB;
-      if (totC > 0) {
-        rc = Math.min(er, totC);
-        const rA = eCA/totC;
-        eCA = Math.max(0, eCA - rc*rA);
-        eCB = Math.max(0, eCB - rc*(1-rA));
-        er -= rc;
-      }
-
-      // 2. FERR supplémentaire (au-delà du minimum légal)
-      if (er > 0.01) {
-        const ferrDispA = Math.max(0, eFA - fmA);
-        const ferrDispB = Math.max(0, eFB - fmB);
-        const totFerr = ferrDispA + ferrDispB;
-
-        if (totFerr > 0) {
+      if (marieEncoreActive) {
+        // ── PHASE 1 : Marie travaille — SEULEMENT comptes de Jean ──
+        // 1. CELI de Jean
+        if (eCA > 0) {
+          const rcA = Math.min(er, eCA);
+          eCA = Math.max(0, eCA - rcA);
+          rc = rcA;
+          er -= rcA;
+        }
+        // 2. FERR supplémentaire de Jean (si converti ≥ 71)
+        if (er > 0.01 && eFA > 0 && aa >= 71) {
+          const ferrDispA = Math.max(0, eFA - fmA);
           if (ferrDispA > 0) {
-            const partA = er * (ferrDispA / totFerr);
-            const tmA = Math.min(.55, Math.max(.15, tauxMarg(rbaRaw + partA, pFed, pQC)));
-            ferrSuppA = Math.min(partA / (1 - tmA), ferrDispA);
+            const tmA = Math.min(0.55, Math.max(0.15, tauxMarg(rbaRaw + ferrDispA, pFed, pQC)));
+            ferrSuppA = Math.min(er / (1 - tmA), ferrDispA);
             er -= ferrSuppA * (1 - tmA);
           }
-          if (er > 0.01 && ferrDispB > 0) {
-            const tmB = Math.min(.55, Math.max(.15, tauxMarg(rbbRaw + er, pFed, pQC)));
-            ferrSuppB = Math.min(er / (1 - tmB), ferrDispB);
-            er -= ferrSuppB * (1 - tmB);
+        }
+        // 3. REER de Jean (avant 71)
+        if (er > 0.01 && eRA > 0) {
+          const tmA = Math.min(0.55, Math.max(0.15, tauxMarg(rbaRaw + er, pFed, pQC)));
+          rra = Math.min(er / (1 - tmA), eRA);
+          eRA = Math.max(0, eRA - rra);
+        }
+        // ⚠ Comptes de Marie : JAMAIS touchés pendant qu'elle travaille
+
+      } else {
+        // ── PHASE 2 : Les deux retraités ────────────────────────────
+        // 1. CELI des deux proportionnellement
+        const totC = eCA + eCB;
+        if (totC > 0) {
+          rc = Math.min(er, totC);
+          const ratioA = eCA / totC;
+          eCA = Math.max(0, eCA - rc * ratioA);
+          eCB = Math.max(0, eCB - rc * (1 - ratioA));
+          er -= rc;
+        }
+        // 2. FERR supplémentaire (proportionnel aux soldes disponibles)
+        if (er > 0.01) {
+          const ferrDispA = aa >= 71 ? Math.max(0, eFA - fmA) : 0;
+          const ferrDispB = ab >= 71 ? Math.max(0, eFB - fmB) : 0;
+          const totFerr = ferrDispA + ferrDispB;
+          if (totFerr > 0) {
+            if (ferrDispA > 0) {
+              const partA = er * (ferrDispA / totFerr);
+              const tmA = Math.min(0.55, Math.max(0.15, tauxMarg(rbaRaw + partA, pFed, pQC)));
+              ferrSuppA = Math.min(partA / (1 - tmA), ferrDispA);
+              er -= ferrSuppA * (1 - tmA);
+            }
+            if (er > 0.01 && ferrDispB > 0) {
+              const tmB = Math.min(0.55, Math.max(0.15, tauxMarg(rbbRaw + er, pFed, pQC)));
+              ferrSuppB = Math.min(er / (1 - tmB), ferrDispB);
+              er -= ferrSuppB * (1 - tmB);
+            }
           }
         }
-      }
-
-      // 3. REER (avant 71 ans) si déficit résiduel
-      if (er > 0.01) {
-        const saA = eRA, saB = eRB;
-        if (saA > 0 && saB > 0) {
-          const tot = saA + saB;
-          const tmA = Math.min(.55, Math.max(.15, tauxMarg(rbaRaw + ferrSuppA + er*(saA/tot), pFed, pQC)));
-          rra = Math.min(er*(saA/tot)/(1-tmA), saA);
-          eRA = Math.max(0, eRA - rra);
-          const tmB = Math.min(.55, Math.max(.15, tauxMarg(rbbRaw + ferrSuppB + er*(saB/tot), pFed, pQC)));
-          rrb = Math.min(er*(saB/tot)/(1-tmB), saB);
-          eRB = Math.max(0, eRB - rrb);
-        } else if (saA > 0) {
-          const tmA = Math.min(.55, Math.max(.15, tauxMarg(rbaRaw + ferrSuppA + er, pFed, pQC)));
-          rra = Math.min(er/(1-tmA), saA);
-          eRA = Math.max(0, eRA - rra);
-        } else if (saB > 0) {
-          const tmB = Math.min(.55, Math.max(.15, tauxMarg(rbbRaw + ferrSuppB + er, pFed, pQC)));
-          rrb = Math.min(er/(1-tmB), saB);
-          eRB = Math.max(0, eRB - rrb);
+        // 3. REER des deux (avant 71) proportionnel
+        if (er > 0.01) {
+          const saA = eRA, saB = eRB;
+          const totReer = saA + saB;
+          if (totReer > 0) {
+            if (saA > 0) {
+              const tmA = Math.min(0.55, Math.max(0.15, tauxMarg(rbaRaw + er*(saA/totReer), pFed, pQC)));
+              rra = Math.min(er*(saA/totReer)/(1-tmA), saA);
+              eRA = Math.max(0, eRA - rra);
+              er -= rra*(1-tmA);
+            }
+            if (er > 0.01 && saB > 0) {
+              const tmB = Math.min(0.55, Math.max(0.15, tauxMarg(rbbRaw + er, pFed, pQC)));
+              rrb = Math.min(er/(1-tmB), saB);
+              eRB = Math.max(0, eRB - rrb);
+            }
+          }
         }
       }
     }
 
-    // Déduire FERR (minimum + supplémentaire) des soldes maintenant
+    // Déduire FERR (minimum + supplémentaire) des soldes
     eFA = Math.max(0, eFA - fmA - ferrSuppA);
     eFB = Math.max(0, eFB - fmB - ferrSuppB);
 
@@ -240,7 +265,7 @@ export function simulerDecaissement({
     const clb2 = clawback(rfB, svB*fi, cr.seuilPSV);
     const netFinal = (rfA-ia2-cla2) + (rfB-ib2-clb2) + rc;
 
-    // Rendements
+    // Rendements (appliqués après retraits)
     const r = rendement;
     eRA*=(1+r); eFA*=(1+r); eCA*=(1+r);
     eRB*=(1+r); eFB*=(1+r); eCB*=(1+r);
@@ -258,9 +283,13 @@ export function simulerDecaissement({
     const svB_an   = ab >= 65           ? svB       : 0;
     const pensB_an = ab >= ageRetraiteB ? pensionB  : 0;
 
+    // Proportion CELI selon snapshot avant retrait
+    const celiTotAvant = Math.max(eCA_avant + eCB_avant, 1);
+
     rows.push({
       ages:`${aa}/${ab}`, annee:an,
-      bTravaille: ab < ageRetraiteB,
+      phase: marieEncoreActive ? "transition" : "retraite_complete",
+      bTravaille: marieEncoreActive,
       cible: Math.round(cible),
       // Revenus A
       salaireA:  Math.round(salA_an  * fi),
@@ -275,8 +304,8 @@ export function simulerDecaissement({
       pensionB:  Math.round(pensB_an * fi),
       ferrMinB:  Math.round(fmB),
       // Retraits épargne détaillés par personne
-      retraitCELI_A: Math.round(rc * (eCA_avant / Math.max(eCA_avant + eCB_avant, 1))),
-      retraitCELI_B: Math.round(rc * (eCB_avant / Math.max(eCA_avant + eCB_avant, 1))),
+      retraitCELI_A: marieEncoreActive ? Math.round(rc) : Math.round(rc * (eCA_avant / celiTotAvant)),
+      retraitCELI_B: marieEncoreActive ? 0              : Math.round(rc * (eCB_avant / celiTotAvant)),
       retraitREER_A: Math.round(rra),
       retraitREER_B: Math.round(rrb),
       ferrSupp_A:    Math.round(ferrSuppA),
@@ -294,7 +323,6 @@ export function simulerDecaissement({
       actifs: Math.round(actifs),
       ferrA:  Math.round(eFA), celiA: Math.round(eCA),
       ferrB:  Math.round(eFB), celiB: Math.round(eCB),
-      // Debug — soldes après rendement
       _debug: { eRA:Math.round(eRA), eFA:Math.round(eFA), eCA:Math.round(eCA), eRB:Math.round(eRB), eFB:Math.round(eFB), eCB:Math.round(eCB), aa, ab },
     });
 
