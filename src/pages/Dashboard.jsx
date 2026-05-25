@@ -446,97 +446,61 @@ export default function Dashboard() {
                     );
                   })()}
 
-                  {/* Grille 3×3 — Scénarios âge × rendement */}
+                  {/* Grille 3×3 — Scénarios âge × rendement — MÊME source que calcNIFFromProfiles */}
                   {(() => {
-                    const INF = 0.025;
-                    const espVie = esperanceVie || 90;
-                    const epargneActuelle = soldeTotal || 0;
-                    const cotM = nifCotMensuelle || 0;
-                    const revenuBrutAnnuel = revBrut || 80000;
+                    // Source unique : nif = calcNIFFromProfiles(profiles)
+                    const INF       = 0.025;
+                    const espVie    = esperanceVie || 95;
+                    const epargne   = soldeTotal || 0;
+                    const cotM      = nifCotMensuelle || 0;
+                    const cibleAuj  = nif.depensesCibles; // $ constants aujourd'hui
+                    // Revenus garantis en $ constants depuis la même source
+                    const rrqAuj    = (revenusGarantis?.p1?.rrq || 0) + (revenusGarantis?.p2?.rrq || 0); // mensuel total base
+                    const psvAuj    = (revenusGarantis?.p1?.psv || 0) + (revenusGarantis?.p2?.psv || 0); // mensuel
+                    const penAuj    = (revenusGarantis?.p1?.pension || 0) + (revenusGarantis?.p2?.pension || 0); // mensuel
+                    const garantisAuj = (rrqAuj + psvAuj + penAuj) * 12; // annuel $ constants
 
-                    // Variables revenus garantis
-                    const retraiteData = bySection.retraite || {};
-                    const retraiteP1   = retraiteData.prestations_gouvernementales || retraiteData || {};
-                    const retraiteP2   = enCouple ? (retraiteData.conjoint?.prestations_gouvernementales || retraiteData.conjoint || {}) : {};
-                    const rrqMensuelP1 = parseFloat(revenusGarantis?.p1?.rrq || retraiteP1.rrq || 0);
-                    const rrqMensuelP2 = parseFloat(revenusGarantis?.p2?.rrq || retraiteP2.rrq || 0);
-                    const psvMensuelP1 = parseFloat(revenusGarantis?.p1?.psv || retraiteP1.psv || 713.34);
-                    const psvMensuelP2 = enCouple ? parseFloat(revenusGarantis?.p2?.psv || retraiteP2.psv || 713.34) : 0;
-                    const pensionPDMensuel = parseFloat(revenusGarantis?.p1?.pension || revenusGarantis?.p2?.pension || fpMensuelTotal || 0);
-                    const conjointAgeVal = parseInt(profil.age_conjoint || profil.conjoint_age || 0);
-
-                    // Cible annuelle — source unique : même que calcNIFFromProfiles
-                    const nifResult = nif.nifResult;
-                    const depCible  = nif.depensesCibles; // en $ d'aujourd'hui
-
-                    const calcScenario = (ageRet, rendAccum, rendDecaisse) => {
+                    // Formule identique à calcNIF() dans calcNIF.js :
+                    // NIF en $ constants = manque / tauxRéel (rente actuarielle + 4%, moyenne)
+                    const calcCellule = (ageRet, rendAccum, rendDecaisse) => {
                       const annesAv = Math.max(1, ageRet - (ageActuel || 38));
-                      const cibleBase = depCible || revenuBrutAnnuel * 0.80;
+                      const annesDecaisse = Math.max(1, espVie - ageRet);
+                      const fi = Math.pow(1 + INF, annesAv);
 
-                      // RRQ — facteur selon l'âge de début (min 60)
-                      const ageDebutRRQ = Math.max(60, ageRet);
+                      // Ajustement RRQ selon l'âge (même logique que readPersonne)
                       let factRRQ = 1;
-                      if (ageDebutRRQ < 65) factRRQ = Math.max(0.64, 1 - (65 - ageDebutRRQ) * 12 * 0.006);
-                      else if (ageDebutRRQ > 65) factRRQ = 1 + Math.min((ageDebutRRQ - 65) * 12, 60) * 0.007;
-                      const rrqAnnuelP1 = rrqMensuelP1 * factRRQ * 12;
-                      const rrqAnnuelP2 = rrqMensuelP2 * 12; // conjoint assume 65 ans
+                      if (ageRet < 65) factRRQ = Math.max(0.64, 1 - (65 - ageRet) * 12 * 0.006);
+                      else if (ageRet > 65) factRRQ = 1 + Math.min((ageRet - 65) * 12, 60) * 0.007;
+                      // Garantis ajustés en $ constants (RRQ factored, PSV toujours à 65)
+                      const garantisAjAuj = ((rrqAuj * factRRQ) + psvAuj + penAuj) * 12;
 
-                      // Simulation année par année
-                      const simuler = (capitalInitial) => {
-                        let capital = capitalInitial;
-                        for (let age = ageRet; age <= espVie; age++) {
-                          const ann = age - ageRet;
-                          const fi = Math.pow(1 + INF, ann);
-                          const cible = cibleBase * fi;
-                          let revenus = 0;
-                          // RRQ p1
-                          if (age >= ageDebutRRQ) revenus += rrqAnnuelP1 * fi;
-                          // PSV p1
-                          if (age >= 65) revenus += psvMensuelP1 * 12 * fi;
-                          // RRQ + PSV conjoint
-                          if (enCouple) {
-                            const ageConj = conjointAgeVal > 0 ? conjointAgeVal + ann : age;
-                            if (ageConj >= 65) {
-                              revenus += rrqAnnuelP2 * fi;
-                              revenus += psvMensuelP2 * 12 * fi;
-                            }
-                          }
-                          // Pension PD (conjoint, débute quand conjoint a 65 ans)
-                          if (pensionPDMensuel > 0) {
-                            const ageConj = conjointAgeVal > 0 ? conjointAgeVal + ann : age;
-                            if (ageConj >= 65) revenus += pensionPDMensuel * 12 * fi;
-                          }
-                          const manque = Math.max(0, cible - revenus);
-                          capital = capital * (1 + rendDecaisse) - manque;
-                          if (capital <= 0) return false;
-                        }
-                        return true;
-                      };
+                      const manqueAuj = Math.max(0, cibleAuj - garantisAjAuj);
+                      // Taux réel (Fisher)
+                      const tauxReel = ((1 + rendDecaisse) / (1 + INF)) - 1;
+                      const nif4pct = manqueAuj / 0.04;
+                      const nifRente = tauxReel > 0.005
+                        ? manqueAuj * ((1 - Math.pow(1 + tauxReel, -annesDecaisse)) / tauxReel)
+                        : manqueAuj * annesDecaisse;
+                      const nifConst = (nif4pct + nifRente) / 2; // $ constants
+                      const nifNom   = Math.round(nifConst * fi);  // $ nominaux
 
-                      // Recherche binaire du NIF
-                      let lo = 0, hi = 15000000, nifV = 0;
-                      for (let i = 0; i < 40; i++) {
-                        const mid = (lo + hi) / 2;
-                        if (simuler(mid)) { nifV = mid; hi = mid; }
-                        else lo = mid;
-                      }
-
-                      // Capital projeté
+                      // Capital projeté nominal
                       const rM = rendAccum / 12;
                       const n  = annesAv * 12;
-                      const cap = epargneActuelle * Math.pow(1 + rM, n)
-                        + (rM > 0 ? cotM * (Math.pow(1 + rM, n) - 1) / rM : cotM * n);
+                      const capNom = Math.round(
+                        epargne * Math.pow(1 + rM, n) +
+                        (rM > 0 ? cotM * (Math.pow(1 + rM, n) - 1) / rM : cotM * n)
+                      );
+                      // Score : ratio nominal/nominal (cohérent)
+                      const score = nifNom > 0 ? Math.min(Math.round(capNom / nifNom * 100), 999) : 100;
 
-                      const score = nifV > 0 ? Math.min(Math.round(cap / nifV * 100), 999) : 100;
-
+                      // Cotisation supplémentaire
                       let cotSupp = 0;
-                      if (cap < nifV && annesAv > 0 && rM > 0) {
+                      if (capNom < nifNom && annesAv > 0 && rM > 0) {
                         const facteur = (Math.pow(1 + rM, n) - 1) / rM;
-                        const manqueCapital = nifV - epargneActuelle * Math.pow(1 + rM, n);
-                        cotSupp = Math.max(0, manqueCapital / facteur);
+                        cotSupp = Math.max(0, Math.round((nifNom - epargne * Math.pow(1 + rM, n)) / facteur));
                       }
-
-                      return { score, nif: Math.round(nifV), cap: Math.round(cap), cotSupp: Math.round(cotSupp), factRRQ: Math.round(factRRQ * 100) };
+                      return { score, nif: nifNom, cap: capNom, cotSupp };
                     };
 
                     const getColor = (score) => {
@@ -546,21 +510,13 @@ export default function Dashboard() {
                       return               { bg: "rgba(248,113,113,0.08)", border: "rgba(248,113,113,0.25)", text: "#f87171" };
                     };
 
-                    const ageBase = ageRetraite || 65;
-                    const AGES_RET = [ageBase - 5, ageBase, ageBase + 5];
+                    const ageBase   = ageRetraite || 65;
+                    const AGES_RET  = [ageBase - 5, ageBase, ageBase + 5];
                     const getRRQLabel = (age) => {
                       if (age < 65) return `RRQ −${Math.round((65 - age) * 12 * 0.6)}% · PSV à 65`;
                       if (age === 65) return "RRQ base · PSV à 65";
                       return `RRQ +${Math.round((age - 65) * 12 * 0.7)}% · PSV à 65`;
                     };
-
-                    // Cellule "Actuel" — source unique pour les métriques du haut
-                    const celluleActuelle = calcScenario(ageBase, 0.07, 0.05);
-                    const nifCibleCalc     = celluleActuelle.nif;
-                    const capitalProjecteCalc = celluleActuelle.cap;
-                    const cotSuppCalc      = celluleActuelle.cotSupp;
-                    const scoreNIFCalc     = celluleActuelle.score;
-                    const nifColorCalc     = scoreNIFCalc >= 100 ? "#5BC4A0" : scoreNIFCalc >= 75 ? "#C9A063" : scoreNIFCalc >= 50 ? "#f59e0b" : "#f87171";
 
                     return (
                       <div style={{ marginTop: 20 }}>
@@ -568,88 +524,79 @@ export default function Dashboard() {
                           Scénarios autour de votre objectif de retraite à {ageBase} ans
                         </div>
                         <div style={{ borderRadius: 12, overflow: "hidden", border: "1px solid rgba(255,255,255,0.08)" }}>
-                          {/* En-tête — ages à gauche, label à droite */}
                           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1.4fr", background: "rgba(255,255,255,0.04)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
                             {AGES_RET.map(age => (
                               <div key={age} style={{ padding: "10px 12px", textAlign: "center", borderRight: "1px solid rgba(255,255,255,0.06)" }}>
                                 <div style={{ fontSize: 12, fontWeight: 700, color: age === ageBase ? "#C9A063" : "#fff" }}>Retraite à {age} ans</div>
-                                <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>
-                                  {getRRQLabel(age)}
-                                </div>
+                                <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>{getRRQLabel(age)}</div>
                               </div>
                             ))}
                             <div style={{ padding: "10px 14px", fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.07em", display: "flex", alignItems: "center" }}>
                               Taux de rendement
                             </div>
                           </div>
-                          {/* Lignes */}
                           {[
                             { label: "Conservateur", accum: 0.05, decaisse: 0.03, defaut: false },
                             { label: "Équilibré",    accum: 0.07, decaisse: 0.05, defaut: true  },
                             { label: "Croissance",   accum: 0.09, decaisse: 0.07, defaut: false },
                           ].map((rend, ri) => (
                             <div key={rend.label} style={{
-                              display: "grid",
-                              gridTemplateColumns: "1fr 1fr 1fr 1.4fr",
+                              display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1.4fr",
                               background: rend.defaut ? "rgba(201,160,99,0.06)" : ri % 2 === 0 ? "transparent" : "rgba(255,255,255,0.015)",
                               borderBottom: ri < 2 ? "1px solid rgba(255,255,255,0.06)" : "none",
                             }}>
-                              {/* Cellules par âge — en premier */}
                               {AGES_RET.map(age => {
-                                // Cellule "Actuel" = source unique calcNIFFromProfiles
                                 const isActuel = rend.defaut && age === ageBase;
-                                const cellRaw = calcScenario(age, rend.accum, rend.decaisse);
                                 const cell = isActuel
-                                  ? { ...cellRaw, nif: capitalNIFNominal || capitalNIF, cap: capitalProjecteNominal || capitalProjecte, score: scoreNIF, cotSupp }
-                                  : cellRaw;
+                                  ? { nif: capitalNIFNominal || capitalNIF, cap: capitalProjecteNominal || capitalProjecte, score: scoreNIF, cotSupp }
+                                  : calcCellule(age, rend.accum, rend.decaisse);
                                 const c = getColor(cell.score);
                                 return (
-                                  <div key={age} style={{ padding: "14px 10px", borderRight: `1px solid ${c.border}`, textAlign: "center", position: "relative", background: c.bg, transition: "all .2s", outline: isActuel ? `2px solid ${c.text}` : "none", outlineOffset: -2 }}>
+                                  <div key={age} style={{ padding: "14px 10px", borderRight: `1px solid ${c.border}`, textAlign: "center", position: "relative", background: c.bg, outline: isActuel ? `2px solid ${c.text}` : "none", outlineOffset: -2 }}>
                                     <div style={{ position: "absolute", top: 5, left: 5, fontSize: 9, fontWeight: 700, color: c.text, background: c.bg, border: `1px solid ${c.border}`, borderRadius: 4, padding: "1px 5px", lineHeight: 1.4, opacity: 0.85 }}>
                                       {cell.score}%
                                     </div>
                                     {isActuel && (
-                                      <div style={{ position: "absolute", top: -9, left: "50%", transform: "translateX(-50%)", fontSize: 8, fontWeight: 700, color: c.text, background: "#0A1628", padding: "1px 6px", borderRadius: 4, border: `1px solid ${c.border}`, whiteSpace: "nowrap" }}>Actuel</div>
+                                      <div style={{ position: "absolute", top: -9, left: "50%", transform: "translateX(-50%)", fontSize: 8, fontWeight: 700, color: c.text, background: "#0A1628", padding: "1px 6px", borderRadius: 4, border: `1px solid ${c.border}`, whiteSpace: "nowrap" }}>Actuel ★</div>
                                     )}
                                     <div style={{ fontSize: 14, fontWeight: 800, color: c.text, letterSpacing: "-0.3px", marginBottom: 8, lineHeight: 1 }}>
                                       {cell.nif >= 1000000 ? (cell.nif / 1000000).toFixed(2) + "M $" : Math.round(cell.nif / 1000) + "k $"}
+                                      <span style={{ fontSize: 9, fontWeight: 400, color: "rgba(255,255,255,0.25)", display: "block", marginTop: 2 }}>NIF nominal</span>
                                     </div>
                                     <div style={{ height: 1, background: c.border, margin: "0 0 8px 0", opacity: 0.5 }} />
-                                    <div style={{ fontSize: 13, fontWeight: 700, color: c.text, lineHeight: 1 }}>
+                                    <div style={{ fontSize: 12, fontWeight: 700, color: c.text, lineHeight: 1 }}>
                                       {(cotM + cell.cotSupp).toLocaleString("fr-CA")} $
-                                      <span style={{ fontSize: 9, fontWeight: 400, color: "rgba(255,255,255,0.3)", display: "block", marginTop: 2 }}>/mois</span>
+                                      <span style={{ fontSize: 9, fontWeight: 400, color: "rgba(255,255,255,0.3)", display: "block", marginTop: 2 }}>/mois total</span>
                                     </div>
                                   </div>
                                 );
-                                })}
-                                {/* Label ligne — à droite */}
-                                <div style={{ padding: "12px 14px", borderLeft: "1px solid rgba(255,255,255,0.06)" }}>
+                              })}
+                              <div style={{ padding: "12px 14px", borderLeft: "1px solid rgba(255,255,255,0.06)" }}>
                                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
                                   <div style={{ fontSize: 12, fontWeight: 700, color: rend.defaut ? "#C9A063" : "rgba(255,255,255,0.8)" }}>{rend.label}</div>
-                                  {rend.defaut && (
-                                    <span style={{ fontSize: 8, fontWeight: 700, background: "rgba(201,160,99,0.2)", color: "#C9A063", border: "1px solid rgba(201,160,99,0.35)", padding: "1px 5px", borderRadius: 4 }}>★</span>
-                                  )}
+                                  {rend.defaut && <span style={{ fontSize: 8, fontWeight: 700, background: "rgba(201,160,99,0.2)", color: "#C9A063", border: "1px solid rgba(201,160,99,0.35)", padding: "1px 5px", borderRadius: 4 }}>★</span>}
                                 </div>
                                 <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", lineHeight: 1.4 }}>
                                   {(rend.accum * 100).toFixed(0)}% accum.<br/>
                                   {(rend.decaisse * 100).toFixed(0)}% décaiss.
                                 </div>
-                                </div>
-                                </div>
-                                ))}
+                              </div>
+                            </div>
+                          ))}
                         </div>
                         <div style={{ display: "flex", gap: 16, marginTop: 10, flexWrap: "wrap" }}>
                           {[
-                            { color: "#f87171", bg: "rgba(248,113,113,0.08)", label: "< 50% du NIF atteint" },
-                            { color: "#EAB308", bg: "rgba(234,179,8,0.08)",   label: "50% à 89%" },
-                            { color: "#5BC4A0", bg: "rgba(91,196,160,0.08)",  label: "90% à 99%" },
-                            { color: "#60A5FA", bg: "rgba(59,130,246,0.10)",  label: "100% et plus ✓" },
+                            { color: "#f87171", bg: "rgba(248,113,113,0.08)", label: "< 50% du NIF" },
+                            { color: "#EAB308", bg: "rgba(234,179,8,0.08)",   label: "50–89%" },
+                            { color: "#5BC4A0", bg: "rgba(91,196,160,0.08)",  label: "90–99%" },
+                            { color: "#60A5FA", bg: "rgba(59,130,246,0.10)",  label: "≥ 100% ✓" },
                           ].map(l => (
                             <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
                               <div style={{ width: 10, height: 10, borderRadius: 3, background: l.bg, border: `1px solid ${l.color}`, flexShrink: 0 }} />
                               <span style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>{l.label}</span>
                             </div>
                           ))}
+                          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", marginLeft: "auto" }}>Valeurs nominales · Formule identique au NIF affiché</span>
                         </div>
                       </div>
                     );
