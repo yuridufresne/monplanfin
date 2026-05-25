@@ -120,6 +120,8 @@
   }
 }
 
+@keyframes pulse { 0%,100%{opacity:.4} 50%{opacity:1} }
+
 @layer utilities {
   /* Financial figures — tabular nums for perfect column alignment */
   .font-financial {

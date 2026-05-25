@@ -217,11 +217,19 @@ export default function ModelisationRetraite() {
   const pensB = parseFloat((retCj.fond_pension||{}).rente_mensuelle_estimee)||0;
 
   // États
+  // Taux de remplacement : lire depuis ABF, 80% par défaut
+  const revenuRetraiteAnnuel = parseFloat(ret.revenu_retraite_mensuel || 0) * 12;
+  const revenuBrutTotal = (brutA || 0) + (brutB || 0);
+  const tauxABF = revenuBrutTotal > 0 && revenuRetraiteAnnuel > 0
+    ? Math.round(revenuRetraiteAnnuel / revenuBrutTotal * 100)
+    : 80;
+
   const [tab,      setTab]      = useState("plan");
   const [unlocked, setUnlocked] = useState(false);
   const [rend, setRend] = useState(7);
   const [espVie,   setEspVie]   = useState(90);
-  const [cible,    setCible]    = useState(() => Math.round((brutA+brutB||80000)*.80));
+  const [taux,     setTaux]     = useState(tauxABF);
+  const [cible,    setCible]    = useState(() => Math.round((brutA+brutB||80000)*(tauxABF/100)));
   const [plafondLissage, setPlafondLissage] = useState(90997);
 
   // Paramètres avancés
@@ -320,6 +328,41 @@ export default function ModelisationRetraite() {
                 <span style={{fontSize:11,color:"rgba(255,255,255,.35)"}}>$/an</span>
               </div>
             </label>
+            <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
+              <label style={{ display:"flex", alignItems:"center", gap:7, ...S.label }}>
+                Taux de remplacement
+                <div style={{display:"flex",alignItems:"center",gap:6,marginLeft:5}}>
+                  <input type="range" min={40} max={120} step={5} value={taux}
+                    onChange={e=>{ setTaux(+e.target.value); setCible(Math.round(revenuBrutTotal*(+e.target.value/100))); }}
+                    style={{width:100,accentColor:"#C9A063",cursor:"pointer"}} />
+                  <span style={{fontSize:12,fontWeight:700,color:"#C9A063",fontFamily:"var(--font-mono)",minWidth:32}}>{taux}%</span>
+                </div>
+              </label>
+              <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
+                <span style={{
+                  fontSize:10, padding:"2px 8px", borderRadius:6,
+                  background: taux===tauxABF ? "rgba(91,196,160,.12)" : "rgba(255,255,255,.05)",
+                  color: taux===tauxABF ? "#5BC4A0" : "rgba(255,255,255,.3)",
+                  border: `1px solid ${taux===tauxABF ? "rgba(91,196,160,.3)" : "rgba(255,255,255,.08)"}`,
+                }}>Objectif ABF : {tauxABF}%{taux===tauxABF?" ✓":""}</span>
+                <span style={{fontSize:10,padding:"2px 8px",borderRadius:6,background:"rgba(255,255,255,.05)",color:"rgba(255,255,255,.3)",border:"1px solid rgba(255,255,255,.08)"}}>
+                  IQPF : 70%
+                </span>
+                {taux !== tauxABF && (
+                  <button onClick={()=>{ setTaux(tauxABF); setCible(Math.round(revenuBrutTotal*(tauxABF/100))); }}
+                    style={{fontSize:10,padding:"2px 8px",borderRadius:6,background:"rgba(201,160,99,.1)",color:"#C9A063",border:"1px solid rgba(201,160,99,.2)",cursor:"pointer"}}>
+                    ← ABF ({tauxABF}%)
+                  </button>
+                )}
+                <button onClick={()=>{ setTaux(70); setCible(Math.round(revenuBrutTotal*.70)); }}
+                  style={{fontSize:10,padding:"2px 8px",borderRadius:6,background:"rgba(255,255,255,.05)",color:"rgba(255,255,255,.4)",border:"1px solid rgba(255,255,255,.08)",cursor:"pointer"}}>
+                  ← IQPF (70%)
+                </button>
+              </div>
+              {taux !== tauxABF && (
+                <p style={{fontSize:9,color:"rgba(255,255,255,.25)",marginTop:2}}>* Simulation locale — ne modifie pas votre objectif ABF de {tauxABF}%</p>
+              )}
+            </div>
           </div>
 
           {/* Lissage fiscal */}

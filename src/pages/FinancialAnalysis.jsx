@@ -1259,11 +1259,40 @@ export default function FinancialAnalysis() {
   const [completedSteps, setCompletedSteps] = useState(new Set());
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [autoSaveStatus, setAutoSaveStatus] = useState('idle'); // 'idle' | 'saving' | 'saved'
 
   const step = STEPS[currentStep];
   const StepComponent = STEP_COMPONENTS[step.key];
   const data = stepData[step.key] || {};
   const setData = (updater) => setStepData(prev => ({ ...prev, [step.key]: typeof updater === "function" ? updater(prev[step.key] || {}) : updater }));
+
+  // Autosave — déclenché 1.5s après le dernier changement de données
+  useEffect(() => {
+    if (!stepData[step.key] || Object.keys(stepData[step.key]).length === 0) return;
+    setAutoSaveStatus('saving');
+    const timer = setTimeout(async () => {
+      try {
+        const existing = await base44.entities.FinancialProfile.filter({ section: step.key });
+        if (existing.length > 0) {
+          await base44.entities.FinancialProfile.update(existing[0].id, {
+            data: stepData[step.key] || {},
+            completed: completedSteps.has(step.key)
+          });
+        } else {
+          await base44.entities.FinancialProfile.create({
+            section: step.key,
+            data: stepData[step.key] || {},
+            completed: false
+          });
+        }
+        setAutoSaveStatus('saved');
+        setTimeout(() => setAutoSaveStatus('idle'), 2000);
+      } catch(e) {
+        setAutoSaveStatus('idle');
+      }
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [stepData[step.key]]);
 
   const saveStep = async () => {
     setSaving(true);
@@ -1368,7 +1397,20 @@ export default function FinancialAnalysis() {
               <div className="px-8 py-5 flex items-center gap-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)", background: "rgba(201,160,99,0.04)" }}>
                 <step.icon className="w-5 h-5 text-[#C9A063]" />
                 <h2 className="font-urbanist text-[18px] font-semibold text-white">{step.title}</h2>
-                <span className="ml-auto text-[12px]" style={{ color: "#94A3B8" }}>{currentStep + 1} / {STEPS.length}</span>
+                <span className="ml-auto flex items-center gap-3">
+                  {autoSaveStatus === 'saving' && (
+                    <span style={{ fontSize:11, color:"rgba(255,255,255,0.3)", display:"flex", alignItems:"center", gap:4 }}>
+                      <span style={{ width:6, height:6, borderRadius:"50%", background:"rgba(201,160,99,0.5)", display:"inline-block", animation:"pulse 1s infinite" }} />
+                      Sauvegarde...
+                    </span>
+                  )}
+                  {autoSaveStatus === 'saved' && (
+                    <span style={{ fontSize:11, color:"rgba(91,196,160,0.7)", display:"flex", alignItems:"center", gap:4 }}>
+                      ✓ Sauvegardé
+                    </span>
+                  )}
+                  <span className="text-[12px]" style={{ color: "#94A3B8" }}>{currentStep + 1} / {STEPS.length}</span>
+                </span>
               </div>
               <div className="p-8">
                 <StepComponent data={data} setData={setData} stepData={stepData} />
