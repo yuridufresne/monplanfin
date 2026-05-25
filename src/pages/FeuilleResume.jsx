@@ -889,7 +889,11 @@ export default function FeuilleResume() {
                   <TableRow cells={["Revenu brut annuel", "", fmt(vueActuelle.brut)]} />
                   {vueActuelle.deductibles > 0 && <TableRow cells={["Dépenses déductibles (TA)", "−", fmt(vueActuelle.deductibles)]} />}
                   {vueActuelle.isTA && <TableRow cells={["Cotisation déductible TA (½ RRQ + ½ RQAP)", "−", fmt(vueActuelle.cotis.rrq / 2 + vueActuelle.cotis.rqap / 2)]} />}
-                  <TableRow cells={["Revenu imposable", "=", fmt(vueActuelle.imposable)]} />
+                  {(() => {
+                    const reerAff = ongletFiscal === "p1" ? reerP1Annuel : ongletFiscal === "p2" ? reerP2Annuel : reerP1Annuel + reerP2Annuel;
+                    const revImposableAffiche = vueActuelle.imposable;
+                    return <TableRow cells={["Revenu imposable (après déd. REER " + fmt(reerAff) + ")", "=", fmt(revImposableAffiche)]} />;
+                  })()}
                   <TableRow cells={[`Impôt fédéral (brut ${fmt(vueActuelle.impFedBrut)} − crédit ${fmt(vueActuelle.creditFed)} − abatt. QC 16,5 %)`, "−", fmt(vueActuelle.impFed)]} />
                   <TableRow cells={[`Impôt provincial (brut ${fmt(vueActuelle.impQcBrut)} − crédit ${fmt(vueActuelle.creditQc)})`, "−", fmt(vueActuelle.impQc)]} />
                   <TableRow cells={[`Cotisations sociales (RRQ ${fmt(vueActuelle.cotis.rrq)} + RQAP ${fmt(vueActuelle.cotis.rqap)} + AE ${fmt(vueActuelle.cotis.ae)}${vueActuelle.isTA && vueActuelle.cotis.fss > 0 ? ` + FSS ${fmt(vueActuelle.cotis.fss)}` : ""})`, "−", fmt(vueActuelle.cotis.total)]} />
@@ -1040,7 +1044,7 @@ export default function FeuilleResume() {
                 </table>
                 <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginTop: 8 }}>
                   RFNR utilisé : {fmt(rfnrCalcule > 0 ? rfnrCalcule : (parseFloat(allocationsABF.revenu_net_p1) || 0))}
-                  {rfnrCalcule > 0 && <span style={{ color: "#5BC4A0", marginLeft: 4 }}>(calculé depuis l'ABF)</span>}
+                  {rfnrCalcule > 0 && <span style={{ color: "#5BC4A0", marginLeft: 4 }}>(revenu net ligne 23600 — brut moins déductions REER)</span>}
                   {" "}·{" "}
                   {(() => {
                     const el = allocationsABF.enfants || [];

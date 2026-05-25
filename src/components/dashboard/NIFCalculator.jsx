@@ -35,22 +35,32 @@ function Slider({ label, value, min, max, step, fmtFn, onChange, note }) {
   );
 }
 
-// ── Calcul NIF depuis sliders ─────────────────────────────────────────────────
+// ── Calcul NIF depuis sliders (avec indexation inflation) ────────────────────
+function calcNIF({ ageActuel, ageRetraite, esperanceVie, revenuNetDesire, rendement, revenuGarantiAnnuel }) {
+  const anneesAvantRetraite = Math.max(1, ageRetraite - ageActuel);
+  const anneesEnRetraite    = Math.max(1, esperanceVie - ageRetraite);
+  const inf = 0.025;
+  const revenuDesireFutur  = revenuNetDesire * Math.pow(1 + inf, anneesAvantRetraite);
+  const garantisFuturs     = (revenuGarantiAnnuel || 0) * Math.pow(1 + inf, anneesAvantRetraite);
+  const manque = Math.max(0, revenuDesireFutur - garantisFuturs);
+  if (manque <= 0) return 0;
+  const rendementReel = ((1 + rendement) / (1 + inf)) - 1;
+  if (rendementReel <= 0) return manque * anneesEnRetraite;
+  return Math.max(0, manque * ((1 - Math.pow(1 + rendementReel, -anneesEnRetraite)) / rendementReel));
+}
+
 function computeNIF({ depensesCibles, tauxRetrait, rrqMensuel, psvMensuel, fpMensuel, soldeReer, soldeCeli, cotMensuelle, rendement, ageActuel, ageRetraite, espVie }) {
   const anneesAccum   = Math.max(0, ageRetraite - ageActuel);
   const anneesDecaisse = Math.max(0, espVie - ageRetraite);
   const revGarantiAnnuel = (rrqMensuel + psvMensuel + fpMensuel) * 12;
+
+  // NIF avec inflation
+  const capitalNIF_rente = calcNIF({ ageActuel, ageRetraite, esperanceVie: espVie, revenuNetDesire: depensesCibles, rendement: rendement / 100, revenuGarantiAnnuel: revGarantiAnnuel });
   const manqueAnnuel = Math.max(0, depensesCibles - revGarantiAnnuel);
-
-  const rM = rendement / 100 / 12;
-  const r = rendement / 100 - 0.025;
-
   const capitalNIF_4pct = manqueAnnuel / (tauxRetrait / 100);
-  const capitalNIF_rente = r > 0.005
-    ? manqueAnnuel * ((1 - Math.pow(1 + r, -anneesDecaisse)) / r)
-    : manqueAnnuel * anneesDecaisse;
   const capitalNIF = (capitalNIF_4pct + capitalNIF_rente) / 2;
 
+  const rM = rendement / 100 / 12;
   const soldeTotal = soldeReer + soldeCeli;
   const fvSolde = soldeTotal * Math.pow(1 + rM, anneesAccum * 12);
   const fvCot = rM > 0
@@ -370,11 +380,25 @@ export default function NIFCalculator({ profiles }) {
     const soldeReer = (comptes.reer || []).reduce((s, c) => s + (parseFloat(c.solde) || 0), 0);
     const soldeCeli = (comptes.celi || []).reduce((s, c) => s + (parseFloat(c.solde) || 0), 0);
 
+    const enCouple = ["marie", "conjoint", "union_civile"].includes((m.profil_personnel?.situation) || "");
+    const retraiteConj = enCouple ? (retraite.conjoint || {}) : {};
+    const sv1 = parseFloat(retraite.sv) || PRESTATIONS_2026.psv.mensuel65;
+    const sv2 = enCouple ? (parseFloat(retraiteConj.sv) || PRESTATIONS_2026.psv.mensuel65) : 0;
+    const rrq1 = parseFloat(retraite.rrq) || 0;
+    const rrq2 = enCouple ? (parseFloat(retraiteConj.rrq) || 0) : 0;
+    const fp1 = parseFloat((retraite.fond_pension || {}).rente_mensuelle_estimee) || 0;
+    const fp2 = enCouple ? (parseFloat((retraiteConj.fond_pension || {}).rente_mensuelle_estimee) || 0) : 0;
+    const rrqMensuel = rrq1 + rrq2;
+    const psvMensuel = sv1 + sv2;
+    const fpMensuel  = fp1 + fp2;
+    const revBrut = base.revBrut || 80000;
+    const depensesCibles = Math.round(revBrut * 0.80);
+
     return {
-      depensesCibles: base.depensesCibles || 55000,
-      rrqMensuel: parseFloat(retraite.rrq) || 900,
-      psvMensuel: PRESTATIONS_2026.psv.mensuel65,
-      fpMensuel: parseFloat((retraite.fond_pension || {}).rente_mensuelle_estimee) || 0,
+      depensesCibles: depensesCibles || base.depensesCibles || 55000,
+      rrqMensuel,
+      psvMensuel,
+      fpMensuel,
       soldeReer,
       soldeCeli,
       cotMensuelle: base.cotMensuelle || 500,
