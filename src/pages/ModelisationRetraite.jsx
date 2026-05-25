@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { simulerDecaissement, projeterSoldesRetraite } from "@/lib/moteurDecaissement";
+import { calcNIFFromProfiles } from "@/lib/calcNIF";
 import { ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { Link } from "react-router-dom";
 
@@ -278,68 +279,94 @@ export default function ModelisationRetraite() {
     return r>0.001?manque*((1-Math.pow(1+r,-n))/r):manque*n;
   }
 
-  // Plan de base — même projection que le plan avancé (projeterSoldesRetraite à 7%)
-  const projBase = useMemo(()=>projeterSoldesRetraite({
-    ageActuelA:ageA, ageRetraiteA:retA,
-    reerA, celiA, cotReerA, cotCeliA,
-    ageActuelB:enCouple?ageB:null, ageRetraiteB:enCouple?retB:null,
-    reerB:enCouple?reerB:0, celiB:enCouple?soldeCeliB:0,
-    cotReerB:enCouple?cotReerB:0, cotCeliB:enCouple?cotCeliB:0,
-    rendement:RA,
-  }),[ageA,ageB,retA,retB,reerA,celiA,reerB,soldeCeliB,cotReerA,cotCeliA,cotReerB,cotCeliB,enCouple]);
+  // ── Plan de base — même source de vérité que calcNIFFromProfiles ─────────────
+  const nifData = useMemo(()=>calcNIFFromProfiles(profiles),[profiles]);
+
+  // Simulation décaissement pour le plan de base (mêmes params ABF, cible ajustée par slider)
+  const paramsBase = useMemo(()=>{
+    const proj = projeterSoldesRetraite({
+      ageActuelA:ageA, ageRetraiteA:retA,
+      reerA, celiA, cotReerA, cotCeliA,
+      ageActuelB:enCouple?ageB:null, ageRetraiteB:enCouple?retB:null,
+      reerB:enCouple?reerB:0, celiB:enCouple?soldeCeliB:0,
+      cotReerB:enCouple?cotReerB:0, cotCeliB:enCouple?cotCeliB:0,
+      rendement:RA,
+    });
+    const cibleSim = Math.round(cibleABF*(taux/tauxABF));
+    return {
+      ageA:retA, ageRetraiteA:retA, salaireA:brutA,
+      rrqA, svA, pensionA:pensA,
+      reerA:proj.reerA, celiA:proj.celiA,
+      ageB:enCouple?ageB+(retA-ageA):retA, ageRetraiteB:enCouple?retB:99,
+      salaireB:enCouple?brutB:0, rrqB:enCouple?rrqB:0,
+      svB:enCouple?svB:0, pensionB:enCouple?pensB:0,  // svB/rrqB = valeurs annuelles du composant
+      reerB:enCouple?proj.reerB:0, celiB:enCouple?proj.celiB:0,
+      cibleNette:cibleSim, inflation:.025, rendement:RD, esperanceVie:espVie,
+      plafondLissage:0,
+      _proj: proj, // pour capR
+    };
+  },[taux,espVie,ageA,ageB,retA,retB,reerA,celiA,reerB,soldeCeliB,cotReerA,cotCeliA,cotReerB,cotCeliB,rrqA,rrqB,svA,svB,pensA,pensB,cibleABF,tauxABF,enCouple,brutA,brutB]);
+
+  const rowsBase = useMemo(()=>{
+    const {_proj,...p}=paramsBase;
+    return simulerDecaissement(p);
+  },[paramsBase]);
 
   const donneesGraphique = useMemo(()=>{
-    const nA=Math.max(0,retA-ageA);
-    const rAp=projBase.reerA, cAp=projBase.celiA;
-    const rBp=projBase.reerB, cBp=projBase.celiB;
-    const capR=rAp+cAp+rBp+cBp;
-    const ratioA=capR>0?(rAp+cAp)/capR:0.5;
-    const cibleSim=Math.round(cibleABF*(taux/tauxABF));
-    const gar65=(rrqA||0)+(svA||0)+(rrqB||0)+(svB||0)+(pensA||0)+(pensB||0);
-    const nif=calcNIFLocal(Math.max(0,cibleSim-gar65),espVie);
-    let cap=capR, capNIF=nif;
-    const ages=[],cible=[],foyer=[],jC=[],mC=[],nifCurve=[];
+    const proj = paramsBase._proj;
+    const capR = proj.reerA+proj.celiA+proj.reerB+proj.celiB;
+    const cibleSim = Math.round(cibleABF*(taux/tauxABF));
+    const gar65 = (rrqA||0)+(svA||0)+(rrqB||0)+(svB||0)+(pensA||0)+(pensB||0);
+    const nif = nifData.capitalNIF;
 
-    for(let age=retA-5;age<=espVie;age++){
-      ages.push(age);
+    // Courbe NIF : simulation avec capital NIF comme point de départ
+    let capNIF = nif;
+    const ages=[],cibleArr=[],foyer=[],jC=[],mC=[],nifCurve=[];
+
+    // Phase accumulation (avant retraite) — 5 ans avant
+    for(let age=retA-5;age<retA;age++){
       const ageM=ageB+(age-ageA);
       const fi=Math.pow(1+INF,age-retA);
-      const cV=Math.round(cibleSim*fi);
-      cible.push(cV);
-
-      if(age<retA){
-        const anAv=retA-age;
-        const capAct=fv(reerA+celiA+reerB+soldeCeliB,(cotReerA+cotCeliA+cotReerB+cotCeliB),RA,Math.max(0,nA-anAv));
-        const rv=Math.round(capAct*RD);
-        const salM=ageM<retB?Math.round(brutB*0.63*fi):0;
-        jC.push(Math.round(rv*ratioA));
-        mC.push(Math.round(rv*(1-ratioA))+salM);
-        foyer.push(rv+salM);
-        nifCurve.push(null);
-      } else {
-        const rrqJa=age>=65?Math.round(rrqA*fi):0;
-        const svJa =age>=65?Math.round(svA*fi):0;
-        const penJa=age>=retA?Math.round(pensA*fi):0;
-        const salM =ageM<retB?Math.round(brutB*0.63*fi):0;
-        const rrqMa=ageM>=65?Math.round(rrqB*fi):0;
-        const svMa =ageM>=65?Math.round(svB*fi):0;
-        const penMa=ageM>=retB?Math.round(pensB*fi):0;
-        const gar=rrqJa+svJa+penJa+salM+rrqMa+svMa+penMa;
-        const manque=Math.max(0,cV-gar);
-        const ret2=cap>0?Math.min(manque,cap*RD):0;
-        cap=Math.max(0,cap*(1+RD)-ret2);
-        const srg=age>=65?calcSRG(rrqJa+rrqMa+salM+ret2):0;
-        const jT=rrqJa+svJa+penJa+srg*0.5+Math.round(ret2*ratioA);
-        const mT=rrqMa+svMa+penMa+srg*0.5+Math.round(ret2*(1-ratioA))+salM;
-        jC.push(jT);mC.push(mT);foyer.push(jT+mT);
-        const manqueN=Math.max(0,cV-gar);
-        const retN=capNIF>0?Math.min(manqueN,capNIF*RD):0;
-        capNIF=Math.max(0,capNIF*(1+RD)-retN);
-        nifCurve.push(Math.round(gar+retN));
-      }
+      const anAv=retA-age;
+      const capAct=fv(reerA+celiA+reerB+soldeCeliB,(cotReerA+cotCeliA+cotReerB+cotCeliB),RA,Math.max(0,(retA-ageA)-anAv));
+      const rv=Math.round(capAct*RD);
+      const salM=ageM<retB?Math.round(brutB*0.63*fi):0;
+      const ratioA=capR>0?(proj.reerA+proj.celiA)/capR:0.5;
+      ages.push(age);
+      cibleArr.push(Math.round(cibleSim*fi));
+      jC.push(Math.round(rv*ratioA));
+      mC.push(Math.round(rv*(1-ratioA))+salM);
+      foyer.push(rv+salM);
+      nifCurve.push(null);
     }
-    return{ages,cible,foyer,jC,mC,nifCurve,nif,capR,cibleSim,gar65,tauxABF};
-  },[taux,espVie,projBase,ageA,ageB,retA,retB,reerA,celiA,reerB,soldeCeliB,cotReerA,cotCeliA,cotReerB,cotCeliB,rrqA,rrqB,svA,svB,pensA,pensB,cibleABF,tauxABF]);
+
+    // Phase décaissement — depuis les rows simulés
+    for(let i=0;i<rowsBase.length;i++){
+      const r=rowsBase[i];
+      const age=retA+i;
+      if(age>espVie)break;
+      const fi=Math.pow(1+INF,i);
+      const ageM=ageB+(age-ageA);
+      const rrqMa=ageM>=65?Math.round(rrqB*fi):0;
+      const svMa =ageM>=65?Math.round(svB*fi):0;
+      ages.push(age);
+      cibleArr.push(r.cible);
+      // Net réalisé par personne depuis les rows
+      const jT=r.netRealise-Math.round(r.netRealise*(enCouple?(ageM<retB?0.4:0.5):0));
+      const mT=enCouple?r.netRealise-jT:0;
+      foyer.push(r.netRealise);
+      jC.push(jT);
+      mC.push(mT);
+      // Courbe NIF : revenus garantis de la row + retrait depuis capital NIF
+      const garRow = (r.rrqA||0)+(r.svA||0)+(r.pensionA||0)+(r.salaireB||0)+(r.rrqB||0)+(r.svB||0)+(r.pensionB||0);
+      const manqueNIF = Math.max(0,r.cible-garRow);
+      const retN = capNIF>0?Math.min(manqueNIF,capNIF*RD):0;
+      capNIF = Math.max(0,capNIF*(1+RD)-retN);
+      nifCurve.push(Math.round(garRow+retN));
+    }
+
+    return{ages,cible:cibleArr,foyer,jC,mC,nifCurve,nif,capR,cibleSim,gar65,tauxABF};
+  },[taux,espVie,rowsBase,paramsBase,nifData,ageA,ageB,retA,retB,reerA,celiA,reerB,soldeCeliB,cotReerA,cotCeliA,cotReerB,cotCeliB,rrqA,rrqB,svA,svB,pensA,pensB,cibleABF,tauxABF,enCouple,brutB]);
 
   const fmtCA = n => Math.round(Math.abs(n)).toLocaleString('fr-CA')+' $';
   const fmtK  = n => {
