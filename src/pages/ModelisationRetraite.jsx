@@ -194,9 +194,9 @@ export default function ModelisationRetraite() {
   const rev  = abf.revenu || {};
   const ret  = abf.retraite || {};
   const prof = abf.profil_personnel || {};
+  const enCouple = ["marie","conjoint","union_civile"].includes(prof.situation||"");
   const prenomA = prof.prenom || prof.prenom_principal || prof.first_name || prof.nom || "Client";
   const prenomB = prof.conjoint?.prenom || prof.conjoint?.prenom_principal || prof.conjoint?.first_name || prof.conjoint?.nom || (enCouple ? "Conjoint(e)" : "");
-  const enCouple = ["marie","conjoint","union_civile"].includes(prof.situation||"");
   const retCj = ret.conjoint || {};
 
   // Valeurs depuis ABF
