@@ -150,8 +150,8 @@ export default function ModelisationRetraite() {
   const rev  = abf.revenu || {};
   const ret  = abf.retraite || {};
   const prof = abf.profil_personnel || {};
-  const prenomA = prof.prenom || "Personne A";
-  const prenomB = prof.conjoint?.prenom || "Conjoint(e)";
+  const prenomA = prof.prenom || prof.prenom_principal || prof.first_name || prof.nom || "Client";
+  const prenomB = prof.conjoint?.prenom || prof.conjoint?.prenom_principal || prof.conjoint?.first_name || prof.conjoint?.nom || (enCouple ? "Conjoint(e)" : "");
   const enCouple = ["marie","conjoint","union_civile"].includes(prof.situation||"");
   const retCj = ret.conjoint || {};
 
@@ -358,8 +358,8 @@ export default function ModelisationRetraite() {
 
               <div style={{ display:"grid", gridTemplateColumns:enCouple?"1fr 1fr":"1fr", gap:12, marginBottom:14 }}>
                 {[
-                  {label:"Personne principale", age:ageRetA, setAge:setAgeRetA, rrqAge:rrqAp, setRrqAge:setRrqAp, reer:reerAv, setReer:setReerAv, celi:celiAv, setCeli:setCeliAv, rrqBase:rrqA},
-                  ...(enCouple?[{label:"Conjoint(e)", age:ageRetB, setAge:setAgeRetB, rrqAge:rrqBp, setRrqAge:setRrqBp, reer:reerBv, setReer:setReerBv, celi:celiBv, setCeli:setCeliBv, rrqBase:rrqB}]:[]),
+                  {label:prenomA, age:ageRetA, setAge:setAgeRetA, rrqAge:rrqAp, setRrqAge:setRrqAp, reer:reerAv, setReer:setReerAv, celi:celiAv, setCeli:setCeliAv, rrqBase:rrqA},
+                  ...(enCouple?[{label:prenomB, age:ageRetB, setAge:setAgeRetB, rrqAge:rrqBp, setRrqAge:setRrqBp, reer:reerBv, setReer:setReerBv, celi:celiBv, setCeli:setCeliBv, rrqBase:rrqB}]:[]),
                 ].map(({label,age,setAge,rrqAge,setRrqAge,reer,setReer,celi,setCeli,rrqBase})=>(
                   <div key={label} style={{ background:"rgba(255,255,255,.03)", border:"1px solid rgba(255,255,255,.08)", borderRadius:12, padding:"14px 16px" }}>
                     <div style={{ fontSize:11, fontWeight:700, color:"#C9A063", marginBottom:12 }}>{label}</div>
