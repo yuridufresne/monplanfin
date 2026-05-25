@@ -388,7 +388,7 @@ export default function Dashboard() {
                       </div>
 
                       {/* Tableau 3×3 scénarios */}
-                      <div style={{ marginTop: 16 }}>
+                      <div style={{ marginTop: 12 }}>
                         <NIFScenarioTable
                           ageRetraite={ageRetraite}
                           ageActuel={ageActuel}
