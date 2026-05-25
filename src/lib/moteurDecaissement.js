@@ -140,11 +140,9 @@ export function simulerDecaissement({
     if (aa===71 && eRA>0) { eFA+=eRA; eRA=0; }
     if (ab===71 && eRB>0) { eFB+=eRB; eRB=0; }
 
-    // FERR minimums
+    // FERR minimums légaux (calculés mais pas encore déduits des soldes)
     const fmA = aa>=71&&eFA>0 ? getFERRmin(aa,eFA,ab) : 0;
     const fmB = ab>=71&&eFB>0 ? getFERRmin(ab,eFB,aa) : 0;
-    if (fmA>0) eFA = Math.max(0, eFA-fmA);
-    if (fmB>0) eFB = Math.max(0, eFB-fmB);
 
     // Revenus garantis
     const fi = Math.pow(1+inflation, an);
@@ -153,66 +151,87 @@ export function simulerDecaissement({
     const rbaRaw = revGA*fi + fmA;
     const rbbRaw = revGB*fi + fmB;
 
-    // Impôt préliminaire + clawback
-    // Si B travaille encore (ab < ageRetraiteB), pas de crédit retraite/âge sur son revenu
+    // Impôt préliminaire (avec FERR minimum inclus)
     const ia  = calcImpotRetraite(rbaRaw, aa, fmA>0||pensionA>0, pFed, pQC, cr);
     const ib  = ab < ageRetraiteB
-      ? Math.round(calcImpot(rbbRaw, pFed, pQC))  // impôt normal, pas de crédit retraite
+      ? Math.round(calcImpot(rbbRaw, pFed, pQC))
       : calcImpotRetraite(rbbRaw, ab, fmB>0||pensionB>0, pFed, pQC, cr);
     const cla = clawback(rbaRaw, svA*fi, cr.seuilPSV);
     const clb = clawback(rbbRaw, svB*fi, cr.seuilPSV);
-    const netFixe = (rbaRaw-ia-cla) + (rbbRaw-ib-clb);
+    const netAvecFerrMin = (rbaRaw-ia-cla) + (rbbRaw-ib-clb);
 
-    // Décaissement
-    const ecart = cible - netFixe;
-    let rc=0, rra=0, rrb=0;
+    // Décaissement pour combler le déficit
+    const ecart = cible - netAvecFerrMin;
+    let rc=0, rra=0, rrb=0, ferrSuppA=0, ferrSuppB=0;
 
     if (ecart > 0) {
-      // 1. CELI proportionnel
+      let er = ecart;
+
+      // 1. CELI en priorité (non imposable)
       const totC = eCA+eCB;
       if (totC > 0) {
-        rc = Math.min(ecart, totC);
+        rc = Math.min(er, totC);
         const rA = eCA/totC;
         eCA = Math.max(0, eCA - rc*rA);
         eCB = Math.max(0, eCB - rc*(1-rA));
+        er -= rc;
       }
-      let er = ecart - rc;
 
+      // 2. FERR supplémentaire (au-delà du minimum légal)
       if (er > 0.01) {
-        const saA = eFA+eRA, saB = eFB+eRB;
-        const grossup = (manque, age, rba, prio) => {
-          const solde = prio==='a' ? (eFA>0?eFA:eRA) : (eFB>0?eFB:eRB);
-          if (solde<=0) return 0;
-          const tm = Math.min(.55, Math.max(.15, tauxMarg(rba+manque, pFed, pQC)));
-          const brut = Math.min(manque/(1-tm), solde);
-          if (prio==='a') { if(eFA>0) eFA=Math.max(0,eFA-brut); else eRA=Math.max(0,eRA-brut); }
-          else            { if(eFB>0) eFB=Math.max(0,eFB-brut); else eRB=Math.max(0,eRB-brut); }
-          return brut;
-        };
+        const ferrDispA = Math.max(0, eFA - fmA);
+        const ferrDispB = Math.max(0, eFB - fmB);
+        const totFerr = ferrDispA + ferrDispB;
 
-        if (saA>0 && saB>0) {
-          rra = grossup(er*(saA/(saA+saB)), aa, rbaRaw, 'a');
-          rrb = grossup(er*(saB/(saA+saB)), ab, rbbRaw, 'b');
-        } else if (rbaRaw<=rbbRaw && saA>0) {
-          rra = grossup(er, aa, rbaRaw, 'a');
-          const tm = tauxMarg(rbaRaw+rra, pFed, pQC);
-          er -= rra*(1-tm);
-          if (er>0.01&&saB>0) rrb = grossup(er, ab, rbbRaw, 'b');
-        } else if (saB>0) {
-          rrb = grossup(er, ab, rbbRaw, 'b');
-          const tm = tauxMarg(rbbRaw+rrb, pFed, pQC);
-          er -= rrb*(1-tm);
-          if (er>0.01&&saA>0) rra = grossup(er, aa, rbaRaw, 'a');
+        if (totFerr > 0) {
+          if (ferrDispA > 0) {
+            const partA = er * (ferrDispA / totFerr);
+            const tmA = Math.min(.55, Math.max(.15, tauxMarg(rbaRaw + partA, pFed, pQC)));
+            ferrSuppA = Math.min(partA / (1 - tmA), ferrDispA);
+            er -= ferrSuppA * (1 - tmA);
+          }
+          if (er > 0.01 && ferrDispB > 0) {
+            const tmB = Math.min(.55, Math.max(.15, tauxMarg(rbbRaw + er, pFed, pQC)));
+            ferrSuppB = Math.min(er / (1 - tmB), ferrDispB);
+            er -= ferrSuppB * (1 - tmB);
+          }
+        }
+      }
+
+      // 3. REER (avant 71 ans) si déficit résiduel
+      if (er > 0.01) {
+        const saA = eRA, saB = eRB;
+        if (saA > 0 && saB > 0) {
+          const tot = saA + saB;
+          const tmA = Math.min(.55, Math.max(.15, tauxMarg(rbaRaw + ferrSuppA + er*(saA/tot), pFed, pQC)));
+          rra = Math.min(er*(saA/tot)/(1-tmA), saA);
+          eRA = Math.max(0, eRA - rra);
+          const tmB = Math.min(.55, Math.max(.15, tauxMarg(rbbRaw + ferrSuppB + er*(saB/tot), pFed, pQC)));
+          rrb = Math.min(er*(saB/tot)/(1-tmB), saB);
+          eRB = Math.max(0, eRB - rrb);
+        } else if (saA > 0) {
+          const tmA = Math.min(.55, Math.max(.15, tauxMarg(rbaRaw + ferrSuppA + er, pFed, pQC)));
+          rra = Math.min(er/(1-tmA), saA);
+          eRA = Math.max(0, eRA - rra);
+        } else if (saB > 0) {
+          const tmB = Math.min(.55, Math.max(.15, tauxMarg(rbbRaw + ferrSuppB + er, pFed, pQC)));
+          rrb = Math.min(er/(1-tmB), saB);
+          eRB = Math.max(0, eRB - rrb);
         }
       }
     }
 
-    // Recalcul impôt final
-    const rfA = rbaRaw+rra, rfB = rbbRaw+rrb;
-    const ia2  = calcImpotRetraite(rfA, aa, fmA>0||rra>0||pensionA>0, pFed, pQC, cr);
+    // Déduire FERR (minimum + supplémentaire) des soldes maintenant
+    eFA = Math.max(0, eFA - fmA - ferrSuppA);
+    eFB = Math.max(0, eFB - fmB - ferrSuppB);
+
+    // Recalcul impôt final avec tous les retraits
+    const rfA = rbaRaw + ferrSuppA + rra;
+    const rfB = rbbRaw + ferrSuppB + rrb;
+    const ia2  = calcImpotRetraite(rfA, aa, fmA>0||ferrSuppA>0||rra>0||pensionA>0, pFed, pQC, cr);
     const ib2  = ab < ageRetraiteB
       ? Math.round(calcImpot(rfB, pFed, pQC))
-      : calcImpotRetraite(rfB, ab, fmB>0||rrb>0||pensionB>0, pFed, pQC, cr);
+      : calcImpotRetraite(rfB, ab, fmB>0||ferrSuppB>0||rrb>0||pensionB>0, pFed, pQC, cr);
     const cla2 = clawback(rfA, svA*fi, cr.seuilPSV);
     const clb2 = clawback(rfB, svB*fi, cr.seuilPSV);
     const netFinal = (rfA-ia2-cla2) + (rfB-ib2-clb2) + rc;
@@ -253,8 +272,8 @@ export function simulerDecaissement({
       ferrMinB:  Math.round(fmB),
       // Retraits épargne
       retraitCELI:  Math.round(rc),
-      retraitREER:  Math.round(rra + rrb),
-      totalRetire:  Math.round(rc + rra + rrb + fmA + fmB),
+      retraitREER:  Math.round(rra + rrb + ferrSuppA + ferrSuppB),
+      totalRetire:  Math.round(rc + rra + rrb + fmA + fmB + ferrSuppA + ferrSuppB),
       // Bilan
       impot:       Math.round(ia2 + ib2),
       clawbackPSV: Math.round(cla2 + clb2),
