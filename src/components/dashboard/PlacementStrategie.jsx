@@ -122,11 +122,11 @@ export default function PlacementStrategie({ retraiteABF={}, retraiteConj={}, re
             <div key={i} style={{ ...S.row }}>
               <div style={{ display:"flex", alignItems:"center", gap:7 }}>
                 <div style={{ width:6, height:6, borderRadius:"50%", background:"#C9A063", flexShrink:0 }} />
-                <div>
+                <div style={{ display:"flex", alignItems:"center", gap:4 }}>
                   <span style={{ fontSize:11, color:"#C9A063", fontWeight:600 }}>REER</span>
-                  {c._qui && <span style={{ fontSize:9, fontWeight:600, padding:"1px 5px", borderRadius:3, background:"rgba(255,255,255,.06)", color:"rgba(255,255,255,.4)", marginLeft:4 }}>{c._qui}</span>}
-                  {parseFloat(c.solde) > 0 && <span style={{ fontSize:9, color:"rgba(255,255,255,0.3)", marginLeft:5 }}>{fmt(parseFloat(c.solde))}</span>}
+                  {c._qui && <span style={{ fontSize:9, fontWeight:600, padding:"1px 5px", borderRadius:3, background:"rgba(255,255,255,.06)", color:"rgba(255,255,255,.4)" }}>{c._qui}</span>}
                 </div>
+                {parseFloat(c.solde) > 0 && <span style={{ fontSize:9, color:"rgba(255,255,255,0.3)", marginLeft:5 }}>{fmt(parseFloat(c.solde))}</span>}
               </div>
               <div style={{ fontSize:12, fontWeight:700, color:"#C9A063" }}>{(parseFloat(c.cotisation_mensuelle)||0).toLocaleString("fr-CA")} $<span style={{ fontSize:9, fontWeight:400, color:"rgba(255,255,255,0.3)" }}>/mois</span></div>
             </div>
@@ -136,7 +136,7 @@ export default function PlacementStrategie({ retraiteABF={}, retraiteConj={}, re
             <div style={{ ...S.row, borderBottom:"none" }}>
               <div style={{ display:"flex", alignItems:"center", gap:7 }}>
                 <div style={{ width:6, height:6, borderRadius:"50%", background:"#5BC4A0", flexShrink:0 }} />
-                <span style={{ fontSize:11 }}>CELI</span>
+                <span style={{ fontSize:11, color:"#5BC4A0", fontWeight:600 }}>CELI</span>
               </div>
               <div style={{ fontSize:12, fontWeight:700, color:"#5BC4A0" }}>0 $<span style={{ fontSize:9, fontWeight:400, color:"rgba(255,255,255,0.3)" }}>/mois</span></div>
             </div>
@@ -144,11 +144,11 @@ export default function PlacementStrategie({ retraiteABF={}, retraiteConj={}, re
             <div key={i} style={{ ...S.row, borderBottom: i === celiList.length - 1 ? "none" : undefined }}>
               <div style={{ display:"flex", alignItems:"center", gap:7 }}>
                 <div style={{ width:6, height:6, borderRadius:"50%", background:"#5BC4A0", flexShrink:0 }} />
-                <div>
-                  <span style={{ fontSize:11 }}>CELI</span>
-                  {c._qui && <span style={{ fontSize:9, fontWeight:600, padding:"1px 5px", borderRadius:3, background:"rgba(255,255,255,.06)", color:"rgba(255,255,255,.4)", marginLeft:4 }}>{c._qui}</span>}
-                  {parseFloat(c.solde) > 0 && <span style={{ fontSize:9, color:"rgba(255,255,255,0.3)", marginLeft:5 }}>{fmt(parseFloat(c.solde))}</span>}
+                <div style={{ display:"flex", alignItems:"center", gap:4 }}>
+                  <span style={{ fontSize:11, color:"#5BC4A0", fontWeight:600 }}>CELI</span>
+                  {c._qui && <span style={{ fontSize:9, fontWeight:600, padding:"1px 5px", borderRadius:3, background:"rgba(255,255,255,.06)", color:"rgba(255,255,255,.4)" }}>{c._qui}</span>}
                 </div>
+                {parseFloat(c.solde) > 0 && <span style={{ fontSize:9, color:"rgba(255,255,255,0.3)", marginLeft:5 }}>{fmt(parseFloat(c.solde))}</span>}
               </div>
               <div style={{ fontSize:12, fontWeight:700, color:"#5BC4A0" }}>{(parseFloat(c.cotisation_mensuelle)||0).toLocaleString("fr-CA")} $<span style={{ fontSize:9, fontWeight:400, color:"rgba(255,255,255,0.3)" }}>/mois</span></div>
             </div>
