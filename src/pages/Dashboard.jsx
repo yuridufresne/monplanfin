@@ -325,10 +325,10 @@ export default function Dashboard() {
 
               {/* NIF — 3 cols */}
               <motion.div {...fadeUp(0.1)} style={{ gridColumn: "span 3 / span 3" }}>
-                <div
-                  onClick={() => setNifFlipped(true)}
-                  style={{ ...G.cardGold, padding: "1.4rem 1.5rem", height: "100%", cursor: "pointer" }}
-                >
+                <FlipCard
+                  expandedHeight={720}
+                  onFlip={setNifFlipped}
+                  front={<>
                   {/* Métriques — alimentées par calcScenario(ageBase, 0.07, 0.05) */}
                   {(() => {
                     const ageBase0 = ageRetraite || 65;
@@ -635,28 +635,8 @@ export default function Dashboard() {
                       </div>
                     );
                   })()}
-
-                  {/* Hint flip */}
-                  <div style={{ marginTop: 12, fontSize: 10, color: "rgba(201,160,99,0.45)", fontWeight: 500, display: "flex", alignItems: "center", gap: 4 }}>
-                    <span>✦</span> Voir le plan de décaissement →
-                  </div>
-                </div>
-              </motion.div>
-
-              {/* Overlay plan de décaissement */}
-              {nifFlipped && (
-                <div
-                  style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px", backdropFilter: "blur(4px)" }}
-                  onClick={() => setNifFlipped(false)}
-                >
-                  <div
-                    style={{ background: "#0A1628", border: "1px solid rgba(201,160,99,0.2)", borderRadius: 20, padding: "24px", width: "100%", maxWidth: 900, maxHeight: "90vh", overflowY: "auto", position: "relative" }}
-                    onClick={e => e.stopPropagation()}
-                  >
-                    <button
-                      onClick={() => setNifFlipped(false)}
-                      style={{ position: "absolute", top: 16, right: 16, width: 32, height: 32, borderRadius: "50%", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.6)", fontSize: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10 }}
-                    >×</button>
+                  </>}
+                  back={
                     <PlanDecaissement
                       profilData={{
                         ageRetraite: ageRetraite || 65,
@@ -670,9 +650,9 @@ export default function Dashboard() {
                         revenuCible: (revBrut || 180000) * 0.80,
                       }}
                     />
-                  </div>
-                </div>
-              )}
+                  }
+                />
+              </motion.div>
 
               {/* Protection + Revenus garantis — 2 cols */}
               <div style={{ gridColumn: "span 2 / span 2", display: "flex", flexDirection: "column", gap: 12 }}>
