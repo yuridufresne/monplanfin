@@ -154,8 +154,11 @@ export function simulerDecaissement({
     const rbbRaw = revGB*fi + fmB;
 
     // Impôt préliminaire + clawback
-    const ia  = calcImpotRetraite(rbaRaw,aa,fmA>0||pensionA>0,pFed,pQC,cr);
-    const ib  = calcImpotRetraite(rbbRaw,ab,fmB>0||pensionB>0,pFed,pQC,cr);
+    // Si B travaille encore (ab < ageRetraiteB), pas de crédit retraite/âge sur son revenu
+    const ia  = calcImpotRetraite(rbaRaw, aa, fmA>0||pensionA>0, pFed, pQC, cr);
+    const ib  = ab < ageRetraiteB
+      ? Math.round(calcImpot(rbbRaw, pFed, pQC))  // impôt normal, pas de crédit retraite
+      : calcImpotRetraite(rbbRaw, ab, fmB>0||pensionB>0, pFed, pQC, cr);
     const cla = clawback(rbaRaw, svA*fi, cr.seuilPSV);
     const clb = clawback(rbbRaw, svB*fi, cr.seuilPSV);
     const netFixe = (rbaRaw-ia-cla) + (rbbRaw-ib-clb);
@@ -206,8 +209,10 @@ export function simulerDecaissement({
 
     // Recalcul impôt final
     const rfA = rbaRaw+rra, rfB = rbbRaw+rrb;
-    const ia2  = calcImpotRetraite(rfA,aa,fmA>0||rra>0||pensionA>0,pFed,pQC,cr);
-    const ib2  = calcImpotRetraite(rfB,ab,fmB>0||rrb>0||pensionB>0,pFed,pQC,cr);
+    const ia2  = calcImpotRetraite(rfA, aa, fmA>0||rra>0||pensionA>0, pFed, pQC, cr);
+    const ib2  = ab < ageRetraiteB
+      ? Math.round(calcImpot(rfB, pFed, pQC))
+      : calcImpotRetraite(rfB, ab, fmB>0||rrb>0||pensionB>0, pFed, pQC, cr);
     const cla2 = clawback(rfA, svA*fi, cr.seuilPSV);
     const clb2 = clawback(rfB, svB*fi, cr.seuilPSV);
     const netFinal = (rfA-ia2-cla2) + (rfB-ib2-clb2) + rc;
@@ -219,10 +224,22 @@ export function simulerDecaissement({
 
     const actifs = eRA+eFA+eCA+eRB+eFB+eCB;
 
+    // Séparer salaire actif vs revenus de retraite pour l'affichage
+    const salaireActif = Math.round(
+      (aa < ageRetraiteA ? revGA : 0) * fi +
+      (ab < ageRetraiteB ? revGB : 0) * fi
+    );
+    const revenusRetraite = Math.round(
+      (aa >= ageRetraiteA ? revGA : 0) * fi +
+      (ab >= ageRetraiteB ? revGB : 0) * fi
+    );
+
     rows.push({
       ages:`${aa}/${ab}`, annee:an,
+      bTravaille: ab < ageRetraiteB,
       cible:Math.round(cible),
-      rrqSvPension:Math.round((revGA+revGB)*fi),
+      salaireActif,
+      rrqSvPension: revenusRetraite,
       ferrMin:Math.round(fmA+fmB),
       retraitCELI:Math.round(rc),
       retraitREER:Math.round(rra+rrb),

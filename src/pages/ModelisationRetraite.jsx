@@ -54,10 +54,10 @@ function TableauResultats({ rows }) {
             <th colSpan={1} style={gh("#7F77DD","rgba(127,119,221,.06)")}>Patrimoine</th>
           </tr>
           <tr>
-            <th style={S.th}>RRQ+PSV</th><th style={S.th}>Pension</th><th style={{...S.th,borderRight:"1px solid rgba(255,255,255,.07)"}}>FERR</th>
-            <th style={{...S.th,color:"rgba(91,196,160,.8)"}}>🟢 CELI</th><th style={{...S.th,color:"#EAB308",borderRight:"1px solid rgba(255,255,255,.07)"}}>🟡 FERR</th>
-            <th style={{...S.th,color:"#f87171"}}>Impôt</th><th style={{...S.th,fontWeight:700,color:"#fff"}}>Net</th><th style={{...S.th,borderRight:"1px solid rgba(255,255,255,.07)"}}>vs Cible</th>
-            <th style={S.th}>Total</th>
+           <th style={S.th}>RRQ+PSV</th><th style={{...S.th,color:"#6B8ED6"}}>Salaire actif</th><th style={{...S.th,borderRight:"1px solid rgba(255,255,255,.07)"}}>FERR min</th>
+           <th style={{...S.th,color:"rgba(91,196,160,.8)"}}>🟢 CELI</th><th style={{...S.th,color:"#EAB308",borderRight:"1px solid rgba(255,255,255,.07)"}}>🟡 FERR</th>
+           <th style={{...S.th,color:"#f87171"}}>Impôt</th><th style={{...S.th,fontWeight:700,color:"#fff"}}>Net</th><th style={{...S.th,borderRight:"1px solid rgba(255,255,255,.07)"}}>vs Cible</th>
+           <th style={S.th}>Total</th>
           </tr>
         </thead>
         <tbody>
@@ -68,8 +68,8 @@ function TableauResultats({ rows }) {
             return (
               <tr key={r.ages+i} style={{background:bg}}>
                 <td style={{...S.td,textAlign:"left",fontWeight:700,color:r.ages.split("/")[0]==="71"?"#C9A063":"#fff"}}>{r.ages}{r.ages.split("/")[0]==="71"?" ★":""}</td>
-                <td style={{...S.td,color:"#5BC4A0"}}>{fmtk(r.rrqSvPension)}</td>
-                <td style={{...S.td,color:"#C9A063"}}>—</td>
+                <td style={{...S.td,color:"#5BC4A0"}}>{r.rrqSvPension>0?fmtk(r.rrqSvPension):"—"}</td>
+                <td style={{...S.td,color:r.salaireActif>0?"#6B8ED6":"rgba(255,255,255,.2)"}}>{r.salaireActif>0?fmtk(r.salaireActif):"—"}</td>
                 <td style={{...S.td,color:r.ferrMin>0?"#EAB308":"rgba(255,255,255,.2)",borderRight:"1px solid rgba(255,255,255,.07)"}}>{r.ferrMin>0?fmtk(r.ferrMin):"—"}</td>
                 <td style={{...S.td,color:r.retraitCELI>0?"rgba(91,196,160,.9)":"rgba(255,255,255,.2)"}}>{r.retraitCELI>0?fmtk(r.retraitCELI):"—"}</td>
                 <td style={{...S.td,color:r.retraitREER>0?"#EAB308":"rgba(255,255,255,.2)",borderRight:"1px solid rgba(255,255,255,.07)"}}>{r.retraitREER>0?fmtk(r.retraitREER):"—"}</td>
@@ -167,15 +167,15 @@ export default function ModelisationRetraite() {
   }),[ageA,ageB,ageRetA,ageRetB,reerAv,celiAv,reerBv,celiBv,cotReerA,cotCeliA,cotReerB,cotCeliB,rend,enCouple]);
 
   const params = useMemo(()=>({
-    ageA:ageRetA, ageRetraiteA:ageRetA, salaireA:0,
+    ageA:ageRetA, ageRetraiteA:ageRetA, salaireA:brutA,
     rrqA:adjRRQ(rrqA,rrqAp)*12, svA:713.34*12, pensionA:pensA*12,
     reerA:projection.reerA, celiA:projection.celiA,
     ageB:enCouple?ageRetA+(ageB-ageA):ageRetA, ageRetraiteB:enCouple?ageRetB:99,
-    salaireB:0, rrqB:enCouple?adjRRQ(rrqB,rrqBp)*12:0,
+    salaireB:enCouple?brutB:0, rrqB:enCouple?adjRRQ(rrqB,rrqBp)*12:0,
     svB:enCouple?713.34*12:0, pensionB:enCouple?pensB*12:0,
     reerB:enCouple?projection.reerB:0, celiB:enCouple?projection.celiB:0,
     cibleNette:cible, inflation:.025, rendement:rend/100, esperanceVie:espVie,
-  }),[ageA,ageB,ageRetA,ageRetB,rrqAp,rrqBp,projection,cible,rend,espVie,enCouple,rrqA,rrqB,pensA,pensB]);
+  }),[ageA,ageB,ageRetA,ageRetB,rrqAp,rrqBp,projection,cible,rend,espVie,enCouple,rrqA,rrqB,pensA,pensB,brutA,brutB]);
 
   const rows       = useMemo(()=>simulerDecaissement(params),[params]);
   const last       = rows[rows.length-1]||{};
