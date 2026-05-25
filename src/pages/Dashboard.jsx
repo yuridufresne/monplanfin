@@ -16,8 +16,6 @@ import InfoTooltip from "@/components/ui/InfoTooltip";
 import FlipCard from "@/components/ui/FlipCard";
 import DetteStrategie from "@/components/dashboard/DetteStrategie";
 import PlacementStrategie from "@/components/dashboard/PlacementStrategie";
-import NIFScenarioGrid from "@/components/dashboard/NIFScenarioGrid.jsx";
-import NIFScenarioTable from "@/components/dashboard/NIFScenarioTable.jsx";
 
 // ── Formatters ────────────────────────────────────────────────────────────────
 const fmt = (v) => new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v || 0);
@@ -104,7 +102,6 @@ export default function Dashboard() {
   const [user, setUser] = useState(null);
   const [synced, setSynced] = useState(false);
   const [showReset, setShowReset] = useState(false);
-  const [nifFlipped, setNifFlipped] = useState(false);
   const [detteFlipped, setDetteFlipped] = useState(false);
   const [placementFlipped, setPlacementFlipped] = useState(false);
 
@@ -323,90 +320,259 @@ export default function Dashboard() {
             {/* ── ZONE 2 — NIF + Protection ───────────────────────────── */}
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-5">
 
-              {/* NIF — 3 cols — FlipCard */}
+              {/* NIF — 3 cols */}
               <motion.div {...fadeUp(0.1)} style={{ gridColumn: "span 3 / span 3" }}>
-                <FlipCard
-                  expandedHeight={720}
-                  onFlip={setNifFlipped}
-                  front={
-                    <>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <p style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>Indépendance financière</p>
-                          <Badge color={nifBadge}>{statutLabels[statut]}</Badge>
-                        </div>
-                        <Link to="/avance" style={{ fontSize: 11, color: "#C9A063", textDecoration: "none", display: "flex", alignItems: "center", gap: 4 }}>
-                          <ExternalLink style={{ width: 10, height: 10 }} /> Avancé
-                        </Link>
-                      </div>
+                <div style={{ ...G.cardGold, padding: "1.4rem 1.5rem", height: "100%" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <p style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>Indépendance financière</p>
+                      <Badge color={nifBadge}>{statutLabels[statut]}</Badge>
+                    </div>
+                    <Link to="/avance" style={{ fontSize: 11, color: "#C9A063", textDecoration: "none", display: "flex", alignItems: "center", gap: 4 }}>
+                      <ExternalLink style={{ width: 10, height: 10 }} /> Avancé
+                    </Link>
+                  </div>
 
-                      <div style={{ display: "flex", gap: "1.5rem", alignItems: "center", flexWrap: "wrap" }}>
-                        <div style={{ flexShrink: 0 }}>
-                          <ScoreArc score={scoreNIF} />
+                  <div style={{ display: "flex", gap: "1.5rem", alignItems: "center", flexWrap: "wrap" }}>
+                    <div style={{ flexShrink: 0 }}>
+                      <ScoreArc score={scoreNIF} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+                      {[
+                        {
+                          label: "NIF cible",
+                          value: fmt(capitalNIF),
+                          color: "#C9A063",
+                          info: "Capital à accumuler d'ici " + ageRetraite + " ans en dollars futurs. Calculé sur 80% du revenu brut du foyer moins les revenus garantis (RRQ+PSV+Pension) indexés à l'inflation.",
+                        },
+                        {
+                          label: "Capital projeté",
+                          value: fmt(capitalProjecte),
+                          color: "#6B8ED6",
+                          info: "Valeur projetée de vos épargnes actuelles + cotisations mensuelles à 7%/an jusqu'à " + ageRetraite + " ans.",
+                        },
+                        ...(cotSupp > 0 ? [{
+                          label: "Cotisation supp.",
+                          value: `${fmt(cotSupp)}/mois`,
+                          color: "#f87171",
+                          info: "Montant mensuel additionnel en REER+CELI pour atteindre le NIF à " + ageRetraite + " ans à 7%/an.",
+                        }] : []),
+                      ].map(m => (
+                        <div key={m.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "7px 10px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <p style={{ ...MUTED }}>{m.label}</p>
+                            <InfoTooltip text={m.info} />
+                          </div>
+                          <p style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 700, color: m.color }}>{m.value}</p>
                         </div>
-                        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 10 }}>
-                          {[
-                            {
-                              label: "NIF cible",
-                              value: fmt(capitalNIF),
-                              color: "#C9A063",
-                              info: "Capital à accumuler d'ici " + ageRetraite + " ans en dollars futurs. Calculé sur 80% du revenu brut du foyer moins les revenus garantis (RRQ+PSV+Pension) indexés à l'inflation.",
-                            },
-                            {
-                              label: "Capital projeté",
-                              value: fmt(capitalProjecte),
-                              color: "#6B8ED6",
-                              info: "Valeur projetée de vos épargnes actuelles + cotisations mensuelles à 7%/an jusqu'à " + ageRetraite + " ans.",
-                            },
-                            ...(cotSupp > 0 ? [{
-                              label: "Cotisation supp.",
-                              value: `${fmt(cotSupp)}/mois`,
-                              color: "#f87171",
-                              info: "Montant mensuel additionnel en REER+CELI pour atteindre le NIF à " + ageRetraite + " ans à 7%/an.",
-                            }] : []),
-                          ].map(m => (
-                            <div key={m.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "7px 10px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                <p style={{ ...MUTED }}>{m.label}</p>
-                                <InfoTooltip text={m.info} />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Barre de progression */}
+                  <div style={{ marginTop: 14 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                      <p style={MUTED}>Progression vers le NIF</p>
+                      <p style={{ ...MUTED, color: nifColor }}>{scoreNIF}%</p>
+                    </div>
+                    <div style={{ height: 5, borderRadius: 99, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+                      <div style={{ height: "100%", width: `${Math.min(scoreNIF, 100)}%`, background: `linear-gradient(90deg, ${nifColor}, ${nifColor}cc)`, borderRadius: 99, transition: "width 1s ease" }} />
+                    </div>
+                  </div>
+
+                  {/* Grille 3×3 — Scénarios âge × rendement */}
+                  {(() => {
+                    const INF = 0.025;
+                    const espVie = esperanceVie || 90;
+                    const epargneActuelle = soldeTotal || 0;
+                    const cotM = nifCotMensuelle || 0;
+                    const revenuBrutAnnuel = revBrut || 80000;
+
+                    // Variables revenus garantis
+                    const retraiteData = bySection.retraite || {};
+                    const retraiteP1   = retraiteData.prestations_gouvernementales || retraiteData || {};
+                    const retraiteP2   = enCouple ? (retraiteData.conjoint?.prestations_gouvernementales || retraiteData.conjoint || {}) : {};
+                    const rrqMensuelP1 = parseFloat(revenusGarantis?.p1?.rrq || retraiteP1.rrq || 0);
+                    const rrqMensuelP2 = parseFloat(revenusGarantis?.p2?.rrq || retraiteP2.rrq || 0);
+                    const psvMensuelP1 = parseFloat(revenusGarantis?.p1?.psv || retraiteP1.psv || 713.34);
+                    const psvMensuelP2 = enCouple ? parseFloat(revenusGarantis?.p2?.psv || retraiteP2.psv || 713.34) : 0;
+                    const pensionPDMensuel = parseFloat(revenusGarantis?.p1?.pension || revenusGarantis?.p2?.pension || fpMensuelTotal || 0);
+                    const conjointAgeVal = parseInt(profil.age_conjoint || profil.conjoint_age || 0);
+
+                    const calcScenario = (ageRet, rendAccum, rendDecaisse) => {
+                      const annesAv = Math.max(1, ageRet - (ageActuel || 38));
+                      const cibleBase = revenuBrutAnnuel * 0.80;
+
+                      // RRQ — facteur selon l'âge de début (min 60)
+                      const ageDebutRRQ = Math.max(60, ageRet);
+                      let factRRQ = 1;
+                      if (ageDebutRRQ < 65) factRRQ = Math.max(0.64, 1 - (65 - ageDebutRRQ) * 12 * 0.006);
+                      else if (ageDebutRRQ > 65) factRRQ = 1 + Math.min((ageDebutRRQ - 65) * 12, 60) * 0.007;
+                      const rrqAnnuelP1 = rrqMensuelP1 * factRRQ * 12;
+                      const rrqAnnuelP2 = rrqMensuelP2 * 12; // conjoint assume 65 ans
+
+                      // Simulation année par année
+                      const simuler = (capitalInitial) => {
+                        let capital = capitalInitial;
+                        for (let age = ageRet; age <= espVie; age++) {
+                          const ann = age - ageRet;
+                          const fi = Math.pow(1 + INF, ann);
+                          const cible = cibleBase * fi;
+                          let revenus = 0;
+                          // RRQ p1
+                          if (age >= ageDebutRRQ) revenus += rrqAnnuelP1 * fi;
+                          // PSV p1
+                          if (age >= 65) revenus += psvMensuelP1 * 12 * fi;
+                          // RRQ + PSV conjoint
+                          if (enCouple) {
+                            const ageConj = conjointAgeVal > 0 ? conjointAgeVal + ann : age;
+                            if (ageConj >= 65) {
+                              revenus += rrqAnnuelP2 * fi;
+                              revenus += psvMensuelP2 * 12 * fi;
+                            }
+                          }
+                          // Pension PD (conjoint, débute quand conjoint a 65 ans)
+                          if (pensionPDMensuel > 0) {
+                            const ageConj = conjointAgeVal > 0 ? conjointAgeVal + ann : age;
+                            if (ageConj >= 65) revenus += pensionPDMensuel * 12 * fi;
+                          }
+                          const manque = Math.max(0, cible - revenus);
+                          capital = capital * (1 + rendDecaisse) - manque;
+                          if (capital <= 0) return false;
+                        }
+                        return true;
+                      };
+
+                      // Recherche binaire du NIF
+                      let lo = 0, hi = 15000000, nifV = 0;
+                      for (let i = 0; i < 40; i++) {
+                        const mid = (lo + hi) / 2;
+                        if (simuler(mid)) { nifV = mid; hi = mid; }
+                        else lo = mid;
+                      }
+
+                      // Capital projeté
+                      const rM = rendAccum / 12;
+                      const n  = annesAv * 12;
+                      const cap = epargneActuelle * Math.pow(1 + rM, n)
+                        + (rM > 0 ? cotM * (Math.pow(1 + rM, n) - 1) / rM : cotM * n);
+
+                      const score = nifV > 0 ? Math.min(Math.round(cap / nifV * 100), 999) : 100;
+
+                      let cotSupp = 0;
+                      if (cap < nifV && annesAv > 0 && rM > 0) {
+                        const facteur = (Math.pow(1 + rM, n) - 1) / rM;
+                        const manqueCapital = nifV - epargneActuelle * Math.pow(1 + rM, n);
+                        cotSupp = Math.max(0, manqueCapital / facteur);
+                      }
+
+                      return { score, nif: Math.round(nifV), cap: Math.round(cap), cotSupp: Math.round(cotSupp), factRRQ: Math.round(factRRQ * 100) };
+                    };
+
+                    const getColor = (score) => {
+                      if (score >= 100) return { bg: "rgba(59,130,246,0.10)",  border: "rgba(59,130,246,0.35)",  text: "#60A5FA" };
+                      if (score >= 90)  return { bg: "rgba(91,196,160,0.08)",  border: "rgba(91,196,160,0.25)",  text: "#5BC4A0" };
+                      if (score >= 50)  return { bg: "rgba(234,179,8,0.08)",   border: "rgba(234,179,8,0.25)",   text: "#EAB308" };
+                      return               { bg: "rgba(248,113,113,0.08)", border: "rgba(248,113,113,0.25)", text: "#f87171" };
+                    };
+
+                    const ageBase = ageRetraite || 65;
+                    const AGES_RET = [ageBase - 5, ageBase, ageBase + 5];
+                    const getRRQLabel = (age) => {
+                      if (age < 65) return `RRQ −${Math.round((65 - age) * 12 * 0.6)}% · PSV à 65`;
+                      if (age === 65) return "RRQ base · PSV à 65";
+                      return `RRQ +${Math.round((age - 65) * 12 * 0.7)}% · PSV à 65`;
+                    };
+
+                    return (
+                      <div style={{ marginTop: 20 }}>
+                        <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.5)", marginBottom: 12 }}>
+                          Scénarios autour de votre objectif de retraite à {ageBase} ans
+                        </div>
+                        <div style={{ borderRadius: 12, overflow: "hidden", border: "1px solid rgba(255,255,255,0.08)" }}>
+                          {/* En-tête */}
+                          <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr 1fr", background: "rgba(255,255,255,0.04)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                            <div style={{ padding: "10px 14px", fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.07em" }}>
+                              Taux de rendement
+                            </div>
+                            {AGES_RET.map(age => (
+                              <div key={age} style={{ padding: "10px 12px", textAlign: "center", borderLeft: "1px solid rgba(255,255,255,0.06)" }}>
+                                <div style={{ fontSize: 12, fontWeight: 700, color: age === ageBase ? "#C9A063" : "#fff" }}>Retraite à {age} ans</div>
+                                <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>
+                                  {getRRQLabel(age)}
+                                </div>
                               </div>
-                              <p style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 700, color: m.color }}>{m.value}</p>
+                            ))}
+                          </div>
+                          {/* Lignes */}
+                          {[
+                            { label: "Conservateur", accum: 0.05, decaisse: 0.03, defaut: false },
+                            { label: "Équilibré",    accum: 0.07, decaisse: 0.05, defaut: true  },
+                            { label: "Croissance",   accum: 0.09, decaisse: 0.07, defaut: false },
+                          ].map((rend, ri) => (
+                            <div key={rend.label} style={{
+                              display: "grid",
+                              gridTemplateColumns: "1.4fr 1fr 1fr 1fr",
+                              background: rend.defaut ? "rgba(201,160,99,0.06)" : ri % 2 === 0 ? "transparent" : "rgba(255,255,255,0.015)",
+                              borderBottom: ri < 2 ? "1px solid rgba(255,255,255,0.06)" : "none",
+                            }}>
+                              {/* Label ligne */}
+                              <div style={{ padding: "12px 14px", borderRight: "1px solid rgba(255,255,255,0.06)" }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
+                                  <div style={{ fontSize: 12, fontWeight: 700, color: rend.defaut ? "#C9A063" : "rgba(255,255,255,0.8)" }}>{rend.label}</div>
+                                  {rend.defaut && (
+                                    <span style={{ fontSize: 8, fontWeight: 700, background: "rgba(201,160,99,0.2)", color: "#C9A063", border: "1px solid rgba(201,160,99,0.35)", padding: "1px 5px", borderRadius: 4 }}>recommandé</span>
+                                  )}
+                                </div>
+                                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", lineHeight: 1.4 }}>
+                                  {(rend.accum * 100).toFixed(0)}% avant retraite<br/>
+                                  {(rend.decaisse * 100).toFixed(0)}% pendant retraite
+                                </div>
+                              </div>
+                              {/* Cellules par âge */}
+                              {AGES_RET.map(age => {
+                                const cell = calcScenario(age, rend.accum, rend.decaisse);
+                                const c = getColor(cell.score);
+                                const isActuel = rend.defaut && age === ageBase;
+                                return (
+                                  <div key={age} style={{ padding: "14px 10px", borderLeft: `1px solid ${c.border}`, textAlign: "center", position: "relative", background: c.bg, transition: "all .2s", outline: isActuel ? `2px solid ${c.text}` : "none", outlineOffset: -2 }}>
+                                    <div style={{ position: "absolute", top: 5, left: 5, fontSize: 9, fontWeight: 700, color: c.text, background: c.bg, border: `1px solid ${c.border}`, borderRadius: 4, padding: "1px 5px", lineHeight: 1.4, opacity: 0.85 }}>
+                                      {cell.score}%
+                                    </div>
+                                    {isActuel && (
+                                      <div style={{ position: "absolute", top: -9, left: "50%", transform: "translateX(-50%)", fontSize: 8, fontWeight: 700, color: c.text, background: "#0A1628", padding: "1px 6px", borderRadius: 4, border: `1px solid ${c.border}`, whiteSpace: "nowrap" }}>Actuel</div>
+                                    )}
+                                    <div style={{ fontSize: 14, fontWeight: 800, color: c.text, letterSpacing: "-0.3px", marginBottom: 8, lineHeight: 1 }}>
+                                      {cell.nif >= 1000000 ? (cell.nif / 1000000).toFixed(2) + "M $" : Math.round(cell.nif / 1000) + "k $"}
+                                    </div>
+                                    <div style={{ height: 1, background: c.border, margin: "0 0 8px 0", opacity: 0.5 }} />
+                                    <div style={{ fontSize: 13, fontWeight: 700, color: c.text, lineHeight: 1 }}>
+                                      {(cotM + cell.cotSupp).toLocaleString("fr-CA")} $
+                                      <span style={{ fontSize: 9, fontWeight: 400, color: "rgba(255,255,255,0.3)", display: "block", marginTop: 2 }}>/mois</span>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ))}
+                        </div>
+                        <div style={{ display: "flex", gap: 16, marginTop: 10, flexWrap: "wrap" }}>
+                          {[
+                            { color: "#f87171", bg: "rgba(248,113,113,0.08)", label: "< 50% du NIF atteint" },
+                            { color: "#EAB308", bg: "rgba(234,179,8,0.08)",   label: "50% à 89%" },
+                            { color: "#5BC4A0", bg: "rgba(91,196,160,0.08)",  label: "90% à 99%" },
+                            { color: "#60A5FA", bg: "rgba(59,130,246,0.10)",  label: "100% et plus ✓" },
+                          ].map(l => (
+                            <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                              <div style={{ width: 10, height: 10, borderRadius: 3, background: l.bg, border: `1px solid ${l.color}`, flexShrink: 0 }} />
+                              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>{l.label}</span>
                             </div>
                           ))}
                         </div>
                       </div>
-
-                      {/* Barre de progression */}
-                      <div style={{ marginTop: 14 }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                          <p style={MUTED}>Progression vers le NIF</p>
-                          <p style={{ ...MUTED, color: nifColor }}>{scoreNIF}%</p>
-                        </div>
-                        <div style={{ height: 5, borderRadius: 99, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
-                          <div style={{ height: "100%", width: `${Math.min(scoreNIF, 100)}%`, background: `linear-gradient(90deg, ${nifColor}, ${nifColor}cc)`, borderRadius: 99, transition: "width 1s ease" }} />
-                        </div>
-                      </div>
-
-
-                    </>
-                  }
-                  back={
-                    <NIFScenarioGrid
-                      ageRetraite={ageRetraite}
-                      ageActuel={ageActuel}
-                      esperanceVie={esperanceVie}
-                      soldeTotal={soldeTotal}
-                      nifCotMensuelle={nifCotMensuelle}
-                      revBrut={revBrut}
-                      revenusGarantis={revenusGarantis}
-                      enCouple={enCouple}
-                      fpMensuelTotal={fpMensuelTotal}
-                      profil={profil}
-                      bySection={bySection}
-                      isVisible={nifFlipped}
-                    />
-                  }
-                />
+                    );
+                  })()}
+                </div>
               </motion.div>
 
               {/* Protection + Revenus garantis — 2 cols */}
