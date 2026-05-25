@@ -636,9 +636,18 @@ export default function Dashboard() {
                     );
                   })()}
 
-                  {/* Hint flip */}
-                  <div style={{ marginTop: 12, fontSize: 10, color: "rgba(201,160,99,0.45)", fontWeight: 500, display: "flex", alignItems: "center", gap: 4 }}>
-                    <span>✦</span> Voir le plan de décaissement →
+                  {/* Hint flip + lien modélisation */}
+                  <div style={{ marginTop: 12, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 6 }}>
+                    <div style={{ fontSize: 10, color: "rgba(201,160,99,0.45)", fontWeight: 500, display: "flex", alignItems: "center", gap: 4 }}>
+                      <span>✦</span> Voir le plan de décaissement →
+                    </div>
+                    <Link
+                      to="/modelisation"
+                      onClick={e => e.stopPropagation()}
+                      style={{ fontSize: 10, color: "#C9A063", background: "rgba(201,160,99,0.08)", border: "1px solid rgba(201,160,99,0.2)", padding: "4px 10px", borderRadius: 8, textDecoration: "none", fontWeight: 600 }}
+                    >
+                      Modélisation complète →
+                    </Link>
                   </div>
                 </div>
               </motion.div>
