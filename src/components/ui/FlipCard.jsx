@@ -23,7 +23,7 @@ export default function FlipCard({ front, back, expandedHeight = 560, onFlip }) 
         style={{
           position: "relative",
           width: "100%",
-          height: flipped ? `min(${expandedHeight}px, calc(100vh - 120px))` : 220,
+          height: flipped ? `min(${expandedHeight}px, calc(100vh - 120px))` : "auto",
           transformStyle: "preserve-3d",
           transition: "transform 0.5s cubic-bezier(0.4,0,0.2,1), height 0.4s ease",
           transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)",
@@ -38,7 +38,7 @@ export default function FlipCard({ front, back, expandedHeight = 560, onFlip }) 
           background: "rgba(255,255,255,0.04)",
           border: "1px solid rgba(255,255,255,0.08)",
           borderRadius: 16, padding: "18px 20px",
-          overflow: "hidden",
+          overflow: "visible",
         }}>
           {front}
           <div style={{ display:"flex", alignItems:"center", gap:5, marginTop:12,
