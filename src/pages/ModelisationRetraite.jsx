@@ -35,17 +35,7 @@ function PaywallBanner({ onUnlock }) {
 // ── Tableau de résultats ──────────────────────────────────────────────────────
 // Structure : Âge | [Jean: Sal RRQ SV Pen FERRmin CELI REER/FERR] | [Marie: idem] | Bilan | Patrimoine
 function TableauResultats({ rows, prenomA = "A", prenomB = "B" }) {
-  const dernierAge = rows.length > 0 ? parseInt(rows[rows.length-1].ages.split('/')[0]) : 999;
-  const vis = rows.filter((r) => {
-    const ageJean  = parseInt(r.ages.split('/')[0]);
-    const ageMarie = parseInt(r.ages.split('/')[1]);
-    return (
-      ageJean <= 71
-      || ageMarie === 71
-      || ageJean % 5 === 0
-      || ageJean === dernierAge
-    );
-  });
+  const vis = rows;
   const S = {
     th:{ fontSize:9, fontWeight:600, color:"rgba(255,255,255,.28)", textTransform:"uppercase", letterSpacing:".06em", padding:"6px 8px", textAlign:"right", background:"rgba(255,255,255,.03)", borderBottom:"1px solid rgba(255,255,255,.07)", whiteSpace:"nowrap" },
     td:{ padding:"7px 8px", textAlign:"right", borderBottom:"1px solid rgba(255,255,255,.04)", fontSize:11, fontVariantNumeric:"tabular-nums", whiteSpace:"nowrap" },
@@ -55,7 +45,7 @@ function TableauResultats({ rows, prenomA = "A", prenomB = "B" }) {
 
   return (
     <div>
-      <div style={{ overflowX:"auto", borderRadius:10, border:"1px solid rgba(255,255,255,.09)" }}>
+      <div style={{ overflowX:"auto", overflowY:"auto", maxHeight:"600px", borderRadius:10, border:"1px solid rgba(255,255,255,.09)" }}>
         {/* Colonnes par personne : Sal | RRQ | SV | Pension | FERR min | CELI | REER/FERR = 7 cols × 2 = 14 */}
         {/* + Bilan 5 cols + Patrimoine 4 cols + Âge 1 = 24 cols total */}
         <table style={{ width:"100%", borderCollapse:"collapse", minWidth:1100 }}>
