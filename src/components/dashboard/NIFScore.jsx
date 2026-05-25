@@ -108,9 +108,9 @@ export default function NIFScore({ profiles }) {
   const nif = useMemo(() => calcNIFFromProfiles(profiles), [profiles]);
   const {
     // NIF fixe
-    capitalNIF, nifResult,
+    capitalNIF, capitalNIFNominal, nifResult,
     // Progression
-    capitalProjecte, scoreNIF, cotSupp, statut,
+    capitalProjecte, capitalProjecteNominal, scoreNIF, cotSupp, statut,
     // Contexte
     ageRetraite, revGarantiAnnuel, depensesCibles, revBrut, tauxRemplacement,
     rrqMensuelTotal, psvMensuelTotal, fpMensuelTotal,
@@ -256,12 +256,12 @@ export default function NIFScore({ profiles }) {
             {/* PARTIE 1 — NIF fixe */}
             <div style={{ marginBottom: 14, padding: "12px 16px", borderRadius: 14, background: "rgba(201,160,99,0.07)", border: "1px solid rgba(201,160,99,0.2)" }}>
               <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(201,160,99,0.6)", marginBottom: 6 }}>
-                Votre NIF — en dollars d'aujourd'hui
-              </p>
+                Votre NIF — en dollars nominaux (futurs)
+               </p>
               <p style={{ fontFamily: "var(--font-mono)", fontSize: 22, fontWeight: 900, color: GOLD, lineHeight: 1, marginBottom: 2 }}>
-                {fmt(capitalNIF)}
+                {fmt(capitalNIFNominal || capitalNIF)}
               </p>
-              <p style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", marginBottom: 6 }}>en dollars d'aujourd'hui</p>
+              <p style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", marginBottom: 2 }}>dollars nominaux à la retraite · aujourd'hui : {fmt(capitalNIF)}</p>
               <p style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", lineHeight: 1.6 }}>
                 = {fmt(depensesCibles)}/an cible ({tauxRemplacement}% × {fmt(revBrut)} brut)
                 {revGarantiAnnuel > 0 && <> − {fmt(revGarantiAnnuel)}/an garantis</>}
@@ -294,8 +294,8 @@ export default function NIFScore({ profiles }) {
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 14 }}>
               <div style={cardStyle}>
                 <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.4)", marginBottom: 5 }}>Capital projeté à {ageRetraite} ans</p>
-                <p style={{ fontFamily: "var(--font-mono)", fontSize: 15, fontWeight: 700, color: "#6B8ED6", lineHeight: 1 }}>{fmt(capitalProjecte)}</p>
-                <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>en dollars d'aujourd'hui</p>
+                <p style={{ fontFamily: "var(--font-mono)", fontSize: 15, fontWeight: 700, color: "#6B8ED6", lineHeight: 1 }}>{fmt(capitalProjecteNominal || capitalProjecte)}</p>
+                <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>dollars nominaux · aujourd'hui : {fmt(capitalProjecte)}</p>
                 <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>Épargne actuelle + cotisations à 7%/an</p>
               </div>
               <div style={cardStyle}>

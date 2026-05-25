@@ -285,15 +285,21 @@ export function calcNIFFromProfiles(profiles) {
   const revGarantiC = revenusGarantis.p2.totalMensuel * 12;
   const ratioConjGaranti = revGarantiAnnuelAuj > 0 ? revGarantiC / revGarantiAnnuelAuj : 0;
 
+  // Valeurs nominales (dollars futurs à la retraite) pour affichage
+  const fi = Math.pow(1 + INFLATION, nifResult.anneesAvant);
+  const capitalNIFNominal = Math.round(nifResult.nif * fi);
+
   return {
     // ── NIF (fixe) ──
-    capitalNIF:        nifResult.nif,          // alias pour compatibilité
+    capitalNIF:        nifResult.nif,          // dollars constants (aujourd'hui)
+    capitalNIFNominal,                          // dollars nominaux (futurs) — pour affichage
     capitalNIF_4pct:   nifResult.nif_4pct,
     capitalNIF_rente:  nifResult.nif_rente,
     nifResult,                                  // objet complet
 
     // ── Progression ──
-    capitalProjecte:   progression.capitalProjetee,
+    capitalProjecte:        progression.capitalProjetee,        // dollars constants
+    capitalProjecteNominal: progression.capitalProjeteeNominal, // dollars nominaux — pour affichage
     scoreNIF:          progression.score,
     cotSupp:           progression.cotSuppNecessaire,
     statut:            progression.statut,

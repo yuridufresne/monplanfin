@@ -147,7 +147,7 @@ export default function Dashboard() {
 
   // ── NIF ────────────────────────────────────────────────────────────────────
   const nif = useMemo(() => calcNIFFromProfiles(profiles), [profiles]);
-  const { capitalNIF, capitalProjecte, scoreNIF, cotSupp, statut, rrqMensuelTotal, psvMensuelTotal, fpMensuelTotal, revGarantiAnnuel, ageRetraite, anneesAccum, ageActuel, soldeTotal, cotMensuelle: nifCotMensuelle, revenusGarantis, esperanceVie } = nif;
+  const { capitalNIF, capitalNIFNominal, capitalProjecte, capitalProjecteNominal, scoreNIF, cotSupp, statut, rrqMensuelTotal, psvMensuelTotal, fpMensuelTotal, revGarantiAnnuel, ageRetraite, anneesAccum, ageActuel, soldeTotal, cotMensuelle: nifCotMensuelle, revenusGarantis, esperanceVie } = nif;
 
   const statutColors = { depasse: "#5BC4A0", atteint: "#5BC4A0", en_voie: "#C9A063", insuffisant: "#f59e0b", critique: "#f87171" };
   const statutLabels = { depasse: "Dépassé ✓✓", atteint: "Atteint ✓", en_voie: "En voie", insuffisant: "Insuffisant ⚠", critique: "Action requise ✗" };
@@ -168,10 +168,13 @@ export default function Dashboard() {
   }, [dettesABF, enCouple]);
   const comptes = retraiteABF.comptes || {};
   const comptesConj = retraiteConj.comptes || {};
-  const reerSolde = [...(comptes.reer || []), ...(comptesConj.reer || [])].reduce((s, c) => s + (parseFloat(c.solde) || 0), 0);
-  const celiSolde = [...(comptes.celi || []), ...(comptesConj.celi || [])].reduce((s, c) => s + (parseFloat(c.solde) || 0), 0);
-  const reee = (comptes.reee || []).concat(comptesConj.reee || []).reduce((s, c) => s + (parseFloat(c.solde) || 0), 0);
-  const totalAssets = investmentAssets + realEstateAssets + reerSolde + celiSolde + reee;
+  const reerSolde    = [...(comptes.reer    || []), ...(comptesConj.reer    || [])].reduce((s, c) => s + (parseFloat(c.solde) || 0), 0);
+  const celiSolde    = [...(comptes.celi    || []), ...(comptesConj.celi    || [])].reduce((s, c) => s + (parseFloat(c.solde) || 0), 0);
+  const reee         = [...(comptes.reee    || []), ...(comptesConj.reee    || [])].reduce((s, c) => s + (parseFloat(c.solde) || 0), 0);
+  const criSolde     = [...(comptes.cri     || []), ...(comptesConj.cri     || [])].reduce((s, c) => s + (parseFloat(c.solde) || 0), 0);
+  const frvSolde     = [...(comptes.frv     || []), ...(comptesConj.frv     || [])].reduce((s, c) => s + (parseFloat(c.solde) || 0), 0);
+  const celiappSolde = [...(comptes.celiapp || []), ...(comptesConj.celiapp || [])].reduce((s, c) => s + (parseFloat(c.solde) || 0), 0);
+  const totalAssets = investmentAssets + realEstateAssets + reerSolde + celiSolde + reee + criSolde + frvSolde + celiappSolde;
 
   // Dettes depuis ABF (source principale) — fallback vers entité Debt
   const dettesABFConjoint = enCouple ? (dettesABF.conjoint || {}) : {};
@@ -211,10 +214,13 @@ export default function Dashboard() {
   const alloc = hasEnfants ? allocMensuel * 12 : 0;
 
   // ── Cotisations mensuelles ─────────────────────────────────────────────────
-  const reerCot = [...(comptes.reer || []), ...(comptesConj.reer || [])].reduce((s, c) => s + (parseFloat(c.cotisation_mensuelle) || 0), 0);
-  const celiCot = [...(comptes.celi || []), ...(comptesConj.celi || [])].reduce((s, c) => s + (parseFloat(c.cotisation_mensuelle) || 0), 0);
-  const reee_cot = [...(comptes.reee || [])].reduce((s, c) => s + (parseFloat(c.cotisation_mensuelle) || 0), 0);
-  const totalCotMensuelle = reerCot + celiCot + reee_cot;
+  const reerCot    = [...(comptes.reer    || []), ...(comptesConj.reer    || [])].reduce((s, c) => s + (parseFloat(c.cotisation_mensuelle) || 0), 0);
+  const celiCot    = [...(comptes.celi    || []), ...(comptesConj.celi    || [])].reduce((s, c) => s + (parseFloat(c.cotisation_mensuelle) || 0), 0);
+  const reee_cot   = [...(comptes.reee    || []), ...(comptesConj.reee    || [])].reduce((s, c) => s + (parseFloat(c.cotisation_mensuelle) || 0), 0);
+  const criCot     = [...(comptes.cri     || []), ...(comptesConj.cri     || [])].reduce((s, c) => s + (parseFloat(c.cotisation_mensuelle) || 0), 0);
+  const frvCot     = [...(comptes.frv     || []), ...(comptesConj.frv     || [])].reduce((s, c) => s + (parseFloat(c.cotisation_mensuelle) || 0), 0);
+  const celiappCot = [...(comptes.celiapp || []), ...(comptesConj.celiapp || [])].reduce((s, c) => s + (parseFloat(c.cotisation_mensuelle) || 0), 0);
+  const totalCotMensuelle = reerCot + celiCot + reee_cot + criCot + frvCot + celiappCot;
 
   // ── Assurances / protection ────────────────────────────────────────────────
   const assuranceABF = bySection.assurance || {};
@@ -413,10 +419,10 @@ export default function Dashboard() {
                           <div style={{ flexShrink: 0 }}><ScoreArc score={nifScore} /></div>
                           <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 10 }}>
                             {[
-                              { label: "NIF cible", value: fmt(capitalNIF), color: "#C9A063", info: "Capital nécessaire à la retraite pour maintenir votre revenu cible jusqu'à " + (esperanceVie||95) + " ans, après soustraction des revenus garantis (RRQ, PSV, Pension)." },
-                              { label: "Capital projeté", value: fmt(capitalProjecte), color: "#6B8ED6", info: "Valeur projetée de vos épargnes actuelles + cotisations mensuelles à 7%/an jusqu'à " + (ageRetraite||65) + " ans." },
-                              ...(cotSupp > 0 ? [{ label: "Cotisation supp.", value: `${fmt(cotSupp)}/mois`, color: "#f87171", info: "Montant mensuel additionnel pour atteindre le NIF à " + (ageRetraite||65) + " ans à 7%/an." }] : []),
-                            ].map(m => (
+                               { label: "NIF cible (nominal)", value: fmt(capitalNIFNominal || capitalNIF), color: "#C9A063", info: "Capital nécessaire à la retraite en dollars futurs (nominaux) pour maintenir votre revenu cible jusqu'à " + (esperanceVie||95) + " ans. Dollars d'aujourd'hui : " + fmt(capitalNIF) + "." },
+                               { label: "Capital projeté (nominal)", value: fmt(capitalProjecteNominal || capitalProjecte), color: "#6B8ED6", info: "Valeur future nominale de vos épargnes + cotisations à 7%/an jusqu'à " + (ageRetraite||65) + " ans. Dollars d'aujourd'hui : " + fmt(capitalProjecte) + "." },
+                               ...(cotSupp > 0 ? [{ label: "Cotisation supp.", value: `${fmt(cotSupp)}/mois`, color: "#f87171", info: "Montant mensuel additionnel pour atteindre le NIF à " + (ageRetraite||65) + " ans à 7%/an." }] : []),
+                             ].map(m => (
                               <div key={m.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "7px 10px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
                                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                                   <p style={{ ...MUTED }}>{m.label}</p>
@@ -594,7 +600,7 @@ export default function Dashboard() {
                                 const isActuel = rend.defaut && age === ageBase;
                                 const cellRaw = calcScenario(age, rend.accum, rend.decaisse);
                                 const cell = isActuel
-                                  ? { ...cellRaw, nif: capitalNIF, cap: capitalProjecte, score: scoreNIF, cotSupp }
+                                  ? { ...cellRaw, nif: capitalNIFNominal || capitalNIF, cap: capitalProjecteNominal || capitalProjecte, score: scoreNIF, cotSupp }
                                   : cellRaw;
                                 const c = getColor(cell.score);
                                 return (
@@ -800,22 +806,25 @@ export default function Dashboard() {
                         info="Soldes actuels de vos comptes enregistrés (REER, CELI, REEE). Les cotisations mensuelles indiquées sont prélevées de vos revenus."
                         link
                       />
-                      {reerSolde > 0 && <Row left="REER" right={fmt(reerSolde)} sub={reerCot > 0 ? `+${fmt(reerCot)}/mois` : undefined} dot="#5BC4A0" />}
-                      {celiSolde > 0 && <Row left="CELI" right={fmt(celiSolde)} sub={celiCot > 0 ? `+${fmt(celiCot)}/mois` : undefined} dot="#6B8ED6" />}
-                      {reee > 0      && <Row left="REEE" right={fmt(reee)} sub={reee_cot > 0 ? `+${fmt(reee_cot)}/mois · SCEE+IQEE` : "SCEE+IQEE"} dot="#A87DD3" />}
+                      {reerSolde    > 0 && <Row left="REER"     right={fmt(reerSolde)}    sub={reerCot    > 0 ? `+${fmt(reerCot)}/mois`    : undefined} dot="#C9A063" />}
+                      {celiSolde    > 0 && <Row left="CELI"     right={fmt(celiSolde)}    sub={celiCot    > 0 ? `+${fmt(celiCot)}/mois`    : undefined} dot="#5BC4A0" />}
+                      {reee         > 0 && <Row left="REEE"     right={fmt(reee)}          sub={reee_cot   > 0 ? `+${fmt(reee_cot)}/mois · SCEE+IQEE` : "SCEE+IQEE"} dot="#A87DD3" />}
+                      {criSolde     > 0 && <Row left="CRI"      right={fmt(criSolde)}      sub={criCot     > 0 ? `+${fmt(criCot)}/mois`     : undefined} dot="#6B8ED6" />}
+                      {frvSolde     > 0 && <Row left="FRV"      right={fmt(frvSolde)}      sub={frvCot     > 0 ? `+${fmt(frvCot)}/mois`     : undefined} dot="#60A5FA" />}
+                      {celiappSolde > 0 && <Row left="CELIAPP"  right={fmt(celiappSolde)}  sub={celiappCot > 0 ? `+${fmt(celiappCot)}/mois` : undefined} dot="#F8A332" />}
                       {investments.length > 0 && (
-                        <Row left={`Placements (${investments.length})`} right={fmt(investmentAssets)} dot="#C9A063" />
+                        <Row left={`Placements (${investments.length})`} right={fmt(investmentAssets)} dot="#EAB308" />
                       )}
-                      {reerSolde === 0 && celiSolde === 0 && reee === 0 && investments.length === 0 && (
+                      {reerSolde === 0 && celiSolde === 0 && reee === 0 && criSolde === 0 && frvSolde === 0 && celiappSolde === 0 && investments.length === 0 && (
                         <p style={{ ...MUTED, padding: "12px 0" }}>Aucun compte enregistré</p>
                       )}
-                      {(reerSolde + celiSolde + reee + investmentAssets) > 0 && (
+                      {(reerSolde + celiSolde + reee + criSolde + frvSolde + celiappSolde + investmentAssets) > 0 && (
                         <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 8, marginTop: 4, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
                           <div>
                             <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", fontWeight: 600 }}>Total</p>
                             {totalCotMensuelle > 0 && <p style={{ ...MUTED }}>{fmt(totalCotMensuelle)}/mois</p>}
                           </div>
-                          <p style={{ fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 800, color: "#5BC4A0" }}>{fmt(reerSolde + celiSolde + reee + investmentAssets)}</p>
+                          <p style={{ fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 800, color: "#5BC4A0" }}>{fmt(reerSolde + celiSolde + reee + criSolde + frvSolde + celiappSolde + investmentAssets)}</p>
                         </div>
                       )}
                     </>

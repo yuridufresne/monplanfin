@@ -172,12 +172,13 @@ export default function PlacementStrategie({ profiles=[], retraiteABF={}, retrai
           <div style={{ ...S.sep }} />
 
           <div style={{ ...S.label, marginBottom:2 }}>
-            Projection à {ageRetraiteEff} ans —{" "}
+            Projection nominale à {ageRetraiteEff} ans —{" "}
             <span style={{ color:"#C9A063" }}>REER {rendReer}%</span>
             {" · "}
             <span style={{ color:"#5BC4A0" }}>CELI {rendCeli}%</span>
           </div>
           <div style={{ fontSize:16, fontWeight:700, color:"#fff" }}>{fmt(projActuel)}</div>
+          <div style={{ fontSize:9, color:"rgba(255,255,255,0.25)", marginTop:2 }}>valeur nominale (dollars futurs)</div>
         </div>
 
         {/* DROITE — Simulation (read/write) */}
@@ -275,8 +276,9 @@ export default function PlacementStrategie({ profiles=[], retraiteABF={}, retrai
 
           <div style={{ ...S.sep }} />
 
-          <div style={{ ...S.label, marginBottom:2 }}>Projection à {ageRetraiteEff} ans</div>
+          <div style={{ ...S.label, marginBottom:2 }}>Projection nominale à {ageRetraiteEff} ans</div>
           <div style={{ fontSize:16, fontWeight:700, color:"#C9A063" }}>{fmt(sim.proj)}</div>
+          <div style={{ fontSize:9, color:"rgba(255,255,255,0.25)", marginTop:1 }}>valeur nominale (dollars futurs)</div>
           <div style={{ fontSize:10, fontWeight:600, marginTop:1, color:sim.diff>=0?"#5BC4A0":"#f87171" }}>
             {sim.diff>=0?"+":""}{fmt(sim.diff)} vs plan actuel
           </div>

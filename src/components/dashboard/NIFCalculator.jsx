@@ -163,8 +163,8 @@ function TabCalculateur({ defaults }) {
         {/* 4 KPI cards */}
         <div className="grid grid-cols-2 gap-2">
           {[
-            { l: "Capital NIF requis", v: fmt(res.capitalNIF), c: GOLD },
-            { l: "Capital projeté", v: fmt(res.capitalProjecte), c: "#6B8ED6" },
+            { l: "NIF requis (nominal)", v: fmt(res.capitalNIF), c: GOLD },
+            { l: "Capital projeté (nominal)", v: fmt(res.capitalProjecte), c: "#6B8ED6" },
             { l: res.surplus >= 0 ? "Surplus projeté" : "Manque", v: fmt(Math.abs(res.surplus)), c: res.surplus >= 0 ? "#5BC4A0" : "#f87171" },
             { l: res.scoreNIF >= 100 ? "Objectif" : "Cotisation supp.", v: res.scoreNIF >= 100 ? "Atteint ✓" : `${fmt(res.cotSupp)}/mois`, c: res.scoreNIF >= 100 ? "#5BC4A0" : "#f87171" },
           ].map(k => (
@@ -242,16 +242,16 @@ function TabFormule({ defaults }) {
       value: fmt(res.manqueAnnuel) + "/an",
     },
     {
-      n: 4,
-      title: "Capital NIF",
-      detail: `Règle des 4% = ${fmt(res.capitalNIF_4pct)} · Rente actuarielle = ${fmt(res.capitalNIF_rente)} · Moyenne = ${fmt(res.capitalNIF)}`,
-      value: fmt(res.capitalNIF),
+    n: 4,
+    title: "Capital NIF (nominal — dollars futurs)",
+    detail: `Règle des 4% = ${fmt(res.capitalNIF_4pct)} · Rente actuarielle = ${fmt(res.capitalNIF_rente)} · Moyenne = ${fmt(res.capitalNIF)}`,
+    value: fmt(res.capitalNIF),
     },
     {
-      n: 5,
-      title: "Capital projeté à la retraite",
-      detail: `Épargne actuelle + cotisations futures capitalisées à 7%`,
-      value: fmt(res.capitalProjecte),
+    n: 5,
+    title: "Capital projeté à la retraite (nominal)",
+    detail: `Épargne actuelle + cotisations futures capitalisées à 7% — en dollars futurs`,
+    value: fmt(res.capitalProjecte),
     },
     {
       n: 6,
