@@ -212,7 +212,7 @@ export default function ModelisationRetraite() {
     ageA:ageRetA, ageRetraiteA:ageRetA, salaireA:brutA,
     rrqA:adjRRQ(rrqA,rrqAp)*12, svA:713.34*12, pensionA:pensA*12,
     reerA:projection.reerA, celiA:projection.celiA,
-    ageB:enCouple?ageRetA+(ageB-ageA):ageRetA, ageRetraiteB:enCouple?ageRetB:99,
+    ageB:enCouple?ageB+(ageRetA-ageA):ageRetA, ageRetraiteB:enCouple?ageRetB:99,
     salaireB:enCouple?brutB:0, rrqB:enCouple?adjRRQ(rrqB,rrqBp)*12:0,
     svB:enCouple?713.34*12:0, pensionB:enCouple?pensB*12:0,
     reerB:enCouple?projection.reerB:0, celiB:enCouple?projection.celiB:0,

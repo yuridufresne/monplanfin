@@ -131,10 +131,13 @@ export function simulerDecaissement({
 
   const ageDepart = ageRetraiteA;
   const nbAnnees  = esperanceVie - ageDepart;
+  // ageB = âge de Marie au moment où la simulation commence (an=0)
+  // Si non fourni, on suppose qu'elle a le même âge que Jean au départ
+  const ageBDepart = (ageB != null) ? ageB : ageDepart;
 
   for (let an = 0; an <= nbAnnees; an++) {
-    const aa = ageDepart + an;
-    const ab = (ageB || ageA) + (aa - ageA);
+    const aa = ageDepart + an;      // âge Jean cette année
+    const ab = ageBDepart + an;     // âge Marie cette année (offset fixe)
 
     // Conversion REER→FERR à 71 ans
     if (aa===71 && eRA>0) { eFA+=eRA; eRA=0; }
@@ -283,6 +286,8 @@ export function simulerDecaissement({
       actifs: Math.round(actifs),
       ferrA:  Math.round(eFA), celiA: Math.round(eCA),
       ferrB:  Math.round(eFB), celiB: Math.round(eCB),
+      // Debug — soldes après rendement
+      _debug: { eRA:Math.round(eRA), eFA:Math.round(eFA), eCA:Math.round(eCA), eRB:Math.round(eRB), eFB:Math.round(eFB), eCB:Math.round(eCB), aa, ab },
     });
 
     // Indexation cible + paliers
