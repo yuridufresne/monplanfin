@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import InfoTooltip from "@/components/ui/InfoTooltip";
 import { buildPayload, IQPF } from "@/lib/clientPayload";
 
@@ -37,8 +37,16 @@ export default function PlacementStrategie({ profiles=[], retraiteABF={}, retrai
     return { reerCot, celiCot, soldeR, soldeC, total, ans };
   }, [pA, pB, ageActuelEff, ageRetraiteEff]);
 
-  const [budget,   setBudget]   = useState(actuel.total || 725);
-  const [reerPct,  setReerPct]  = useState(actuel.total>0?Math.round(actuel.reerCot/actuel.total*100):50);
+  const [budget,   setBudget]   = useState(0);
+  const [reerPct,  setReerPct]  = useState(50);
+
+  // Synchroniser budget/répartition dès que les profils sont chargés
+  useEffect(() => {
+    if (actuel.total > 0) {
+      setBudget(actuel.total);
+      setReerPct(Math.round(actuel.reerCot / actuel.total * 100));
+    }
+  }, [actuel.total, actuel.reerCot]);
   const [advOpen,  setAdvOpen]  = useState(false);
   const [rendReer, setRendReer] = useState(7);
   const [rendCeli, setRendCeli] = useState(6);
