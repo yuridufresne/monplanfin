@@ -87,12 +87,33 @@ export default function NIFScenarioGrid({
     const cap = epargneActuelle * Math.pow(1 + rM, n)
       + (rM > 0 ? cotM * (Math.pow(1 + rM, n) - 1) / rM : cotM * n);
     const score = nifV > 0 ? Math.min(Math.round(cap / nifV * 100), 999) : 100;
-    let cotSupp = 0;
-    if (cap < nifV && annesAv > 0 && rM > 0) {
-      const facteur = (Math.pow(1 + rM, n) - 1) / rM;
-      cotSupp = Math.max(0, (nifV - epargneActuelle * Math.pow(1 + rM, n)) / facteur);
+
+    // Cotisation mensuelle REQUISE pour atteindre le NIF depuis le solde actuel
+    const fvSolde = epargneActuelle * Math.pow(1 + rM, n);
+    const capitalManquant = nifV - fvSolde;
+    let cotRequise = 0;
+    if (capitalManquant > 0 && rM > 0) {
+      cotRequise = capitalManquant / ((Math.pow(1 + rM, n) - 1) / rM);
     }
-    return { score, nif: Math.round(nifV), cap: Math.round(cap), cotSupp: Math.round(cotSupp) };
+
+    return {
+      score,
+      nif: Math.round(nifV),
+      cap: Math.round(cap),
+      cotRequise: Math.round(Math.max(0, cotRequise)),
+      cotSupp: Math.round(Math.max(0, cotRequise - cotM)),
+    };
+  };
+
+  const renderMarkdown = (text) => {
+    if (!text) return null;
+    const parts = text.split(/(\*\*[^*]+\*\*)/g);
+    return parts.map((part, i) => {
+      if (part.startsWith("**") && part.endsWith("**")) {
+        return <strong key={i} style={{ color: "#C9A063", fontWeight: 700 }}>{part.slice(2, -2)}</strong>;
+      }
+      return <span key={i}>{part}</span>;
+    });
   };
 
   const genererExplication = async () => {
@@ -100,22 +121,16 @@ export default function NIFScenarioGrid({
     setLoadingIA(true);
     const nifEquilibre = calcScenario(ageRetraite || 65, 0.07, 0.05);
     const revGarantiAnnuel = (rrqMensuelP1 + rrqMensuelP2 + psvMensuelP1 + psvMensuelP2 + pensionPDMensuel) * 12;
-    const prompt = `Tu es un planificateur financier québécois. Explique en 4-5 phrases courtes et simples POURQUOI le NIF de ce client est ${(nifEquilibre.nif / 1000000).toFixed(2)}M$.
+    const manqueAnnuel = Math.max(0, revenuBrutAnnuel * 0.80 - revGarantiAnnuel);
+    const prompt = `Tu es un planificateur financier québécois. En 3-4 phrases maximum, explique pourquoi le NIF de ce client est ${(nifEquilibre.nif / 1000000).toFixed(2)}M$. Sois concret avec les chiffres.
 
-Données du client :
-- Revenu brut foyer : ${revenuBrutAnnuel.toLocaleString("fr-CA")} $/an
-- Cible retraite (80%) : ${(revenuBrutAnnuel * 0.80).toLocaleString("fr-CA")} $/an
-- Âge actuel : ${ageActuel} ans, retraite à ${ageRetraite} ans
-- RRQ estimée foyer : ${(rrqMensuelP1 + rrqMensuelP2).toLocaleString("fr-CA")} $/mois
-- PSV : ${enCouple ? "2 × 713$" : "713$"} /mois à 65 ans
-- Pension PD : ${pensionPDMensuel > 0 ? pensionPDMensuel.toLocaleString("fr-CA") + " $/mois à la retraite" : "aucune"}
-- Total revenus garantis : ${revGarantiAnnuel.toLocaleString("fr-CA")} $/an
-- Épargne actuelle : ${epargneActuelle.toLocaleString("fr-CA")} $ (REER + CELI)
-- Cotisation mensuelle : ${cotM.toLocaleString("fr-CA")} $/mois
-- Score NIF actuel : ${nifEquilibre.score}%
-${pensionPDMensuel > 0 ? `\nIMPORTANT : La pension PD du conjoint (${pensionPDMensuel.toLocaleString("fr-CA")} $/mois) ne se débloque qu'à la retraite.` : ""}
+- Revenu brut foyer : ${revenuBrutAnnuel.toLocaleString("fr-CA")} $/an → cible retraite : ${(revenuBrutAnnuel * 0.80).toLocaleString("fr-CA")} $/an
+- Revenus garantis : ${revGarantiAnnuel.toLocaleString("fr-CA")} $/an (RRQ + PSV + pension PD)
+- Manque annuel : ${manqueAnnuel.toLocaleString("fr-CA")} $/an à financer par l'épargne
+- Score actuel : ${nifEquilibre.score}% du NIF atteint
+${pensionPDMensuel > 0 ? `- Pension PD conjoint : ${pensionPDMensuel.toLocaleString("fr-CA")} $/mois (disponible à la retraite)` : ""}
 
-Sois direct, concret, en français québécois naturel. Pas de jargon. Commence par "Votre NIF de ${(nifEquilibre.nif / 1000000).toFixed(2)} M$ représente..." et explique l'impact des revenus garantis sur la réduction du capital nécessaire.`;
+Commence directement par l'explication. Pas de salutation. Utilise **gras** pour les chiffres clés.`;
 
     const res = await base44.integrations.Core.InvokeLLM({ prompt, model: "claude_sonnet_4_6" });
     setExplication(typeof res === "string" ? res : res?.text || res?.content || "Analyse générée.");
@@ -152,8 +167,8 @@ Sois direct, concret, en français québécois naturel. Pas de jargon. Commence 
             Analyse IA en cours…
           </div>
         ) : (
-          <div style={{ fontSize: 12.5, color: "rgba(255,255,255,0.75)", lineHeight: 1.7 }}>
-            {explication || "Retournez la carte pour générer l'analyse personnalisée."}
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", lineHeight: 1.65 }}>
+            {explication ? renderMarkdown(explication) : "Retournez la carte pour générer l'analyse personnalisée."}
           </div>
         )}
       </div>
@@ -194,10 +209,19 @@ Sois direct, concret, en français québécois naturel. Pas de jargon. Commence 
                     {cell.nif >= 1000000 ? (cell.nif / 1000000).toFixed(2) + "M $" : Math.round(cell.nif / 1000) + "k $"}
                   </div>
                   <div style={{ height: 1, background: c.border, margin: "0 0 8px 0", opacity: 0.5 }} />
-                  <div style={{ fontSize: 13, fontWeight: 700, color: c.text, lineHeight: 1 }}>
-                    {(cotM + cell.cotSupp).toLocaleString("fr-CA")} $
-                    <span style={{ fontSize: 9, fontWeight: 400, color: "rgba(255,255,255,0.3)", display: "block", marginTop: 2 }}>/mois</span>
+                  <div style={{ fontSize: cell.cotRequise === 0 ? 12 : 13, fontWeight: 700, color: cell.cotRequise === 0 ? "#5BC4A0" : c.text, lineHeight: 1 }}>
+                    {cell.cotRequise === 0
+                      ? "Atteint ✓"
+                      : cell.cotRequise.toLocaleString("fr-CA") + " $"}
+                    {cell.cotRequise > 0 && (
+                      <span style={{ fontSize: 9, fontWeight: 400, color: "rgba(255,255,255,0.3)", display: "block", marginTop: 1 }}>/mois requis</span>
+                    )}
                   </div>
+                  {cell.cotRequise > cotM && cell.cotRequise > 0 && (
+                    <div style={{ fontSize: 9, color: "rgba(248,113,113,0.6)", marginTop: 2 }}>
+                      +{(cell.cotRequise - cotM).toLocaleString("fr-CA")} $ vs actuel
+                    </div>
+                  )}
                 </div>
               );
             })}
