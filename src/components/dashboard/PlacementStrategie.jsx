@@ -5,12 +5,19 @@ const fmt = n => Math.round(n).toLocaleString("fr-CA") + " $";
 const FV  = (c, r, n) => { const rM=r/12; return rM>0?c*12*(Math.pow(1+rM,n)-1)/rM:c*12*n; };
 const FVs = (s, r, n) => s * Math.pow(1+r, n);
 
-export default function PlacementStrategie({ retraiteABF={}, retraiteConj={}, revenuBrut=0, tauxMarginal=0.475, ageActuel=38, ageRetraite=65 }) {
+export default function PlacementStrategie({ retraiteABF={}, retraiteConj={}, revenuBrut=0, tauxMarginal=0.475, ageActuel=38, ageRetraite=65, prenomA="", prenomB="" }) {
   const comptes     = retraiteABF.comptes || {};
   const comptesConj = retraiteConj.comptes || {};
+  const enCouple    = Object.keys(comptesConj).length > 0;
 
-  const reerList = [...(comptes.reer || []), ...(comptesConj.reer || [])];
-  const celiList = [...(comptes.celi || []), ...(comptesConj.celi || [])];
+  const reerList = [
+    ...(comptes.reer || []).map(c => ({...c, _qui: prenomA})),
+    ...(enCouple ? (comptesConj.reer || []).map(c => ({...c, _qui: prenomB})) : []),
+  ];
+  const celiList = [
+    ...(comptes.celi || []).map(c => ({...c, _qui: prenomA})),
+    ...(enCouple ? (comptesConj.celi || []).map(c => ({...c, _qui: prenomB})) : []),
+  ];
 
   const actuel = useMemo(() => {
     const reerCot  = reerList.reduce((s,c)=>s+(parseFloat(c.cotisation_mensuelle)||0),0);
@@ -102,28 +109,50 @@ export default function PlacementStrategie({ retraiteABF={}, retraiteConj={}, re
             <span style={{ fontSize:9, color:"rgba(255,255,255,0.2)", background:"rgba(255,255,255,0.05)", padding:"2px 7px", borderRadius:4 }}>Depuis ABF</span>
           </div>
 
-          {/* Ligne REER */}
-          <div style={{ ...S.row }}>
-            <div style={{ display:"flex", alignItems:"center", gap:7 }}>
-              <div style={{ width:6, height:6, borderRadius:"50%", background:"#C9A063", flexShrink:0 }} />
-              <div>
+          {/* Lignes REER par compte */}
+          {reerList.length === 0 ? (
+            <div style={{ ...S.row }}>
+              <div style={{ display:"flex", alignItems:"center", gap:7 }}>
+                <div style={{ width:6, height:6, borderRadius:"50%", background:"#C9A063", flexShrink:0 }} />
                 <span style={{ fontSize:11 }}>REER</span>
-                {actuel.soldeR > 0 && <span style={{ fontSize:9, color:"rgba(255,255,255,0.3)", marginLeft:5 }}>{fmt(actuel.soldeR)}</span>}
               </div>
+              <div style={{ fontSize:12, fontWeight:700, color:"#C9A063" }}>0 $<span style={{ fontSize:9, fontWeight:400, color:"rgba(255,255,255,0.3)" }}>/mois</span></div>
             </div>
-            <div style={{ fontSize:12, fontWeight:700, color:"#C9A063" }}>{actuel.reerCot.toLocaleString("fr-CA")} $<span style={{ fontSize:9, fontWeight:400, color:"rgba(255,255,255,0.3)" }}>/mois</span></div>
-          </div>
-          {/* Ligne CELI */}
-          <div style={{ ...S.row, borderBottom:"none" }}>
-            <div style={{ display:"flex", alignItems:"center", gap:7 }}>
-              <div style={{ width:6, height:6, borderRadius:"50%", background:"#5BC4A0", flexShrink:0 }} />
-              <div>
+          ) : reerList.map((c, i) => (
+            <div key={i} style={{ ...S.row }}>
+              <div style={{ display:"flex", alignItems:"center", gap:7 }}>
+                <div style={{ width:6, height:6, borderRadius:"50%", background:"#C9A063", flexShrink:0 }} />
+                <div>
+                  <span style={{ fontSize:11 }}>REER</span>
+                  {c._qui && <span style={{ fontSize:9, fontWeight:600, padding:"1px 5px", borderRadius:3, background:"rgba(255,255,255,.06)", color:"rgba(255,255,255,.4)", marginLeft:4 }}>{c._qui}</span>}
+                  {parseFloat(c.solde) > 0 && <span style={{ fontSize:9, color:"rgba(255,255,255,0.3)", marginLeft:5 }}>{fmt(parseFloat(c.solde))}</span>}
+                </div>
+              </div>
+              <div style={{ fontSize:12, fontWeight:700, color:"#C9A063" }}>{(parseFloat(c.cotisation_mensuelle)||0).toLocaleString("fr-CA")} $<span style={{ fontSize:9, fontWeight:400, color:"rgba(255,255,255,0.3)" }}>/mois</span></div>
+            </div>
+          ))}
+          {/* Lignes CELI par compte */}
+          {celiList.length === 0 ? (
+            <div style={{ ...S.row, borderBottom:"none" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:7 }}>
+                <div style={{ width:6, height:6, borderRadius:"50%", background:"#5BC4A0", flexShrink:0 }} />
                 <span style={{ fontSize:11 }}>CELI</span>
-                {actuel.soldeC > 0 && <span style={{ fontSize:9, color:"rgba(255,255,255,0.3)", marginLeft:5 }}>{fmt(actuel.soldeC)}</span>}
               </div>
+              <div style={{ fontSize:12, fontWeight:700, color:"#5BC4A0" }}>0 $<span style={{ fontSize:9, fontWeight:400, color:"rgba(255,255,255,0.3)" }}>/mois</span></div>
             </div>
-            <div style={{ fontSize:12, fontWeight:700, color:"#5BC4A0" }}>{actuel.celiCot.toLocaleString("fr-CA")} $<span style={{ fontSize:9, fontWeight:400, color:"rgba(255,255,255,0.3)" }}>/mois</span></div>
-          </div>
+          ) : celiList.map((c, i) => (
+            <div key={i} style={{ ...S.row, borderBottom: i === celiList.length - 1 ? "none" : undefined }}>
+              <div style={{ display:"flex", alignItems:"center", gap:7 }}>
+                <div style={{ width:6, height:6, borderRadius:"50%", background:"#5BC4A0", flexShrink:0 }} />
+                <div>
+                  <span style={{ fontSize:11 }}>CELI</span>
+                  {c._qui && <span style={{ fontSize:9, fontWeight:600, padding:"1px 5px", borderRadius:3, background:"rgba(255,255,255,.06)", color:"rgba(255,255,255,.4)", marginLeft:4 }}>{c._qui}</span>}
+                  {parseFloat(c.solde) > 0 && <span style={{ fontSize:9, color:"rgba(255,255,255,0.3)", marginLeft:5 }}>{fmt(parseFloat(c.solde))}</span>}
+                </div>
+              </div>
+              <div style={{ fontSize:12, fontWeight:700, color:"#5BC4A0" }}>{(parseFloat(c.cotisation_mensuelle)||0).toLocaleString("fr-CA")} $<span style={{ fontSize:9, fontWeight:400, color:"rgba(255,255,255,0.3)" }}>/mois</span></div>
+            </div>
+          ))}
 
           <div style={{ marginTop:6 }}>
             <SplitBar pctR={actuel.reerCot} pctC={actuel.celiCot} />
