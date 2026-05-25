@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { simulerDecaissement } from "@/lib/moteurDecaissement";
+import { simulerDecaissement, projeterSoldesRetraite } from "@/lib/moteurDecaissement";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine, ComposedChart } from "recharts";
 import { Link } from "react-router-dom";
 
@@ -125,6 +125,10 @@ export default function ModelisationRetraite() {
   const celiA = (ret.comptes?.celi||[]).reduce((s,c)=>s+(parseFloat(c.solde)||0),0);
   const reerB = (retCj.comptes?.reer||[]).reduce((s,c)=>s+(parseFloat(c.solde)||0),0);
   const celiB = (retCj.comptes?.celi||[]).reduce((s,c)=>s+(parseFloat(c.solde)||0),0);
+  const cotReerA = (ret.comptes?.reer||[]).reduce((s,c)=>s+(parseFloat(c.cotisation_mensuelle)||0),0);
+  const cotCeliA = (ret.comptes?.celi||[]).reduce((s,c)=>s+(parseFloat(c.cotisation_mensuelle)||0),0);
+  const cotReerB = (retCj.comptes?.reer||[]).reduce((s,c)=>s+(parseFloat(c.cotisation_mensuelle)||0),0);
+  const cotCeliB = (retCj.comptes?.celi||[]).reduce((s,c)=>s+(parseFloat(c.cotisation_mensuelle)||0),0);
   const rrqA  = parseFloat(ret.prestations_gouvernementales?.rrq || ret.rrq) || 900;
   const rrqB  = parseFloat(retCj.prestations_gouvernementales?.rrq || retCj.rrq) || 1229;
   const pensA = parseFloat((ret.fond_pension||{}).rente_mensuelle_estimee)||0;
@@ -154,15 +158,25 @@ export default function ModelisationRetraite() {
   };
 
   const params = useMemo(()=>({
-    ageA, ageRetraiteA:ageRetA, salaireA:0,
+    ageA, ageActuelA:ageA, ageRetraiteA:ageRetA, salaireA:0,
     rrqA:adjRRQ(rrqA,rrqAp)*12, svA:713.34*12, pensionA:pensA*12,
-    reerA:reerAv, celiA:celiAv,
-    ageB:enCouple?ageB:ageA, ageRetraiteB:enCouple?ageRetB:99,
+    reerA:reerAv, celiA:celiAv, cotReerA, cotCeliA,
+    ageB:enCouple?ageB:ageA, ageActuelB:enCouple?ageB:null, ageRetraiteB:enCouple?ageRetB:99,
     salaireB:0, rrqB:enCouple?adjRRQ(rrqB,rrqBp)*12:0,
     svB:enCouple?713.34*12:0, pensionB:enCouple?pensB*12:0,
     reerB:enCouple?reerBv:0, celiB:enCouple?celiBv:0,
+    cotReerB:enCouple?cotReerB:0, cotCeliB:enCouple?cotCeliB:0,
     cibleNette:cible, inflation:.025, rendement:rend/100, esperanceVie:espVie,
-  }),[ageA,ageB,ageRetA,ageRetB,rrqAp,rrqBp,reerAv,celiAv,reerBv,celiBv,cible,rend,espVie,enCouple,rrqA,rrqB,pensA,pensB]);
+  }),[ageA,ageB,ageRetA,ageRetB,rrqAp,rrqBp,reerAv,celiAv,reerBv,celiBv,cotReerA,cotCeliA,cotReerB,cotCeliB,cible,rend,espVie,enCouple,rrqA,rrqB,pensA,pensB]);
+
+  const projection = useMemo(()=>projeterSoldesRetraite({
+    ageActuelA:ageA, ageRetraiteA:ageRetA,
+    reerA:reerAv, celiA:celiAv, cotReerA, cotCeliA,
+    ageActuelB:enCouple?ageB:null, ageRetraiteB:enCouple?ageRetB:null,
+    reerB:enCouple?reerBv:0, celiB:enCouple?celiBv:0,
+    cotReerB:enCouple?cotReerB:0, cotCeliB:enCouple?cotCeliB:0,
+    rendement:rend/100,
+  }),[ageA,ageB,ageRetA,ageRetB,reerAv,celiAv,reerBv,celiBv,cotReerA,cotCeliA,cotReerB,cotCeliB,rend,enCouple]);
 
   const rows       = useMemo(()=>simulerDecaissement(params),[params]);
   const last       = rows[rows.length-1]||{};
@@ -227,6 +241,26 @@ export default function ModelisationRetraite() {
                 <div style={{ fontSize:15, fontWeight:700, color:s.c }}>{s.v}</div>
               </div>
             ))}
+          </div>
+
+          {/* Soldes projetés à la retraite */}
+          <div style={{background:"rgba(201,160,99,.06)",border:"1px solid rgba(201,160,99,.18)",borderRadius:12,padding:"12px 16px",marginBottom:12}}>
+            <div style={{fontSize:10,fontWeight:600,color:"rgba(201,160,99,.7)",textTransform:"uppercase",letterSpacing:".06em",marginBottom:8}}>
+              Soldes projetés à la retraite ({ageRetA} ans) — point de départ du décaissement
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
+              {[
+                {l:"REER total",v:projection.totalReer,c:"#C9A063"},
+                {l:"CELI total",v:projection.totalCeli,c:"#5BC4A0"},
+                {l:"Total épargne",v:projection.total,c:"#fff"},
+                {l:"Années d'accumulation",v:`${Math.max(0,ageRetA-ageA)} ans`,c:"rgba(255,255,255,.6)"},
+              ].map(s=>(
+                <div key={s.l} style={{background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.07)",borderRadius:8,padding:"8px 10px"}}>
+                  <div style={{fontSize:9,color:"rgba(255,255,255,.28)",textTransform:"uppercase",letterSpacing:".06em",marginBottom:3}}>{s.l}</div>
+                  <div style={{fontSize:14,fontWeight:700,color:s.c}}>{typeof s.v==="string"?s.v:s.v.toLocaleString("fr-CA")+" $"}</div>
+                </div>
+              ))}
+            </div>
           </div>
 
           <TableauResultats rows={rows} />

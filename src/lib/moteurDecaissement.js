@@ -47,17 +47,79 @@ function getFERRmin(age, solde, ageCj) {
   return Math.round(solde * taux);
 }
 
+/**
+ * Projette les soldes REER et CELI de l'âge actuel jusqu'à l'âge de retraite.
+ * Formule : FV = solde × (1+r)^n + cotisation × ((1+r)^n - 1) / r
+ */
+export function projeterSoldesRetraite({
+  ageActuelA, ageRetraiteA,
+  reerA, celiA, cotReerA = 0, cotCeliA = 0,
+  ageActuelB = null, ageRetraiteB = null,
+  reerB = 0, celiB = 0, cotReerB = 0, cotCeliB = 0,
+  rendement = 0.07,
+}) {
+  const FV = (solde, cot, r, n) => {
+    if (n <= 0) return solde;
+    const rM = r / 12;
+    const nM = n * 12;
+    return rM > 0
+      ? solde * Math.pow(1 + rM, nM) + cot * (Math.pow(1 + rM, nM) - 1) / rM
+      : solde + cot * nM;
+  };
+
+  const nA = Math.max(0, ageRetraiteA - ageActuelA);
+  const projReerA = FV(reerA, cotReerA, rendement, nA);
+  const projCeliA = FV(celiA, cotCeliA, rendement, nA);
+
+  let projReerB = reerB, projCeliB = celiB;
+  if (ageActuelB !== null && ageRetraiteB !== null) {
+    const nB = Math.max(0, ageRetraiteB - ageActuelB);
+    projReerB = FV(reerB, cotReerB, rendement, nB);
+    projCeliB = FV(celiB, cotCeliB, rendement, nB);
+  }
+
+  return {
+    reerA: Math.round(projReerA),
+    celiA: Math.round(projCeliA),
+    reerB: Math.round(projReerB),
+    celiB: Math.round(projCeliB),
+    totalReer: Math.round(projReerA + projReerB),
+    totalCeli: Math.round(projCeliA + projCeliB),
+    total: Math.round(projReerA + projCeliA + projReerB + projCeliB),
+  };
+}
+
 export function simulerDecaissement({
   // Conjoint A
-  ageA, ageRetraiteA=65, salaireA=0, rrqA=0, svA=713.34*12, pensionA=0, reerA=0, celiA=0,
+  ageA, ageActuelA=null, ageRetraiteA=65, salaireA=0, rrqA=0, svA=713.34*12, pensionA=0,
+  reerA=0, celiA=0, cotReerA=0, cotCeliA=0,
   // Conjoint B
-  ageB, ageRetraiteB=65, salaireB=0, rrqB=0, svB=713.34*12, pensionB=0, reerB=0, celiB=0,
+  ageB, ageActuelB=null, ageRetraiteB=65, salaireB=0, rrqB=0, svB=713.34*12, pensionB=0,
+  reerB=0, celiB=0, cotReerB=0, cotCeliB=0,
   // Paramètres
   cibleNette, inflation=0.025, rendement=0.05, esperanceVie=90,
 }) {
-  // Comptes mutables
-  let eRA=reerA, eFA=0, eCA=celiA;
-  let eRB=reerB, eFB=0, eCB=celiB;
+  // Phase d'accumulation : projeter les soldes si on n'est pas encore à la retraite
+  let soldeReerA = reerA, soldeCeliA = celiA;
+  let soldeReerB = reerB, soldeCeliB = celiB;
+
+  if (ageActuelA !== null && ageActuelA < ageRetraiteA) {
+    const proj = projeterSoldesRetraite({
+      ageActuelA, ageRetraiteA, reerA, celiA, cotReerA, cotCeliA,
+      ageActuelB: ageActuelB !== null ? ageActuelB : (ageB || null),
+      ageRetraiteB,
+      reerB, celiB, cotReerB, cotCeliB,
+      rendement,
+    });
+    soldeReerA = proj.reerA;
+    soldeCeliA = proj.celiA;
+    soldeReerB = proj.reerB;
+    soldeCeliB = proj.celiB;
+  }
+
+  // Comptes mutables — soldes projetés à la retraite
+  let eRA=soldeReerA, eFA=0, eCA=soldeCeliA;
+  let eRB=soldeReerB, eFB=0, eCB=soldeCeliB;
 
   // Paliers indexés (copies mutables)
   let pFed = PALIERS_FED_BASE.map(p=>[...p]);
