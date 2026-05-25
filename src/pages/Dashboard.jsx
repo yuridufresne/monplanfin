@@ -382,12 +382,6 @@ export default function Dashboard() {
 
                   {/* Grille 3×3 — Scénarios âge × rendement */}
                   {(() => {
-                    const SCENARIOS_REND = [
-                      { label: "Conservateur", accum: 0.05, decaisse: 0.03 },
-                      { label: "Équilibré ★",  accum: 0.07, decaisse: 0.05, defaut: true },
-                      { label: "Croissance",   accum: 0.09, decaisse: 0.07 },
-                    ];
-                    const AGES_RET = [60, 65, 70];
                     const inf = 0.025;
                     const espVie = esperanceVie || 90;
                     const epargneActuelle = soldeTotal || 0;
@@ -432,10 +426,18 @@ export default function Dashboard() {
                       return               { bg: "rgba(248,113,113,0.08)", border: "rgba(248,113,113,0.25)", text: "#f87171" };
                     };
 
+                    const ageBase = ageRetraite || 65;
+                    const AGES_RET = [ageBase - 5, ageBase, ageBase + 5];
+                    const getRRQLabel = (age) => {
+                      if (age < 65) return `RRQ −${Math.round((65 - age) * 12 * 0.6)}% · PSV à 65`;
+                      if (age === 65) return "RRQ base · PSV à 65";
+                      return `RRQ +${Math.round((age - 65) * 12 * 0.7)}% · PSV à 65`;
+                    };
+
                     return (
                       <div style={{ marginTop: 20 }}>
                         <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.5)", marginBottom: 12 }}>
-                          Épargne nécessaire selon l'âge de retraite et le rendement
+                          Scénarios autour de votre objectif de retraite à {ageBase} ans
                         </div>
                         <div style={{ borderRadius: 12, overflow: "hidden", border: "1px solid rgba(255,255,255,0.08)" }}>
                           {/* En-tête */}
@@ -443,11 +445,11 @@ export default function Dashboard() {
                             <div style={{ padding: "10px 14px", fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.07em" }}>
                               Taux de rendement
                             </div>
-                            {[60, 65, 70].map(age => (
+                            {AGES_RET.map(age => (
                               <div key={age} style={{ padding: "10px 12px", textAlign: "center", borderLeft: "1px solid rgba(255,255,255,0.06)" }}>
-                                <div style={{ fontSize: 12, fontWeight: 700, color: "#fff" }}>Retraite à {age} ans</div>
+                                <div style={{ fontSize: 12, fontWeight: 700, color: age === ageBase ? "#C9A063" : "#fff" }}>Retraite à {age} ans</div>
                                 <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>
-                                  {age === 60 ? "RRQ −36% · PSV à 65" : age === 65 ? "RRQ base · PSV à 65" : "RRQ +42% · PSV à 65"}
+                                  {getRRQLabel(age)}
                                 </div>
                               </div>
                             ))}
@@ -478,10 +480,10 @@ export default function Dashboard() {
                                 </div>
                               </div>
                               {/* Cellules par âge */}
-                              {[60, 65, 70].map(age => {
+                              {AGES_RET.map(age => {
                                 const cell = calcScenario(age, rend.accum, rend.decaisse);
                                 const c = getColor(cell.score);
-                                const isActuel = rend.defaut && age === (ageRetraite || 65);
+                                const isActuel = rend.defaut && age === ageBase;
                                 return (
                                   <div key={age} style={{ padding: "14px 10px", borderLeft: `1px solid ${c.border}`, textAlign: "center", position: "relative", background: c.bg, transition: "all .2s", outline: isActuel ? `2px solid ${c.text}` : "none", outlineOffset: -2 }}>
                                     <div style={{ position: "absolute", top: 5, left: 5, fontSize: 9, fontWeight: 700, color: c.text, background: c.bg, border: `1px solid ${c.border}`, borderRadius: 4, padding: "1px 5px", lineHeight: 1.4, opacity: 0.85 }}>
