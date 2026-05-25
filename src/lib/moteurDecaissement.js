@@ -1,6 +1,13 @@
 /**
  * moteurDecaissement.js — Moteur de décaissement retraite QC 2026
- * Traduction complète du MoteurRetraiteQuebec Python
+ *
+ * STRATÉGIE : Lissage fiscal (décaissement hâtif du REER/FERR)
+ * ─────────────────────────────────────────────────────────────
+ * Au lieu de vider le CELI puis frapper le REER à 50 %+ d'impôt,
+ * on force chaque année un retrait REER/FERR jusqu'à un "plafond cible"
+ * (ex: seuil PSV ~90 997 $). On paie ~25-30 % d'impôt modéré maintenant,
+ * et le surplus net est recyclé dans le CELI. Résultat : le FERR s'épuise
+ * graduellement, le CELI grossit, et les actifs durent plusieurs années de plus.
  */
 
 const FERR_TAUX = {71:.0528,72:.054,73:.0553,74:.0567,75:.0582,76:.0598,77:.0617,78:.0636,79:.0658,80:.0682,81:.0708,82:.0738,83:.0771,84:.0808,85:.0851,86:.0899,87:.0955,88:.1021,89:.1099,90:.1192,91:.1306,92:.1449,93:.1634,94:.1899,95:.2};
@@ -31,11 +38,6 @@ function calcImpotRetraite(rev, age, pension, pFed, pQC, credits) {
   return Math.round(imp);
 }
 
-function tauxMarg(rev, pFed, pQC) {
-  if (rev <= 0) return 0;
-  return (calcImpot(rev+1000,pFed,pQC) - calcImpot(rev,pFed,pQC)) / 1000;
-}
-
 function clawback(rev, psv, seuil) {
   return rev > seuil ? Math.round(Math.min((rev-seuil)*.15, psv)) : 0;
 }
@@ -49,7 +51,6 @@ function getFERRmin(age, solde, ageCj) {
 
 /**
  * Projette les soldes REER et CELI de l'âge actuel jusqu'à l'âge de retraite.
- * Formule : FV = solde × (1+r)^n + cotisation × ((1+r)^n - 1) / r
  */
 export function projeterSoldesRetraite({
   ageActuelA, ageRetraiteA,
@@ -90,6 +91,13 @@ export function projeterSoldesRetraite({
   };
 }
 
+/**
+ * Simulation de décaissement avec lissage fiscal.
+ *
+ * @param plafondLissage  Revenu brut cible pour le lissage fiscal (ex: 90997 = seuil PSV).
+ *                        0 = stratégie naïve (CELI d'abord, REER/FERR en dernier recours).
+ *                        Valeur typique : 60000–110000.
+ */
 export function simulerDecaissement({
   // Conjoint A
   ageA, ageActuelA=null, ageRetraiteA=65, salaireA=0, rrqA=0, svA=713.34*12, pensionA=0,
@@ -99,8 +107,10 @@ export function simulerDecaissement({
   reerB=0, celiB=0, cotReerB=0, cotCeliB=0,
   // Paramètres
   cibleNette, inflation=0.025, rendement=0.05, esperanceVie=90,
+  // Lissage fiscal : plafond de revenu brut imposable visé par personne (0 = désactivé)
+  plafondLissage=0,
 }) {
-  // Phase d'accumulation : projeter les soldes si on n'est pas encore à la retraite
+  // ── Phase d'accumulation ─────────────────────────────────────────────────
   let soldeReerA = reerA, soldeCeliA = celiA;
   let soldeReerB = reerB, soldeCeliB = celiB;
 
@@ -118,7 +128,7 @@ export function simulerDecaissement({
     soldeCeliB = proj.celiB;
   }
 
-  // Comptes mutables — soldes projetés à la retraite
+  // ── Comptes mutables ─────────────────────────────────────────────────────
   let eRA=soldeReerA, eFA=0, eCA=soldeCeliA;
   let eRB=soldeReerB, eFB=0, eCB=soldeCeliB;
 
@@ -129,189 +139,283 @@ export function simulerDecaissement({
   let cible = cibleNette;
   const rows = [];
 
-  // Recherche binaire : brut à retirer d'un compte imposable pour obtenir `netVoulu` net
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
+  // Recherche binaire : brut à retirer pour obtenir `netVoulu` net après impôt marginal
   const brutPourNet = (netVoulu, revBase, disp, pF, pQ) => {
     if (disp <= 0 || netVoulu <= 0) return 0;
     let lo = 0, hi = Math.min(netVoulu * 4, disp);
     for (let i = 0; i < 30; i++) {
       const mid = (lo + hi) / 2;
-      const impBase = calcImpot(revBase, pF, pQ);
-      const netMid = mid - (calcImpot(revBase + mid, pF, pQ) - impBase);
+      const netMid = mid - (calcImpot(revBase + mid, pF, pQ) - calcImpot(revBase, pF, pQ));
       if (netMid < netVoulu) lo = mid; else hi = mid;
     }
     return Math.min((lo + hi) / 2, disp);
   };
 
-  const ageDepart = ageRetraiteA;
-  const nbAnnees  = esperanceVie - ageDepart;
-  // ageB = âge de Marie au moment où la simulation commence (an=0)
-  // Si non fourni, on suppose qu'elle a le même âge que Jean au départ
+  // Net marginal d'un retrait brut donné
+  const netMarginal = (brut, revBase, pF, pQ) =>
+    brut - (calcImpot(revBase + brut, pF, pQ) - calcImpot(revBase, pF, pQ));
+
+  const ageDepart  = ageRetraiteA;
+  const nbAnnees   = esperanceVie - ageDepart;
   const ageBDepart = (ageB != null) ? ageB : ageDepart;
 
   for (let an = 0; an <= nbAnnees; an++) {
-    const aa = ageDepart + an;      // âge Jean cette année
-    const ab = ageBDepart + an;     // âge Marie cette année (offset fixe)
+    const aa = ageDepart + an;
+    const ab = ageBDepart + an;
 
     // Conversion REER→FERR à 71 ans
     if (aa===71 && eRA>0) { eFA+=eRA; eRA=0; }
     if (ab===71 && eRB>0) { eFB+=eRB; eRB=0; }
 
-    // FERR minimums légaux (calculés mais pas encore déduits des soldes)
+    // FERR minimums légaux
     const fmA = aa>=71&&eFA>0 ? getFERRmin(aa,eFA,ab) : 0;
     const fmB = ab>=71&&eFB>0 ? getFERRmin(ab,eFB,aa) : 0;
 
-    // Revenus garantis
+    // Facteur d'inflation cumulé
     const fi = Math.pow(1+inflation, an);
+
+    // Revenus garantis cette année (indexés)
     const revGA = aa < ageRetraiteA ? salaireA : (rrqA + (aa>=65?svA:0) + pensionA);
     const revGB = ab < ageRetraiteB ? salaireB : (rrqB + (ab>=65?svB:0) + pensionB);
+
+    // Revenu brut de base (garantis + FERR min)
     const rbaRaw = revGA*fi + fmA;
     const rbbRaw = revGB*fi + fmB;
 
-    // Impôt préliminaire (avec FERR minimum inclus)
-    const ia  = calcImpotRetraite(rbaRaw, aa, fmA>0||pensionA>0, pFed, pQC, cr);
-    const ib  = ab < ageRetraiteB
-      ? Math.round(calcImpot(rbbRaw, pFed, pQC))
-      : calcImpotRetraite(rbbRaw, ab, fmB>0||pensionB>0, pFed, pQC, cr);
-    const cla = clawback(rbaRaw, svA*fi, cr.seuilPSV);
-    const clb = clawback(rbbRaw, svB*fi, cr.seuilPSV);
-    const netAvecFerrMin = (rbaRaw-ia-cla) + (rbbRaw-ib-clb);
-
-    // ── 5. Décaissement si déficit ─────────────────────────────────
-    const ecart = cible - netAvecFerrMin;
-    let rc=0, rra=0, rrb=0, ferrSuppA=0, ferrSuppB=0;
     const marieEncoreActive = ab < ageRetraiteB;
-    // Snapshot CELI avant retrait (pour calcul proportionnel dans rows.push)
+
+    // Snapshot CELI avant tout retrait
     const eCA_avant = eCA, eCB_avant = eCB;
 
-    if (ecart > 0) {
-      let er = ecart;
+    // ── Variables de décaissement ──────────────────────────────────────────
+    let rc=0, rra=0, rrb=0, ferrSuppA=0, ferrSuppB=0;
+    let lissageActifA=false, lissageActifB=false;
 
-      if (marieEncoreActive) {
-        // ── PHASE 1 : Marie travaille — SEULEMENT comptes de Jean ──
-        // 1. CELI de Jean
-        if (eCA > 0) {
-          const rcA = Math.min(er, eCA);
-          eCA = Math.max(0, eCA - rcA);
-          rc = rcA;
-          er -= rcA;
-        }
-        // 2. FERR supplémentaire de Jean (si converti ≥ 71)
-        if (er > 0.01 && eFA > 0 && aa >= 71) {
-          const ferrDispA = Math.max(0, eFA - fmA);
-          if (ferrDispA > 0) {
-            ferrSuppA = brutPourNet(er, rbaRaw, ferrDispA, pFed, pQC);
-            const impBase = calcImpot(rbaRaw, pFed, pQC);
-            const impAvec = calcImpot(rbaRaw + ferrSuppA, pFed, pQC);
-            er = Math.max(0, er - (ferrSuppA - (impAvec - impBase)));
+    // ══════════════════════════════════════════════════════════════════════
+    // ÉTAPE 5 : STRATÉGIE DE LISSAGE FISCAL
+    // ══════════════════════════════════════════════════════════════════════
+
+    const lissageOn = plafondLissage > 0;
+    const plafondFi = plafondLissage * fi; // plafond indexé à l'inflation
+
+    if (lissageOn && !marieEncoreActive) {
+      // ── 5A. RETRAIT HÂTIF : remplir l'espace fiscal jusqu'au plafond ──
+      // Conjoint A : espace entre revenu garanti actuel et plafond
+      const especeFiscalA = Math.max(0, plafondFi - rbaRaw);
+      if (especeFiscalA > 0) {
+        // Retirer depuis FERR (si converti) ou REER (avant 71)
+        const srcA = (aa >= 71 && eFA > fmA) ? Math.max(0, eFA - fmA) : eRA;
+        if (srcA > 0) {
+          const montantA = Math.min(especeFiscalA, srcA);
+          if (aa >= 71) {
+            ferrSuppA = montantA;
+            lissageActifA = true;
+          } else {
+            rra = montantA;
+            lissageActifA = true;
           }
         }
-        // 3. REER de Jean (avant 71)
-        if (er > 0.01 && eRA > 0) {
-          rra = brutPourNet(er, rbaRaw, eRA, pFed, pQC);
-          eRA = Math.max(0, eRA - rra);
+      }
+
+      // Conjoint B : idem (seulement si à la retraite)
+      const especeFiscalB = Math.max(0, plafondFi - rbbRaw);
+      if (especeFiscalB > 0) {
+        const srcB = (ab >= 71 && eFB > fmB) ? Math.max(0, eFB - fmB) : eRB;
+        if (srcB > 0) {
+          const montantB = Math.min(especeFiscalB, srcB);
+          if (ab >= 71) {
+            ferrSuppB = montantB;
+            lissageActifB = true;
+          } else {
+            rrb = montantB;
+            lissageActifB = true;
+          }
         }
-        // ⚠ Comptes de Marie : JAMAIS touchés pendant qu'elle travaille
+      }
+
+      // ── 5B. ÉVALUATION DU NET GÉNÉRÉ PAR LA STRATÉGIE ─────────────────
+      const rfA_strat = rbaRaw + ferrSuppA + rra;
+      const rfB_strat = rbbRaw + ferrSuppB + rrb;
+
+      const ia_strat = calcImpotRetraite(rfA_strat, aa, fmA>0||ferrSuppA>0||rra>0||pensionA>0, pFed, pQC, cr);
+      const ib_strat = calcImpotRetraite(rfB_strat, ab, fmB>0||ferrSuppB>0||rrb>0||pensionB>0, pFed, pQC, cr);
+      const cla_strat = clawback(rfA_strat, svA*fi, cr.seuilPSV);
+      const clb_strat = clawback(rfB_strat, svB*fi, cr.seuilPSV);
+
+      const netStrategie = (rfA_strat - ia_strat - cla_strat) + (rfB_strat - ib_strat - clb_strat);
+      const ecartStrat   = cible - netStrategie;
+
+      if (ecartStrat <= 0) {
+        // ── SURPLUS : La stratégie génère plus que la cible ──────────────
+        // On recycle l'excédent net dans le CELI (blanchiment REER→CELI)
+        const surplus = Math.abs(ecartStrat);
+        const demiSurplus = surplus / 2;
+        eCA += demiSurplus;
+        eCB += demiSurplus;
+        // Pas de retrait CELI nécessaire — le rc reste 0
 
       } else {
-        // ── PHASE 2 : Les deux retraités ────────────────────────────
-        // 1. CELI des deux proportionnellement
+        // ── DÉFICIT : La stratégie ne suffit pas ─────────────────────────
+        // D'abord le CELI (sans impact fiscal) pour combler la différence
         const totC = eCA + eCB;
         if (totC > 0) {
-          rc = Math.min(er, totC);
+          rc = Math.min(ecartStrat, totC);
           const ratioA = eCA / totC;
           eCA = Math.max(0, eCA - rc * ratioA);
           eCB = Math.max(0, eCB - rc * (1 - ratioA));
-          er -= rc;
         }
-        // 2. FERR supplémentaire — recherche binaire du brut exact
-        if (er > 0.01) {
-          const ferrDispA = aa >= 71 ? Math.max(0, eFA - fmA) : 0;
-          const ferrDispB = ab >= 71 ? Math.max(0, eFB - fmB) : 0;
-          const totFerr = ferrDispA + ferrDispB;
 
-          if (totFerr > 0) {
-            if (ferrDispA > 0) {
-              const partNetA = er * (ferrDispA / totFerr);
-              ferrSuppA = brutPourNet(partNetA, rbaRaw, ferrDispA, pFed, pQC);
-              const impBase = calcImpot(rbaRaw, pFed, pQC);
-              const impAvec = calcImpot(rbaRaw + ferrSuppA, pFed, pQC);
-              er = Math.max(0, er - (ferrSuppA - (impAvec - impBase)));
-            }
-            if (er > 0.01 && ferrDispB > 0) {
-              ferrSuppB = brutPourNet(er, rbbRaw, ferrDispB, pFed, pQC);
-              const impBase = calcImpot(rbbRaw, pFed, pQC);
-              const impAvec = calcImpot(rbbRaw + ferrSuppB, pFed, pQC);
-              er = Math.max(0, er - (ferrSuppB - (impAvec - impBase)));
-            }
+        const ecartRestant = ecartStrat - rc;
+
+        if (ecartRestant > 0.01) {
+          // ── MUR FISCAL : CELI épuisé, retour au REER/FERR au-delà du plafond ──
+          // Jean en premier (FERR supp ou REER)
+          if (aa >= 71 && eFA > fmA + ferrSuppA) {
+            const dispA = Math.max(0, eFA - fmA - ferrSuppA);
+            const brutA = brutPourNet(ecartRestant, rbaRaw + ferrSuppA, dispA, pFed, pQC);
+            ferrSuppA += brutA;
+          } else if (eRA > rra) {
+            const dispA = Math.max(0, eRA - rra);
+            const brutA = brutPourNet(ecartRestant, rbaRaw + rra, dispA, pFed, pQC);
+            rra += brutA;
           }
         }
-        // 3. REER des deux (avant 71) proportionnel
-        if (er > 0.01) {
-          const saA = eRA, saB = eRB;
-          const totReer = saA + saB;
-          if (totReer > 0) {
-            if (saA > 0) {
-              const partNetA = er * (saA / totReer);
-              rra = brutPourNet(partNetA, rbaRaw, saA, pFed, pQC);
-              eRA = Math.max(0, eRA - rra);
-              const impBase = calcImpot(rbaRaw, pFed, pQC);
-              er = Math.max(0, er - (rra - (calcImpot(rbaRaw + rra, pFed, pQC) - impBase)));
+      }
+
+    } else {
+      // ══════════════════════════════════════════════════════════════════
+      // STRATÉGIE NAÏVE (lissage désactivé ou Marie encore active)
+      // ══════════════════════════════════════════════════════════════════
+
+      // Impôt préliminaire sur revenus garantis + FERR min
+      const ia_base  = calcImpotRetraite(rbaRaw, aa, fmA>0||pensionA>0, pFed, pQC, cr);
+      const ib_base  = marieEncoreActive
+        ? Math.round(calcImpot(rbbRaw, pFed, pQC))
+        : calcImpotRetraite(rbbRaw, ab, fmB>0||pensionB>0, pFed, pQC, cr);
+      const cla_base = clawback(rbaRaw, svA*fi, cr.seuilPSV);
+      const clb_base = clawback(rbbRaw, svB*fi, cr.seuilPSV);
+      const netBase  = (rbaRaw-ia_base-cla_base) + (rbbRaw-ib_base-clb_base);
+
+      const ecart = cible - netBase;
+
+      if (ecart > 0) {
+        let er = ecart;
+
+        if (marieEncoreActive) {
+          // Phase 1 : Marie travaille — seulement comptes de Jean
+          if (eCA > 0) {
+            const rcA = Math.min(er, eCA);
+            eCA -= rcA; rc = rcA; er -= rcA;
+          }
+          if (er > 0.01 && eFA > fmA && aa >= 71) {
+            const dispA = Math.max(0, eFA - fmA);
+            ferrSuppA = brutPourNet(er, rbaRaw, dispA, pFed, pQC);
+            er = Math.max(0, er - netMarginal(ferrSuppA, rbaRaw, pFed, pQC));
+          }
+          if (er > 0.01 && eRA > 0) {
+            rra = brutPourNet(er, rbaRaw, eRA, pFed, pQC);
+            eRA = Math.max(0, eRA - rra);
+          }
+
+        } else {
+          // Phase 2 : Les deux retraités
+          // 1. CELI proportionnel
+          const totC = eCA + eCB;
+          if (totC > 0) {
+            rc = Math.min(er, totC);
+            const ratioA = eCA / totC;
+            eCA = Math.max(0, eCA - rc * ratioA);
+            eCB = Math.max(0, eCB - rc * (1 - ratioA));
+            er -= rc;
+          }
+          // 2. FERR supp proportionnel
+          if (er > 0.01) {
+            const ferrDispA = aa >= 71 ? Math.max(0, eFA - fmA) : 0;
+            const ferrDispB = ab >= 71 ? Math.max(0, eFB - fmB) : 0;
+            const totFerr = ferrDispA + ferrDispB;
+            if (totFerr > 0) {
+              if (ferrDispA > 0) {
+                const partNetA = er * (ferrDispA / totFerr);
+                ferrSuppA = brutPourNet(partNetA, rbaRaw, ferrDispA, pFed, pQC);
+                er = Math.max(0, er - netMarginal(ferrSuppA, rbaRaw, pFed, pQC));
+              }
+              if (er > 0.01 && ferrDispB > 0) {
+                ferrSuppB = brutPourNet(er, rbbRaw, ferrDispB, pFed, pQC);
+                er = Math.max(0, er - netMarginal(ferrSuppB, rbbRaw, pFed, pQC));
+              }
             }
-            if (er > 0.01 && saB > 0) {
-              rrb = brutPourNet(er, rbbRaw, saB, pFed, pQC);
-              eRB = Math.max(0, eRB - rrb);
+          }
+          // 3. REER proportionnel
+          if (er > 0.01) {
+            const saA = eRA, saB = eRB, totReer = saA + saB;
+            if (totReer > 0) {
+              if (saA > 0) {
+                const partA = er * (saA / totReer);
+                rra = brutPourNet(partA, rbaRaw, saA, pFed, pQC);
+                eRA = Math.max(0, eRA - rra);
+                er = Math.max(0, er - netMarginal(rra, rbaRaw, pFed, pQC));
+              }
+              if (er > 0.01 && saB > 0) {
+                rrb = brutPourNet(er, rbbRaw, saB, pFed, pQC);
+                eRB = Math.max(0, eRB - rrb);
+              }
             }
           }
         }
       }
     }
 
-    // Déduire FERR (minimum + supplémentaire) des soldes
+    // ── Déduire FERR (min + supp) des soldes ────────────────────────────────
     eFA = Math.max(0, eFA - fmA - ferrSuppA);
     eFB = Math.max(0, eFB - fmB - ferrSuppB);
+    // Déduire REER si retrait direct (Phase 1 naïve ou lissage REER)
+    if (!lissageActifA) eRA = Math.max(0, eRA - rra);
+    if (!lissageActifB) eRB = Math.max(0, eRB - rrb);
+    // Pour le lissage, les retraits REER stratégiques sont déduits ici
+    if (lissageActifA && rra > 0 && aa < 71) eRA = Math.max(0, eRA - rra);
+    if (lissageActifB && rrb > 0 && ab < 71) eRB = Math.max(0, eRB - rrb);
 
-    // Recalcul impôt final avec tous les retraits
+    // ── Recalcul impôt final ────────────────────────────────────────────────
     const rfA = rbaRaw + ferrSuppA + rra;
     const rfB = rbbRaw + ferrSuppB + rrb;
     const ia2  = calcImpotRetraite(rfA, aa, fmA>0||ferrSuppA>0||rra>0||pensionA>0, pFed, pQC, cr);
-    const ib2  = ab < ageRetraiteB
+    const ib2  = marieEncoreActive
       ? Math.round(calcImpot(rfB, pFed, pQC))
       : calcImpotRetraite(rfB, ab, fmB>0||ferrSuppB>0||rrb>0||pensionB>0, pFed, pQC, cr);
     const cla2 = clawback(rfA, svA*fi, cr.seuilPSV);
     const clb2 = clawback(rfB, svB*fi, cr.seuilPSV);
     const netFinal = (rfA-ia2-cla2) + (rfB-ib2-clb2) + rc;
 
-    // Snapshot soldes AVANT rendement (pour affichage fin d'année)
+    // ── Snapshot soldes AVANT rendement ────────────────────────────────────
     const ferrA_snap = Math.round(eFA);
     const celiA_snap = Math.round(eCA);
     const ferrB_snap = Math.round(eFB);
     const celiB_snap = Math.round(eCB);
 
-    // Rendements (appliqués après retraits)
-    const r = rendement;
-    eRA*=(1+r); eFA*=(1+r); eCA*=(1+r);
-    eRB*=(1+r); eFB*=(1+r); eCB*=(1+r);
+    // ── Rendements ──────────────────────────────────────────────────────────
+    eRA*=(1+rendement); eFA*=(1+rendement); eCA*=(1+rendement);
+    eRB*=(1+rendement); eFB*=(1+rendement); eCB*=(1+rendement);
 
     const actifs = eRA+eFA+eCA+eRB+eFB+eCB;
 
-    // Détail par source et par personne (indexés)
+    // Détails par source (indexés)
     const salA_an  = aa < ageRetraiteA  ? salaireA  : 0;
     const rrqA_an  = aa >= ageRetraiteA ? rrqA      : 0;
     const svA_an   = aa >= 65           ? svA       : 0;
     const pensA_an = aa >= ageRetraiteA ? pensionA  : 0;
-
     const salB_an  = ab < ageRetraiteB  ? salaireB  : 0;
     const rrqB_an  = ab >= ageRetraiteB ? rrqB      : 0;
     const svB_an   = ab >= 65           ? svB       : 0;
     const pensB_an = ab >= ageRetraiteB ? pensionB  : 0;
 
-    // Proportion CELI selon snapshot avant retrait
     const celiTotAvant = Math.max(eCA_avant + eCB_avant, 1);
 
     rows.push({
       ages:`${aa}/${ab}`, annee:an,
       phase: marieEncoreActive ? "transition" : "retraite_complete",
-      bTravaille: marieEncoreActive,
+      lissage: lissageOn && !marieEncoreActive,
       cible: Math.round(cible),
       // Revenus A
       salaireA:  Math.round(salA_an  * fi),
@@ -325,14 +429,14 @@ export function simulerDecaissement({
       svB:       Math.round(svB_an   * fi),
       pensionB:  Math.round(pensB_an * fi),
       ferrMinB:  Math.round(fmB),
-      // Retraits épargne détaillés par personne
+      // Retraits détaillés
       retraitCELI_A: marieEncoreActive ? Math.round(rc) : Math.round(rc * (eCA_avant / celiTotAvant)),
       retraitCELI_B: marieEncoreActive ? 0              : Math.round(rc * (eCB_avant / celiTotAvant)),
       retraitREER_A: Math.round(rra),
       retraitREER_B: Math.round(rrb),
       ferrSupp_A:    Math.round(ferrSuppA),
       ferrSupp_B:    Math.round(ferrSuppB),
-      // Totaux pour compatibilité
+      // Totaux compatibilité
       retraitCELI:  Math.round(rc),
       retraitREER:  Math.round(rra + rrb + ferrSuppA + ferrSuppB),
       totalRetire:  Math.round(rc + rra + rrb + fmA + fmB + ferrSuppA + ferrSuppB),
@@ -345,10 +449,9 @@ export function simulerDecaissement({
       actifs: Math.round(actifs),
       ferrA:  ferrA_snap, celiA: celiA_snap,
       ferrB:  ferrB_snap, celiB: celiB_snap,
-      _debug: { eRA:Math.round(eRA), eFA:Math.round(eFA), eCA:Math.round(eCA), eRB:Math.round(eRB), eFB:Math.round(eFB), eCB:Math.round(eCB), aa, ab },
     });
 
-    // Indexation cible + paliers
+    // Indexation annuelle
     cible *= (1+inflation);
     pFed = pFed.map(([l,h,t])=>[l*(1+inflation),h*(1+inflation),t]);
     pQC  = pQC.map(([l,h,t])=>[l*(1+inflation),h*(1+inflation),t]);

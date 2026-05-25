@@ -226,6 +226,7 @@ export default function ModelisationRetraite() {
   const [rend, setRend] = useState(7);
   const [espVie,   setEspVie]   = useState(90);
   const [cible,    setCible]    = useState(() => Math.round((brutA+brutB||80000)*.80));
+  const [plafondLissage, setPlafondLissage] = useState(90997);
 
   // Paramètres avancés
   const [ageRetA, setAgeRetA] = useState(65);
@@ -261,7 +262,8 @@ export default function ModelisationRetraite() {
     svB:enCouple?713.34*12:0, pensionB:enCouple?pensB*12:0,
     reerB:enCouple?projection.reerB:0, celiB:enCouple?projection.celiB:0,
     cibleNette:cible, inflation:.025, rendement:rend/100, esperanceVie:espVie,
-  }),[ageA,ageB,ageRetA,ageRetB,rrqAp,rrqBp,projection,cible,rend,espVie,enCouple,rrqA,rrqB,pensA,pensB,brutA,brutB]);
+    plafondLissage,
+  }),[ageA,ageB,ageRetA,ageRetB,rrqAp,rrqBp,projection,cible,rend,espVie,enCouple,rrqA,rrqB,pensA,pensB,brutA,brutB,plafondLissage]);
 
   const rows       = useMemo(()=>simulerDecaissement(params),[params]);
   const last       = rows[rows.length-1]||{};
@@ -324,12 +326,50 @@ export default function ModelisationRetraite() {
             </label>
           </div>
 
+          {/* Lissage fiscal */}
+          <div style={{ background:"rgba(201,160,99,.05)", border:"1px solid rgba(201,160,99,.15)", borderRadius:10, padding:"10px 14px", display:"flex", alignItems:"center", gap:12, flexWrap:"wrap" }}>
+            <div style={{ flex:1, minWidth:200 }}>
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:4 }}>
+                <span style={{ fontSize:10, fontWeight:700, color:"#C9A063", textTransform:"uppercase", letterSpacing:".07em" }}>
+                  ⚡ Lissage fiscal — Plafond REER/FERR hâtif
+                </span>
+                <span style={{ fontSize:12, fontWeight:700, color:"#C9A063", fontFamily:"var(--font-mono)" }}>
+                  {plafondLissage === 0 ? "Désactivé" : `${Math.round(plafondLissage/1000)}k $/pers.`}
+                </span>
+              </div>
+              <input
+                type="range"
+                min={0} max={130000} step={5000}
+                value={plafondLissage}
+                onChange={e=>setPlafondLissage(+e.target.value)}
+                style={{ width:"100%", accentColor:"#C9A063", cursor:"pointer" }}
+              />
+              <div style={{ display:"flex", justifyContent:"space-between", fontSize:9, color:"rgba(255,255,255,.25)", marginTop:3 }}>
+                <span>Désactivé</span>
+                <span>60k$</span>
+                <span style={{ color:"rgba(201,160,99,.5)", fontWeight:700 }}>91k$ (PSV)</span>
+                <span>110k$</span>
+                <span>130k$</span>
+              </div>
+            </div>
+            <div style={{ fontSize:10, color:"rgba(255,255,255,.35)", maxWidth:260, lineHeight:1.5 }}>
+              {plafondLissage === 0
+                ? "Mode naïf : CELI d'abord, puis REER/FERR en dernier recours."
+                : plafondLissage <= 60000
+                ? "Conservateur : retrait hâtif modéré, économie d'impôt limitée."
+                : plafondLissage <= 91000
+                ? "Optimal : remplit l'espace fiscal jusqu'au seuil de récupération PSV (~91k$). Recommandé."
+                : "Agressif : dépasse le seuil PSV — risque de clawback, mais décharge le FERR rapidement."}
+            </div>
+          </div>
+
           {/* Stats */}
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:8, marginBottom:14 }}>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8, marginBottom:14 }}>
             {[
               {l:"Impôt total retraite",v:fmt(totalImpot),c:"#f87171"},
               {l:"Clawback PSV",v:totalClaw>0?fmt(totalClaw):"Aucun ✓",c:totalClaw>0?"#EAB308":"#5BC4A0"},
               {l:`Patrimoine à ${espVie} ans`,v:fmtk(last.actifs||0),c:"#5BC4A0"},
+              {l:"Années en surplus",v:`${rows.filter(r=>r.ecart>-500).length} / ${rows.length}`,c:"#C9A063"},
             ].map(s=>(
               <div key={s.l} style={S.card}>
                 <div style={{ fontSize:9, fontWeight:600, color:"rgba(255,255,255,.28)", textTransform:"uppercase", letterSpacing:".06em", marginBottom:3 }}>{s.l}</div>
