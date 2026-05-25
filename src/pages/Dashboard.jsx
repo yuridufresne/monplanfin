@@ -465,21 +465,27 @@ export default function Dashboard() {
                                   {isActuel && (
                                     <div style={{ position: "absolute", top: -8, left: "50%", transform: "translateX(-50%)", fontSize: 8, fontWeight: 700, color: "#C9A063", background: "#0A1628", padding: "1px 5px", borderRadius: 4, border: "1px solid rgba(201,160,99,0.35)", whiteSpace: "nowrap" }}>Actuel</div>
                                   )}
-                                  <div style={{ fontSize: 17, fontWeight: 800, color: c.text, lineHeight: 1 }}>{cell.score}%</div>
-                                    <div style={{ fontSize: 9, fontWeight: 600, color: c.text, opacity: 0.8, marginTop: 2 }}>{c.label}</div>
-                                    <div style={{ fontSize: 9, color: "rgba(255,255,255,0.28)", marginTop: 4 }}>NIF {(cell.nif / 1000000).toFixed(1)}M$</div>
-                                    <div style={{ height: 1, background: "rgba(255,255,255,0.07)", margin: "5px 0" }} />
-                                    {cell.cotSupp > 0 ? (
-                                      <div>
-                                        <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", marginBottom: 1 }}>+ à cotiser</div>
-                                        <div style={{ fontSize: 11, fontWeight: 700, color: "#f87171" }}>{Math.round(cell.cotSupp).toLocaleString("fr-CA")} $/mois</div>
-                                      </div>
-                                    ) : (
-                                      <div>
-                                        <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", marginBottom: 1 }}>surplus</div>
-                                        <div style={{ fontSize: 11, fontWeight: 700, color: "#5BC4A0" }}>+{Math.round((cell.cap - cell.nif) / 1000).toLocaleString("fr-CA")}k$</div>
-                                      </div>
+                                  {/* 1. Somme à cumuler */}
+                                    <div style={{ fontSize: 8, fontWeight: 600, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>À cumuler</div>
+                                    <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", letterSpacing: "-0.3px" }}>
+                                      {cell.nif >= 1000000 ? (cell.nif / 1000000).toFixed(1) + "M$" : Math.round(cell.nif / 1000) + "k$"}
+                                    </div>
+                                    <div style={{ height: 1, background: "rgba(255,255,255,0.07)", margin: "6px 0" }} />
+                                    {/* 2. Cotisation mensuelle requise */}
+                                    <div style={{ fontSize: 8, fontWeight: 600, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>
+                                      {cell.cotSupp > 0 ? "Cotisation requise" : "Cotisation actuelle"}
+                                    </div>
+                                    <div style={{ fontSize: 13, fontWeight: 700, color: cell.cotSupp > 0 ? "#f87171" : "#5BC4A0" }}>
+                                      {(cotM + cell.cotSupp).toLocaleString("fr-CA")} $<span style={{ fontSize: 9, fontWeight: 400, color: "rgba(255,255,255,0.3)" }}>/mois</span>
+                                    </div>
+                                    {cell.cotSupp > 0 && (
+                                      <div style={{ fontSize: 9, color: "rgba(248,113,113,0.7)", marginTop: 1 }}>+{cell.cotSupp.toLocaleString("fr-CA")} $ supp.</div>
                                     )}
+                                    <div style={{ height: 1, background: "rgba(255,255,255,0.07)", margin: "6px 0" }} />
+                                    {/* 3. Score trajectoire actuelle */}
+                                    <div style={{ fontSize: 8, fontWeight: 600, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>Trajectoire actuelle</div>
+                                    <div style={{ fontSize: 16, fontWeight: 800, color: c.text }}>{cell.score}%</div>
+                                    <div style={{ fontSize: 9, fontWeight: 600, color: c.text, opacity: 0.75 }}>{c.label}</div>
                                 </div>
                               );
                             })}
