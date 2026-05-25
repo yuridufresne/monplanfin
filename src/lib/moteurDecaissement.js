@@ -165,6 +165,10 @@ export function simulerDecaissement({
     const aa = ageDepart + an;
     const ab = ageBDepart + an;
 
+    // Capture flags de conversion AVANT la conversion
+    const wasConvJean  = aa === 71 && eRA > 0;
+    const wasConvMarie = ab === 71 && eRB > 0;
+
     // Conversion REER→FERR à 71 ans
     if (aa===71 && eRA>0) { eFA+=eRA; eRA=0; }
     if (ab===71 && eRB>0) { eFB+=eRB; eRB=0; }
@@ -416,6 +420,9 @@ export function simulerDecaissement({
       ages:`${aa}/${ab}`, annee:an,
       phase: marieEncoreActive ? "transition" : "retraite_complete",
       lissage: lissageOn && !marieEncoreActive,
+      isConversionJean:  wasConvJean,
+      isConversionMarie: wasConvMarie,
+      isConversion:      wasConvJean || wasConvMarie,
       cible: Math.round(cible),
       // Revenus A
       salaireA:  Math.round(salA_an  * fi),

@@ -35,8 +35,17 @@ function PaywallBanner({ onUnlock }) {
 // ── Tableau de résultats ──────────────────────────────────────────────────────
 // Structure : Âge | [Jean: Sal RRQ SV Pen FERRmin CELI REER/FERR] | [Marie: idem] | Bilan | Patrimoine
 function TableauResultats({ rows, prenomA = "A", prenomB = "B" }) {
-  const SHOW = [0,1,2,4,6,8,10,12,15,18,21,24,27];
-  const vis  = rows.filter((_,i)=>SHOW.includes(i)||i===rows.length-1);
+  const dernierAge = rows.length > 0 ? parseInt(rows[rows.length-1].ages.split('/')[0]) : 999;
+  const vis = rows.filter((r) => {
+    const ageJean  = parseInt(r.ages.split('/')[0]);
+    const ageMarie = parseInt(r.ages.split('/')[1]);
+    return (
+      ageJean <= 71
+      || ageMarie === 71
+      || ageJean % 5 === 0
+      || ageJean === dernierAge
+    );
+  });
   const S = {
     th:{ fontSize:9, fontWeight:600, color:"rgba(255,255,255,.28)", textTransform:"uppercase", letterSpacing:".06em", padding:"6px 8px", textAlign:"right", background:"rgba(255,255,255,.03)", borderBottom:"1px solid rgba(255,255,255,.07)", whiteSpace:"nowrap" },
     td:{ padding:"7px 8px", textAlign:"right", borderBottom:"1px solid rgba(255,255,255,.04)", fontSize:11, fontVariantNumeric:"tabular-nums", whiteSpace:"nowrap" },
@@ -102,13 +111,12 @@ function TableauResultats({ rows, prenomA = "A", prenomB = "B" }) {
           <tbody>
             {vis.map((r,i)=>{
               const ec  = r.ecart>=0 ? "#5BC4A0" : "#f87171";
-              const hasFerr = r.ferrMinA>0 || r.ferrMinB>0;
               const isTransition = r.phase === "transition";
               const isLissage = r.lissage === true;
-              const bg = isTransition
-                ? "rgba(107,142,214,.07)"
+              const bg = r.isConversion
+                ? "rgba(201,160,99,.06)"
+                : isTransition ? "rgba(107,142,214,.07)"
                 : isLissage ? "rgba(201,160,99,.04)"
-                : hasFerr ? "rgba(201,160,99,.06)"
                 : i%2 ? "rgba(255,255,255,.015)" : "transparent";
               const d  = (v) => v>0 ? fmtk(v) : "—";
               const dc = (v,yes,no="rgba(255,255,255,.2)") => ({...S.td, color: v>0 ? yes : no});
@@ -117,8 +125,15 @@ function TableauResultats({ rows, prenomA = "A", prenomB = "B" }) {
               const reerFerrB = (r.retraitREER_B||0) + (r.ferrSupp_B||0);
               return (
                 <tr key={r.ages+i} style={{background:bg}}>
-                  <td style={{...S.td,textAlign:"left",fontWeight:700,color:isTransition?"#6B8ED6":hasFerr?"#C9A063":"#fff"}}>
-                    {r.ages}{hasFerr?" ★":""}{isTransition?" 🔄":""}
+                  <td style={{
+                    ...S.td, textAlign:"left", fontWeight:700,
+                    color: r.isConversion ? "#C9A063" : isTransition ? "#6B8ED6" : "#fff",
+                    borderTop: r.isConversion ? "1px solid rgba(201,160,99,.2)" : undefined,
+                  }}>
+                    {r.ages}
+                    {r.isConversionJean  && <span style={{fontSize:9,marginLeft:4,color:"#C9A063"}}>★J</span>}
+                    {r.isConversionMarie && <span style={{fontSize:9,marginLeft:4,color:"rgba(91,196,160,.8)"}}>★M</span>}
+                    {isTransition && <span style={{fontSize:9,marginLeft:4,opacity:.5}}>🔄</span>}
                   </td>
                   {/* Jean — revenus garantis */}
                   <td style={dc(r.salaireA,"#6B8ED6")}>{d(r.salaireA)}</td>
@@ -160,7 +175,8 @@ function TableauResultats({ rows, prenomA = "A", prenomB = "B" }) {
       <div style={{ display:"flex", gap:14, flexWrap:"wrap", marginTop:8, fontSize:10, color:"rgba(255,255,255,.3)" }}>
         <span>🟢 CELI — non imposable</span>
         <span>🟠 REER/FERR — imposable (REER avant 71 ans + FERR au-delà du minimum)</span>
-        <span>★ Conversion REER→FERR à 71 ans</span>
+        <span><span style={{color:"#C9A063",fontWeight:700}}>★J</span> Conversion REER→FERR Jean (71 ans)</span>
+        <span><span style={{color:"rgba(91,196,160,.8)",fontWeight:700}}>★M</span> Conversion REER→FERR Marie (71 ans)</span>
       </div>
     </div>
   );
