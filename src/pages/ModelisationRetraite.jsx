@@ -85,7 +85,10 @@ function TableauResultats({ rows, prenomA = "A", prenomB = "B" }) {
               <th style={{...S.th,color:"rgba(91,196,160,.75)"}}>🟢 CELI</th>
               <th style={{...S.th,color:"rgba(251,146,60,.8)",...sep}}>🟠 REER/FERR</th>
               {/* Bilan — 5 cols */}
-              <th style={{...S.th,color:"rgba(255,255,255,.4)"}}>Cible</th>
+              <th style={{...S.th,color:"rgba(255,255,255,.4)"}}>
+                Cible
+                <span style={{ fontSize:8, color:"rgba(255,255,255,.3)", display:"block", fontWeight:400 }}>indexée 2,5%/an</span>
+              </th>
               <th style={{...S.th,color:"#C9A063"}}>Retiré</th>
               <th style={{...S.th,color:"#f87171"}}>Impôt</th>
               <th style={{...S.th,fontWeight:700,color:"#fff"}}>Net</th>
@@ -222,20 +225,23 @@ export default function ModelisationRetraite() {
   const pensA = parseFloat((ret.fond_pension||{}).rente_mensuelle_estimee)||0;
   const pensB = parseFloat((retCj.fond_pension||{}).rente_mensuelle_estimee)||0;
 
-  // États
-  // Taux de remplacement : lire depuis ABF, 80% par défaut
-  const revenuRetraiteAnnuel = parseFloat(ret.revenu_retraite_mensuel || 0) * 12;
-  const revenuBrutTotal = (brutA || 0) + (brutB || 0);
-  const tauxABF = revenuBrutTotal > 0 && revenuRetraiteAnnuel > 0
-    ? Math.round(revenuRetraiteAnnuel / revenuBrutTotal * 100)
-    : 80;
+  // ── Cible ABF — logique de priorité ─────────────────────────────────────────
+  const revenuRetraiteMensuelABF = parseFloat(ret.revenu_retraite_mensuel) || 0;
+  const cibleDirecteABF = revenuRetraiteMensuelABF * 12;
+  const pctABF = parseFloat(ret.revenu_retraite_pct) || 80;
+  const brutTotal = (brutA || 0) + (brutB || 0);
+  const ciblePctABF = Math.round(brutTotal * pctABF / 100);
+  const cibleBase = cibleDirecteABF > 0 ? cibleDirecteABF : ciblePctABF;
+  const tauxABF = brutTotal > 0 && cibleBase > 0
+    ? Math.round(cibleBase / brutTotal * 100)
+    : pctABF;
 
   const [tab,      setTab]      = useState("plan");
   const [unlocked, setUnlocked] = useState(false);
   const [rend, setRend] = useState(7);
   const [espVie,   setEspVie]   = useState(90);
   const [taux,     setTaux]     = useState(tauxABF);
-  const [cible,    setCible]    = useState(() => Math.round((brutA+brutB||80000)*(tauxABF/100)));
+  const [cible,    setCible]    = useState(() => cibleBase > 0 ? cibleBase : Math.round((brutTotal||80000)*(tauxABF/100)));
   const [plafondLissage, setPlafondLissage] = useState(90997);
 
   // Paramètres avancés
@@ -339,7 +345,7 @@ export default function ModelisationRetraite() {
                 Taux de remplacement
                 <div style={{display:"flex",alignItems:"center",gap:6,marginLeft:5}}>
                   <input type="range" min={40} max={120} step={5} value={taux}
-                    onChange={e=>{ setTaux(+e.target.value); setCible(Math.round(revenuBrutTotal*(+e.target.value/100))); }}
+                    onChange={e=>{ const t=+e.target.value; setTaux(t); setCible(t===tauxABF ? cibleBase : Math.round(brutTotal*(t/100))); }}
                     style={{width:100,accentColor:"#C9A063",cursor:"pointer"}} />
                   <span style={{fontSize:12,fontWeight:700,color:"#C9A063",fontFamily:"var(--font-mono)",minWidth:32}}>{taux}%</span>
                 </div>
@@ -355,19 +361,22 @@ export default function ModelisationRetraite() {
                   IQPF : 70%
                 </span>
                 {taux !== tauxABF && (
-                  <button onClick={()=>{ setTaux(tauxABF); setCible(Math.round(revenuBrutTotal*(tauxABF/100))); }}
+                  <button onClick={()=>{ setTaux(tauxABF); setCible(cibleBase); }}
                     style={{fontSize:10,padding:"2px 8px",borderRadius:6,background:"rgba(201,160,99,.1)",color:"#C9A063",border:"1px solid rgba(201,160,99,.2)",cursor:"pointer"}}>
                     ← ABF ({tauxABF}%)
                   </button>
                 )}
-                <button onClick={()=>{ setTaux(70); setCible(Math.round(revenuBrutTotal*.70)); }}
+                <button onClick={()=>{ setTaux(70); setCible(Math.round(brutTotal*.70)); }}
                   style={{fontSize:10,padding:"2px 8px",borderRadius:6,background:"rgba(255,255,255,.05)",color:"rgba(255,255,255,.4)",border:"1px solid rgba(255,255,255,.08)",cursor:"pointer"}}>
                   ← IQPF (70%)
                 </button>
               </div>
-              {taux !== tauxABF && (
-                <p style={{fontSize:9,color:"rgba(255,255,255,.25)",marginTop:2}}>* Simulation locale — ne modifie pas votre objectif ABF de {tauxABF}%</p>
-              )}
+              <p style={{fontSize:9,color:"rgba(255,255,255,.25)",marginTop:2}}>
+                {cibleDirecteABF > 0
+                  ? `Source ABF : ${revenuRetraiteMensuelABF.toLocaleString('fr-CA')} $/mois saisi`
+                  : `Source ABF : ${pctABF}% du revenu brut`}
+                {taux !== tauxABF && " · Simulation locale"}
+              </p>
             </div>
           </div>
 
