@@ -806,11 +806,8 @@ export default function Dashboard() {
                       renteRRQ: revenusGarantis?.p1?.rrq || rrqMensuelTotal || 0,
                       rrqConjoint: enCouple ? (revenusGarantis?.p2?.rrq || 0) : 0,
                       psvBase: 713.34,
-                      enCouple,
                       pensionPD: fpMensuelTotal || 0,
-                      revenuCible: (revBrut || 80000) * 0.80,
-                      rendement: 0.05,
-                      inflation: 0.025,
+                      revenuCible: (revBrut || 180000) * 0.80,
                     }}
                   />
                 }
