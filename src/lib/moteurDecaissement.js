@@ -237,6 +237,7 @@ export function simulerDecaissement({
     rows.push({
       ages:`${aa}/${ab}`, annee:an,
       bTravaille: ab < ageRetraiteB,
+      totalRetire: Math.round(rc + rra + rrb + (fmA||0) + (fmB||0)),
       cible:Math.round(cible),
       salaireActif,
       rrqSvPension: revenusRetraite,
