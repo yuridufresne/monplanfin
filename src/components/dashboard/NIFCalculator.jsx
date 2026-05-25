@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
-import { calcNIFFromProfiles } from "@/lib/calcNIF";
+import { calcNIF as calcNIFLib, calcScoreNIF, calcCotisationRequise, IQPF } from "@/lib/nif";
+import { readABF, readProfil, readRevenus, readRetraite, calcCibleRetraite } from "@/lib/abf";
 import { PRESTATIONS_2026 } from "@/lib/prestationsGouvernementales";
 
 const fmt = (v) =>
@@ -35,47 +36,36 @@ function Slider({ label, value, min, max, step, fmtFn, onChange, note }) {
   );
 }
 
-// ── Calcul NIF depuis sliders (avec indexation inflation) ────────────────────
-function calcNIF({ ageActuel, ageRetraite, esperanceVie, revenuNetDesire, rendement, revenuGarantiAnnuel }) {
-  const anneesAvantRetraite = Math.max(1, ageRetraite - ageActuel);
-  const anneesEnRetraite    = Math.max(1, esperanceVie - ageRetraite);
-  const inf = 0.025;
-  const revenuDesireFutur  = revenuNetDesire * Math.pow(1 + inf, anneesAvantRetraite);
-  const garantisFuturs     = (revenuGarantiAnnuel || 0) * Math.pow(1 + inf, anneesAvantRetraite);
-  const manque = Math.max(0, revenuDesireFutur - garantisFuturs);
-  if (manque <= 0) return 0;
-  const rendementReel = ((1 + rendement) / (1 + inf)) - 1;
-  if (rendementReel <= 0) return manque * anneesEnRetraite;
-  return Math.max(0, manque * ((1 - Math.pow(1 + rendementReel, -anneesEnRetraite)) / rendementReel));
-}
-
+// ── Calcul NIF depuis sliders — utilise @/lib/nif comme source unique ─────────
 function computeNIF({ depensesCibles, tauxRetrait, rrqMensuel, psvMensuel, fpMensuel, soldeReer, soldeCeli, cotMensuelle, rendement, ageActuel, ageRetraite, espVie }) {
-  const anneesAccum   = Math.max(0, ageRetraite - ageActuel);
+  const anneesAccum    = Math.max(0, ageRetraite - ageActuel);
   const anneesDecaisse = Math.max(0, espVie - ageRetraite);
   const revGarantiAnnuel = (rrqMensuel + psvMensuel + fpMensuel) * 12;
-
-  // NIF avec inflation
-  const capitalNIF_rente = calcNIF({ ageActuel, ageRetraite, esperanceVie: espVie, revenuNetDesire: depensesCibles, rendement: rendement / 100, revenuGarantiAnnuel: revGarantiAnnuel });
   const manqueAnnuel = Math.max(0, depensesCibles - revGarantiAnnuel);
+
+  // NIF rente (source unique @/lib/nif)
+  const capitalNIF_rente = calcNIFLib({
+    cibleAnnuelle: depensesCibles,
+    revenuGarantiAnnuel: revGarantiAnnuel,
+    ageRetraite,
+    ageActuel,
+    esperanceVie: espVie,
+    rendement: rendement / 100,
+    inflation: IQPF.INFLATION,
+  });
   const capitalNIF_4pct = manqueAnnuel / (tauxRetrait / 100);
   const capitalNIF = (capitalNIF_4pct + capitalNIF_rente) / 2;
 
   const rM = rendement / 100 / 12;
   const soldeTotal = soldeReer + soldeCeli;
-  const fvSolde = soldeTotal * Math.pow(1 + rM, anneesAccum * 12);
-  const fvCot = rM > 0
-    ? cotMensuelle * (Math.pow(1 + rM, anneesAccum * 12) - 1) / rM
-    : cotMensuelle * anneesAccum * 12;
+  const nM = anneesAccum * 12;
+  const fvSolde = soldeTotal * Math.pow(1 + rM, nM);
+  const fvCot = rM > 0 ? cotMensuelle * (Math.pow(1 + rM, nM) - 1) / rM : cotMensuelle * nM;
   const capitalProjecte = fvSolde + fvCot;
 
   const scoreNIF = capitalNIF > 0 ? Math.min(capitalProjecte / capitalNIF * 100, 200) : 100;
-  const surplus = capitalProjecte - capitalNIF;
-
-  let cotSupp = 0;
-  if (scoreNIF < 100 && anneesAccum > 0 && rM > 0) {
-    const facteur = (Math.pow(1 + rM, anneesAccum * 12) - 1) / rM;
-    cotSupp = Math.max(0, (capitalNIF - capitalProjecte) / facteur);
-  }
+  const surplus  = capitalProjecte - capitalNIF;
+  const cotSupp  = calcCotisationRequise({ nif: capitalNIF, capital: soldeTotal, anneesAccum, rendement: rendement / 100 });
 
   // Courbe de projection année par année
   const chart = [];
@@ -92,7 +82,7 @@ function computeNIF({ depensesCibles, tauxRetrait, rrqMensuel, psvMensuel, fpMen
     revGarantiAnnuel: Math.round(revGarantiAnnuel),
     scoreNIF: Math.round(scoreNIF),
     surplus: Math.round(surplus),
-    cotSupp: Math.round(cotSupp),
+    cotSupp,
     capitalNIF_4pct: Math.round(capitalNIF_4pct),
     capitalNIF_rente: Math.round(capitalNIF_rente),
     anneesAccum,
@@ -364,47 +354,35 @@ function TabQuebec() {
 export default function NIFCalculator({ profiles }) {
   const [activeTab, setActiveTab] = useState("calculateur");
 
-  // Extraire defaults depuis profils ABF
+  // Extraire defaults depuis profils ABF — source unique @/lib/abf
   const defaults = useMemo(() => {
-    const base = calcNIFFromProfiles(profiles);
-    const unwrap = (raw) => {
-      if (!raw || typeof raw !== "object") return {};
-      if (raw.comptes || raw.sv || raw.rrq) return raw;
-      if (raw.data && typeof raw.data === "object") return unwrap(raw.data);
-      return raw;
-    };
-    const m = {};
-    (profiles || []).forEach(p => { m[p.section] = unwrap(p.data); });
-    const retraite = m.retraite || {};
-    const comptes = retraite.comptes || {};
-    const soldeReer = (comptes.reer || []).reduce((s, c) => s + (parseFloat(c.solde) || 0), 0);
-    const soldeCeli = (comptes.celi || []).reduce((s, c) => s + (parseFloat(c.solde) || 0), 0);
+    const abf         = readABF(profiles);
+    const profil      = readProfil(abf);
+    const revenus     = readRevenus(abf);
+    const retraiteABF = readRetraite(abf, profil.enCouple);
+    const { cibleAnnuelle } = calcCibleRetraite(retraiteABF, revenus.brutTotal);
 
-    const enCouple = ["marie", "conjoint", "union_civile"].includes((m.profil_personnel?.situation) || "");
-    const retraiteConj = enCouple ? (retraite.conjoint || {}) : {};
-    const sv1 = parseFloat(retraite.sv) || PRESTATIONS_2026.psv.mensuel65;
-    const sv2 = enCouple ? (parseFloat(retraiteConj.sv) || PRESTATIONS_2026.psv.mensuel65) : 0;
-    const rrq1 = parseFloat(retraite.rrq) || 0;
-    const rrq2 = enCouple ? (parseFloat(retraiteConj.rrq) || 0) : 0;
-    const fp1 = parseFloat((retraite.fond_pension || {}).rente_mensuelle_estimee) || 0;
-    const fp2 = enCouple ? (parseFloat((retraiteConj.fond_pension || {}).rente_mensuelle_estimee) || 0) : 0;
-    const rrqMensuel = rrq1 + rrq2;
-    const psvMensuel = sv1 + sv2;
-    const fpMensuel  = fp1 + fp2;
-    const revBrut = base.revBrut || 80000;
-    const depensesCibles = Math.round(revBrut * 0.80);
+    const epA = retraiteABF.personneA.epargne;
+    const epB = retraiteABF.personneB?.epargne || {};
+    const soldeReer = epA.soldeReer + (epB.soldeReer || 0);
+    const soldeCeli = epA.soldeCeli + (epB.soldeCeli || 0);
+    const cotMensuelle = epA.cotReer + epA.cotCeli + (epB.cotReer || 0) + (epB.cotCeli || 0);
+
+    const rrqMensuel  = (retraiteABF.personneA.rrqMensuel)  + (retraiteABF.personneB?.rrqMensuel  || 0);
+    const psvMensuel  = (retraiteABF.personneA.svMensuel)   + (retraiteABF.personneB?.svMensuel   || 0);
+    const fpMensuel   = (retraiteABF.personneA.pensionMens) + (retraiteABF.personneB?.pensionMens || 0);
 
     return {
-      depensesCibles: depensesCibles || base.depensesCibles || 55000,
+      depensesCibles: cibleAnnuelle || 55000,
       rrqMensuel,
       psvMensuel,
       fpMensuel,
       soldeReer,
       soldeCeli,
-      cotMensuelle: base.cotMensuelle || 500,
-      ageActuel: base.ageActuel || 38,
-      ageRetraite: base.ageRetraite || 65,
-      espVie: 95,
+      cotMensuelle: cotMensuelle || 500,
+      ageActuel:   profil.age   || 38,
+      ageRetraite: retraiteABF.personneA.ageRetraite || 65,
+      espVie:      retraiteABF.esperanceVie || IQPF.ESP_VIE,
     };
   }, [profiles]);
 
