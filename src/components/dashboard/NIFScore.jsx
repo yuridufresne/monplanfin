@@ -256,16 +256,16 @@ export default function NIFScore({ profiles }) {
             {/* PARTIE 1 — NIF fixe */}
             <div style={{ marginBottom: 14, padding: "12px 16px", borderRadius: 14, background: "rgba(201,160,99,0.07)", border: "1px solid rgba(201,160,99,0.2)" }}>
               <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(201,160,99,0.6)", marginBottom: 6 }}>
-                Votre NIF — valeur fixe en dollars {nifResult?.anneeProjFuture || "futurs"}
+                Votre NIF — en dollars d'aujourd'hui
               </p>
-              <p style={{ fontFamily: "var(--font-mono)", fontSize: 22, fontWeight: 900, color: GOLD, lineHeight: 1, marginBottom: 6 }}>
+              <p style={{ fontFamily: "var(--font-mono)", fontSize: 22, fontWeight: 900, color: GOLD, lineHeight: 1, marginBottom: 2 }}>
                 {fmt(capitalNIF)}
               </p>
+              <p style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", marginBottom: 6 }}>en dollars d'aujourd'hui</p>
               <p style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", lineHeight: 1.6 }}>
                 = {fmt(depensesCibles)}/an cible ({tauxRemplacement}% × {fmt(revBrut)} brut)
                 {revGarantiAnnuel > 0 && <> − {fmt(revGarantiAnnuel)}/an garantis</>}
-                {nifResult?.facteurInflation > 1 && <>, ajusté × {nifResult.facteurInflation} inflation sur {anneesAccum} ans</>}
-                {" ÷ 4% (règle des 4%)"}
+                {" · taux réel (rendement − inflation)"}
               </p>
               {/* Décomposition revenus garantis — aujourd'hui et en dollars futurs */}
               {revGarantiAnnuel > 0 && (
@@ -295,7 +295,8 @@ export default function NIFScore({ profiles }) {
               <div style={cardStyle}>
                 <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.4)", marginBottom: 5 }}>Capital projeté à {ageRetraite} ans</p>
                 <p style={{ fontFamily: "var(--font-mono)", fontSize: 15, fontWeight: 700, color: "#6B8ED6", lineHeight: 1 }}>{fmt(capitalProjecte)}</p>
-                <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 4 }}>Épargne actuelle + cotisations à 7%/an</p>
+                <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>en dollars d'aujourd'hui</p>
+                <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>Épargne actuelle + cotisations à 7%/an</p>
               </div>
               <div style={cardStyle}>
                 <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.4)", marginBottom: 5 }}>Statut</p>

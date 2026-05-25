@@ -3,9 +3,9 @@
  *
  * ARCHITECTURE EN DEUX ÉTAPES :
  *
- * 1. calcNIF()        → valeur FIXE en dollars FUTURS (ne dépend PAS de l'épargne)
- *    NIF = capital nécessaire au jour J de la retraite, exprimé en $ ajustés à l'inflation
- *    NIF = (revenuCibleFutur − revenuGarantiFutur) / tauxRetrait   (règle des 4%, moyennée avec rente)
+ * 1. calcNIF()        → valeur FIXE en dollars D'AUJOURD'HUI (ne dépend PAS de l'épargne)
+ *    NIF = capital équivalent en $ constants, calculé via taux réel (Fisher)
+ *    NIF = manqueRéel / tauxRéel  (règle des 4% + rente actuarielle, moyennées)
  *
  * 2. calcAtteintNIF() → progression vers le NIF (dépend de l'épargne actuelle + cotisations)
  *    Score = capitalProjeté / NIF × 100
@@ -49,36 +49,42 @@ export function calcNIF({
   const anneesDecaisse = Math.max(1, esperanceVie - ageRetraite);
   const facteurInflation = Math.pow(1 + inflation, anneesAvant);
 
-  // Cible et garantis en dollars FUTURS (au jour de la retraite)
-  const revenuCibleFutur   = revenuBrutFoyer * tauxRemplacement * facteurInflation;
+  // Manque en dollars d'aujourd'hui (cible et garantis croissent au même rythme)
+  const revenuCibleAujourdhui  = revenuBrutFoyer * tauxRemplacement;
+  const manqueAujourdhui       = Math.max(0, revenuCibleAujourdhui - revenuGarantiAujourdhui);
+
+  // NIF en dollars d'aujourd'hui via taux réel (Fisher: rendement réel = nominal − inflation)
+  const tauxReel = ((1 + rendementDecaissement) / (1 + inflation)) - 1;
+
+  // NIF méthode 1 — règle des 4% (en $ aujourd'hui)
+  const nif_4pct = manqueAujourdhui / tauxRetrait;
+
+  // NIF méthode 2 — rente viagère actuarielle en $ d'aujourd'hui
+  const nif_rente = tauxReel > 0.005
+    ? manqueAujourdhui * ((1 - Math.pow(1 + tauxReel, -anneesDecaisse)) / tauxReel)
+    : manqueAujourdhui * anneesDecaisse;
+
+  // NIF final = moyenne des deux méthodes (dollars d'aujourd'hui)
+  const nif = (nif_4pct + nif_rente) / 2;
+
+  // Dollars futurs pour référence affichage
+  const revenuCibleFutur   = revenuCibleAujourdhui * facteurInflation;
   const revenuGarantiFutur = revenuGarantiAujourdhui * facteurInflation;
   const manqueFutur        = Math.max(0, revenuCibleFutur - revenuGarantiFutur);
 
-  // NIF méthode 1 — règle des 4%
-  const nif_4pct = manqueFutur / tauxRetrait;
-
-  // NIF méthode 2 — rente viagère actuarielle (taux réel = rendement − inflation)
-  const tauxReel = rendementDecaissement - inflation;
-  const nif_rente = tauxReel > 0.005
-    ? manqueFutur * ((1 - Math.pow(1 + tauxReel, -anneesDecaisse)) / tauxReel)
-    : manqueFutur * anneesDecaisse;
-
-  // NIF final = moyenne des deux méthodes
-  const nif = (nif_4pct + nif_rente) / 2;
-
   return {
-    // ── NIF — valeur FIXE en dollars futurs ──
+    // ── NIF — en dollars d'aujourd'hui ──
     nif:                     Math.round(nif),
     nif_4pct:                Math.round(nif_4pct),
     nif_rente:               Math.round(nif_rente),
 
     // ── Composantes pour affichage ──
     revenuCibleFutur:        Math.round(revenuCibleFutur),
-    revenuCibleAujourdhui:   Math.round(revenuBrutFoyer * tauxRemplacement),
+    revenuCibleAujourdhui:   Math.round(revenuCibleAujourdhui),
     revenuGarantiFutur:      Math.round(revenuGarantiFutur),
     revenuGarantiAujourdhui: Math.round(revenuGarantiAujourdhui),
     manqueFutur:             Math.round(manqueFutur),
-    manqueAujourdhui:        Math.round(Math.max(0, revenuBrutFoyer * tauxRemplacement - revenuGarantiAujourdhui)),
+    manqueAujourdhui:        Math.round(manqueAujourdhui),
 
     // ── Paramètres ──
     anneesAvant,
@@ -107,24 +113,31 @@ export function calcAtteintNIF({
   soldeActuel,
   cotMensuelle,
   rendementAccumulation = RENDEMENT_ACCUM,
+  inflation = INFLATION,
 }) {
   const { nif, anneesAvant } = nifResult;
   const rM = rendementAccumulation / 12;
   const n  = Math.max(1, anneesAvant) * 12;
 
-  // Valeur future de l'épargne actuelle + cotisations futures (en dollars nominaux)
+  // Valeur future nominale de l'épargne + cotisations
   const fvSolde = soldeActuel * Math.pow(1 + rM, n);
   const fvCot   = rM > 0 ? cotMensuelle * (Math.pow(1 + rM, n) - 1) / rM : cotMensuelle * n;
-  const capitalProjetee = fvSolde + fvCot;
+  const capitalProjeteeNominal = fvSolde + fvCot;
+
+  // Déflater en dollars d'aujourd'hui pour comparer avec NIF (aussi en dollars constants)
+  const fi = Math.pow(1 + inflation, anneesAvant);
+  const capitalProjetee = capitalProjeteeNominal / fi;
 
   const ecart  = capitalProjetee - nif;
   const score  = nif > 0 ? capitalProjetee / nif * 100 : 100;
 
   // Cotisation mensuelle supplémentaire pour atteindre le NIF
+  // NIF est en $ constants → le convertir en $ nominaux pour calculer la cotisation
+  const nifNominal = nif * fi;
   let cotSuppNecessaire = 0;
-  if (capitalProjetee < nif && anneesAvant > 0 && rM > 0) {
+  if (capitalProjeteeNominal < nifNominal && anneesAvant > 0 && rM > 0) {
     const facteur = (Math.pow(1 + rM, n) - 1) / rM;
-    cotSuppNecessaire = Math.max(0, (nif - fvSolde) / facteur);
+    cotSuppNecessaire = Math.max(0, (nifNominal - fvSolde) / facteur);
   }
 
   const statut = score >= 110 ? "depasse"
@@ -134,7 +147,8 @@ export function calcAtteintNIF({
     : "critique";
 
   return {
-    capitalProjetee:   Math.round(capitalProjetee),
+    capitalProjetee:        Math.round(capitalProjetee),        // dollars d'aujourd'hui
+    capitalProjeteeNominal: Math.round(capitalProjeteeNominal), // dollars nominaux à la retraite
     ecart:             Math.round(ecart),
     score:             Math.min(Math.round(score), 999),
     cotSuppNecessaire: Math.round(cotSuppNecessaire),

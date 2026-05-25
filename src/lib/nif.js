@@ -48,14 +48,17 @@ export function calcNIF({
   rendement    = IQPF.REND_DECAISSE,
   inflation    = IQPF.INFLATION,
 }) {
-  const anneesAvant   = Math.max(0, ageRetraite - ageActuel);
   const anneesRetrait = Math.max(1, esperanceVie - ageRetraite);
-  const fi = Math.pow(1+inflation, anneesAvant);
-  const manque = Math.max(0, cibleAnnuelle*fi - revenuGarantiAnnuel*fi);
-  if (manque <= 0) return 0;
-  const rReel = ((1+rendement)/(1+inflation))-1;
-  if (rReel <= 0.001) return Math.round(manque*anneesRetrait);
-  return Math.max(0, Math.round(manque*((1-Math.pow(1+rReel,-anneesRetrait))/rReel)));
+
+  // Manque en dollars d'aujourd'hui (cible et garantis croissent au même rythme)
+  const manqueReel = Math.max(0, cibleAnnuelle - revenuGarantiAnnuel);
+  if (manqueReel <= 0) return 0;
+
+  // Rendement réel (Fisher) — donne le NIF en dollars constants d'aujourd'hui
+  const rendementReel = ((1 + rendement) / (1 + inflation)) - 1;
+  if (rendementReel <= 0.001) return Math.round(manqueReel * anneesRetrait);
+
+  return Math.max(0, Math.round(manqueReel * ((1 - Math.pow(1 + rendementReel, -anneesRetrait)) / rendementReel)));
 }
 
 export function calcCapitalProjecte({
@@ -63,16 +66,23 @@ export function calcCapitalProjecte({
   soldeReerB=0, soldeCeliB=0, cotReerMensB=0, cotCeliMensB=0,
   anneesAccumA, anneesAccumB=null,
   rendement = IQPF.REND_ACCUM,
+  inflation = IQPF.INFLATION,
 }) {
   const reerA = valeurFuture(soldeReer,  cotReerMens,  rendement, anneesAccumA);
   const celiA = valeurFuture(soldeCeli,  cotCeliMens,  rendement, anneesAccumA);
   const reerB = anneesAccumB!==null ? valeurFuture(soldeReerB,cotReerMensB,rendement,anneesAccumB) : soldeReerB;
   const celiB = anneesAccumB!==null ? valeurFuture(soldeCeliB,cotCeliMensB,rendement,anneesAccumB) : soldeCeliB;
+  const total = reerA + celiA + reerB + celiB;
+
+  // Déflater en dollars d'aujourd'hui pour comparer avec NIF (aussi en dollars constants)
+  const fi = Math.pow(1 + inflation, anneesAccumA);
+
   return {
     reerA:Math.round(reerA), celiA:Math.round(celiA),
     reerB:Math.round(reerB), celiB:Math.round(celiB),
     totalReer:Math.round(reerA+reerB), totalCeli:Math.round(celiA+celiB),
-    total:Math.round(reerA+celiA+reerB+celiB),
+    total:Math.round(total),                    // dollars nominaux à la retraite
+    totalAujourdhui: Math.round(total / fi),    // dollars d'aujourd'hui
   };
 }
 
