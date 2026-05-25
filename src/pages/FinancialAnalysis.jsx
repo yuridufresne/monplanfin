@@ -567,6 +567,32 @@ function CompteEpargneSection({ type, label, comptes, setComptes }) {
 function RetraitePanel({ data, setData, stepData }) {
   const f = (k) => (v) => setData(p => ({ ...p, [k]: v }));
 
+  // Revenu brut annuel combiné (principal + conjoint) depuis l'étape Revenu
+  const revData = stepData?.revenu || {};
+  const brutAnnuel = [
+    ...(revData.emplois || []),
+    ...(revData.conjoint?.emplois || []),
+  ].reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0), 0);
+  const brutMensuel = brutAnnuel / 12;
+
+  const handleMensuelChange = (v) => {
+    const mensuel = parseFloat(v) || 0;
+    const updates = { revenu_retraite_mensuel: v };
+    if (brutMensuel > 0 && mensuel > 0) {
+      updates.revenu_retraite_pct = Math.round((mensuel / brutMensuel) * 100);
+    }
+    setData(p => ({ ...p, ...updates }));
+  };
+
+  const handlePctChange = (v) => {
+    const pct = parseFloat(v) || 0;
+    const updates = { revenu_retraite_pct: v };
+    if (brutMensuel > 0 && pct > 0) {
+      updates.revenu_retraite_mensuel = Math.round(brutMensuel * pct / 100);
+    }
+    setData(p => ({ ...p, ...updates }));
+  };
+
   const comptes = data.comptes || {};
   const setComptes = (updater) => setData(p => ({
     ...p,
@@ -596,8 +622,12 @@ function RetraitePanel({ data, setData, stepData }) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <Field label="Âge prévu de retraite"><Input value={data.age_retraite} onChange={f("age_retraite")} type="number" placeholder="65" /></Field>
         <Field label="Espérance de vie visée"><Input value={data.esperance_vie} onChange={f("esperance_vie")} type="number" placeholder="90" /></Field>
-        <Field label="Revenu mensuel désiré à la retraite ($)"><Input value={data.revenu_retraite_mensuel} onChange={f("revenu_retraite_mensuel")} type="number" /></Field>
-        <Field label="% du revenu actuel" hint="80% recommandé"><Input value={data.revenu_retraite_pct} onChange={f("revenu_retraite_pct")} type="number" placeholder="80" /></Field>
+        <Field label="Revenu mensuel désiré à la retraite ($)" hint={brutMensuel > 0 && data.revenu_retraite_pct ? `≈ ${Math.round(data.revenu_retraite_pct)}% du revenu actuel` : undefined}>
+          <Input value={data.revenu_retraite_mensuel} onChange={handleMensuelChange} type="number" placeholder={brutMensuel > 0 ? Math.round(brutMensuel * 0.8) : ""} />
+        </Field>
+        <Field label="% du revenu actuel" hint={brutMensuel > 0 && data.revenu_retraite_mensuel ? `≈ ${Math.round(data.revenu_retraite_mensuel).toLocaleString('fr-CA')} $/mois` : "80% recommandé"}>
+          <Input value={data.revenu_retraite_pct} onChange={handlePctChange} type="number" placeholder="80" />
+        </Field>
       </div>
 
       <AssistantPrestations data={data} setData={setData} stepData={stepData} />
