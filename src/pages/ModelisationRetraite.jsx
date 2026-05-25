@@ -137,8 +137,7 @@ export default function ModelisationRetraite() {
   // États
   const [tab,      setTab]      = useState("plan");
   const [unlocked, setUnlocked] = useState(false);
-  const [rendReer, setRendReer] = useState(7);
-  const [rendCeli, setRendCeli] = useState(6);
+  const [rend, setRend] = useState(7);
   const [espVie,   setEspVie]   = useState(90);
   const [cible,    setCible]    = useState(() => Math.round((brutA+brutB||80000)*.80));
 
@@ -164,22 +163,19 @@ export default function ModelisationRetraite() {
     ageActuelB:enCouple?ageB:null, ageRetraiteB:enCouple?ageRetB:null,
     reerB:enCouple?reerBv:0, celiB:enCouple?celiBv:0,
     cotReerB:enCouple?cotReerB:0, cotCeliB:enCouple?cotCeliB:0,
-    rendementReer:rendReer/100, rendementCeli:rendCeli/100,
-    tauxMarginal:0.475, inclureRetourImpot:true,
-  }),[ageA,ageB,ageRetA,ageRetB,reerAv,celiAv,reerBv,celiBv,cotReerA,cotCeliA,cotReerB,cotCeliB,rendReer,rendCeli,enCouple]);
+    rendement:rend/100,
+  }),[ageA,ageB,ageRetA,ageRetB,reerAv,celiAv,reerBv,celiBv,cotReerA,cotCeliA,cotReerB,cotCeliB,rend,enCouple]);
 
   const params = useMemo(()=>({
-    ageA, ageRetraiteA:ageRetA, salaireA:0,
+    ageA:ageRetA, ageRetraiteA:ageRetA, salaireA:0,
     rrqA:adjRRQ(rrqA,rrqAp)*12, svA:713.34*12, pensionA:pensA*12,
     reerA:projection.reerA, celiA:projection.celiA,
-    ageB:enCouple?ageB:ageA, ageRetraiteB:enCouple?ageRetB:99,
+    ageB:enCouple?ageRetA+(ageB-ageA):ageRetA, ageRetraiteB:enCouple?ageRetB:99,
     salaireB:0, rrqB:enCouple?adjRRQ(rrqB,rrqBp)*12:0,
     svB:enCouple?713.34*12:0, pensionB:enCouple?pensB*12:0,
     reerB:enCouple?projection.reerB:0, celiB:enCouple?projection.celiB:0,
-    cibleNette:cible, inflation:.025,
-    rendement:(rendReer+rendCeli)/2/100,
-    esperanceVie:espVie,
-  }),[ageA,ageB,ageRetA,ageRetB,rrqAp,rrqBp,projection,cible,rendReer,rendCeli,espVie,enCouple,rrqA,rrqB,pensA,pensB]);
+    cibleNette:cible, inflation:.025, rendement:rend/100, esperanceVie:espVie,
+  }),[ageA,ageB,ageRetA,ageRetB,rrqAp,rrqBp,projection,cible,rend,espVie,enCouple,rrqA,rrqB,pensA,pensB]);
 
   const rows       = useMemo(()=>simulerDecaissement(params),[params]);
   const last       = rows[rows.length-1]||{};
@@ -222,15 +218,9 @@ export default function ModelisationRetraite() {
           {/* Contrôles de base */}
           <div style={{ display:"flex", gap:12, marginBottom:14, flexWrap:"wrap", alignItems:"center", background:"rgba(255,255,255,.03)", border:"1px solid rgba(255,255,255,.07)", borderRadius:12, padding:"12px 16px" }}>
             <label style={{ display:"flex", alignItems:"center", gap:7, ...S.label }}>
-              Rendement REER
-              <select value={rendReer} onChange={e=>setRendReer(+e.target.value)} style={{...S.select,marginLeft:5}}>
-                {[3,4,5,6,7,8,9,10].map(v=><option key={v} value={v} style={{background:"#0D1628"}}>{v}%</option>)}
-              </select>
-            </label>
-            <label style={{ display:"flex", alignItems:"center", gap:7, ...S.label }}>
-              Rendement CELI
-              <select value={rendCeli} onChange={e=>setRendCeli(+e.target.value)} style={{...S.select,marginLeft:5}}>
-                {[3,4,5,6,7,8,9,10].map(v=><option key={v} value={v} style={{background:"#0D1628"}}>{v}%</option>)}
+              Rendement
+              <select value={rend} onChange={e=>setRend(+e.target.value)} style={{...S.select,marginLeft:5}}>
+                {[3,4,5,6,7,8,9,10].map(v=><option key={v} value={v} style={{background:"#0D1628"}}>{v}%/an</option>)}
               </select>
             </label>
             <label style={{ display:"flex", alignItems:"center", gap:7, ...S.label }}>
@@ -263,25 +253,23 @@ export default function ModelisationRetraite() {
           </div>
 
           {/* Soldes projetés à la retraite */}
-          <div style={{background:"rgba(201,160,99,.06)",border:"1px solid rgba(201,160,99,.18)",borderRadius:12,padding:"12px 16px",marginBottom:12}}>
+          <div style={{background:"rgba(201,160,99,.05)",border:"1px solid rgba(201,160,99,.15)",borderRadius:12,padding:"12px 16px",marginBottom:12}}>
             <div style={{fontSize:10,fontWeight:600,color:"rgba(201,160,99,.7)",textTransform:"uppercase",letterSpacing:".06em",marginBottom:8}}>
-              Soldes projetés à la retraite ({ageRetA} ans) — point de départ du décaissement
+              Point de départ du décaissement — soldes projetés à {ageRetA} ans
             </div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
               {[
-                {l:"REER brut total",v:projection.totalReer,c:"#C9A063"},
-                {l:"CELI total (+ retour impôt)",v:projection.totalCeli,c:"#5BC4A0"},
-                {l:"Total brut",v:projection.total,c:"#fff"},
-                {l:"Total net (REER×70%+CELI)",v:projection.totalNet,c:"#6B8ED6"},
+                {l:"REER total", v:projection.totalReer, c:"#C9A063", sub:`Soldes actuels + cotisations × ${rend}%/an`},
+                {l:"CELI total", v:projection.totalCeli, c:"#5BC4A0", sub:`Soldes actuels + cotisations × ${rend}%/an`},
+                {l:"Total épargne", v:projection.total, c:"#fff", sub:"Entrée dans la simulation"},
+                {l:"Années d'accumulation", v:`${projection.anneesA} ans`, c:"rgba(255,255,255,.5)", sub:`De ${ageA} à ${ageRetA} ans`},
               ].map(s=>(
                 <div key={s.l} style={{background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.07)",borderRadius:8,padding:"8px 10px"}}>
                   <div style={{fontSize:9,color:"rgba(255,255,255,.28)",textTransform:"uppercase",letterSpacing:".06em",marginBottom:3}}>{s.l}</div>
-                  <div style={{fontSize:14,fontWeight:700,color:s.c}}>{s.v.toLocaleString("fr-CA")} $</div>
+                  <div style={{fontSize:14,fontWeight:700,color:s.c}}>{typeof s.v==="string"?s.v:s.v.toLocaleString("fr-CA")+" $"}</div>
+                  <div style={{fontSize:9,color:"rgba(255,255,255,.22)",marginTop:2}}>{s.sub}</div>
                 </div>
               ))}
-            </div>
-            <div style={{gridColumn:"1/-1",fontSize:10,color:"rgba(255,255,255,.3)",marginTop:6}}>
-              Inclut le retour d'impôt REER réinvesti en CELI (double dipping) · REER net = brut × 70% (impôt estimé 30% à la retraite) · Rendement décaissement = moyenne REER+CELI ({((rendReer+rendCeli)/2).toFixed(1)}%/an)
             </div>
           </div>
 
@@ -355,8 +343,7 @@ export default function ModelisationRetraite() {
                 <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10 }}>
                   {[
                     ["Revenu cible ($/an)", <input key="c" type="number" value={cible} onChange={e=>setCible(+e.target.value)} style={S.input}/>],
-                    ["Rendement REER", <select key="rr" value={rendReer} onChange={e=>setRendReer(+e.target.value)} style={S.select}>{[2,3,4,5,6,7,8,9,10].map(v=><option key={v} value={v} style={{background:"#0D1628"}}>{v}%</option>)}</select>],
-                    ["Rendement CELI", <select key="rc" value={rendCeli} onChange={e=>setRendCeli(+e.target.value)} style={S.select}>{[2,3,4,5,6,7,8,9,10].map(v=><option key={v} value={v} style={{background:"#0D1628"}}>{v}%</option>)}</select>],
+                    ["Rendement", <select key="r" value={rend} onChange={e=>setRend(+e.target.value)} style={S.select}>{[3,4,5,6,7,8,9,10].map(v=><option key={v} value={v} style={{background:"#0D1628"}}>{v}%/an</option>)}</select>],
                     ["Espérance de vie", <select key="e" value={espVie} onChange={e=>setEspVie(+e.target.value)} style={S.select}>{[80,83,85,88,90,93,95,98,100].map(v=><option key={v} value={v} style={{background:"#0D1628"}}>{v} ans</option>)}</select>],
                   ].map(([l,ctrl])=>(
                     <div key={l}><div style={{...S.label,marginBottom:5}}>{l}</div>{ctrl}</div>

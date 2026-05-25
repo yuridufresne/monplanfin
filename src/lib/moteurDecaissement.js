@@ -56,10 +56,7 @@ export function projeterSoldesRetraite({
   reerA, celiA, cotReerA = 0, cotCeliA = 0,
   ageActuelB = null, ageRetraiteB = null,
   reerB = 0, celiB = 0, cotReerB = 0, cotCeliB = 0,
-  rendementReer = 0.07,
-  rendementCeli = 0.06,
-  tauxMarginal = 0.475,
-  inclureRetourImpot = true,
+  rendement = 0.07,
 }) {
   const FV = (solde, cot, r, n) => {
     if (n <= 0) return solde;
@@ -69,37 +66,27 @@ export function projeterSoldesRetraite({
       : solde + cot * nM;
   };
 
-  const retourA = inclureRetourImpot ? cotReerA * tauxMarginal : 0;
-  const retourB = inclureRetourImpot ? cotReerB * tauxMarginal : 0;
-
   const nA = Math.max(0, ageRetraiteA - ageActuelA);
-  const projReerA = FV(reerA, cotReerA, rendementReer, nA);
-  const projReerANet = projReerA * 0.70;
-  const projCeliA = FV(celiA, cotCeliA + retourA, rendementCeli, nA);
+  const projReerA = FV(reerA, cotReerA, rendement, nA);
+  const projCeliA = FV(celiA, cotCeliA, rendement, nA);
 
-  let projReerB = reerB, projReerBNet = reerB * 0.70, projCeliB = celiB;
+  let projReerB = reerB, projCeliB = celiB;
   if (ageActuelB !== null && ageRetraiteB !== null) {
     const nB = Math.max(0, ageRetraiteB - ageActuelB);
-    projReerB = FV(reerB, cotReerB, rendementReer, nB);
-    projReerBNet = projReerB * 0.70;
-    projCeliB = FV(celiB, cotCeliB + retourB, rendementCeli, nB);
+    projReerB = FV(reerB, cotReerB, rendement, nB);
+    projCeliB = FV(celiB, cotCeliB, rendement, nB);
   }
-
-  const nB2 = ageActuelB !== null ? Math.max(0, (ageRetraiteB || 65) - (ageActuelB || 65)) : 0;
 
   return {
     reerA: Math.round(projReerA),
-    reerANet: Math.round(projReerANet),
     celiA: Math.round(projCeliA),
-    retourImpotA: Math.round(FV(0, retourA, rendementCeli, nA)),
     reerB: Math.round(projReerB),
-    reerBNet: Math.round(projReerBNet),
     celiB: Math.round(projCeliB),
-    retourImpotB: Math.round(FV(0, retourB, rendementCeli, nB2)),
     totalReer: Math.round(projReerA + projReerB),
     totalCeli: Math.round(projCeliA + projCeliB),
-    totalNet: Math.round(projReerANet + projCeliA + projReerBNet + projCeliB),
     total: Math.round(projReerA + projCeliA + projReerB + projCeliB),
+    anneesA: nA,
+    anneesB: ageActuelB !== null ? Math.max(0, (ageRetraiteB || 65) - ageActuelB) : 0,
   };
 }
 
