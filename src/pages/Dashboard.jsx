@@ -486,6 +486,9 @@ export default function Dashboard() {
                                 const isActuel = rend.defaut && age === (ageRetraite || 65);
                                 return (
                                   <div key={age} style={{ padding: "14px 10px", borderLeft: `1px solid ${c.border}`, textAlign: "center", position: "relative", background: c.bg, transition: "all .2s", outline: isActuel ? `2px solid ${c.text}` : "none", outlineOffset: -2 }}>
+                                    <div style={{ position: "absolute", top: 5, left: 5, fontSize: 9, fontWeight: 700, color: c.text, background: c.bg, border: `1px solid ${c.border}`, borderRadius: 4, padding: "1px 5px", lineHeight: 1.4, opacity: 0.85 }}>
+                                      {cell.score}%
+                                    </div>
                                     {isActuel && (
                                       <div style={{ position: "absolute", top: -9, left: "50%", transform: "translateX(-50%)", fontSize: 8, fontWeight: 700, color: c.text, background: "#0A1628", padding: "1px 6px", borderRadius: 4, border: `1px solid ${c.border}`, whiteSpace: "nowrap" }}>Actuel</div>
                                     )}
