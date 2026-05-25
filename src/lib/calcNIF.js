@@ -131,13 +131,14 @@ export function calcAtteintNIF({
   const ecart  = capitalProjetee - nif;
   const score  = nif > 0 ? capitalProjetee / nif * 100 : 100;
 
-  // Cotisation mensuelle supplémentaire pour atteindre le NIF
-  // NIF est en $ constants → le convertir en $ nominaux pour calculer la cotisation
+  // Cotisation mensuelle SUPPLÉMENTAIRE pour atteindre le NIF
+  // = ce qu'il faut ajouter EN PLUS des cotisations actuelles
   const nifNominal = nif * fi;
   let cotSuppNecessaire = 0;
   if (capitalProjeteeNominal < nifNominal && anneesAvant > 0 && rM > 0) {
     const facteur = (Math.pow(1 + rM, n) - 1) / rM;
-    cotSuppNecessaire = Math.max(0, (nifNominal - fvSolde) / facteur);
+    // manque nominal = NIF nominal − capital déjà projeté (solde + cotisations actuelles)
+    cotSuppNecessaire = Math.max(0, (nifNominal - capitalProjeteeNominal) / facteur);
   }
 
   const statut = score >= 110 ? "depasse"
