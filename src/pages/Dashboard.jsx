@@ -393,24 +393,29 @@ export default function Dashboard() {
                     const badgeC = scoreC >= 90 ? "green" : scoreC >= 50 ? "gold" : "red";
                     const statutC = scoreC >= 100 ? "depasse" : scoreC >= 90 ? "atteint" : scoreC >= 60 ? "en_voie" : scoreC >= 30 ? "insuffisant" : "critique";
 
+                    // Utilise calcNIFFromProfiles comme source unique (même que ModelisationRetraite)
+                    const nifScore  = scoreNIF;
+                    const nifColor2 = nifScore >= 100 ? "#5BC4A0" : nifScore >= 75 ? "#C9A063" : nifScore >= 50 ? "#f59e0b" : "#f87171";
+                    const nifBadge2 = ["depasse","atteint"].includes(statut) ? "green" : statut === "en_voie" ? "gold" : "red";
+
                     return (
                       <>
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                             <p style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>Indépendance financière</p>
-                            <Badge color={badgeC}>{statutLabels[statutC]}</Badge>
+                            <Badge color={nifBadge2}>{statutLabels[statut]}</Badge>
                           </div>
                           <Link to="/avance" style={{ fontSize: 11, color: "#C9A063", textDecoration: "none", display: "flex", alignItems: "center", gap: 4 }}>
                             <ExternalLink style={{ width: 10, height: 10 }} /> Avancé
                           </Link>
                         </div>
                         <div style={{ display: "flex", gap: "1.5rem", alignItems: "center", flexWrap: "wrap" }}>
-                          <div style={{ flexShrink: 0 }}><ScoreArc score={scoreC} /></div>
+                          <div style={{ flexShrink: 0 }}><ScoreArc score={nifScore} /></div>
                           <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 10 }}>
                             {[
-                              { label: "NIF cible", value: fmt(cell0.nif), color: "#C9A063", info: "Capital initial nécessaire pour que l'épargne ne tombe jamais à 0 jusqu'à 90 ans. Simulation année par année avec RRQ, PSV, Pension PD selon l'âge réel." },
-                              { label: "Capital projeté", value: fmt(cell0.cap), color: "#6B8ED6", info: "Valeur projetée de vos épargnes actuelles + cotisations mensuelles à 7%/an jusqu'à " + ageBase0 + " ans." },
-                              ...(cell0.cotSupp > 0 ? [{ label: "Cotisation supp.", value: `${fmt(cell0.cotSupp)}/mois`, color: "#f87171", info: "Montant mensuel additionnel en REER+CELI pour atteindre le NIF à " + ageBase0 + " ans à 7%/an." }] : []),
+                              { label: "NIF cible", value: fmt(capitalNIF), color: "#C9A063", info: "Capital nécessaire à la retraite pour maintenir votre revenu cible jusqu'à " + (esperanceVie||95) + " ans, après soustraction des revenus garantis (RRQ, PSV, Pension)." },
+                              { label: "Capital projeté", value: fmt(capitalProjecte), color: "#6B8ED6", info: "Valeur projetée de vos épargnes actuelles + cotisations mensuelles à 7%/an jusqu'à " + (ageRetraite||65) + " ans." },
+                              ...(cotSupp > 0 ? [{ label: "Cotisation supp.", value: `${fmt(cotSupp)}/mois`, color: "#f87171", info: "Montant mensuel additionnel pour atteindre le NIF à " + (ageRetraite||65) + " ans à 7%/an." }] : []),
                             ].map(m => (
                               <div key={m.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "7px 10px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
                                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -425,10 +430,10 @@ export default function Dashboard() {
                         <div style={{ marginTop: 14 }}>
                           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                             <p style={MUTED}>Progression vers le NIF</p>
-                            <p style={{ ...MUTED, color: colorC }}>{scoreC}%</p>
+                            <p style={{ ...MUTED, color: nifColor2 }}>{nifScore}%</p>
                           </div>
                           <div style={{ height: 5, borderRadius: 99, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
-                            <div style={{ height: "100%", width: `${Math.min(scoreC, 100)}%`, background: `linear-gradient(90deg, ${colorC}, ${colorC}cc)`, borderRadius: 99, transition: "width 1s ease" }} />
+                            <div style={{ height: "100%", width: `${Math.min(nifScore, 100)}%`, background: `linear-gradient(90deg, ${nifColor2}, ${nifColor2}cc)`, borderRadius: 99, transition: "width 1s ease" }} />
                           </div>
                         </div>
                       </>

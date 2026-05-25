@@ -314,10 +314,10 @@ export default function ModelisationRetraite() {
 
   const donneesGraphique = useMemo(()=>{
     const proj = paramsBase._proj;
-    const capR = proj.reerA+proj.celiA+proj.reerB+proj.celiB;
+    const capR = nifData.capitalProjecte; // source unique — même que dashboard
     const cibleSim = Math.round(cibleABF*(taux/tauxABF));
     const gar65 = (rrqA||0)+(svA||0)+(rrqB||0)+(svB||0)+(pensA||0)+(pensB||0);
-    const nif = nifData.capitalNIF;
+    const nif = nifData.capitalNIF;       // source unique — même que dashboard
 
     // Courbe NIF : simulation avec capital NIF comme point de départ
     let capNIF = nif;
