@@ -23,7 +23,7 @@ export default function FlipCard({ front, back, expandedHeight = 560, onFlip }) 
         style={{
           position: "relative",
           width: "100%",
-          height: flipped ? expandedHeight : 220,
+          height: flipped ? `min(${expandedHeight}px, calc(100vh - 120px))` : 220,
           transformStyle: "preserve-3d",
           transition: "transform 0.5s cubic-bezier(0.4,0,0.2,1), height 0.4s ease",
           transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)",
@@ -56,6 +56,7 @@ export default function FlipCard({ front, back, expandedHeight = 560, onFlip }) 
           border: "1px solid rgba(201,160,99,0.18)",
           borderRadius: 16, padding: "20px 22px",
           overflowY: "auto",
+          maxHeight: "min(580px, calc(100vh - 120px))",
         }}>
           <button
             onClick={e => { e.stopPropagation(); handleFlip(); }}

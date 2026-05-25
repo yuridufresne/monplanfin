@@ -91,19 +91,19 @@ export default function PlacementStrategie({ retraiteABF={}, retraiteConj={}, re
   };
 
   return (
-    <div>
+    <div style={{ display:"flex", flexDirection:"column", height:"100%", overflow:"hidden" }}>
       {/* Header */}
-      <div style={{ marginBottom:14 }}>
+      <div style={{ marginBottom:10 }}>
         <div style={{ fontSize:14, fontWeight:700, color:"#C9A063", marginBottom:2 }}>Placements & épargne</div>
         <div style={{ fontSize:11, color:"rgba(255,255,255,0.35)" }}>Projection REER & CELI selon la répartition choisie</div>
       </div>
 
       {/* Deux rectangles */}
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:14 }}>
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, flex:1, overflow:"auto", minHeight:0, marginBottom:8 }}>
 
         {/* GAUCHE — Plan actuel (read-only) */}
-        <div style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.09)", borderRadius:12, padding:"14px 16px" }}>
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+        <div style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.09)", borderRadius:12, padding:"10px 12px" }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:7 }}>
             <div style={{ ...S.label, margin:0 }}>Plan actuel</div>
             <span style={{ fontSize:9, color:"rgba(255,255,255,0.2)", background:"rgba(255,255,255,0.05)", padding:"2px 7px", borderRadius:4 }}>Depuis ABF</span>
           </div>
@@ -146,14 +146,14 @@ export default function PlacementStrategie({ retraiteABF={}, retraiteConj={}, re
         </div>
 
         {/* DROITE — Simulation (read/write) */}
-        <div style={{ background:"rgba(201,160,99,0.04)", border:"1px solid rgba(201,160,99,0.18)", borderRadius:12, padding:"14px 16px" }}>
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+        <div style={{ background:"rgba(201,160,99,0.04)", border:"1px solid rgba(201,160,99,0.18)", borderRadius:12, padding:"10px 12px" }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:7 }}>
             <div style={{ ...S.label, margin:0, color:"rgba(201,160,99,0.6)" }}>Simulation</div>
             <span style={{ fontSize:9, color:"rgba(201,160,99,0.4)", background:"rgba(201,160,99,0.08)", padding:"2px 7px", borderRadius:4 }}>Modifiable</span>
           </div>
 
           {/* Slider budget */}
-          <div style={{ marginBottom:10 }}>
+          <div style={{ marginBottom:7 }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:3 }}>
               <span style={{ ...S.muted }}>Budget mensuel épargne</span>
               <div style={{ display:"flex", alignItems:"center", gap:8 }}>
@@ -174,7 +174,7 @@ export default function PlacementStrategie({ retraiteABF={}, retraiteConj={}, re
           </div>
 
           {/* Slider répartition */}
-          <div style={{ marginBottom:10 }}>
+          <div style={{ marginBottom:7 }}>
             <div style={{ display:"flex", justifyContent:"space-between", marginBottom:3 }}>
               <span style={{ ...S.muted }}>Répartition épargne</span>
               <div style={{ display:"flex", gap:10 }}>
@@ -189,7 +189,7 @@ export default function PlacementStrategie({ retraiteABF={}, retraiteConj={}, re
           </div>
 
           {/* Sélecteurs de rendement */}
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:12 }}>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6, marginBottom:8 }}>
             {[
               { label:"Rendement REER", value:rendReer, set:setRendReer, color:"#C9A063" },
               { label:"Rendement CELI", value:rendCeli, set:setRendCeli, color:"#5BC4A0" },
@@ -250,12 +250,12 @@ export default function PlacementStrategie({ retraiteABF={}, retraiteConj={}, re
       </div>
 
       {/* Banner stratégies avancées */}
-      <div onClick={()=>setAdvOpen(o=>!o)} style={{ background:"linear-gradient(135deg,rgba(201,160,99,0.06),rgba(127,119,221,0.06))", border:"1px solid rgba(201,160,99,0.2)", borderRadius:12, padding:"14px 16px", cursor:"pointer" }}>
+      <div onClick={()=>setAdvOpen(o=>!o)} style={{ background:"linear-gradient(135deg,rgba(201,160,99,0.06),rgba(127,119,221,0.06))", border:"1px solid rgba(201,160,99,0.2)", borderRadius:12, padding:"10px 12px", cursor:"pointer", flexShrink:0 }}>
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
           <div style={{ width:28, height:28, borderRadius:"50%", background:"rgba(201,160,99,0.12)", border:"1px solid rgba(201,160,99,0.28)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, flexShrink:0 }}>🔒</div>
           <div style={{ flex:1 }}>
-            <div style={{ fontSize:12, fontWeight:700, color:"#C9A063", marginBottom:1 }}>Stratégies avancées — Plan conseiller</div>
-            <div style={{ fontSize:10, color:"rgba(255,255,255,0.35)" }}>REER conjoint · Fractionnement pension PD · Optimisation séquence · Plan de décaissement</div>
+            <div style={{ fontSize:11, fontWeight:700, color:"#C9A063", marginBottom:1 }}>Stratégies avancées — Plan conseiller</div>
+            <div style={{ fontSize:9, color:"rgba(255,255,255,0.35)" }}>REER conjoint · Fractionnement pension PD · Optimisation séquence · Plan de décaissement</div>
           </div>
           <span style={{ fontSize:11, fontWeight:600, color:"#C9A063", flexShrink:0 }}>{advOpen?"▲":"Voir →"}</span>
         </div>
