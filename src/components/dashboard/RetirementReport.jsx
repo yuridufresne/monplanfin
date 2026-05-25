@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { calcNIFFromProfiles, calcAtteintNIF } from "@/lib/calcNIF";
+import { buildPayload } from "@/lib/clientPayload";
 import FlipCard from "@/components/ui/FlipCard";
 import PlanDecaissement from "@/components/dashboard/PlanDecaissement";
 
@@ -120,6 +121,9 @@ export default function RetirementReport({ profiles }) {
     rrqMensuelTotal, psvMensuelTotal,
     revBrut, tauxRemplacement,
   } = nif;
+
+  // Données d'épargne via source unique buildPayload
+  const pl = useMemo(() => buildPayload(profiles), [profiles]);
 
   const anneesAvant = anneesAccum;
   const anneesPend  = anneesDecaisse;

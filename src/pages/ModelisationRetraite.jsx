@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { simulerDecaissement, projeterSoldesRetraite } from "@/lib/moteurDecaissement";
 import { calcNIFFromProfiles } from "@/lib/calcNIF";
+import { buildPayload, IQPF as IQPF_CP } from "@/lib/clientPayload";
 import { ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { Link } from "react-router-dom";
 
@@ -183,62 +184,40 @@ export default function ModelisationRetraite() {
     queryFn: () => base44.entities.FinancialProfile.list(),
   });
 
-  const unwrap = (raw) => {
-    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return raw || {};
-    const hasBusinessFields = raw.emplois || raw.hypotheques || raw.dettes || raw.comptes || raw.montant_fonds || raw.nom || raw.enfants;
-    if (hasBusinessFields) return raw;
-    if (raw.data && typeof raw.data === "object" && !Array.isArray(raw.data)) return unwrap(raw.data);
-    return raw;
-  };
+  // ── Lecture données ABF via source unique buildPayload ───────────────────────
+  const pl = useMemo(() => buildPayload(profiles), [profiles]);
+  const pA_pl = pl.conjoint_a;
+  const pB_pl = pl.conjoint_b;
+  const enCouple = pl.enCouple;
 
-  // ── Lecture données ABF ────────────────────────────────────────────────────────
-  const abf      = useMemo(() => profiles.reduce((o,p)=>({...o,[p.section]:unwrap(p.data||p)}),{}), [profiles]);
-  const profil   = abf.profil_personnel || {};
-  const rev      = abf.revenu || {};
-  const ret      = abf.retraite || {};
-  const retCj    = ret.conjoint || {};
-  const enCouple = ["marie","conjoint","union_civile"].includes(profil.situation||"");
+  const prenomA = pA_pl.prenom || "Client";
+  const prenomB = pB_pl?.prenom || "Conjoint(e)";
 
-  const prenomA = profil.prenom || profil.nom?.split(" ")[0] || "Client";
-  const prenomB = profil.conjoint?.prenom || profil.conjoint?.nom?.split(" ")[0] || "Conjoint(e)";
+  const ageA = pA_pl.age || 38;
+  const ageB = pB_pl?.age || (enCouple ? ageA - 2 : ageA);
+  const retA = pA_pl.ageRetraite;
+  const retB = pB_pl?.ageRetraite || 65;
+  const espVieABF = pl.hypotheses.esperance_vie;
 
-  const dobA  = profil.dob || profil.date_naissance;
-  const dobB  = profil.conjoint?.dob || profil.conjoint?.date_naissance;
-  const ageA  = dobA ? Math.floor((Date.now()-new Date(dobA))/(365.25*24*3600*1000)) : 38;
-  const ageB  = dobB ? Math.floor((Date.now()-new Date(dobB))/(365.25*24*3600*1000)) : (enCouple ? ageA-2 : ageA);
-
-  const retA  = parseInt(ret.age_retraite)  || 65;
-  const retB  = parseInt(retCj.age_retraite) || 65;
-
-  const espVieABF = parseInt(ret.esperance_vie) || 95;
-
-  const brutA = (rev.emplois||[]).reduce((s,e)=>s+(parseFloat(e.revenu_brut)||0),0);
-  const brutB = enCouple ? (rev.conjoint?.emplois||[]).reduce((s,e)=>s+(parseFloat(e.revenu_brut)||0),0) : 0;
-
-  // cotisations stockées en mensuel dans l'ABF — on garde en mensuel pour fv()
-  const reerA    = (ret.comptes?.reer||[]).reduce((s,c)=>s+(parseFloat(c.solde)||0),0);
-  const cotReerA = (ret.comptes?.reer||[]).reduce((s,c)=>s+(parseFloat(c.cotisation_mensuelle)||0),0);
-  const celiA    = (ret.comptes?.celi||[]).reduce((s,c)=>s+(parseFloat(c.solde)||0),0);
-  const cotCeliA = (ret.comptes?.celi||[]).reduce((s,c)=>s+(parseFloat(c.cotisation_mensuelle)||0),0);
-
-  const reerB      = enCouple ? (retCj.comptes?.reer||[]).reduce((s,c)=>s+(parseFloat(c.solde)||0),0) : 0;
-  const cotReerB   = enCouple ? (retCj.comptes?.reer||[]).reduce((s,c)=>s+(parseFloat(c.cotisation_mensuelle)||0),0) : 0;
-  const soldeCeliB = enCouple ? (retCj.comptes?.celi||[]).reduce((s,c)=>s+(parseFloat(c.solde)||0),0) : 0;
-  const cotCeliB   = enCouple ? (retCj.comptes?.celi||[]).reduce((s,c)=>s+(parseFloat(c.cotisation_mensuelle)||0),0) : 0;
-
-  // cotReerA/cotCeliA sont maintenant en mensuel — annualiser pour rrq seulement
-  const rrqA  = (parseFloat(ret.rrq)  || 0) * 12;
-  const rrqB  = enCouple ? (parseFloat(retCj.rrq) || 0) * 12 : 0;
-  const svA   = (parseFloat(ret.sv)   || 713.34) * 12;
-  const svB   = enCouple ? (parseFloat(retCj.sv) || 713.34) * 12 : 0;
-  const pensA = (parseFloat((ret.fond_pension||{}).rente_mensuelle_estimee)||0)*12;
-  const pensB = enCouple ? (parseFloat((retCj.fond_pension||{}).rente_mensuelle_estimee)||0)*12 : 0;
-
-  const revenuRetraiteMensuelABF = parseFloat(ret.revenu_retraite_mensuel) || 0;
-  const pctABF    = parseFloat(ret.revenu_retraite_pct) || 80;
+  const brutA = pA_pl.salaire;
+  const brutB = pB_pl?.salaire || 0;
   const brutTotal = brutA + brutB;
-  const cibleABF  = revenuRetraiteMensuelABF > 0 ? revenuRetraiteMensuelABF*12 : Math.round(brutTotal*pctABF/100);
-  const tauxABF   = brutTotal > 0 ? Math.round(cibleABF/brutTotal*100) : pctABF;
+
+  const reerA = pA_pl.soldeReer, cotReerA = pA_pl.cotReer;
+  const celiA = pA_pl.soldeCeli, cotCeliA = pA_pl.cotCeli;
+  const reerB = pB_pl?.soldeReer || 0, cotReerB = pB_pl?.cotReer || 0;
+  const soldeCeliB = pB_pl?.soldeCeli || 0, cotCeliB = pB_pl?.cotCeli || 0;
+
+  // Valeurs annuelles (sv et rrq stockés en mensuel dans readPersonne)
+  const rrqA = pA_pl.rrqAjuste * 12;
+  const rrqB = (pB_pl?.rrqAjuste || 0) * 12;
+  const svA  = pA_pl.sv * 12;
+  const svB  = (pB_pl?.sv || 0) * 12;
+  const pensA = pA_pl.pensionPD;
+  const pensB = pB_pl?.pensionPD || 0;
+
+  const cibleABF = pl.objectifs.cible_annuelle;
+  const tauxABF  = pl.objectifs.taux_remplacement_vise;
 
   const [tab,      setTab]      = useState("plan");
   const [unlocked, setUnlocked] = useState(false);
@@ -387,8 +366,8 @@ export default function ModelisationRetraite() {
     rendement:rend/100,
   }),[ageA,ageB,ageRetA,ageRetB,reerAv,celiAv,reerBv,celiBv,cotReerA,cotCeliA,cotReerB,cotCeliB,rend,enCouple]);
 
-  const rrqAvA = (parseFloat(ret.rrq)||0);
-  const rrqAvB = enCouple?(parseFloat(retCj.rrq)||0):0;
+  const rrqAvA = pA_pl.rrqBase;
+  const rrqAvB = enCouple ? (pB_pl?.rrqBase || 0) : 0;
   const params = useMemo(()=>({
     ageA:ageRetA, ageRetraiteA:ageRetA, salaireA:brutA,
     rrqA:adjRRQ(rrqAvA,rrqAp)*12, svA:713.34*12, pensionA:pensA,

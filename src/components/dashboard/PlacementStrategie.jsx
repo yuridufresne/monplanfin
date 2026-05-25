@@ -1,33 +1,41 @@
 import { useState, useMemo } from "react";
 import InfoTooltip from "@/components/ui/InfoTooltip";
+import { buildPayload, IQPF } from "@/lib/clientPayload";
 
 const fmt = n => Math.round(n).toLocaleString("fr-CA") + " $";
 const FV  = (c, r, n) => { const rM=r/12; return rM>0?c*12*(Math.pow(1+rM,n)-1)/rM:c*12*n; };
 const FVs = (s, r, n) => s * Math.pow(1+r, n);
 
-export default function PlacementStrategie({ retraiteABF={}, retraiteConj={}, revenuBrut=0, tauxMarginal=0.475, ageActuel=38, ageRetraite=65, prenomA="", prenomB="" }) {
-  const comptes     = retraiteABF.comptes || {};
-  const comptesConj = retraiteConj.comptes || {};
-  const enCouple    = Object.keys(comptesConj).length > 0;
+export default function PlacementStrategie({ profiles=[], retraiteABF={}, retraiteConj={}, revenuBrut=0, tauxMarginal=0.475, ageActuel=38, ageRetraite=65, prenomA="", prenomB="" }) {
+  // Source unique — buildPayload
+  const pl = useMemo(() => buildPayload(profiles), [profiles]);
+  const pA = pl.conjoint_a;
+  const pB = pl.conjoint_b;
+  const enCouple = pl.enCouple;
 
-  const reerList = [
-    ...(comptes.reer || []).map(c => ({...c, _qui: prenomA})),
-    ...(enCouple ? (comptesConj.reer || []).map(c => ({...c, _qui: prenomB})) : []),
-  ];
-  const celiList = [
-    ...(comptes.celi || []).map(c => ({...c, _qui: prenomA})),
-    ...(enCouple ? (comptesConj.celi || []).map(c => ({...c, _qui: prenomB})) : []),
-  ];
+  // Construire les listes de comptes depuis le payload
+  const reerList = useMemo(() => [
+    ...(pA.comptes.reer || []).map(c => ({...c, _qui: pA.prenom})),
+    ...(enCouple && pB ? (pB.comptes.reer || []).map(c => ({...c, _qui: pB.prenom})) : []),
+  ], [pA, pB, enCouple]);
+
+  const celiList = useMemo(() => [
+    ...(pA.comptes.celi || []).map(c => ({...c, _qui: pA.prenom})),
+    ...(enCouple && pB ? (pB.comptes.celi || []).map(c => ({...c, _qui: pB.prenom})) : []),
+  ], [pA, pB, enCouple]);
+
+  const ageActuelEff = pA.age || ageActuel;
+  const ageRetraiteEff = pA.ageRetraite || ageRetraite;
 
   const actuel = useMemo(() => {
-    const reerCot  = reerList.reduce((s,c)=>s+(parseFloat(c.cotisation_mensuelle)||0),0);
-    const celiCot  = celiList.reduce((s,c)=>s+(parseFloat(c.cotisation_mensuelle)||0),0);
-    const soldeR   = reerList.reduce((s,c)=>s+(parseFloat(c.solde)||0),0);
-    const soldeC   = celiList.reduce((s,c)=>s+(parseFloat(c.solde)||0),0);
-    const total    = reerCot+celiCot;
-    const ans      = Math.max(1, ageRetraite-ageActuel);
+    const reerCot = pA.cotReer + (pB?.cotReer || 0);
+    const celiCot = pA.cotCeli + (pB?.cotCeli || 0);
+    const soldeR  = pA.soldeReer + (pB?.soldeReer || 0);
+    const soldeC  = pA.soldeCeli + (pB?.soldeCeli || 0);
+    const total   = reerCot + celiCot;
+    const ans     = Math.max(1, ageRetraiteEff - ageActuelEff);
     return { reerCot, celiCot, soldeR, soldeC, total, ans };
-  }, [reerList, celiList, ageActuel, ageRetraite]);
+  }, [pA, pB, ageActuelEff, ageRetraiteEff]);
 
   const [budget,   setBudget]   = useState(actuel.total || 725);
   const [reerPct,  setReerPct]  = useState(actuel.total>0?Math.round(actuel.reerCot/actuel.total*100):50);
@@ -156,7 +164,7 @@ export default function PlacementStrategie({ retraiteABF={}, retraiteConj={}, re
           <div style={{ ...S.sep }} />
 
           <div style={{ ...S.label, marginBottom:2 }}>
-            Projection à {ageRetraite} ans —{" "}
+            Projection à {ageRetraiteEff} ans —{" "}
             <span style={{ color:"#C9A063" }}>REER {rendReer}%</span>
             {" · "}
             <span style={{ color:"#5BC4A0" }}>CELI {rendCeli}%</span>
@@ -259,7 +267,7 @@ export default function PlacementStrategie({ retraiteABF={}, retraiteConj={}, re
 
           <div style={{ ...S.sep }} />
 
-          <div style={{ ...S.label, marginBottom:2 }}>Projection à {ageRetraite} ans</div>
+          <div style={{ ...S.label, marginBottom:2 }}>Projection à {ageRetraiteEff} ans</div>
           <div style={{ fontSize:16, fontWeight:700, color:"#C9A063" }}>{fmt(sim.proj)}</div>
           <div style={{ fontSize:10, fontWeight:600, marginTop:1, color:sim.diff>=0?"#5BC4A0":"#f87171" }}>
             {sim.diff>=0?"+":""}{fmt(sim.diff)} vs plan actuel

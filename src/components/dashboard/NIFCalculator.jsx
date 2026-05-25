@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
-import { calcNIF as calcNIFLib, calcScoreNIF, calcCotisationRequise, IQPF } from "@/lib/nif";
-import { readABF, readProfil, readRevenus, readRetraite, calcCibleRetraite } from "@/lib/abf";
+import { calcNIF as calcNIFLib, calcScoreNIF, calcCotisationRequise, IQPF as IQPF_NIF } from "@/lib/nif";
+import { buildPayload, IQPF } from "@/lib/clientPayload";
 import { PRESTATIONS_2026 } from "@/lib/prestationsGouvernementales";
 
 const fmt = (v) =>
@@ -354,35 +354,22 @@ function TabQuebec() {
 export default function NIFCalculator({ profiles }) {
   const [activeTab, setActiveTab] = useState("calculateur");
 
-  // Extraire defaults depuis profils ABF — source unique @/lib/abf
+  // Extraire defaults depuis profils ABF — source unique @/lib/clientPayload
   const defaults = useMemo(() => {
-    const abf         = readABF(profiles);
-    const profil      = readProfil(abf);
-    const revenus     = readRevenus(abf);
-    const retraiteABF = readRetraite(abf, profil.enCouple);
-    const { cibleAnnuelle } = calcCibleRetraite(retraiteABF, revenus.brutTotal);
-
-    const epA = retraiteABF.personneA.epargne;
-    const epB = retraiteABF.personneB?.epargne || {};
-    const soldeReer = epA.soldeReer + (epB.soldeReer || 0);
-    const soldeCeli = epA.soldeCeli + (epB.soldeCeli || 0);
-    const cotMensuelle = epA.cotReer + epA.cotCeli + (epB.cotReer || 0) + (epB.cotCeli || 0);
-
-    const rrqMensuel  = (retraiteABF.personneA.rrqMensuel)  + (retraiteABF.personneB?.rrqMensuel  || 0);
-    const psvMensuel  = (retraiteABF.personneA.svMensuel)   + (retraiteABF.personneB?.svMensuel   || 0);
-    const fpMensuel   = (retraiteABF.personneA.pensionMens) + (retraiteABF.personneB?.pensionMens || 0);
-
+    const pl = buildPayload(profiles);
+    const pA = pl.conjoint_a;
+    const pB = pl.conjoint_b;
     return {
-      depensesCibles: cibleAnnuelle || 55000,
-      rrqMensuel,
-      psvMensuel,
-      fpMensuel,
-      soldeReer,
-      soldeCeli,
-      cotMensuelle: cotMensuelle || 500,
-      ageActuel:   profil.age   || 38,
-      ageRetraite: retraiteABF.personneA.ageRetraite || 65,
-      espVie:      retraiteABF.esperanceVie || IQPF.ESP_VIE,
+      depensesCibles: pl.objectifs.cible_annuelle || 55000,
+      rrqMensuel:   (pA.rrqAjuste + (pB?.rrqAjuste || 0)),
+      psvMensuel:   (pA.sv + (pB?.sv || 0)),
+      fpMensuel:    Math.round((pA.pensionPD + (pB?.pensionPD || 0)) / 12),
+      soldeReer:    pA.soldeReer + (pB?.soldeReer || 0),
+      soldeCeli:    pA.soldeCeli + (pB?.soldeCeli || 0),
+      cotMensuelle: pl.epargne.total_cot_mens || 500,
+      ageActuel:    pA.age || 38,
+      ageRetraite:  pA.ageRetraite || 65,
+      espVie:       pl.hypotheses.esperance_vie || IQPF.ESP_VIE,
     };
   }, [profiles]);
 
