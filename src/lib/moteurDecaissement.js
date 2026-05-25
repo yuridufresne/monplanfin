@@ -129,6 +129,19 @@ export function simulerDecaissement({
   let cible = cibleNette;
   const rows = [];
 
+  // Recherche binaire : brut à retirer d'un compte imposable pour obtenir `netVoulu` net
+  const brutPourNet = (netVoulu, revBase, disp, pF, pQ) => {
+    if (disp <= 0 || netVoulu <= 0) return 0;
+    let lo = 0, hi = Math.min(netVoulu * 4, disp);
+    for (let i = 0; i < 30; i++) {
+      const mid = (lo + hi) / 2;
+      const impBase = calcImpot(revBase, pF, pQ);
+      const netMid = mid - (calcImpot(revBase + mid, pF, pQ) - impBase);
+      if (netMid < netVoulu) lo = mid; else hi = mid;
+    }
+    return Math.min((lo + hi) / 2, disp);
+  };
+
   const ageDepart = ageRetraiteA;
   const nbAnnees  = esperanceVie - ageDepart;
   // ageB = âge de Marie au moment où la simulation commence (an=0)
@@ -186,15 +199,15 @@ export function simulerDecaissement({
         if (er > 0.01 && eFA > 0 && aa >= 71) {
           const ferrDispA = Math.max(0, eFA - fmA);
           if (ferrDispA > 0) {
-            const tmA = Math.min(0.55, Math.max(0.15, tauxMarg(rbaRaw + Math.min(er, ferrDispA), pFed, pQC)));
-            ferrSuppA = Math.min(er / (1 - tmA), ferrDispA);
-            er = Math.max(0, er - ferrSuppA * (1 - tmA));
+            ferrSuppA = brutPourNet(er, rbaRaw, ferrDispA, pFed, pQC);
+            const impBase = calcImpot(rbaRaw, pFed, pQC);
+            const impAvec = calcImpot(rbaRaw + ferrSuppA, pFed, pQC);
+            er = Math.max(0, er - (ferrSuppA - (impAvec - impBase)));
           }
         }
         // 3. REER de Jean (avant 71)
         if (er > 0.01 && eRA > 0) {
-          const tmA = Math.min(0.55, Math.max(0.15, tauxMarg(rbaRaw + er, pFed, pQC)));
-          rra = Math.min(er / (1 - tmA), eRA);
+          rra = brutPourNet(er, rbaRaw, eRA, pFed, pQC);
           eRA = Math.max(0, eRA - rra);
         }
         // ⚠ Comptes de Marie : JAMAIS touchés pendant qu'elle travaille
@@ -210,23 +223,25 @@ export function simulerDecaissement({
           eCB = Math.max(0, eCB - rc * (1 - ratioA));
           er -= rc;
         }
-        // 2. FERR supplémentaire (proportionnel aux soldes disponibles)
+        // 2. FERR supplémentaire — recherche binaire du brut exact
         if (er > 0.01) {
           const ferrDispA = aa >= 71 ? Math.max(0, eFA - fmA) : 0;
           const ferrDispB = ab >= 71 ? Math.max(0, eFB - fmB) : 0;
           const totFerr = ferrDispA + ferrDispB;
+
           if (totFerr > 0) {
             if (ferrDispA > 0) {
-              const partA = er * (ferrDispA / totFerr);
-              const tmA = Math.min(0.55, Math.max(0.15, tauxMarg(rbaRaw + partA, pFed, pQC)));
-              // Limiter le brut retiré : net reçu = ferrSuppA*(1-tmA) ≤ er
-              ferrSuppA = Math.min(partA / (1 - tmA), ferrDispA, er / (1 - tmA));
-              er = Math.max(0, er - ferrSuppA * (1 - tmA));
+              const partNetA = er * (ferrDispA / totFerr);
+              ferrSuppA = brutPourNet(partNetA, rbaRaw, ferrDispA, pFed, pQC);
+              const impBase = calcImpot(rbaRaw, pFed, pQC);
+              const impAvec = calcImpot(rbaRaw + ferrSuppA, pFed, pQC);
+              er = Math.max(0, er - (ferrSuppA - (impAvec - impBase)));
             }
             if (er > 0.01 && ferrDispB > 0) {
-              const tmB = Math.min(0.55, Math.max(0.15, tauxMarg(rbbRaw + er, pFed, pQC)));
-              ferrSuppB = Math.min(er / (1 - tmB), ferrDispB);
-              er = Math.max(0, er - ferrSuppB * (1 - tmB));
+              ferrSuppB = brutPourNet(er, rbbRaw, ferrDispB, pFed, pQC);
+              const impBase = calcImpot(rbbRaw, pFed, pQC);
+              const impAvec = calcImpot(rbbRaw + ferrSuppB, pFed, pQC);
+              er = Math.max(0, er - (ferrSuppB - (impAvec - impBase)));
             }
           }
         }
@@ -236,14 +251,14 @@ export function simulerDecaissement({
           const totReer = saA + saB;
           if (totReer > 0) {
             if (saA > 0) {
-              const tmA = Math.min(0.55, Math.max(0.15, tauxMarg(rbaRaw + er*(saA/totReer), pFed, pQC)));
-              rra = Math.min(er*(saA/totReer)/(1-tmA), saA);
+              const partNetA = er * (saA / totReer);
+              rra = brutPourNet(partNetA, rbaRaw, saA, pFed, pQC);
               eRA = Math.max(0, eRA - rra);
-              er -= rra*(1-tmA);
+              const impBase = calcImpot(rbaRaw, pFed, pQC);
+              er = Math.max(0, er - (rra - (calcImpot(rbaRaw + rra, pFed, pQC) - impBase)));
             }
             if (er > 0.01 && saB > 0) {
-              const tmB = Math.min(0.55, Math.max(0.15, tauxMarg(rbbRaw + er, pFed, pQC)));
-              rrb = Math.min(er/(1-tmB), saB);
+              rrb = brutPourNet(er, rbbRaw, saB, pFed, pQC);
               eRB = Math.max(0, eRB - rrb);
             }
           }
