@@ -144,7 +144,7 @@ export default function Dashboard() {
 
   // ── NIF ────────────────────────────────────────────────────────────────────
   const nif = useMemo(() => calcNIFFromProfiles(profiles), [profiles]);
-  const { capitalNIF, capitalProjecte, scoreNIF, cotSupp, statut, rrqMensuelTotal, psvMensuelTotal, fpMensuelTotal, revGarantiAnnuel, ageRetraite, anneesAccum } = nif;
+  const { capitalNIF, capitalProjecte, scoreNIF, cotSupp, statut, rrqMensuelTotal, psvMensuelTotal, fpMensuelTotal, revGarantiAnnuel, ageRetraite, anneesAccum, ageActuel, soldeTotal, cotMensuelle: nifCotMensuelle, revenusGarantis, esperanceVie } = nif;
 
   const statutColors = { depasse: "#5BC4A0", atteint: "#5BC4A0", en_voie: "#C9A063", insuffisant: "#f59e0b", critique: "#f87171" };
   const statutLabels = { depasse: "Dépassé ✓✓", atteint: "Atteint ✓", en_voie: "En voie", insuffisant: "Insuffisant ⚠", critique: "Action requise ✗" };
@@ -379,6 +379,100 @@ export default function Dashboard() {
                       <div style={{ height: "100%", width: `${Math.min(scoreNIF, 100)}%`, background: `linear-gradient(90deg, ${nifColor}, ${nifColor}cc)`, borderRadius: 99, transition: "width 1s ease" }} />
                     </div>
                   </div>
+
+                  {/* Grille 3×3 — Scénarios âge × rendement */}
+                  {(() => {
+                    const SCENARIOS_REND = [
+                      { label: "Conservateur", accum: 0.05, decaisse: 0.03 },
+                      { label: "Équilibré ★",  accum: 0.07, decaisse: 0.05, defaut: true },
+                      { label: "Croissance",   accum: 0.09, decaisse: 0.07 },
+                    ];
+                    const AGES_RET = [60, 65, 70];
+                    const inf = 0.025;
+                    const espVie = esperanceVie || 90;
+                    const epargneActuelle = soldeTotal || 0;
+                    const cotM = nifCotMensuelle || 0;
+                    const revenuBrutAnnuel = revBrut || 80000;
+
+                    const calcScenario = (ageRet, rendAccum, rendDecaisse) => {
+                      const annesAv  = Math.max(1, ageRet - (ageActuel || 38));
+                      const annesDec = Math.max(1, espVie - ageRet);
+                      const factInf  = Math.pow(1 + inf, annesAv);
+                      const rrqBase  = rrqMensuelTotal || 0;
+                      let factRRQ = 1;
+                      if (ageRet < 65) factRRQ = Math.max(0.64, 1 - (65 - ageRet) * 12 * 0.006);
+                      else if (ageRet > 65) factRRQ = 1 + Math.min((ageRet - 65) * 12, 60) * 0.007;
+                      const psvAnnuelle    = psvMensuelTotal * 12;
+                      const fpMensuel      = fpMensuelTotal || 0;
+                      const garantisAnnuels = (rrqBase * factRRQ + fpMensuel) * 12;
+                      const garantisFuturs  = garantisAnnuels * factInf + psvAnnuelle * Math.pow(1 + inf, annesAv + Math.max(0, 65 - ageRet));
+                      const cibleFuture    = revenuBrutAnnuel * 0.80 * factInf;
+                      const manqueFutur    = Math.max(0, cibleFuture - garantisFuturs);
+                      const nif4   = manqueFutur / 0.04;
+                      const rR     = rendDecaisse - inf;
+                      const nifRente = rR > 0.005 ? manqueFutur * ((1 - Math.pow(1 + rR, -annesDec)) / rR) : manqueFutur * annesDec;
+                      const nifV   = (nif4 + nifRente) / 2;
+                      const rM = rendAccum / 12;
+                      const n  = annesAv * 12;
+                      const cap = epargneActuelle * Math.pow(1 + rM, n) + (rM > 0 ? cotM * (Math.pow(1 + rM, n) - 1) / rM : cotM * n);
+                      const score = nifV > 0 ? Math.min(Math.round(cap / nifV * 100), 999) : 100;
+                      return { score, nif: Math.round(nifV) };
+                    };
+
+                    const getColor = (score) => {
+                      if (score >= 100) return { bg: "rgba(91,196,160,0.10)",  border: "rgba(91,196,160,0.25)",  text: "#5BC4A0", label: "Atteint ✓" };
+                      if (score >= 80)  return { bg: "rgba(201,160,99,0.10)",  border: "rgba(201,160,99,0.22)",  text: "#C9A063", label: "En voie" };
+                      if (score >= 60)  return { bg: "rgba(248,163,50,0.08)",  border: "rgba(248,163,50,0.20)",  text: "#F8A332", label: "Insuffisant" };
+                      return               { bg: "rgba(248,113,113,0.09)", border: "rgba(248,113,113,0.22)", text: "#f87171", label: "Critique" };
+                    };
+
+                    return (
+                      <div style={{ marginTop: 18, borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 16 }}>
+                        <p style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.25)", letterSpacing: "0.07em", textTransform: "uppercase", marginBottom: 10 }}>
+                          Scénarios — Âge de retraite × Rendement
+                        </p>
+                        {/* En-têtes colonnes */}
+                        <div style={{ display: "grid", gridTemplateColumns: "90px 1fr 1fr 1fr", gap: 5, marginBottom: 5 }}>
+                          <div />
+                          {SCENARIOS_REND.map(r => (
+                            <div key={r.label} style={{ textAlign: "center" }}>
+                              <div style={{ fontSize: 9, fontWeight: 700, color: r.defaut ? "#C9A063" : "rgba(255,255,255,0.28)", letterSpacing: "0.05em", textTransform: "uppercase" }}>{r.label}</div>
+                              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.20)", marginTop: 1 }}>{r.accum*100}% / {r.decaisse*100}%</div>
+                            </div>
+                          ))}
+                        </div>
+                        {/* Lignes */}
+                        {AGES_RET.map(age => (
+                          <div key={age} style={{ display: "grid", gridTemplateColumns: "90px 1fr 1fr 1fr", gap: 5, marginBottom: 5, alignItems: "stretch" }}>
+                            <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                              <div style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{age} ans</div>
+                              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.28)", lineHeight: 1.4, marginTop: 1 }}>
+                                {age === 60 ? "RRQ −36% · PSV à 65" : age === 65 ? "RRQ base · PSV à 65" : "RRQ +42% · PSV à 65"}
+                              </div>
+                            </div>
+                            {SCENARIOS_REND.map(r => {
+                              const cell = calcScenario(age, r.accum, r.decaisse);
+                              const c = getColor(cell.score);
+                              const isActuel = r.defaut && age === (ageRetraite || 65);
+                              return (
+                                <div key={r.label} style={{ background: c.bg, border: `1px solid ${isActuel ? "rgba(201,160,99,0.45)" : c.border}`, borderRadius: 10, padding: "8px 6px", textAlign: "center", position: "relative" }}>
+                                  {isActuel && (
+                                    <div style={{ position: "absolute", top: -8, left: "50%", transform: "translateX(-50%)", fontSize: 8, fontWeight: 700, color: "#C9A063", background: "#0A1628", padding: "1px 5px", borderRadius: 4, border: "1px solid rgba(201,160,99,0.35)", whiteSpace: "nowrap" }}>Actuel</div>
+                                  )}
+                                  <div style={{ fontSize: 16, fontWeight: 800, color: c.text, lineHeight: 1 }}>{cell.score}%</div>
+                                  <div style={{ fontSize: 9, fontWeight: 600, color: c.text, opacity: 0.8, marginTop: 2 }}>{c.label}</div>
+                                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.28)", marginTop: 3 }}>{(cell.nif / 1000000).toFixed(1)}M$</div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ))}
+                        <p style={{ fontSize: 10, color: "rgba(255,255,255,0.18)", marginTop: 6, fontStyle: "italic" }}>
+                          * PSV toujours à 65 ans. RRQ ajustée selon l'âge de début.
+                        </p>
+                      </div>
+                    );
+                  })()}
                 </div>
               </motion.div>
 
