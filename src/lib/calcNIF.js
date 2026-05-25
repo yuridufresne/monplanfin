@@ -40,7 +40,7 @@ export function calcNIF({
   revenuGarantiAujourdhui,
   ageActuel,
   ageRetraite = 65,
-  esperanceVie = 90,
+  esperanceVie = 95,
   inflation = INFLATION,
   tauxRetrait = 0.04,
   rendementDecaissement = RENDEMENT_DECAISS,
@@ -182,7 +182,7 @@ export function calcNIFFromProfiles(profiles) {
     : null;
 
   const ageRetraite  = parseInt(retraite.age_retraite)  || 65;
-  const esperanceVie = parseInt(retraite.esperance_vie) || 90;
+  const esperanceVie = parseInt(retraite.esperance_vie) || 95;
 
   // ── Revenus bruts ────────────────────────────────────────────────────────────
   const sumBrut = (emplois, sides) =>

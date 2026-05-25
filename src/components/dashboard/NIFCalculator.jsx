@@ -115,7 +115,7 @@ function TabCalculateur({ defaults }) {
     rendement: 7,
     ageActuel: defaults.ageActuel || 38,
     ageRetraite: defaults.ageRetraite || 65,
-    espVie: defaults.espVie || 90,
+    espVie: defaults.espVie || 95,
   });
   const set = (k, v) => setP(prev => ({ ...prev, [k]: v }));
 
@@ -229,7 +229,7 @@ function TabFormule({ defaults }) {
     rendement: 7,
     ageActuel: defaults.ageActuel || 38,
     ageRetraite: defaults.ageRetraite || 65,
-    espVie: defaults.espVie || 90,
+    espVie: defaults.espVie || 95,
   }), [defaults]);
 
   const steps = [
@@ -404,7 +404,7 @@ export default function NIFCalculator({ profiles }) {
       cotMensuelle: base.cotMensuelle || 500,
       ageActuel: base.ageActuel || 38,
       ageRetraite: base.ageRetraite || 65,
-      espVie: 90,
+      espVie: 95,
     };
   }, [profiles]);
 

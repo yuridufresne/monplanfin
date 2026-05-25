@@ -239,7 +239,7 @@ export default function ModelisationRetraite() {
   const [tab,      setTab]      = useState("plan");
   const [unlocked, setUnlocked] = useState(false);
   const [rend, setRend] = useState(7);
-  const [espVie,   setEspVie]   = useState(90);
+  const [espVie,   setEspVie]   = useState(parseFloat(ret.esperance_vie) || 95);
   const [taux,     setTaux]     = useState(tauxABF);
   const [cible,    setCible]    = useState(() => cibleBase > 0 ? cibleBase : Math.round((brutTotal||80000)*(tauxABF/100)));
   const [plafondLissage, setPlafondLissage] = useState(90997);
@@ -330,7 +330,7 @@ export default function ModelisationRetraite() {
             <label style={{ display:"flex", alignItems:"center", gap:7, ...S.label }}>
               Espérance de vie
               <select value={espVie} onChange={e=>setEspVie(+e.target.value)} style={{...S.select,marginLeft:5}}>
-                {[85,88,90,93,95,100].map(v=><option key={v} value={v} style={{background:"#0D1628"}}>{v} ans</option>)}
+                {[85,88,90,93,95,100].map(v=><option key={v} value={v} style={{background:"#0D1628"}}>{v} ans{v===95?" (IQPF)":""}</option>)}
               </select>
             </label>
             <label style={{ display:"flex", alignItems:"center", gap:7, ...S.label }}>
@@ -524,7 +524,7 @@ export default function ModelisationRetraite() {
                   {[
                     ["Revenu cible ($/an)", <input key="c" type="number" value={cible} onChange={e=>setCible(+e.target.value)} style={S.input}/>],
                     ["Rendement", <select key="r" value={rend} onChange={e=>setRend(+e.target.value)} style={S.select}>{[3,4,5,6,7,8,9,10].map(v=><option key={v} value={v} style={{background:"#0D1628"}}>{v}%/an</option>)}</select>],
-                    ["Espérance de vie", <select key="e" value={espVie} onChange={e=>setEspVie(+e.target.value)} style={S.select}>{[80,83,85,88,90,93,95,98,100].map(v=><option key={v} value={v} style={{background:"#0D1628"}}>{v} ans</option>)}</select>],
+                    ["Espérance de vie", <select key="e" value={espVie} onChange={e=>setEspVie(+e.target.value)} style={S.select}>{[80,83,85,88,90,93,95,98,100].map(v=><option key={v} value={v} style={{background:"#0D1628"}}>{v} ans{v===95?" (IQPF)":""}</option>)}</select>],
                   ].map(([l,ctrl])=>(
                     <div key={l}><div style={{...S.label,marginBottom:5}}>{l}</div>{ctrl}</div>
                   ))}

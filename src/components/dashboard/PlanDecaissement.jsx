@@ -29,7 +29,7 @@ function simule({ soldeReer, soldeCeli, renteRRQ, rrqConjoint, psvBase, pensionP
 }
 
 export default function PlanDecaissement({ profilData={} }) {
-  const { ageRetraite=65, soldeReer=50000, soldeCeli=50000, renteRRQ=900, rrqConjoint=0, psvBase=713.34, pensionPD=0, revenuCible=72000, espVie:espVieInit=90 } = profilData;
+  const { ageRetraite=65, soldeReer=50000, soldeCeli=50000, renteRRQ=900, rrqConjoint=0, psvBase=713.34, pensionPD=0, revenuCible=72000, espVie:espVieInit=95 } = profilData;
   const [rend,  setRend]   = useState(5);
   const [espVie,setEspVie] = useState(espVieInit);
 

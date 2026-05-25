@@ -275,7 +275,7 @@ export default function RetirementReport({ profiles }) {
             <PlanDecaissement
               profilData={{
                 ageRetraite,
-                espVie: esperanceVie || 90,
+                espVie: esperanceVie || 95,
                 soldeReer: nif.revenusGarantis ? (soldeTotal || 0) * 0.6 : (soldeTotal || 0) * 0.6,
                 soldeCeli: (soldeTotal || 0) * 0.4,
                 renteRRQ: rrqMensuelTotal || 0,

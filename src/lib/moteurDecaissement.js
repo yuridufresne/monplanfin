@@ -106,7 +106,7 @@ export function simulerDecaissement({
   ageB, ageActuelB=null, ageRetraiteB=65, salaireB=0, rrqB=0, svB=713.34*12, pensionB=0,
   reerB=0, celiB=0, cotReerB=0, cotCeliB=0,
   // Paramètres
-  cibleNette, inflation=0.025, rendement=0.05, esperanceVie=90,
+  cibleNette, inflation=0.025, rendement=0.05, esperanceVie=95,
   // Lissage fiscal : plafond de revenu brut imposable visé par personne (0 = désactivé)
   plafondLissage=0,
 }) {
