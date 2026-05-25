@@ -277,7 +277,7 @@ export default function ModelisationRetraite() {
   }
 
   const donneesGraphique = useMemo(()=>{
-    const nA=retA-ageA, nB=retB-ageB;
+    const nA=Math.max(0,retA-ageA), nB=Math.max(0,retB-ageB);
     const rAp=fv(reerA,cotReerA,RA,nA), cAp=fv(celiA,cotCeliA,RA,nA);
     const rBp=fv(reerB,cotReerB,RA,nB), cBp=fv(soldeCeliB,cotCeliB,RA,nB);
     const capR=rAp+cAp+rBp+cBp;
@@ -327,7 +327,7 @@ export default function ModelisationRetraite() {
       }
     }
     return{ages,cible,foyer,jC,mC,nifCurve,nif,capR,cibleSim,gar65,tauxABF};
-  },[taux,espVie,profiles]);
+  },[taux,espVie,profiles,ageA,ageB,retA,retB,reerA,celiA,reerB,soldeCeliB,cotReerA,cotCeliA,cotReerB,cotCeliB,rrqA,rrqB,svA,svB,pensA,pensB,cibleABF,tauxABF]);
 
   const fmtCA = n => Math.round(Math.abs(n)).toLocaleString('fr-CA')+' $';
   const fmtK  = n => {
