@@ -459,9 +459,13 @@ export default function Dashboard() {
                     const pensionPDMensuel = parseFloat(revenusGarantis?.p1?.pension || revenusGarantis?.p2?.pension || fpMensuelTotal || 0);
                     const conjointAgeVal = parseInt(profil.age_conjoint || profil.conjoint_age || 0);
 
+                    // Cible annuelle — source unique : même que calcNIFFromProfiles
+                    const nifResult = nif.nifResult;
+                    const depCible  = nif.depensesCibles; // en $ d'aujourd'hui
+
                     const calcScenario = (ageRet, rendAccum, rendDecaisse) => {
                       const annesAv = Math.max(1, ageRet - (ageActuel || 38));
-                      const cibleBase = revenuBrutAnnuel * 0.80;
+                      const cibleBase = depCible || revenuBrutAnnuel * 0.80;
 
                       // RRQ — facteur selon l'âge de début (min 60)
                       const ageDebutRRQ = Math.max(60, ageRet);
@@ -586,9 +590,13 @@ export default function Dashboard() {
                             }}>
                               {/* Cellules par âge — en premier */}
                               {AGES_RET.map(age => {
-                                const cell = calcScenario(age, rend.accum, rend.decaisse);
-                                const c = getColor(cell.score);
+                                // Cellule "Actuel" = source unique calcNIFFromProfiles
                                 const isActuel = rend.defaut && age === ageBase;
+                                const cellRaw = calcScenario(age, rend.accum, rend.decaisse);
+                                const cell = isActuel
+                                  ? { ...cellRaw, nif: capitalNIF, cap: capitalProjecte, score: scoreNIF, cotSupp }
+                                  : cellRaw;
+                                const c = getColor(cell.score);
                                 return (
                                   <div key={age} style={{ padding: "14px 10px", borderRight: `1px solid ${c.border}`, textAlign: "center", position: "relative", background: c.bg, transition: "all .2s", outline: isActuel ? `2px solid ${c.text}` : "none", outlineOffset: -2 }}>
                                     <div style={{ position: "absolute", top: 5, left: 5, fontSize: 9, fontWeight: 700, color: c.text, background: c.bg, border: `1px solid ${c.border}`, borderRadius: 4, padding: "1px 5px", lineHeight: 1.4, opacity: 0.85 }}>
