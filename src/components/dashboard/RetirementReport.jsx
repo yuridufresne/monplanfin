@@ -1,5 +1,7 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { calcNIFFromProfiles, calcAtteintNIF } from "@/lib/calcNIF";
+import FlipCard from "@/components/ui/FlipCard";
+import PlanDecaissement from "@/components/dashboard/PlanDecaissement";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONSTANTES & UTILITAIRES
@@ -122,6 +124,8 @@ export default function RetirementReport({ profiles }) {
   const anneesAvant = anneesAccum;
   const anneesPend  = anneesDecaisse;
 
+  const [nifFlipped, setNifFlipped] = useState(false);
+
   // capitalProjecte vient déjà de calcAtteintNIF dans calcNIFFromProfiles
   const capitalActuelRetraite = capitalProjecte;
   const manqueCapital = Math.max(0, capitalNIF - capitalActuelRetraite);
@@ -199,64 +203,90 @@ export default function RetirementReport({ profiles }) {
         </div>
       </div>
 
-      {/* NIF HERO */}
-      <div style={{
-        padding: "1.75rem 2rem",
-        borderBottom: "1px solid rgba(201,160,99,0.1)",
-        background: "linear-gradient(135deg, rgba(201,160,99,0.07) 0%, transparent 100%)",
-        position: "relative", overflow: "hidden",
-        display: "flex", alignItems: "center", gap: "2.5rem", flexWrap: "wrap",
-      }}>
-        <div style={{ position: "absolute", top: "50%", left: "30%", transform: "translate(-50%,-50%)", width: 400, height: 200, borderRadius: "50%", background: "radial-gradient(ellipse,rgba(201,160,99,0.08) 0%,transparent 70%)", pointerEvents: "none" }} />
+      {/* NIF HERO — FlipCard */}
+      <div style={{ padding: "1rem 1.5rem", borderBottom: "1px solid rgba(201,160,99,0.1)" }}>
+        <FlipCard
+          expandedHeight={700}
+          onFlip={setNifFlipped}
+          front={
+            <div>
+              <div style={{
+                position: "relative", overflow: "hidden",
+                display: "flex", alignItems: "center", gap: "2.5rem", flexWrap: "wrap",
+              }}>
+                <div style={{ position: "absolute", top: "50%", left: "30%", transform: "translate(-50%,-50%)", width: 400, height: 200, borderRadius: "50%", background: "radial-gradient(ellipse,rgba(201,160,99,0.08) 0%,transparent 70%)", pointerEvents: "none" }} />
 
-        {/* Chiffre principal — NIF FIXE */}
-        <div style={{ position: "relative", textAlign: "center", minWidth: 220 }}>
-          <p style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.18em", color: GOLD_DIM, marginBottom: 4 }}>
-            NIF — Valeur fixe en $ {nifResult?.anneeProjFuture || "futurs"}
-          </p>
-          <p style={{
-            fontFamily: "var(--font-mono)", fontWeight: 900,
-            fontSize: "clamp(2.4rem,5vw,3.8rem)",
-            letterSpacing: "-0.04em", lineHeight: 1, color: GOLD,
-            textShadow: "0 0 40px rgba(201,160,99,0.6), 0 0 80px rgba(201,160,99,0.25)",
-          }}>
-            {fmt(capitalNIF)}
-          </p>
-          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.38)", marginTop: 8, lineHeight: 1.6 }}>
-            = {fmt(nifResult?.revenuCibleFutur || depensesCibles)}/an cible
-            {revGarantiAnnuel > 0 && <> − {fmt(nifResult?.revenuGarantiFutur || revGarantiAnnuel)}/an garantis</>}
-            {" ÷ 4%"}
-          </p>
-          <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.25)", marginTop: 5, lineHeight: 1.45 }}>
-            ({tauxRemplacement}% × {fmt(revBrut)} brut, inflation ×{nifResult?.facteurInflation ?? "?"} sur {anneesAvant} ans)
-          </p>
-          <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.28)", marginTop: 5, lineHeight: 1.45 }}>
-            Revenu visé : {fmt(revenuMensuelVise)}/mois auj. → {fmt(revenuMensuelFutur)}/mois en {nifResult?.anneeProjFuture || ""} jusqu'à{" "}
-            <strong style={{ color: "rgba(255,255,255,0.6)" }}>{esperanceVie} ans</strong>
-          </p>
-        </div>
+                {/* Chiffre principal — NIF FIXE */}
+                <div style={{ position: "relative", textAlign: "center", minWidth: 220 }}>
+                  <p style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.18em", color: GOLD_DIM, marginBottom: 4 }}>
+                    NIF — Valeur fixe en $ {nifResult?.anneeProjFuture || "futurs"}
+                  </p>
+                  <p style={{
+                    fontFamily: "var(--font-mono)", fontWeight: 900,
+                    fontSize: "clamp(2.4rem,5vw,3.8rem)",
+                    letterSpacing: "-0.04em", lineHeight: 1, color: GOLD,
+                    textShadow: "0 0 40px rgba(201,160,99,0.6), 0 0 80px rgba(201,160,99,0.25)",
+                  }}>
+                    {fmt(capitalNIF)}
+                  </p>
+                  <p style={{ fontSize: 11, color: "rgba(255,255,255,0.38)", marginTop: 8, lineHeight: 1.6 }}>
+                    = {fmt(nifResult?.revenuCibleFutur || depensesCibles)}/an cible
+                    {revGarantiAnnuel > 0 && <> − {fmt(nifResult?.revenuGarantiFutur || revGarantiAnnuel)}/an garantis</>}
+                    {" ÷ 4%"}
+                  </p>
+                  <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.25)", marginTop: 5, lineHeight: 1.45 }}>
+                    ({tauxRemplacement}% × {fmt(revBrut)} brut, inflation ×{nifResult?.facteurInflation ?? "?"} sur {anneesAvant} ans)
+                  </p>
+                  <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.28)", marginTop: 5, lineHeight: 1.45 }}>
+                    Revenu visé : {fmt(revenuMensuelVise)}/mois auj. → {fmt(revenuMensuelFutur)}/mois en {nifResult?.anneeProjFuture || ""} jusqu'à{" "}
+                    <strong style={{ color: "rgba(255,255,255,0.6)" }}>{esperanceVie} ans</strong>
+                  </p>
+                </div>
 
-        {/* Stats pills — Progression vers le NIF */}
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", flex: 1, position: "relative" }}>
-          {[
-            { l: "Années d'épargne",      v: `${anneesAvant} ans` },
-            { l: "Capital projeté",       v: fmt(capitalProjecte), gold: false, color: "#6B8ED6" },
-            { l: "Revenus garantis",      v: `${fmt(revGarantiAnnuel)}/an` },
-            { l: pmtRequis > 0 ? "Cotis. supp. nécessaire" : "Statut progression",
-              v: pmtRequis > 0 ? `${fmt(pmtRequis)}/mois` : `${progression?.score ?? 0}% du NIF`,
-              gold: true },
-          ].map(x => (
-            <div key={x.l} style={{
-              display: "flex", flexDirection: "column", gap: 4,
-              padding: "10px 16px", borderRadius: 12, flex: "1 1 120px",
-              background: x.gold ? "rgba(201,160,99,0.1)" : "rgba(255,255,255,0.03)",
-              border: x.gold ? "1px solid rgba(201,160,99,0.25)" : "1px solid rgba(255,255,255,0.06)",
-            }}>
-              <p style={{ fontSize: 9.5, color: "rgba(255,255,255,0.35)" }}>{x.l}</p>
-              <p style={{ fontFamily: "var(--font-mono)", fontSize: 13.5, fontWeight: 700, color: x.color || (x.gold ? GOLD : "rgba(255,255,255,0.8)") }}>{x.v}</p>
+                {/* Stats pills */}
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap", flex: 1, position: "relative" }}>
+                  {[
+                    { l: "Années d'épargne",      v: `${anneesAvant} ans` },
+                    { l: "Capital projeté",       v: fmt(capitalProjecte), gold: false, color: "#6B8ED6" },
+                    { l: "Revenus garantis",      v: `${fmt(revGarantiAnnuel)}/an` },
+                    { l: pmtRequis > 0 ? "Cotis. supp. nécessaire" : "Statut progression",
+                      v: pmtRequis > 0 ? `${fmt(pmtRequis)}/mois` : `${progression?.score ?? 0}% du NIF`,
+                      gold: true },
+                  ].map(x => (
+                    <div key={x.l} style={{
+                      display: "flex", flexDirection: "column", gap: 4,
+                      padding: "10px 16px", borderRadius: 12, flex: "1 1 120px",
+                      background: x.gold ? "rgba(201,160,99,0.1)" : "rgba(255,255,255,0.03)",
+                      border: x.gold ? "1px solid rgba(201,160,99,0.25)" : "1px solid rgba(255,255,255,0.06)",
+                    }}>
+                      <p style={{ fontSize: 9.5, color: "rgba(255,255,255,0.35)" }}>{x.l}</p>
+                      <p style={{ fontFamily: "var(--font-mono)", fontSize: 13.5, fontWeight: 700, color: x.color || (x.gold ? GOLD : "rgba(255,255,255,0.8)") }}>{x.v}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {/* Hint flip */}
+              <div style={{ display:"flex", alignItems:"center", gap:5, marginTop:14, fontSize:10, color:"rgba(201,160,99,0.45)", fontWeight:500 }}>
+                <span>✦</span> Voir le plan de décaissement →
+              </div>
             </div>
-          ))}
-        </div>
+          }
+          back={
+            <PlanDecaissement
+              profilData={{
+                ageRetraite,
+                espVie: esperanceVie || 90,
+                soldeReer: nif.revenusGarantis ? (soldeTotal || 0) * 0.6 : (soldeTotal || 0) * 0.6,
+                soldeCeli: (soldeTotal || 0) * 0.4,
+                renteRRQ: rrqMensuelTotal || 0,
+                rrqConjoint: 0,
+                psvBase: psvMensuelTotal > 0 ? psvMensuelTotal / 2 : 713.34,
+                pensionPD: nif.fpMensuelTotal || 0,
+                revenuCible: depensesCibles || (revBrut || 80000) * 0.80,
+              }}
+            />
+          }
+        />
       </div>
 
       {/* DEUX TABLEAUX CÔTE À CÔTE */}
