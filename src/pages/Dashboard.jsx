@@ -428,7 +428,7 @@ export default function Dashboard() {
                     const getColor = (score) => {
                       if (score >= 100) return { bg: "rgba(91,196,160,0.10)",  border: "rgba(91,196,160,0.25)",  text: "#5BC4A0", label: "Atteint ✓" };
                       if (score >= 80)  return { bg: "rgba(201,160,99,0.10)",  border: "rgba(201,160,99,0.22)",  text: "#C9A063", label: "En voie" };
-                      if (score >= 100) return { bg: "rgba(201,160,99,0.12)", border: "rgba(201,160,99,0.40)", text: "#C9A063" };
+                      if (score >= 100) return { bg: "rgba(59,130,246,0.10)", border: "rgba(59,130,246,0.35)", text: "#60A5FA" };
                       if (score >= 90)  return { bg: "rgba(91,196,160,0.08)",  border: "rgba(91,196,160,0.25)",  text: "#5BC4A0" };
                       if (score >= 50)  return { bg: "rgba(234,179,8,0.08)",   border: "rgba(234,179,8,0.25)",   text: "#EAB308" };
                       return               { bg: "rgba(248,113,113,0.08)", border: "rgba(248,113,113,0.25)", text: "#f87171" };
@@ -511,7 +511,7 @@ export default function Dashboard() {
                             { color: "#f87171", bg: "rgba(248,113,113,0.08)", label: "< 50% du NIF atteint" },
                             { color: "#EAB308", bg: "rgba(234,179,8,0.08)",   label: "50% à 89%" },
                             { color: "#5BC4A0", bg: "rgba(91,196,160,0.08)",  label: "90% à 99%" },
-                            { color: "#C9A063", bg: "rgba(201,160,99,0.12)",  label: "100% et plus ✓" },
+                            { color: "#60A5FA", bg: "rgba(59,130,246,0.10)",  label: "100% et plus ✓" },
                           ].map(l => (
                             <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
                               <div style={{ width: 10, height: 10, borderRadius: 3, background: l.bg, border: `1px solid ${l.color}`, flexShrink: 0 }} />
