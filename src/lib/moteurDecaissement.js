@@ -166,6 +166,7 @@ export function simulerDecaissement({
     // Décaissement pour combler le déficit
     const ecart = cible - netAvecFerrMin;
     let rc=0, rra=0, rrb=0, ferrSuppA=0, ferrSuppB=0;
+    let eCA_avant = eCA, eCB_avant = eCB;
 
     if (ecart > 0) {
       let er = ecart;
@@ -273,7 +274,14 @@ export function simulerDecaissement({
       svB:       Math.round(svB_an   * fi),
       pensionB:  Math.round(pensB_an * fi),
       ferrMinB:  Math.round(fmB),
-      // Retraits épargne
+      // Retraits épargne détaillés par personne
+      retraitCELI_A: Math.round(rc * (eCA_avant / Math.max(eCA_avant + eCB_avant, 1))),
+      retraitCELI_B: Math.round(rc * (eCB_avant / Math.max(eCA_avant + eCB_avant, 1))),
+      retraitREER_A: Math.round(rra),
+      retraitREER_B: Math.round(rrb),
+      ferrSupp_A:    Math.round(ferrSuppA),
+      ferrSupp_B:    Math.round(ferrSuppB),
+      // Totaux pour compatibilité
       retraitCELI:  Math.round(rc),
       retraitREER:  Math.round(rra + rrb + ferrSuppA + ferrSuppB),
       totalRetire:  Math.round(rc + rra + rrb + fmA + fmB + ferrSuppA + ferrSuppB),
