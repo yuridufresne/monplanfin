@@ -16,6 +16,7 @@ import InfoTooltip from "@/components/ui/InfoTooltip";
 import FlipCard from "@/components/ui/FlipCard";
 import DetteStrategie from "@/components/dashboard/DetteStrategie";
 import PlacementStrategie from "@/components/dashboard/PlacementStrategie";
+import PlanDecaissement from "@/components/dashboard/PlanDecaissement";
 
 // ── Formatters ────────────────────────────────────────────────────────────────
 const fmt = (v) => new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v || 0);
@@ -104,6 +105,7 @@ export default function Dashboard() {
   const [showReset, setShowReset] = useState(false);
   const [detteFlipped, setDetteFlipped] = useState(false);
   const [placementFlipped, setPlacementFlipped] = useState(false);
+  const [decaissFlipped, setDecaissFlipped] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(setUser);
@@ -767,6 +769,53 @@ export default function Dashboard() {
                 />
               </motion.div>
             </div>
+
+            {/* ── ZONE 3b — Plan de décaissement ─────────────────────── */}
+            <motion.div {...fadeUp(0.19)} className="mb-5">
+              <FlipCard
+                expandedHeight={700}
+                onFlip={setDecaissFlipped}
+                front={
+                  <>
+                    <SectionHeader
+                      title="Plan de décaissement à la retraite"
+                      info="Stratégie optimale de retrait : CELI d'abord (non imposable), puis FERR/REER progressivement pour minimiser l'impôt et éviter le clawback PSV."
+                    />
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-2">
+                      {[
+                        { label: "Âge de retraite", value: `${ageRetraite || 65} ans`, color: "#C9A063" },
+                        { label: "RRQ foyer", value: fmt(rrqMensuelTotal * 12) + "/an", color: "#5BC4A0" },
+                        { label: "PSV foyer", value: fmt(psvMensuelTotal * 12) + "/an", color: "#6B8ED6" },
+                        { label: "Épargne totale", value: fmt(soldeTotal), color: "#fff" },
+                      ].map(k => (
+                        <div key={k.label} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10, padding: "10px 12px" }}>
+                          <p style={{ ...LABEL, marginBottom: 4 }}>{k.label}</p>
+                          <p style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 700, color: k.color }}>{k.value}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                }
+                back={
+                  <PlanDecaissement
+                    profilData={{
+                      ageRetraite: ageRetraite || 65,
+                      espVie: esperanceVie || 90,
+                      soldeReer: reerSolde,
+                      soldeCeli: celiSolde,
+                      renteRRQ: revenusGarantis?.p1?.rrq || rrqMensuelTotal || 0,
+                      rrqConjoint: enCouple ? (revenusGarantis?.p2?.rrq || 0) : 0,
+                      psvBase: 713.34,
+                      enCouple,
+                      pensionPD: fpMensuelTotal || 0,
+                      revenuCible: (revBrut || 80000) * 0.80,
+                      rendement: 0.05,
+                      inflation: 0.025,
+                    }}
+                  />
+                }
+              />
+            </motion.div>
 
             {/* ── ZONE 4 — Avantages gouvernementaux ──────────────────── */}
             {hasEnfants && allocMensuel > 0 && (
