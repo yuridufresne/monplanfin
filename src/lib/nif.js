@@ -91,10 +91,14 @@ export function calcScoreNIF(capitalProjecte, nif) {
   return Math.min(Math.round(capitalProjecte/nif*100),999);
 }
 
-export function calcCotisationRequise({ nif, capital, anneesAccum, rendement=IQPF.REND_ACCUM }) {
+export function calcCotisationRequise({ nif, capital, cotMensActuelle=0, anneesAccum, rendement=IQPF.REND_ACCUM }) {
   const rM=rendement/12, nM=anneesAccum*12;
-  const fvSolde=capital*Math.pow(1+rM,nM);
-  const manque=nif-fvSolde;
-  if(manque<=0||rM===0) return 0;
-  return Math.max(0,Math.round(manque/((Math.pow(1+rM,nM)-1)/rM)));
+  const annuFactor = rM > 0 ? (Math.pow(1+rM,nM)-1)/rM : nM;
+  // Capital déjà projeté avec le plan actuel (soldes + cotisations existantes)
+  const capitalProjete = rM > 0
+    ? capital*Math.pow(1+rM,nM) + cotMensActuelle*annuFactor
+    : capital + cotMensActuelle*nM;
+  const manque = Math.max(0, nif - capitalProjete);
+  if (manque <= 0 || annuFactor === 0) return 0;
+  return Math.max(0, Math.round(manque / annuFactor));
 }

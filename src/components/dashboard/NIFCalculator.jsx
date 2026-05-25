@@ -65,7 +65,7 @@ function computeNIF({ depensesCibles, tauxRetrait, rrqMensuel, psvMensuel, fpMen
 
   const scoreNIF = capitalNIF > 0 ? Math.min(capitalProjecte / capitalNIF * 100, 200) : 100;
   const surplus  = capitalProjecte - capitalNIF;
-  const cotSupp  = calcCotisationRequise({ nif: capitalNIF, capital: soldeTotal, anneesAccum, rendement: rendement / 100 });
+  const cotSupp  = calcCotisationRequise({ nif: capitalNIF, capital: soldeTotal, cotMensActuelle: cotMensuelle, anneesAccum, rendement: rendement / 100 });
 
   // Courbe de projection année par année
   const chart = [];

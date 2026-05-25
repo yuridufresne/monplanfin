@@ -135,10 +135,11 @@ export function buildPayload(profiles = []) {
   const scoreNIF = nifNominal > 0 ? Math.min(Math.round(capitalProjecte / nifNominal * 100), 999) : 100;
 
   const rM = IQPF.REND_ACCUM / 12, nMois = nA * 12;
-  const fvSoldes = epargneTotal * Math.pow(1 + rM, nMois);
-  const manqueCapNominal = nifNominal - fvSoldes;
-  const cotSupp = manqueCapNominal > 0 && rM > 0
-    ? Math.max(0, Math.round(manqueCapNominal / ((Math.pow(1 + rM, nMois) - 1) / rM)))
+  // Capital déjà projeté avec le plan actuel (soldes + cotisations existantes)
+  const annuFactor = rM > 0 ? (Math.pow(1 + rM, nMois) - 1) / rM : nMois;
+  const manqueCapital = Math.max(0, nifNominal - capitalProjecte);
+  const cotSupp = manqueCapital > 0 && annuFactor > 0
+    ? Math.max(0, Math.round(manqueCapital / annuFactor))
     : 0;
 
   return {
