@@ -123,7 +123,7 @@ export default function PlacementStrategie({ retraiteABF={}, retraiteConj={}, re
               <div style={{ display:"flex", alignItems:"center", gap:7 }}>
                 <div style={{ width:6, height:6, borderRadius:"50%", background:"#C9A063", flexShrink:0 }} />
                 <div style={{ display:"flex", alignItems:"center", gap:4 }}>
-                  <span style={{ fontSize:11, color:"#C9A063", fontWeight:600 }}>REER</span>
+                  <span style={{ fontSize:11, color:"#C9A063", fontWeight:600, width:40 }}>REER</span>
                   {c._qui && <span style={{ fontSize:9, fontWeight:600, padding:"1px 5px", borderRadius:3, background:"rgba(255,255,255,.06)", color:"rgba(255,255,255,.4)" }}>{c._qui}</span>}
                 </div>
                 {parseFloat(c.solde) > 0 && <span style={{ fontSize:9, color:"rgba(255,255,255,0.3)", marginLeft:5 }}>{fmt(parseFloat(c.solde))}</span>}
@@ -145,7 +145,7 @@ export default function PlacementStrategie({ retraiteABF={}, retraiteConj={}, re
               <div style={{ display:"flex", alignItems:"center", gap:7 }}>
                 <div style={{ width:6, height:6, borderRadius:"50%", background:"#5BC4A0", flexShrink:0 }} />
                 <div style={{ display:"flex", alignItems:"center", gap:4 }}>
-                  <span style={{ fontSize:11, color:"#5BC4A0", fontWeight:600 }}>CELI</span>
+                  <span style={{ fontSize:11, color:"#5BC4A0", fontWeight:600, width:40 }}>CELI</span>
                   {c._qui && <span style={{ fontSize:9, fontWeight:600, padding:"1px 5px", borderRadius:3, background:"rgba(255,255,255,.06)", color:"rgba(255,255,255,.4)" }}>{c._qui}</span>}
                 </div>
                 {parseFloat(c.solde) > 0 && <span style={{ fontSize:9, color:"rgba(255,255,255,0.3)", marginLeft:5 }}>{fmt(parseFloat(c.solde))}</span>}
