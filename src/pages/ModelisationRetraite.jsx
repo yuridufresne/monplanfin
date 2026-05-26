@@ -498,8 +498,6 @@ export default function ModelisationRetraite({ embedded = false, profiles: profi
             {[
               {color:"#C9A063",dash:true, label:"Objectif NIF"},
               {color:"#378ADD",dash:true, label:"Projection actuelle"},
-              {color:"#BA7517",dash:false,label:prenomA},
-              ...(enCouple?[{color:"#1D9E75",dash:false,label:prenomB}]:[]),
             ].map(l=>(
               <span key={l.label} style={{display:"flex",alignItems:"center",gap:5}}>
                 <span style={{display:"inline-block",width:20,height:0,
@@ -535,8 +533,6 @@ export default function ModelisationRetraite({ embedded = false, profiles: profi
                   label={{value:"Retraite "+retA+" ans",fill:"rgba(55,138,221,.5)",fontSize:10,position:"insideTopRight"}}/>
                 <Line dataKey="nif"    name="Objectif NIF"        stroke="#C9A063" strokeWidth={2} strokeDasharray="5 3" dot={false}/>
                 <Line dataKey="foyer"  name="Projection actuelle" stroke="#378ADD" strokeWidth={2} strokeDasharray="6 3" dot={false}/>
-                <Line dataKey="jean"   name={prenomA}             stroke="#BA7517" strokeWidth={1.5} dot={false}/>
-                {enCouple && <Line dataKey="marie" name={prenomB} stroke="#1D9E75" strokeWidth={1.5} dot={false}/>}
               </ComposedChart>
             </ResponsiveContainer>
           </div>
