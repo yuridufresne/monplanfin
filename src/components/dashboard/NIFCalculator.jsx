@@ -43,7 +43,7 @@ export default function NIFCalculator({ profiles }) {
       <style>{`
         .nif-i{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;border:1px solid rgba(201,160,99,0.5);color:#C9A063;font-size:11px;font-style:italic;font-weight:600;cursor:help;margin-left:8px;position:relative;vertical-align:middle}
         .nif-i:hover .nif-tip{opacity:1;visibility:visible}
-        .nif-tip{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#0A1119;border:1px solid rgba(201,160,99,0.35);border-radius:10px;padding:10px 12px;width:210px;opacity:0;visibility:hidden;transition:all .15s;z-index:99;box-shadow:0 8px 24px rgba(0,0,0,0.6);text-align:left;font-style:normal;font-weight:400}
+        .nif-tip{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#0A1119;border:1px solid rgba(201,160,99,0.35);border-radius:10px;padding:10px 12px;width:280px;opacity:0;visibility:hidden;transition:all .15s;z-index:99;box-shadow:0 8px 24px rgba(0,0,0,0.6);text-align:left;font-style:normal;font-weight:400}
         .nif-tip-row{display:flex;justify-content:space-between;gap:8px;padding:3px 0;font-size:11px;border-bottom:0.5px solid rgba(255,255,255,0.08)}
         .nif-tip-row:last-child{border-bottom:none}
       `}</style>
