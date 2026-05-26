@@ -335,7 +335,13 @@ export default function Dashboard() {
 
               {/* NIF — 3 cols */}
               <motion.div {...fadeUp(0.1)} style={{ gridColumn: "span 3 / span 3" }}>
-                <NIFCalculator profiles={profiles} />
+                <FlipCard
+                  expandedHeight={620}
+                  onFlip={() => {}}
+                  front={<NIFCalculator profiles={profiles} />}
+                  frontStyle={{ background: "transparent", border: "none", padding: 0 }}
+                  back={<NIFScore profiles={profiles} />}
+                />
               </motion.div>
 
               {/* Protection + Revenus garantis — 2 cols */}
