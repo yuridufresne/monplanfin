@@ -331,13 +331,13 @@ export default function Dashboard() {
             </motion.div>
 
             {/* ── ZONE 2 — NIF + Protection ───────────────────────────── */}
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-5">
+            <div className="grid gap-4 mb-5" style={{ gridTemplateColumns: nifFlipped ? "1fr" : "repeat(5, 1fr)" }}>
 
               {/* NIF — 3 cols */}
-              <motion.div {...fadeUp(0.1)} style={{ gridColumn: "span 3 / span 3" }}>
+              <motion.div {...fadeUp(0.1)} style={{ gridColumn: nifFlipped ? "span 1 / -1" : "span 3 / span 3" }}>
                 <FlipCard
                   expandedHeight={800}
-                  onFlip={() => {}}
+                  onFlip={setNifFlipped}
                   front={<NIFCalculator profiles={profiles} />}
                   frontStyle={{ background: "transparent", border: "none", padding: 0 }}
                   back={<div style={{padding:"0 4px"}}><ModelisationRetraite embedded profiles={profiles} /></div>}
@@ -345,7 +345,7 @@ export default function Dashboard() {
               </motion.div>
 
               {/* Protection + Revenus garantis — 2 cols */}
-              <div style={{ gridColumn: "span 2 / span 2", display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ gridColumn: nifFlipped ? "span 1 / -1" : "span 2 / span 2", display: nifFlipped ? "none" : "flex", flexDirection: "column", gap: 12 }}>
 
                 {/* Protection */}
                 <motion.div {...fadeUp(0.12)}>
