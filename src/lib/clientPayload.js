@@ -150,24 +150,30 @@ export function buildPayload(profiles = []) {
   const esperanceVie = Math.max(pA.esperanceVie, pB?.esperanceVie || 0) || IQPF.ESP_VIE;
   const nRetrait = Math.max(1, esperanceVie - pA.ageRetraite);
 
-  const manque = Math.max(0, cibleAnnuelle - garantisTotal);
+  // ── Calcul en dollars FUTURS (nominaux) — cible ET garantis indexés ──
+  const fi = Math.pow(1 + IQPF.INFLATION, nA);
+  const cibleFuture    = cibleAnnuelle * fi;      // dollars de l'année de retraite
+  const garantisFuturs = garantisTotal * fi;       // RRQ+PSV+Pension indexés à l'inflation
+  const manqueFutur    = Math.max(0, cibleFuture - garantisFuturs);
+  const manque         = Math.max(0, cibleAnnuelle - garantisTotal); // conservé pour affichage
+
+  // NIF = capital requis en dollars futurs pour couvrir le manque futur
   const rReel = ((1 + IQPF.REND_DECAISSE) / (1 + IQPF.INFLATION)) - 1;
-  // Même formule que calcNIF.js : moyenne règle 4% + rente viagère
-  const nif_4pct  = manque / 0.04;
+  const nif_4pct  = manqueFutur / 0.04;
   const nif_rente = rReel > 0.001
-    ? manque * ((1 - Math.pow(1 + rReel, -nRetrait)) / rReel)
-    : manque * nRetrait;
-  const nif = Math.round((nif_4pct + nif_rente) / 2);
+    ? manqueFutur * ((1 - Math.pow(1 + rReel, -nRetrait)) / rReel)
+    : manqueFutur * nRetrait;
+  const nif = Math.round((nif_4pct + nif_rente) / 2); // déjà en dollars futurs nominaux
 
   const capA = fv(pA.soldeReer + pA.soldeCeli, pA.cotReer + pA.cotCeli, IQPF.REND_ACCUM, nA);
   const capB = pB ? fv(pB.soldeReer + pB.soldeCeli, pB.cotReer + pB.cotCeli, IQPF.REND_ACCUM, nB) : 0;
   const capitalProjecte = Math.round(capA + capB);
 
-  const nifNominal = Math.round(nif * Math.pow(1 + IQPF.INFLATION, nA));
+  // NIF est déjà nominal — pas besoin de re-multiplier par fi
+  const nifNominal = nif;
   const scoreNIF = nifNominal > 0 ? Math.min(Math.round(capitalProjecte / nifNominal * 100), 999) : 100;
 
   const rM = IQPF.REND_ACCUM / 12, nMois = nA * 12;
-  // Capital déjà projeté avec le plan actuel (soldes + cotisations existantes)
   const annuFactor = rM > 0 ? (Math.pow(1 + rM, nMois) - 1) / rM : nMois;
   const manqueCapital = Math.max(0, nifNominal - capitalProjecte);
   const cotSupp = manqueCapital > 0 && annuFactor > 0
@@ -191,7 +197,7 @@ export function buildPayload(profiles = []) {
     conjoint_a: pA,
     conjoint_b: pB,
     revenus_garantis: {
-      rrq_foyer: rrqFoyer, sv_foyer: svFoyer, pension_foyer: pensionFoyer, total: garantisTotal, // tous en $/an
+      rrq_foyer: rrqFoyer, sv_foyer: svFoyer, pension_foyer: pensionFoyer, total: garantisTotal, total_futur: Math.round(garantisFuturs), // tous en $/an
       rrq_a: pA.rrqAjuste, sv_a: pA.sv, pension_a: pA.pensionPD,
       rrq_b: pB?.rrqAjuste || 0, sv_b: pB?.sv || 0, pension_b: pB?.pensionPD || 0,
     },
