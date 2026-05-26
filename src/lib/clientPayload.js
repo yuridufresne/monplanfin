@@ -54,7 +54,9 @@ function readEpargne(comptes = {}) {
 
 function readPersonne(ret = {}, profil = {}) {
   const ep = readEpargne(ret.comptes);
-  const rrqBrut = parseFloat(ret.rrq) || 0;
+  // BUG #1 fix — RRQ stockée en $/mois dans l'ABF → convertir en $/an
+  const rrqMensuel = parseFloat(ret.rrq) || 0;
+  const rrqBrut = rrqMensuel * 12;
   const ageDeb = parseInt(ret.age_debut_rrq) || 65;
   let fRRQ = 1;
   if (ageDeb < 65) fRRQ = Math.max(0.64, 1 - (65 - ageDeb) * 12 * 0.006);
@@ -64,7 +66,8 @@ function readPersonne(ret = {}, profil = {}) {
     age: calcAge(profil.date_naissance || profil.dob),
     ageRetraite: parseInt(ret.age_retraite) || 65,
     rrqBase: rrqBrut, rrqAjuste: Math.round(rrqBrut * fRRQ), ageDebutRRQ: ageDeb,
-    sv: parseFloat(ret.sv) || IQPF.PSV_MENSUEL,
+    // BUG #2 fix — PSV stockée en $/mois dans l'ABF → convertir en $/an
+    sv: (parseFloat(ret.sv) || IQPF.PSV_MENSUEL) * 12,
     pensionPD: (parseFloat((ret.fond_pension || {}).rente_mensuelle_estimee) || 0) * 12,
     pensionIndexee: (ret.fond_pension || {}).indexee !== false,
     salaire: 0,
@@ -106,15 +109,22 @@ export function buildPayload(profiles = []) {
   const epargneTotal = pA.soldeReer + pA.soldeCeli + (pB ? pB.soldeReer + pB.soldeCeli : 0);
   const cotTotale = pA.cotReer + pA.cotCeli + (pB ? pB.cotReer + pB.cotCeli : 0);
 
-  // rrqAjuste et sv sont en $/mois → ×12 pour annualiser
+  // rrqAjuste et sv sont maintenant en $/an (corrigés dans readPersonne)
   // pensionPD est déjà en $/an (rente_mensuelle_estimee × 12 dans readPersonne)
-  const rrqFoyer     = (pA.rrqAjuste + (pB?.rrqAjuste || 0)) * 12;
-  const svFoyer      = (pA.sv        + (pB?.sv        || 0)) * 12;
+  const rrqFoyer     = pA.rrqAjuste + (pB?.rrqAjuste || 0);
+  const svFoyer      = pA.sv        + (pB?.sv        || 0);
   const pensionFoyer = pA.pensionPD  + (pB?.pensionPD  || 0);
   const garantisTotal = rrqFoyer + svFoyer + pensionFoyer; // $/an
 
-  const revenuRetMensABF = parseFloat(ret.revenu_retraite_mensuel) || 0;
-  const pctABF = parseFloat(ret.revenu_retraite_pct) || IQPF.TAUX_REMPLACEMENT * 100;
+  // BUG #3 fix — taux de remplacement peut être dans "objectifs" plutôt que "retraite"
+  const objSection = dict.objectifs || {};
+  const revenuRetMensABF = parseFloat(ret.revenu_retraite_mensuel)
+    || parseFloat(objSection.revenu_retraite_mensuel) || 0;
+  const pctABF = parseFloat(ret.revenu_retraite_pct)
+    || parseFloat(objSection.taux_remplacement)
+    || parseFloat(objSection.revenu_retraite_pct)
+    || parseFloat(objSection.taux_remplacement_vise)
+    || (IQPF.TAUX_REMPLACEMENT * 100);
   const cibleAnnuelle = revenuRetMensABF > 0 ? revenuRetMensABF * 12 : Math.round(brutTotal * pctABF / 100);
   const tauxEffectif = brutTotal > 0 ? Math.round(cibleAnnuelle / brutTotal * 100) : pctABF;
 
@@ -162,8 +172,8 @@ export function buildPayload(profiles = []) {
     conjoint_b: pB,
     revenus_garantis: {
       rrq_foyer: rrqFoyer, sv_foyer: svFoyer, pension_foyer: pensionFoyer, total: garantisTotal, // tous en $/an
-      rrq_a: pA.rrqAjuste * 12, sv_a: pA.sv * 12, pension_a: pA.pensionPD,
-      rrq_b: (pB?.rrqAjuste || 0) * 12, sv_b: (pB?.sv || 0) * 12, pension_b: pB?.pensionPD || 0,
+      rrq_a: pA.rrqAjuste, sv_a: pA.sv, pension_a: pA.pensionPD,
+      rrq_b: pB?.rrqAjuste || 0, sv_b: pB?.sv || 0, pension_b: pB?.pensionPD || 0,
     },
     epargne: {
       solde_reer_a: pA.soldeReer, cot_reer_a: pA.cotReer,
@@ -231,6 +241,8 @@ export function debugPayload(profiles = []) {
       cot_celi_b:   (retCj.comptes?.celi || []).map(c => c.cotisation_mensuelle),
       emplois_a: (rev.emplois || []).map(e => ({ revenu_brut: e.revenu_brut })),
       emplois_b: (rev.conjoint?.emplois || []).map(e => ({ revenu_brut: e.revenu_brut })),
+      objectifs_section: dict.objectifs || {},
+      objectifs_keys: Object.keys(dict.objectifs || {}),
     },
     sections: Object.keys(dict),
     retraite_keys: Object.keys(ret),
