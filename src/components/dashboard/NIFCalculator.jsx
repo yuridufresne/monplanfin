@@ -14,8 +14,15 @@ export default function NIFCalculator({ profiles }) {
   const enCouple = payload.enCouple;
 
   const anneeAuj = 2026;
-  const anneeRet = kpis?.annee_retraite || (anneeAuj + Math.max(0,(pA?.ageRetraite||65)-(pA?.age||38)));
-  const ageRetMarie = pB ? (pB.age || 36) + ((pA?.ageRetraite||65)-(pA?.age||38)) : null;
+  const nAnnees = Math.max(0, (pA?.ageRetraite || 65) - (pA?.age || 38));
+  const anneeRet = kpis?.annee_retraite || (anneeAuj + nAnnees);
+  // Âge de Marie à la 1re retraite = son âge actuel + années restantes de Jean
+  const ageRetMarie = pB ? (pB.age || 36) + nAnnees : null;
+  // NIF en dollars d'aujourd'hui = nif_nominal / facteur inflation
+  const fi = payload.hypotheses?.inflation
+    ? Math.pow(1 + payload.hypotheses.inflation, nAnnees)
+    : 1;
+  const nifAujourdhui = fi > 0 ? Math.round((kpis?.nif_nominal || 0) / fi) : kpis?.nif;
 
   const C = {
     or:"#C9A063", orBg:"rgba(201,160,99,0.06)", orBg2:"rgba(201,160,99,0.04)",
@@ -83,7 +90,7 @@ export default function NIFCalculator({ profiles }) {
               </span>
             </span>
           </div>
-          <div style={{fontSize:12,color:C.txt40,marginTop:5}}>≈ {fmt(kpis?.nif)} en dollars d'aujourd'hui</div>
+          <div style={{fontSize:12,color:C.txt40,marginTop:5}}>≈ {fmt(nifAujourdhui)} en dollars d'aujourd'hui</div>
           <div style={{height:1,background:"rgba(201,160,99,0.25)",margin:"18px auto",maxWidth:300}}></div>
           <div style={{fontSize:13,color:C.txt55}}>Sommes additionnelles à investir pour l'atteindre</div>
           <div style={{fontFamily:"var(--font-mono)",fontSize:22,fontWeight:500,color:C.rouge,marginTop:4}}>{fmt(kpis?.cot_supp_mens)}/mois</div>
