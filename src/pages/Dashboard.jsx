@@ -7,17 +7,12 @@ import { ArrowRight, ExternalLink, Settings } from "lucide-react";
 import { syncABFToEntities } from "@/hooks/useABFSync";
 import { calcRevenuDisponible } from "@/lib/calcRevenuNet";
 import ResetDataModal from "@/components/dashboard/ResetDataModal";
-import RetirementReport from "@/components/dashboard/RetirementReport";
 import DebtSimulator from "@/components/dashboard/DebtSimulator";
 import ReerLevierSimulator from "@/components/dashboard/ReerLevierSimulator";
-import NIFScore from "@/components/dashboard/NIFScore";
 import NIFCalculator from "@/components/dashboard/NIFCalculator";
 import { calcNIFFromProfiles } from "@/lib/calcNIF";
 import InfoTooltip from "@/components/ui/InfoTooltip";
 import FlipCard from "@/components/ui/FlipCard";
-import DetteStrategie from "@/components/dashboard/DetteStrategie";
-import PlacementStrategie from "@/components/dashboard/PlacementStrategie";
-import PlanDecaissement from "@/components/dashboard/PlanDecaissement";
 import ModelisationRetraite from "@/pages/ModelisationRetraite";
 
 // ── Formatters ────────────────────────────────────────────────────────────────
@@ -340,7 +335,7 @@ export default function Dashboard() {
                   onFlip={() => {}}
                   front={<NIFCalculator profiles={profiles} />}
                   frontStyle={{ background: "transparent", border: "none", padding: 0 }}
-                  back={<NIFScore profiles={profiles} />}
+                  back={<div style={{padding:"0 4px"}}><ModelisationRetraite embedded profiles={profiles} /></div>}
                 />
               </motion.div>
 
@@ -442,7 +437,7 @@ export default function Dashboard() {
                     </>
                   }
                   back={
-                    <DetteStrategie
+                    <DebtSimulator
                       dettes={autresDettes}
                       hypotheques={hypotheques}
                     />
@@ -486,13 +481,10 @@ export default function Dashboard() {
                     </>
                   }
                   back={
-                    <PlacementStrategie
+                    <ReerLevierSimulator
                       retraiteABF={retraiteABF}
-                      retraiteConj={retraiteConj}
                       revenuBrut={revBrut}
                       tauxMarginal={0.475}
-                      prenomA={profil.prenom || profil.nom?.split(" ")[0] || ""}
-                      prenomB={profil.conjoint?.prenom || profil.conjoint?.nom?.split(" ")[0] || ""}
                     />
                   }
                 />

@@ -423,20 +423,29 @@ export default function ModelisationRetraite({ embedded = false, profiles: profi
   };
 
   return (
-    <div style={{ background:"#070E1C", minHeight:"100vh", padding:"24px 20px", color:"#fff", fontFamily:"Inter,sans-serif" }}>
+    <div style={{ background: embedded ? "transparent" : "#070E1C", minHeight: embedded ? undefined : "100vh", padding:"24px 20px", color:"#fff", fontFamily:"Inter,sans-serif" }}>
 
-      {/* Header */}
-      <div style={{ marginBottom:18, display:"flex", alignItems:"flex-start", justifyContent:"space-between", flexWrap:"wrap", gap:8 }}>
-        <div>
-          <div style={{ fontSize:10, fontWeight:700, letterSpacing:"0.14em", textTransform:"uppercase", color:"rgba(201,160,99,.55)", marginBottom:5 }}>Outil de planification</div>
-          <div style={{ fontSize:20, fontWeight:700, color:"#C9A063", marginBottom:4, letterSpacing:"-0.02em" }}>Modélisation de décaissement retraite</div>
-          <div style={{ fontSize:11, color:"rgba(255,255,255,.35)" }}>Fiscalité QC 2026 · CELI en priorité · FERR minimums ARC · Paliers indexés à l'inflation</div>
-          <div style={{ fontSize:10, color:"rgba(255,255,255,.2)", marginTop:4 }}>⚠ À titre informatif. Consultez un planificateur financier agréé (AMF) pour votre situation personnelle.</div>
+      {/* Header — masqué en mode embarqué */}
+      {!embedded && (
+        <div style={{ marginBottom:18, display:"flex", alignItems:"flex-start", justifyContent:"space-between", flexWrap:"wrap", gap:8 }}>
+          <div>
+            <div style={{ fontSize:10, fontWeight:700, letterSpacing:"0.14em", textTransform:"uppercase", color:"rgba(201,160,99,.55)", marginBottom:5 }}>Outil de planification</div>
+            <div style={{ fontSize:20, fontWeight:700, color:"#C9A063", marginBottom:4, letterSpacing:"-0.02em" }}>Modélisation de décaissement retraite</div>
+            <div style={{ fontSize:11, color:"rgba(255,255,255,.35)" }}>Fiscalité QC 2026 · CELI en priorité · FERR minimums ARC · Paliers indexés à l'inflation</div>
+            <div style={{ fontSize:10, color:"rgba(255,255,255,.2)", marginTop:4 }}>⚠ À titre informatif. Consultez un planificateur financier agréé (AMF) pour votre situation personnelle.</div>
+          </div>
+          <Link to="/dashboard" style={{ fontSize:11, color:"rgba(255,255,255,.35)", textDecoration:"none", padding:"6px 12px", borderRadius:8, border:"1px solid rgba(255,255,255,.08)", background:"rgba(255,255,255,.03)" }}>
+            ← Tableau de bord
+          </Link>
         </div>
-        <Link to="/dashboard" style={{ fontSize:11, color:"rgba(255,255,255,.35)", textDecoration:"none", padding:"6px 12px", borderRadius:8, border:"1px solid rgba(255,255,255,.08)", background:"rgba(255,255,255,.03)" }}>
-          ← Tableau de bord
-        </Link>
-      </div>
+      )}
+      {embedded && (
+        <div style={{ marginBottom:14 }}>
+          <div style={{ fontSize:10, fontWeight:700, letterSpacing:"0.14em", textTransform:"uppercase", color:"rgba(201,160,99,.55)", marginBottom:3 }}>Décaissement · Québec 2026</div>
+          <div style={{ fontSize:16, fontWeight:700, color:"#fff", letterSpacing:"-0.02em" }}>Modélisation détaillée de la retraite</div>
+          <div style={{ fontSize:11, color:"rgba(255,255,255,.3)", marginTop:2 }}>Simulez le décaissement année par année : FERR, PSV, RRQ, impôts, clawback et patrimoine à la succession.</div>
+        </div>
+      )}
 
       {/* Tabs */}
       <div style={{ display:"flex", gap:2, background:"rgba(255,255,255,.04)", borderRadius:10, padding:2, marginBottom:16, width:"fit-content" }}>
