@@ -187,8 +187,8 @@ export function calcNIFFromProfiles(profiles) {
   const prenomC  = profil.conjoint?.nom ? profil.conjoint.nom.split(" ")[0]  : null;
 
   // ── Âges ────────────────────────────────────────────────────────────────────
-  const ageActuel = profil.dob
-    ? Math.floor((Date.now() - new Date(profil.dob)) / (365.25 * 24 * 3600 * 1000))
+  const ageActuel = (profil.date_naissance || profil.dob)
+    ? Math.floor((Date.now() - new Date(profil.date_naissance || profil.dob)) / (365.25 * 24 * 3600 * 1000))
     : 38;
 
   const dobConj     = retraite.conjoint?.dob || profil.conjoint?.dob;
@@ -197,7 +197,7 @@ export function calcNIFFromProfiles(profiles) {
     : null;
 
   const ageRetraite  = parseInt(retraite.age_retraite)  || 65;
-  const esperanceVie = parseInt(retraite.esperance_vie) || 90;
+  const esperanceVie = parseInt(retraite.esperance_vie) || 95;
 
   // ── Revenus bruts ────────────────────────────────────────────────────────────
   const sumBrut = (emplois, sides) =>
@@ -213,6 +213,13 @@ export function calcNIFFromProfiles(profiles) {
 
   // Priorité : montant mensuel saisi dans l'ABF
   const montantMensuelSaisi = parseFloat(retraite.revenu_retraite_mensuel) || 0;
+
+  // ── Revenus garantis (RRQ × 12 car stockés en $/mois dans l'ABF) ─────────────
+  const retCj = retraite.conjoint || {};
+  const svA   = (parseFloat(retraite.sv)  || PSV_MENSUEL) * 12;
+  const rrqA  = (parseFloat(retraite.rrq) || 0)           * 12;
+  const svB   = inclureConj ? (parseFloat(retCj.sv)  || PSV_MENSUEL) * 12 : 0;
+  const rrqB  = inclureConj ? (parseFloat(retCj.rrq) || 0)           * 12 : 0;
 
   // ── Revenus garantis — source unique : getRevenusGarantisABF ─────────────────
   const revenusGarantis = getRevenusGarantisABF(retraite, retraiteC, inclureConj);
