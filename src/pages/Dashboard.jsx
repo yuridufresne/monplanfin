@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { ArrowRight, ExternalLink } from "lucide-react";
+import { ArrowRight, ExternalLink, Settings } from "lucide-react";
 import { syncABFToEntities } from "@/hooks/useABFSync";
 import { calcRevenuDisponible } from "@/lib/calcRevenuNet";
 import ResetDataModal from "@/components/dashboard/ResetDataModal";
@@ -258,9 +258,12 @@ export default function Dashboard() {
               {user?.full_name ? `Bonjour, ${user.full_name.split(" ")[0]}.` : "Bonjour."}
             </h1>
             <div style={{ display: "flex", gap: 8 }}>
-              <Link to="/analyse" style={{ fontSize: 11.5, fontWeight: 600, color: "#C9A063", background: "rgba(201,160,99,0.08)", border: "1px solid rgba(201,160,99,0.2)", padding: "6px 14px", borderRadius: 10, textDecoration: "none" }}>
+              <Link to="/analyse" style={{ fontSize: 11.5, fontWeight: 600, color: "#C9A063", background: "rgba(201,160,99,0.08)", border: "1px solid rgba(201,160,99,0.2)", padding: "6px 14px", borderRadius: 10, textDecoration: "none", display: "flex", alignItems: "center", gap: 6 }}>
                 Modifier l'ABF →
               </Link>
+              <button style={{ fontSize: 11, color: "#C9A063", background: "rgba(201,160,99,0.08)", border: "1px solid rgba(201,160,99,0.2)", cursor: "pointer", padding: "6px 10px", borderRadius: 10, display: "flex", alignItems: "center", gap: 4 }}>
+                <Settings style={{ width: 14, height: 14 }} />
+              </button>
               <button onClick={() => setShowReset(true)} style={{ fontSize: 11, color: "rgba(248,113,113,0.6)", background: "transparent", border: "none", cursor: "pointer", padding: "6px 10px" }}>
                 Réinitialiser
               </button>
