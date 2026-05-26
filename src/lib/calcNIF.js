@@ -208,8 +208,9 @@ export function calcNIFFromProfiles(profiles) {
   const brutP2  = inclureConj ? sumBrut(revABFC.emplois, revABFC.sidehustles) : 0;
   const revBrut = (brutP1 + brutP2) || 80000;
 
-  // ── Taux de remplacement ─────────────────────────────────────────────────────
-  const tauxRemplacement = (parseInt(retraite.revenu_retraite_pct) || 80) / 100;
+  // ── Taux de remplacement — priorité : slider (taux_remplacement) > input % (revenu_retraite_pct) > défaut 80
+  const tauxRemplacement = (parseInt(retraite.taux_remplacement)
+      || parseInt(retraite.revenu_retraite_pct) || 80) / 100;
 
   // Priorité : montant mensuel saisi dans l'ABF
   const montantMensuelSaisi = parseFloat(retraite.revenu_retraite_mensuel) || 0;
