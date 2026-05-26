@@ -131,9 +131,12 @@ export function buildPayload(profiles = []) {
 
   const manque = Math.max(0, cibleAnnuelle - garantisTotal);
   const rReel = ((1 + IQPF.REND_DECAISSE) / (1 + IQPF.INFLATION)) - 1;
-  const nif = rReel > 0.001
-    ? Math.round(manque * ((1 - Math.pow(1 + rReel, -nRetrait)) / rReel))
-    : Math.round(manque * nRetrait);
+  // Même formule que calcNIF.js : moyenne règle 4% + rente viagère
+  const nif_4pct  = manque / 0.04;
+  const nif_rente = rReel > 0.001
+    ? manque * ((1 - Math.pow(1 + rReel, -nRetrait)) / rReel)
+    : manque * nRetrait;
+  const nif = Math.round((nif_4pct + nif_rente) / 2);
 
   const capA = fv(pA.soldeReer + pA.soldeCeli, pA.cotReer + pA.cotCeli, IQPF.REND_ACCUM, nA);
   const capB = pB ? fv(pB.soldeReer + pB.soldeCeli, pB.cotReer + pB.cotCeli, IQPF.REND_ACCUM, nB) : 0;
