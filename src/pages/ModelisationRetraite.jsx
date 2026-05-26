@@ -178,11 +178,13 @@ function TableauResultats({ rows, prenomA = "A", prenomB = "B" }) {
 }
 
 // ── Page principale ───────────────────────────────────────────────────────────
-export default function ModelisationRetraite() {
-  const { data: profiles = [] } = useQuery({
+export default function ModelisationRetraite({ embedded = false, profiles: profilesProp }) {
+  const { data: profilesQuery = [] } = useQuery({
     queryKey: ["financialProfiles"],
     queryFn: () => base44.entities.FinancialProfile.list(),
+    enabled: !embedded,
   });
+  const profiles = embedded ? (profilesProp || []) : profilesQuery;
 
   // ── Lecture données ABF via source unique buildPayload ───────────────────────
   const pl = useMemo(() => buildPayload(profiles), [profiles]);
