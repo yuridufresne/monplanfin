@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ExternalLink } from "lucide-react";
 import { calcNIFFromProfiles } from "@/lib/calcNIF";
+import { IQPF } from "@/lib/clientPayload";
 import { base44 } from "@/api/base44Client";
 
 export { calcNIFFromProfiles };
@@ -20,32 +21,25 @@ const RENDEMENTS = [
 const AGES = [60, 65, 70];
 
 function calcCellule({ ageRetraite, rendAccum, rendDecaisse, profilData }) {
-  const { ageActuel, revenuBrutFoyer, revenusGarantis, soldeActuel, cotMensuelle, esperanceVie = 90, inflation = 0.025 } = profilData;
+  const { ageActuel, revenuBrutFoyer, tauxRemplacement, garantisAnnuelsBase, soldeActuel, cotMensuelle, esperanceVie } = profilData;
+  const inflation      = IQPF.INFLATION;
   const anneesAvant    = Math.max(1, ageRetraite - ageActuel);
   const anneesDecaisse = Math.max(1, esperanceVie - ageRetraite);
-  const facteurInflation = Math.pow(1 + inflation, anneesAvant);
+  const fi             = Math.pow(1 + inflation, anneesAvant);
 
-  const rrqBase = (revenusGarantis?.p1?.rrq || 0) + (revenusGarantis?.p2?.rrq || 0);
+  // Ajustement RRQ selon l'âge de retraite vs 65
   let facteurRRQ = 1;
   if (ageRetraite < 65) facteurRRQ = Math.max(0.64, 1 - (65 - ageRetraite) * 12 * 0.006);
   else if (ageRetraite > 65) facteurRRQ = 1 + Math.min((ageRetraite - 65) * 12, 60) * 0.007;
-  const rrqAjuste = rrqBase * facteurRRQ;
 
-  const pensionMensuelle = (revenusGarantis?.p1?.pension || 0) + (revenusGarantis?.p2?.pension || 0);
-  const psvAnnuelle = ((revenusGarantis?.p1?.psv || 0) + (revenusGarantis?.p2?.psv || 0)) * 12;
+  // Revenus garantis ajustés (RRQ modulé, PSV et pension inchangés)
+  const garantisAjustes = garantisAnnuelsBase * facteurRRQ;
+  const totalGarantiFutur = garantisAjustes * fi;
 
-  const garantisAnnuels = (rrqAjuste + pensionMensuelle) * 12;
-  const garantisFuturs  = garantisAnnuels * facteurInflation;
-
-  const anneesPSVdelay   = Math.max(0, 65 - ageRetraite);
-  const facteurInflPSV   = Math.pow(1 + inflation, anneesAvant + anneesPSVdelay);
-  // PSV est ignorée dans le manque car elle arrivera à 65 — on l'intègre dans garantis futurs (simplification)
-  const totalGarantiFutur = garantisFuturs + psvAnnuelle * facteurInflation;
-
-  const cibleFuture = revenuBrutFoyer * 0.80 * facteurInflation;
+  const cibleFuture = revenuBrutFoyer * (tauxRemplacement / 100) * fi;
   const manqueFutur = Math.max(0, cibleFuture - totalGarantiFutur);
 
-  const tauxReel = rendDecaisse - inflation;
+  const tauxReel = ((1 + rendDecaisse) / (1 + inflation)) - 1;
   const nif_4pct  = manqueFutur / 0.04;
   const nif_rente = tauxReel > 0.005
     ? manqueFutur * ((1 - Math.pow(1 + tauxReel, -anneesDecaisse)) / tauxReel)
@@ -58,8 +52,7 @@ function calcCellule({ ageRetraite, rendAccum, rendDecaisse, profilData }) {
     + (rM > 0 ? cotMensuelle * (Math.pow(1 + rM, n) - 1) / rM : cotMensuelle * n);
 
   const score = nif > 0 ? Math.min(Math.round(capitalProjecte / nif * 100), 999) : 100;
-
-  return { nif: Math.round(nif), capitalProjecte: Math.round(capitalProjecte), score, facteurRRQ: +(facteurRRQ * 100).toFixed(0) };
+  return { nif: Math.round(nif), capitalProjecte: Math.round(capitalProjecte), score };
 }
 
 function couleurScore(score) {
@@ -125,9 +118,10 @@ export default function NIFScore({ profiles }) {
 
   const profilData = {
     ageActuel,
-    revenuBrutFoyer: revBrut,
-    revenusGarantis,
-    soldeActuel: soldeTotal,
+    revenuBrutFoyer:    revBrut,
+    tauxRemplacement:   tauxRemplacement,   // déjà en % entier (ex: 80)
+    garantisAnnuelsBase: revGarantiAnnuel,  // source unique buildPayload → calcNIFFromProfiles
+    soldeActuel:        soldeTotal,
     cotMensuelle,
     esperanceVie,
   };

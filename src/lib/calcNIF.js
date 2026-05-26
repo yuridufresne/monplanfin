@@ -36,7 +36,7 @@ const PSV_MENSUEL       = PRESTATIONS_2026.psv.mensuel65; // 713.34 $/mois — s
  */
 export function calcNIF({
   revenuBrutFoyer,
-  tauxRemplacement = 0.80,
+  tauxRemplacement = 0.70,
   revenuGarantiAujourdhui,
   ageActuel,
   ageRetraite = 65,
