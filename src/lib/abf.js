@@ -26,13 +26,15 @@ export function calcAge(dateNaissance) {
 
 export function readEpargne(comptes={}) {
   const sum=(arr,field)=>(arr||[]).reduce((s,c)=>s+(parseFloat(c[field])||0),0);
+  // REEE exclu du capital de retraite — épargne-études uniquement
   return {
     soldeReer: sum(comptes.reer,'solde'),
     cotReer:   sum(comptes.reer,'cotisation_mensuelle'),
     soldeCeli: sum(comptes.celi,'solde'),
     cotCeli:   sum(comptes.celi,'cotisation_mensuelle'),
-    soldeReee: sum(comptes.reee,'solde'),
     soldeCri:  sum(comptes.cri,'solde'),
+    soldeFrv:  sum(comptes.frv,'solde'),
+    // REEE intentionnellement exclu
   };
 }
 

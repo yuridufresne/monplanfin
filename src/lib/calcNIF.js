@@ -261,9 +261,13 @@ export function calcNIFFromProfiles(profiles) {
     : Math.round(revBrut * tauxRemplacement);
 
   // ── Épargne ──────────────────────────────────────────────────────────────────
+  // REEE exclu — épargne-études, pas capital de retraite
+  const COMPTES_RETRAITE = ['reer', 'celi', 'cri', 'frv', 'celiapp', 'non_enregistre'];
+
   const sumEpargne = (ret) => {
     const c = ret.comptes || {};
-    let total = Object.values(c).reduce((s, list) => {
+    let total = COMPTES_RETRAITE.reduce((s, type) => {
+      const list = c[type];
       if (!Array.isArray(list)) return s;
       return s + list.reduce((a, x) => a + (parseFloat(x.solde) || 0), 0);
     }, 0);
@@ -272,7 +276,8 @@ export function calcNIFFromProfiles(profiles) {
   };
   const sumCotis = (ret) => {
     const c = ret.comptes || {};
-    let total = Object.values(c).reduce((s, list) => {
+    let total = COMPTES_RETRAITE.reduce((s, type) => {
+      const list = c[type];
       if (!Array.isArray(list)) return s;
       return s + list.reduce((a, x) => a + (parseFloat(x.cotisation_mensuelle) || 0), 0);
     }, 0);

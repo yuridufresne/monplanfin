@@ -52,13 +52,15 @@ function sumC(comptes = {}, type, field) {
 }
 
 function readEpargne(comptes = {}) {
+  // REEE exclu — épargne-études, pas capital de retraite
   return {
     soldeReer: sumC(comptes, 'reer', 'solde'),
     cotReer: sumC(comptes, 'reer', 'cotisation_mensuelle'),
     soldeCeli: sumC(comptes, 'celi', 'solde'),
     cotCeli: sumC(comptes, 'celi', 'cotisation_mensuelle'),
-    soldeReee: sumC(comptes, 'reee', 'solde'),
     soldeCri: sumC(comptes, 'cri', 'solde'),
+    soldeFrv: sumC(comptes, 'frv', 'solde'),
+    // REEE intentionnellement exclu du capital de retraite
     comptes: {
       reer: comptes.reer || [], celi: comptes.celi || [], reee: comptes.reee || [],
       cri: comptes.cri || [], frv: comptes.frv || [], celiapp: comptes.celiapp || [],
