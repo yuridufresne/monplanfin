@@ -3,12 +3,15 @@
  *
  * ARCHITECTURE EN DEUX ÉTAPES :
  *
- * 1. calcNIF()        → valeur FIXE en dollars D'AUJOURD'HUI (ne dépend PAS de l'épargne)
- *    NIF = capital équivalent en $ constants, calculé via taux réel (Fisher)
- *    NIF = manqueRéel / tauxRéel  (règle des 4% + rente actuarielle, moyennées)
+ * 1. calcNIF()        → valeur FIXE en DOLLARS FUTURS NOMINAUX (ne dépend PAS de l'épargne)
+ *    - Cible future  = cible aujourd'hui × facteur inflation
+ *    - Garantis futurs = garantis aujourd'hui × facteur inflation (via indexerRevenusGarantis)
+ *    - Manque futur  = cible future − garantis futurs
+ *    - NIF = manque futur / taux nominal  (règle 4% + rente actuarielle, moyennées)
+ *    ⚠ NIF est en dollars futurs (nominaux) — cohérent avec le capital projeté
  *
  * 2. calcAtteintNIF() → progression vers le NIF (dépend de l'épargne actuelle + cotisations)
- *    Score = capitalProjeté / NIF × 100
+ *    Score = capitalProjeté nominal / NIF nominal × 100
  *
  * 3. calcNIFFromProfiles() → orchestrateur qui lit les profils ABF et appelle les deux fonctions
  */
@@ -37,7 +40,8 @@ const PSV_MENSUEL       = PRESTATIONS_2026.psv.mensuel65; // 713.34 $/mois — s
 export function calcNIF({
   revenuBrutFoyer,
   tauxRemplacement = 0.70,
-  revenuGarantiAujourdhui,
+  revenuGarantiAujourdhui,   // garantis en $ d'aujourd'hui — sera indexé ici
+  decompositionGarantis = null, // optionnel : pour indexation par composante
   ageActuel,
   ageRetraite = 65,
   esperanceVie = 95,
@@ -49,42 +53,46 @@ export function calcNIF({
   const anneesDecaisse = Math.max(1, esperanceVie - ageRetraite);
   const facteurInflation = Math.pow(1 + inflation, anneesAvant);
 
-  // Manque en dollars d'aujourd'hui (cible et garantis croissent au même rythme)
+  // ── Dollars d'aujourd'hui (pour référence)
   const revenuCibleAujourdhui  = revenuBrutFoyer * tauxRemplacement;
   const manqueAujourdhui       = Math.max(0, revenuCibleAujourdhui - revenuGarantiAujourdhui);
 
-  // NIF en dollars d'aujourd'hui via taux réel (Fisher: rendement réel = nominal − inflation)
-  const tauxReel = ((1 + rendementDecaissement) / (1 + inflation)) - 1;
+  // ── Dollars futurs nominaux — c'est ici que l'indexation entre dans le calcul
+  const revenuCibleFutur   = revenuCibleAujourdhui * facteurInflation;
+  const { totalFutur: revenuGarantiFutur, decompositionFuture } = indexerRevenusGarantis({
+    garantisAujourdhui: revenuGarantiAujourdhui,
+    decomposition:      decompositionGarantis,
+    anneesAvant,
+    inflation,
+  });
+  const manqueFutur = Math.max(0, revenuCibleFutur - revenuGarantiFutur);
 
-  // NIF méthode 1 — règle des 4% (en $ aujourd'hui)
-  const nif_4pct = manqueAujourdhui / tauxRetrait;
+  // ── NIF en dollars futurs nominaux via taux nominal
+  // méthode 1 — règle des 4% (taux de retrait nominal)
+  const nif_4pct = manqueFutur / tauxRetrait;
 
-  // NIF méthode 2 — rente viagère actuarielle en $ d'aujourd'hui
-  const nif_rente = tauxReel > 0.005
-    ? manqueAujourdhui * ((1 - Math.pow(1 + tauxReel, -anneesDecaisse)) / tauxReel)
-    : manqueAujourdhui * anneesDecaisse;
+  // méthode 2 — rente viagère actuarielle (taux nominal)
+  const nif_rente = rendementDecaissement > 0.005
+    ? manqueFutur * ((1 - Math.pow(1 + rendementDecaissement, -anneesDecaisse)) / rendementDecaissement)
+    : manqueFutur * anneesDecaisse;
 
-  // NIF final = moyenne des deux méthodes (dollars d'aujourd'hui)
+  // NIF final = moyenne des deux méthodes — en DOLLARS FUTURS NOMINAUX
   const nif = (nif_4pct + nif_rente) / 2;
 
-  // Dollars futurs pour référence affichage
-  const revenuCibleFutur   = revenuCibleAujourdhui * facteurInflation;
-  const revenuGarantiFutur = revenuGarantiAujourdhui * facteurInflation;
-  const manqueFutur        = Math.max(0, revenuCibleFutur - revenuGarantiFutur);
-
   return {
-    // ── NIF — en dollars d'aujourd'hui ──
+    // ── NIF — en dollars futurs nominaux ──
     nif:                     Math.round(nif),
     nif_4pct:                Math.round(nif_4pct),
     nif_rente:               Math.round(nif_rente),
 
-    // ── Composantes pour affichage ──
+    // ── Composantes ──
     revenuCibleFutur:        Math.round(revenuCibleFutur),
     revenuCibleAujourdhui:   Math.round(revenuCibleAujourdhui),
     revenuGarantiFutur:      Math.round(revenuGarantiFutur),
     revenuGarantiAujourdhui: Math.round(revenuGarantiAujourdhui),
     manqueFutur:             Math.round(manqueFutur),
     manqueAujourdhui:        Math.round(manqueAujourdhui),
+    decompositionFuture,
 
     // ── Paramètres ──
     anneesAvant,
@@ -113,32 +121,25 @@ export function calcAtteintNIF({
   soldeActuel,
   cotMensuelle,
   rendementAccumulation = RENDEMENT_ACCUM,
-  inflation = INFLATION,
 }) {
+  // NIF est maintenant en dollars futurs nominaux → capital projeté aussi en nominal
   const { nif, anneesAvant } = nifResult;
   const rM = rendementAccumulation / 12;
   const n  = Math.max(1, anneesAvant) * 12;
 
-  // Valeur future nominale de l'épargne + cotisations
+  // Capital projeté en dollars futurs nominaux
   const fvSolde = soldeActuel * Math.pow(1 + rM, n);
   const fvCot   = rM > 0 ? cotMensuelle * (Math.pow(1 + rM, n) - 1) / rM : cotMensuelle * n;
-  const capitalProjeteeNominal = fvSolde + fvCot;
+  const capitalProjetee = fvSolde + fvCot; // nominaux — comparables directement au NIF
 
-  // Déflater en dollars d'aujourd'hui pour comparer avec NIF (aussi en dollars constants)
-  const fi = Math.pow(1 + inflation, anneesAvant);
-  const capitalProjetee = capitalProjeteeNominal / fi;
+  const ecart = capitalProjetee - nif;
+  const score = nif > 0 ? capitalProjetee / nif * 100 : 100;
 
-  const ecart  = capitalProjetee - nif;
-  const score  = nif > 0 ? capitalProjetee / nif * 100 : 100;
-
-  // Cotisation mensuelle SUPPLÉMENTAIRE pour atteindre le NIF
-  // = ce qu'il faut ajouter EN PLUS des cotisations actuelles
-  const nifNominal = nif * fi;
+  // Cotisation supplémentaire pour combler le manque
   let cotSuppNecessaire = 0;
-  if (capitalProjeteeNominal < nifNominal && anneesAvant > 0 && rM > 0) {
+  if (capitalProjetee < nif && anneesAvant > 0 && rM > 0) {
     const facteur = (Math.pow(1 + rM, n) - 1) / rM;
-    // manque nominal = NIF nominal − capital déjà projeté (solde + cotisations actuelles)
-    cotSuppNecessaire = Math.max(0, (nifNominal - capitalProjeteeNominal) / facteur);
+    cotSuppNecessaire = Math.max(0, (nif - capitalProjetee) / facteur);
   }
 
   const statut = score >= 110 ? "depasse"
@@ -148,8 +149,8 @@ export function calcAtteintNIF({
     : "critique";
 
   return {
-    capitalProjetee:        Math.round(capitalProjetee),        // dollars d'aujourd'hui
-    capitalProjeteeNominal: Math.round(capitalProjeteeNominal), // dollars nominaux à la retraite
+    capitalProjetee:        Math.round(capitalProjetee), // dollars futurs nominaux
+    capitalProjeteeNominal: Math.round(capitalProjetee), // alias pour compatibilité affichage
     ecart:             Math.round(ecart),
     score:             Math.min(Math.round(score), 999),
     cotSuppNecessaire: Math.round(cotSuppNecessaire),
@@ -241,18 +242,18 @@ export function calcNIFFromProfiles(profiles) {
     revenuBrutFoyer:         revenuBrutEffectif,
     tauxRemplacement,
     revenuGarantiAujourdhui: revGarantiAnnuelAuj,
+    decompositionGarantis:   revenusGarantis.decomposition, // ← indexation par composante
     ageActuel,
     ageRetraite,
     esperanceVie,
   });
 
-  // Décomposition indexée pour affichage
-  const { anneesAvant: anneesNIF } = nifResult;
-  const indexationDetail = indexerRevenusGarantis({
-    garantisAujourdhui: revGarantiAnnuelAuj,
-    decomposition:      revenusGarantis.decomposition,
-    anneesAvant:        anneesNIF,
-  });
+  // Décomposition indexée — déjà calculée dans calcNIF, on la réutilise
+  const indexationDetail = {
+    totalFutur:          nifResult.revenuGarantiFutur,
+    facteur:             nifResult.facteurInflation,
+    decompositionFuture: nifResult.decompositionFuture,
+  };
 
   // Pour compatibilité, si montant mensuel saisi, remplacer la cible
   const depensesCibles = montantMensuelSaisi > 0
@@ -294,14 +295,10 @@ export function calcNIFFromProfiles(profiles) {
   const revGarantiC = revenusGarantis.p2.totalMensuel * 12;
   const ratioConjGaranti = revGarantiAnnuelAuj > 0 ? revGarantiC / revGarantiAnnuelAuj : 0;
 
-  // Valeurs nominales (dollars futurs à la retraite) pour affichage
-  const fi = Math.pow(1 + INFLATION, nifResult.anneesAvant);
-  const capitalNIFNominal = Math.round(nifResult.nif * fi);
-
   return {
-    // ── NIF (fixe) ──
-    capitalNIF:        nifResult.nif,          // dollars constants (aujourd'hui)
-    capitalNIFNominal,                          // dollars nominaux (futurs) — pour affichage
+    // ── NIF (fixe) — en dollars futurs nominaux ──
+    capitalNIF:        nifResult.nif,          // dollars futurs nominaux
+    capitalNIFNominal: nifResult.nif,           // alias identique (même valeur désormais)
     capitalNIF_4pct:   nifResult.nif_4pct,
     capitalNIF_rente:  nifResult.nif_rente,
     nifResult,                                  // objet complet
