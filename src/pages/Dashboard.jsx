@@ -693,15 +693,15 @@ export default function Dashboard() {
                           <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", fontWeight: 600 }}>Aujourd'hui</p>
                           <p style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 700, color: "#5BC4A0" }}>{fmt(totalGarantiAnnuel)}/an</p>
                         </div>
-                        {nif.indexationDetail?.totalFutur > 0 && (
+                        {nif.nifResult?.revenuGarantiFutur > 0 && (
                           <div style={{ marginTop: 6, padding: "8px 10px", borderRadius: 10, background: "rgba(201,160,99,0.07)", border: "1px solid rgba(201,160,99,0.18)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                             <div>
                               <p style={{ fontSize: 11, fontWeight: 700, color: "#C9A063" }}>À la retraite ({ageRetraite || 65} ans)</p>
-                              <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 1 }}>en dollars futurs · ×{nif.indexationDetail?.facteur?.toFixed(2)}</p>
+                              <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 1 }}>en dollars futurs · ×{nif.nifResult?.facteurInflation?.toFixed(2)}</p>
                             </div>
                             <div style={{ textAlign: "right" }}>
-                              <p style={{ fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 800, color: "#C9A063" }}>{fmt(nif.indexationDetail.totalFutur)}/an</p>
-                              <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "rgba(201,160,99,0.6)", marginTop: 1 }}>{fmt(Math.round(nif.indexationDetail.totalFutur / 12))}/mois</p>
+                              <p style={{ fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 800, color: "#C9A063" }}>{fmt(nif.nifResult.revenuGarantiFutur)}/an</p>
+                              <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "rgba(201,160,99,0.6)", marginTop: 1 }}>{fmt(Math.round(nif.nifResult.revenuGarantiFutur / 12))}/mois</p>
                             </div>
                           </div>
                         )}
