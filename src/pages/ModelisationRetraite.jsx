@@ -239,6 +239,7 @@ export default function ModelisationRetraite({ embedded = false, profiles: profi
   // NIF depuis kpis — même source que dashboard
   const nifNominal = kpis?.nif_nominal || 0;
   const capProjeteDashboard = kpis?.capital_projete || 0;
+  const garantisAnnuel = gar?.total || 0;
 
   const [tab,      setTab]      = useState("plan");
   const [unlocked, setUnlocked] = useState(false);
@@ -371,7 +372,7 @@ export default function ModelisationRetraite({ embedded = false, profiles: profi
     }
 
     return{ages,cible:cibleArr,foyer,jC,mC,nifCurve,nif,capR,cibleSim,gar65,tauxABF};
-  },[taux,espVie,rowsBase,paramsBase,nifData,ageA,ageB,retA,retB,reerA,celiA,reerB,soldeCeliB,cotReerA,cotCeliA,cotReerB,cotCeliB,rrqA,rrqB,svA,svB,pensA,pensB,cibleABF,tauxABF,enCouple,brutB]);
+  },[taux,espVie,rowsBase,paramsBase,nifNominal,capProjeteDashboard,garantisAnnuel,ageA,ageB,retA,retB,reerA,celiA,reerB,soldeCeliB,cotReerA,cotCeliA,cotReerB,cotCeliB,rrqA,rrqB,svA,svB,pensA,pensB,cibleABF,tauxABF,enCouple,brutB]);
 
   const fmtCA = n => Math.round(Math.abs(n)).toLocaleString('fr-CA')+' $';
   const fmtK  = n => {
@@ -392,8 +393,8 @@ export default function ModelisationRetraite({ embedded = false, profiles: profi
     rendement:rend/100,
   }),[ageA,ageB,ageRetA,ageRetB,reerAv,celiAv,reerBv,celiBv,cotReerA,cotCeliA,cotReerB,cotCeliB,rend,enCouple]);
 
-  const rrqAvA = pA_pl.rrqBase;
-  const rrqAvB = enCouple ? (pB_pl?.rrqBase || 0) : 0;
+  const rrqAvA = (pA?.rrqAjuste || 0);
+  const rrqAvB = enCouple ? (pB?.rrqAjuste || 0) : 0;
   const params = useMemo(()=>({
     ageA:ageRetA, ageRetraiteA:ageRetA, salaireA:brutA,
     rrqA:adjRRQ(rrqAvA,rrqAp)*12, svA:713.34*12, pensionA:pensA,
