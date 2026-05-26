@@ -330,13 +330,16 @@ export default function Dashboard() {
               ))}
             </motion.div>
 
-            {/* NIF — 3 cols */}
-            <motion.div {...fadeUp(0.1)} style={{ gridColumn: "span 3 / span 3" }}>
-              <NIFCalculator profiles={profiles} />
-            </motion.div>
+            {/* ── ZONE 2 — NIF + Protection ───────────────────────────── */}
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-5">
 
-            {/* Protection + Revenus garantis — 2 cols */}
-            <div style={{ gridColumn: "span 2 / span 2", display: "flex", flexDirection: "column", gap: 12 }}>
+              {/* NIF — 3 cols */}
+              <motion.div {...fadeUp(0.1)} style={{ gridColumn: "span 3 / span 3" }}>
+                <NIFCalculator profiles={profiles} />
+              </motion.div>
+
+              {/* Protection + Revenus garantis — 2 cols */}
+              <div style={{ gridColumn: "span 2 / span 2", display: "flex", flexDirection: "column", gap: 12 }}>
 
                 {/* Protection */}
                 <motion.div {...fadeUp(0.12)}>
