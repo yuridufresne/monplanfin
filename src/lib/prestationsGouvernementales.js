@@ -126,43 +126,76 @@ export function calcSRG({ revenuAnnuelHorsPSV = 0, revenuSansPSV = 0, enCouple =
  * Lire et agréger tous les revenus garantis depuis les sections ABF retraite.
  * Inclut RRQ, PSV/SV, et pension PD des deux conjoints si inclureConj=true.
  */
+/**
+ * Lire et agréger tous les revenus garantis depuis les sections ABF retraite.
+ * Applique les ajustements RRQ (−0,6%/mois avant 65, +0,7%/mois après 65)
+ * et PSV (−0,6%/mois avant 65, +0,6%/mois après 65, max 70 ans)
+ * selon les âges de début saisis dans l'ABF.
+ */
 export function getRevenusGarantisABF(retraite = {}, retraiteConj = {}, inclureConj = true) {
   const PSV_STD = PRESTATIONS_2026.psv.mensuel65;
+  const R = PRESTATIONS_2026.rrq;
+  const P = PRESTATIONS_2026.psv;
 
-  // Personne 1
-  const rrq1 = parseFloat(retraite.rrq) || 0;
-  const sv1  = parseFloat(retraite.sv)  || 0;
-  const fp1  = parseFloat((retraite.fond_pension || {}).rente_mensuelle_estimee)
-            || parseFloat((retraite.fond_pension || {}).prestation_mensuelle) || 0;
+  function adjRRQ(baseMensuel, ageDebut) {
+    if (!baseMensuel) return 0;
+    const age = ageDebut || 65;
+    let f = 1;
+    if (age < 65) f = Math.max(1 - R.reductMax, 1 - Math.min((65 - age) * 12, 60) * R.reductParMois);
+    else if (age > 65) f = 1 + Math.min((age - 65) * 12, 60) * R.bonifParMois;
+    return Math.round(baseMensuel * f);
+  }
 
-  // Conjoint (si inclus)
-  const rrq2 = inclureConj ? (parseFloat(retraiteConj.rrq) || 0) : 0;
-  const sv2  = inclureConj ? (parseFloat(retraiteConj.sv)  || 0) : 0;
-  const fp2  = inclureConj
+  function adjPSV(baseMensuel, ageDebut) {
+    const age = ageDebut || 65;
+    let f = 1;
+    if (age < 65) f = Math.max(1 - P.bonifMax, 1 - Math.min((65 - age) * 12, 60) * P.bonifParMois);
+    else if (age > 65) f = 1 + Math.min((age - 65) * 12, 60) * P.bonifParMois;
+    return Math.round(baseMensuel * f);
+  }
+
+  // Personne 1 — base brute
+  const rrq1Base = parseFloat(retraite.rrq) || 0;
+  const sv1Base  = parseFloat(retraite.sv)  || PSV_STD;
+  const fp1      = parseFloat((retraite.fond_pension || {}).rente_mensuelle_estimee)
+                || parseFloat((retraite.fond_pension || {}).prestation_mensuelle) || 0;
+  const ageRRQ1  = parseInt(retraite.age_debut_rrq) || parseInt(retraite.age_retraite) || 65;
+  const agePSV1  = parseInt(retraite.age_debut_psv) || parseInt(retraite.age_retraite) || 65;
+
+  // Personne 1 — ajustés
+  const rrq1 = adjRRQ(rrq1Base, ageRRQ1);
+  const sv1  = adjPSV(sv1Base,  agePSV1);
+
+  // Conjoint — base brute
+  const rrq2Base = inclureConj ? (parseFloat(retraiteConj.rrq) || 0) : 0;
+  const sv2Base  = inclureConj ? (parseFloat(retraiteConj.sv)  || PSV_STD) : 0;
+  const fp2      = inclureConj
     ? (parseFloat((retraiteConj.fond_pension || {}).rente_mensuelle_estimee)
     || parseFloat((retraiteConj.fond_pension || {}).prestation_mensuelle) || 0)
     : 0;
+  const ageRRQ2  = inclureConj ? (parseInt(retraiteConj.age_debut_rrq) || parseInt(retraiteConj.age_retraite) || 65) : 65;
+  const agePSV2  = inclureConj ? (parseInt(retraiteConj.age_debut_psv) || parseInt(retraiteConj.age_retraite) || 65) : 65;
 
-  // Si SV non renseignée → utiliser taux standard 2026
-  const sv1f = sv1 > 0 ? sv1 : PSV_STD;
-  const sv2f = inclureConj ? (sv2 > 0 ? sv2 : PSV_STD) : 0;
+  // Conjoint — ajustés
+  const rrq2 = inclureConj ? adjRRQ(rrq2Base, ageRRQ2) : 0;
+  const sv2  = inclureConj ? adjPSV(sv2Base,  agePSV2) : 0;
 
-  const totalMensuel = rrq1 + sv1f + fp1 + rrq2 + sv2f + fp2;
+  const totalMensuel = rrq1 + sv1 + fp1 + rrq2 + sv2 + fp2;
 
   return {
-    p1: { rrq: rrq1, psv: sv1f, pension: fp1, totalMensuel: rrq1 + sv1f + fp1 },
-    p2: { rrq: rrq2, psv: sv2f, pension: fp2, totalMensuel: rrq2 + sv2f + fp2 },
+    p1: { rrq: rrq1, psv: sv1, pension: fp1, totalMensuel: rrq1 + sv1 + fp1, ageDebutRRQ: ageRRQ1, ageDebutPSV: agePSV1, rrqBase: rrq1Base, psvBase: sv1Base },
+    p2: { rrq: rrq2, psv: sv2, pension: fp2, totalMensuel: rrq2 + sv2 + fp2, ageDebutRRQ: ageRRQ2, ageDebutPSV: agePSV2, rrqBase: rrq2Base, psvBase: sv2Base },
     totalMensuel:  +totalMensuel.toFixed(2),
     totalAnnuel:   Math.round(totalMensuel * 12),
     decomposition: {
       rrqFoyer:     Math.round((rrq1 + rrq2) * 12),
-      psvFoyer:     Math.round((sv1f + sv2f) * 12),
+      psvFoyer:     Math.round((sv1  + sv2)  * 12),
       pensionFoyer: Math.round((fp1  + fp2)  * 12),
     },
     alertes: [
-      rrq1 === 0 ? '⚠ RRQ personne 1 non saisie' : null,
-      rrq2 === 0 && inclureConj ? '⚠ RRQ conjoint non saisie' : null,
-      sv1  === 0 ? '⚠ PSV personne 1 utilisée à taux standard' : null,
+      rrq1Base === 0 ? '⚠ RRQ personne 1 non saisie' : null,
+      rrq2Base === 0 && inclureConj ? '⚠ RRQ conjoint non saisie' : null,
+      parseFloat(retraite.sv) === 0 ? '⚠ PSV personne 1 utilisée à taux standard' : null,
     ].filter(Boolean),
   };
 }
