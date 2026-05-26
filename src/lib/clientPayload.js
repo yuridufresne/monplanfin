@@ -197,3 +197,43 @@ export function buildPayload(profiles = []) {
     },
   };
 }
+
+/**
+ * debugPayload — pour diagnostiquer les valeurs lues depuis l'ABF
+ * À retirer après correction
+ */
+export function debugPayload(profiles = []) {
+  const dict = {};
+  (profiles || []).forEach(p => {
+    if (p?.section) dict[p.section] = unwrap(p.data || p);
+  });
+
+  const profil = dict.profil_personnel || {};
+  const rev    = dict.revenu           || {};
+  const ret    = dict.retraite         || {};
+  const retCj  = ret.conjoint          || {};
+
+  return {
+    raw: {
+      revenu_retraite_pct:      ret.revenu_retraite_pct,
+      revenu_retraite_mensuel:  ret.revenu_retraite_mensuel,
+      rrq_a: ret.rrq,
+      rrq_b: retCj.rrq,
+      sv_a:  ret.sv,
+      sv_b:  retCj.sv,
+      esperance_vie: ret.esperance_vie,
+      situation: profil.situation,
+      reer_solde_a: (ret.comptes?.reer || []).map(c => c.solde),
+      cot_reer_a:   (ret.comptes?.reer || []).map(c => c.cotisation_mensuelle),
+      celi_solde_a: (ret.comptes?.celi || []).map(c => c.solde),
+      cot_celi_a:   (ret.comptes?.celi || []).map(c => c.cotisation_mensuelle),
+      celi_solde_b: (retCj.comptes?.celi || []).map(c => c.solde),
+      cot_celi_b:   (retCj.comptes?.celi || []).map(c => c.cotisation_mensuelle),
+      emplois_a: (rev.emplois || []).map(e => ({ revenu_brut: e.revenu_brut })),
+      emplois_b: (rev.conjoint?.emplois || []).map(e => ({ revenu_brut: e.revenu_brut })),
+    },
+    sections: Object.keys(dict),
+    retraite_keys: Object.keys(ret),
+    retraite_conjoint_keys: Object.keys(retCj),
+  };
+}
