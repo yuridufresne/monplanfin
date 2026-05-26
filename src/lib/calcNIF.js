@@ -197,7 +197,7 @@ export function calcNIFFromProfiles(profiles) {
     : null;
 
   const ageRetraite  = parseInt(retraite.age_retraite)  || 65;
-  const esperanceVie = parseInt(retraite.esperance_vie) || 95;
+  const esperanceVie = parseInt(retraite.esperance_vie) || 90;
 
   // ── Revenus bruts ────────────────────────────────────────────────────────────
   const sumBrut = (emplois, sides) =>
