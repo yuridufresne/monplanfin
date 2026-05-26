@@ -329,13 +329,14 @@ export default function Dashboard() {
             </motion.div>
 
             {/* ── ZONE 2 — NIF + Protection ───────────────────────────── */}
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-5">
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-5" style={{ display: nifFlipped ? "block" : undefined }}>
 
               {/* NIF — 3 cols */}
-              <motion.div {...fadeUp(0.1)} style={{ gridColumn: "span 3 / span 3" }}>
-                <div
-                  style={{ ...G.cardGold, padding: "1.4rem 1.5rem", height: "100%" }}
-                >
+              <motion.div {...fadeUp(0.1)} style={{ gridColumn: nifFlipped ? "1 / -1" : "span 3 / span 3" }}>
+                <FlipCard
+                  expandedHeight={900}
+                  onFlip={setNifFlipped}
+                  front={<>
                   {/* Métriques — alimentées par calcScenario(ageBase, 0.07, 0.05) */}
                   {(() => {
                     const ageBase0 = ageRetraite || 65;
@@ -641,16 +642,15 @@ export default function Dashboard() {
                     );
                   })()}
 
-                  {/* Lien modélisation */}
-                  <div style={{ marginTop: 12, display: "flex", alignItems: "center", justifyContent: "flex-end" }}>
-                    <Link
-                      to="/modelisation"
-                      style={{ fontSize: 10, color: "#C9A063", background: "rgba(201,160,99,0.08)", border: "1px solid rgba(201,160,99,0.2)", padding: "4px 10px", borderRadius: 8, textDecoration: "none", fontWeight: 600 }}
-                    >
-                      Modélisation complète →
-                    </Link>
+                  {/* Hint flip */}
+                  <div style={{ marginTop: 12, fontSize: 10, color: "rgba(201,160,99,0.45)", fontWeight: 500, display: "flex", alignItems: "center", gap: 4 }}>
+                    <span>✦</span> Voir le rapport détaillé →
                   </div>
-                </div>
+                  </>}
+                  back={
+                    <RetirementReport profiles={profiles} />
+                  }
+                />
               </motion.div>
 
               {/* Protection + Revenus garantis — 2 cols */}
