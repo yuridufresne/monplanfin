@@ -1,10 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { simulerDecaissement, projeterSoldesRetraite } from "@/lib/moteurDecaissement";
-import { calcNIFFromProfiles } from "@/lib/calcNIF";
-import { buildPayload, IQPF as IQPF_CP } from "@/lib/clientPayload";
-import { ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
+import { buildPayload, IQPF } from "@/lib/clientPayload";
+import { ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { Link } from "react-router-dom";
 
 const fmt  = n => Math.round(n).toLocaleString("fr-CA") + " $";
@@ -186,76 +185,86 @@ export default function ModelisationRetraite({ embedded = false, profiles: profi
   });
   const profiles = embedded ? (profilesProp || []) : profilesQuery;
 
-  // ── Lecture données ABF via source unique buildPayload ───────────────────────
-  const pl = useMemo(() => buildPayload(profiles), [profiles]);
-  const pA_pl = pl.conjoint_a;
-  const pB_pl = pl.conjoint_b;
-  const enCouple = pl.enCouple;
+  // ── Source unique : buildPayload (même que Dashboard) ────────────────────────
+  const payload  = useMemo(() => buildPayload(profiles), [profiles]);
+  const pA       = payload.conjoint_a;
+  const pB       = payload.conjoint_b;
+  const enCouple = payload.enCouple;
+  const ep       = payload.epargne;
+  const gar      = payload.revenus_garantis;
+  const obj      = payload.objectifs;
+  const hyp      = payload.hypotheses;
+  const kpis     = payload.kpis;
 
-  const prenomA = pA_pl.prenom || "Client";
-  const prenomB = pB_pl?.prenom || "Conjoint(e)";
+  // Prénoms
+  const prenomA = pA?.prenom || "Client";
+  const prenomB = pB?.prenom || "Conjoint(e)";
 
-  const ageA = pA_pl.age || 38;
-  const ageB = pB_pl?.age || (enCouple ? ageA - 2 : ageA);
-  const retA = pA_pl.ageRetraite;
-  const retB = pB_pl?.ageRetraite || 65;
-  const espVieABF = pl.hypotheses.esperance_vie;
+  // Âges
+  const ageA      = pA?.age         || 38;
+  const ageB      = pB?.age         || 36;
+  const retA      = pA?.ageRetraite || 65;
+  const retB      = pB?.ageRetraite || 65;
+  const espVieABF = hyp?.esperance_vie || IQPF.ESP_VIE || 90;
 
-  const brutA = pA_pl.salaire;
-  const brutB = pB_pl?.salaire || 0;
+  // Revenus bruts
+  const brutA     = pA?.salaire || 0;
+  const brutB     = pB?.salaire || 0;
   const brutTotal = brutA + brutB;
 
-  const reerA = pA_pl.soldeReer, cotReerA = pA_pl.cotReer;
-  const celiA = pA_pl.soldeCeli, cotCeliA = pA_pl.cotCeli;
-  const reerB = pB_pl?.soldeReer || 0, cotReerB = pB_pl?.cotReer || 0;
-  const soldeCeliB = pB_pl?.soldeCeli || 0, cotCeliB = pB_pl?.cotCeli || 0;
+  // Épargne — Jean (A)
+  const reerA    = ep?.solde_reer_a || pA?.soldeReer || 0;
+  const celiA    = ep?.solde_celi_a || pA?.soldeCeli || 0;
+  const cotReerA = ep?.cot_reer_a   || pA?.cotReer   || 0;
+  const cotCeliA = ep?.cot_celi_a   || pA?.cotCeli   || 0;
 
-  // Valeurs annuelles (sv et rrq stockés en mensuel dans readPersonne)
-  const rrqA = pA_pl.rrqAjuste * 12;
-  const rrqB = (pB_pl?.rrqAjuste || 0) * 12;
-  const svA  = pA_pl.sv * 12;
-  const svB  = (pB_pl?.sv || 0) * 12;
-  const pensA = pA_pl.pensionPD;
-  const pensB = pB_pl?.pensionPD || 0;
+  // Épargne — Marie (B) — inclus pour corriger le bug du capital manquant
+  const reerB    = ep?.solde_reer_b || pB?.soldeReer || 0;
+  const soldeCeliB = ep?.solde_celi_b || pB?.soldeCeli || 0;
+  const cotReerB = ep?.cot_reer_b   || pB?.cotReer   || 0;
+  const cotCeliB = ep?.cot_celi_b   || pB?.cotCeli   || 0;
 
-  const cibleABF = pl.objectifs.cible_annuelle;
-  const tauxABF  = pl.objectifs.taux_remplacement_vise;
+  // RRQ et PSV — valeurs annuelles
+  const rrqA  = (pA?.rrqAjuste || 0) * 12;
+  const rrqB  = (pB?.rrqAjuste || 0) * 12;
+  const svA   = (pA?.sv        || 0) * 12;
+  const svB   = (pB?.sv        || 0) * 12;
+  const pensA = pA?.pensionPD  || 0;
+  const pensB = pB?.pensionPD  || 0;
+
+  // Objectifs depuis payload
+  const tauxABF  = obj?.taux_remplacement_vise || 70;
+  const cibleABF = obj?.cible_annuelle         || Math.round(brutTotal * tauxABF / 100);
+
+  // NIF depuis kpis — même source que dashboard
+  const nifNominal = kpis?.nif_nominal || 0;
+  const capProjeteDashboard = kpis?.capital_projete || 0;
 
   const [tab,      setTab]      = useState("plan");
   const [unlocked, setUnlocked] = useState(false);
   const [taux,     setTaux]     = useState(tauxABF);
   const [espVie,   setEspVie]   = useState(espVieABF);
 
-  // Synchroniser taux et espVie quand les profils changent (mode embarqué)
-  const prevTauxABF = useMemo(() => tauxABF, [tauxABF]);
-  const [lastSyncedTaux, setLastSyncedTaux] = useState(tauxABF);
-  if (tauxABF !== lastSyncedTaux) {
-    setTaux(tauxABF);
-    setLastSyncedTaux(tauxABF);
-  }
-  const [lastSyncedEspVie, setLastSyncedEspVie] = useState(espVieABF);
-  if (espVieABF !== lastSyncedEspVie) {
-    setEspVie(espVieABF);
-    setLastSyncedEspVie(espVieABF);
-  }
+  // Sync taux/espVie/cible quand les profils ABF changent (mode embarqué)
+  useEffect(() => { setTaux(tauxABF);    }, [tauxABF]);
+  useEffect(() => { setEspVie(espVieABF);}, [espVieABF]);
 
   // Paramètres onglet avancé
-  const [rend, setRend] = useState(7);
-  const [cible, setCible] = useState(() => cibleABF > 0 ? cibleABF : Math.round((brutTotal||80000)*(tauxABF/100)));
-  const [lastSyncedCible, setLastSyncedCible] = useState(cibleABF);
-  if (cibleABF !== lastSyncedCible && cibleABF > 0) {
-    setCible(cibleABF);
-    setLastSyncedCible(cibleABF);
-  }
-  const [plafondLissage, setPlafondLissage] = useState(90997);
-  const [ageRetA, setAgeRetA] = useState(retA);
-  const [ageRetB, setAgeRetB] = useState(retB);
-  const [rrqAp,   setRrqAp]   = useState(65);
-  const [rrqBp,   setRrqBp]   = useState(65);
-  const [reerAv,  setReerAv]  = useState(reerA);
-  const [celiAv,  setCeliAv]  = useState(celiA);
-  const [reerBv,  setReerBv]  = useState(reerB);
-  const [celiBv,  setCeliBv]  = useState(soldeCeliB);
+  const [rend,          setRend]          = useState(7);
+  const [cible,         setCible]         = useState(() => cibleABF || Math.round((brutTotal||80000)*(tauxABF/100)));
+  const [plafondLissage,setPlafondLissage]= useState(90997);
+  const [ageRetA,       setAgeRetA]       = useState(retA);
+  const [ageRetB,       setAgeRetB]       = useState(retB);
+  const [rrqAp,         setRrqAp]         = useState(65);
+  const [rrqBp,         setRrqBp]         = useState(65);
+  const [reerAv,        setReerAv]        = useState(reerA);
+  const [celiAv,        setCeliAv]        = useState(celiA);
+  const [reerBv,        setReerBv]        = useState(reerB);
+  const [celiBv,        setCeliBv]        = useState(soldeCeliB);
+
+  useEffect(() => { setCible(cibleABF || Math.round((brutTotal||80000)*(tauxABF/100))); }, [cibleABF]);
+  useEffect(() => { setReerAv(reerA); setCeliAv(celiA); setReerBv(reerB); setCeliBv(soldeCeliB); }, [reerA, celiA, reerB, soldeCeliB]);
+  useEffect(() => { setAgeRetA(retA); setAgeRetB(retB); }, [retA, retB]);
 
   const adjRRQ = (base, age) => {
     if (age<65) return Math.round(base*Math.max(.64,1-(65-age)*12*.006));
@@ -278,9 +287,6 @@ export default function ModelisationRetraite({ embedded = false, profiles: profi
     return r>0.001?manque*((1-Math.pow(1+r,-n))/r):manque*n;
   }
 
-  // ── Plan de base — même source de vérité que calcNIFFromProfiles ─────────────
-  const nifData = useMemo(()=>calcNIFFromProfiles(profiles),[profiles]);
-
   // Simulation décaissement pour le plan de base (mêmes params ABF, cible ajustée par slider)
   const paramsBase = useMemo(()=>{
     const proj = projeterSoldesRetraite({
@@ -298,11 +304,11 @@ export default function ModelisationRetraite({ embedded = false, profiles: profi
       reerA:proj.reerA, celiA:proj.celiA,
       ageB:enCouple?ageB+(retA-ageA):retA, ageRetraiteB:enCouple?retB:99,
       salaireB:enCouple?brutB:0, rrqB:enCouple?rrqB:0,
-      svB:enCouple?svB:0, pensionB:enCouple?pensB:0,  // svB/rrqB = valeurs annuelles du composant
+      svB:enCouple?svB:0, pensionB:enCouple?pensB:0,
       reerB:enCouple?proj.reerB:0, celiB:enCouple?proj.celiB:0,
       cibleNette:cibleSim, inflation:.025, rendement:RD, esperanceVie:espVie,
       plafondLissage:0,
-      _proj: proj, // pour capR
+      _proj: proj,
     };
   },[taux,espVie,ageA,ageB,retA,retB,reerA,celiA,reerB,soldeCeliB,cotReerA,cotCeliA,cotReerB,cotCeliB,rrqA,rrqB,svA,svB,pensA,pensB,cibleABF,tauxABF,enCouple,brutA,brutB]);
 
@@ -313,10 +319,10 @@ export default function ModelisationRetraite({ embedded = false, profiles: profi
 
   const donneesGraphique = useMemo(()=>{
     const proj = paramsBase._proj;
-    const capR = nifData.capitalProjecte; // source unique — même que dashboard
+    const capR = capProjeteDashboard;     // source unique — même que dashboard (inclut Marie)
     const cibleSim = Math.round(cibleABF*(taux/tauxABF));
-    const gar65 = (rrqA||0)+(svA||0)+(rrqB||0)+(svB||0)+(pensA||0)+(pensB||0);
-    const nif = nifData.capitalNIF;       // source unique — même que dashboard
+    const gar65 = garantisAnnuel;         // source unique — même que dashboard
+    const nif = nifNominal;              // nominal — même que dashboard
 
     // Courbe NIF : simulation avec capital NIF comme point de départ
     let capNIF = nif;
@@ -373,7 +379,7 @@ export default function ModelisationRetraite({ embedded = false, profiles: profi
     if(a>=1000000)return(n<0?'- ':'')+(n/1e6).toFixed(1)+' M $';
     return(n<0?'- ':'')+a.toLocaleString('fr-CA')+' $';
   };
-  const pctNIF = donneesGraphique.nif > 0 ? Math.round(donneesGraphique.capR/donneesGraphique.nif*100) : 0;
+  const pctNIF = kpis?.score_nif || (nifNominal > 0 ? Math.round(capProjeteDashboard/nifNominal*100) : 0);
   const pctColor = pctNIF>=100?'#5BC4A0':pctNIF>=75?'#EAB308':'#f87171';
 
   // Onglet avancé — projection et simulation décaissement
@@ -467,9 +473,9 @@ export default function ModelisationRetraite({ embedded = false, profiles: profi
             <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,minWidth:440}}>
               {[
                 {l:"Cible à "+retA+" ans",v:fmtCA(donneesGraphique.cibleSim),sub:"Source ABF",c:"#fff"},
-                {l:"Revenus garantis",v:fmtCA(donneesGraphique.gar65),sub:"RRQ + PSV"+(pensA+pensB>0?" + Pension":""),c:"#5BC4A0"},
-                {l:"NIF requis",v:fmtK(donneesGraphique.nif),sub:"Capital à accumuler",c:"#60A5FA"},
-                {l:"Capital projeté",v:fmtK(donneesGraphique.capR),sub:pctNIF+"% du NIF",c:pctColor},
+                {l:"Revenus garantis",v:fmtCA(garantisAnnuel),sub:"RRQ + PSV"+(pensA+pensB>0?" + Pension":""),c:"#5BC4A0"},
+                {l:"NIF requis",v:fmtK(nifNominal),sub:"Capital à accumuler",c:"#60A5FA"},
+                {l:"Capital projeté",v:fmtK(capProjeteDashboard),sub:pctNIF+"% du NIF",c:pctColor},
               ].map(s=>(
                 <div key={s.l} style={{background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.07)",borderRadius:8,padding:"10px 12px"}}>
                   <div style={{fontSize:11,color:"rgba(255,255,255,.3)",marginBottom:2}}>{s.l}</div>
