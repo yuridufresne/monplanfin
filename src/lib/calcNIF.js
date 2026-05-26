@@ -17,7 +17,7 @@ import { getRevenusGarantisABF, indexerRevenusGarantis, PRESTATIONS_2026 } from 
 
 const RENDEMENT_ACCUM   = 0.07;
 const RENDEMENT_DECAISS = 0.05;
-const INFLATION         = 0.025;
+const INFLATION         = 0.023;
 const PSV_MENSUEL       = PRESTATIONS_2026.psv.mensuel65; // 713.34 $/mois — source unique
 
 // ─────────────────────────────────────────────────────────────────────────────
