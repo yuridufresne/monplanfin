@@ -336,7 +336,7 @@ export default function Dashboard() {
               {/* NIF — 3 cols */}
               <motion.div {...fadeUp(0.1)} style={{ gridColumn: nifFlipped ? "span 1 / -1" : "span 3 / span 3" }}>
                 <FlipCard
-                  expandedHeight={800}
+                  expandedHeight={2000}
                   onFlip={setNifFlipped}
                   front={<NIFCalculator profiles={profiles} />}
                   frontStyle={{ background: "transparent", border: "none", padding: 0 }}
