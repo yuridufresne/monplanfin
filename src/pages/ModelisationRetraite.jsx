@@ -56,7 +56,7 @@ function TableauResultats({ rows, prenomA = "A", prenomB = "B" }) {
               <th style={S.th} rowSpan={3}>Âge</th>
               <th colSpan={7} style={gh("#C9A063","rgba(201,160,99,.06)")}>{prenomA}</th>
               <th colSpan={7} style={gh("#5BC4A0","rgba(91,196,160,.05)")}>{prenomB}</th>
-              <th colSpan={5} style={gh("#6B8ED6","rgba(100,149,237,.06)")}>Bilan annuel</th>
+              <th colSpan={4} style={gh("#6B8ED6","rgba(100,149,237,.06)")}>Bilan annuel</th>
               <th colSpan={4} style={gh("#fff","rgba(255,255,255,.03)")}>Patrimoine restant</th>
             </tr>
             {/* Ligne 2 — sous-groupes */}
@@ -85,11 +85,7 @@ function TableauResultats({ rows, prenomA = "A", prenomB = "B" }) {
               <th style={S.th}>FERR min</th>
               <th style={{...S.th,color:"rgba(91,196,160,.75)"}}>🟢 CELI</th>
               <th style={{...S.th,color:"rgba(251,146,60,.8)",...sep}}>🟠 REER/FERR</th>
-              {/* Bilan — 5 cols */}
-              <th style={{...S.th,color:"rgba(255,255,255,.4)"}}>
-                Cible
-                <span style={{ fontSize:8, color:"rgba(255,255,255,.3)", display:"block", fontWeight:400 }}>indexée 2,5%/an</span>
-              </th>
+              {/* Bilan — 4 cols */}
               <th style={{...S.th,color:"#C9A063"}}>Retiré</th>
               <th style={{...S.th,color:"#f87171"}}>Impôt</th>
               <th style={{...S.th,fontWeight:700,color:"#fff"}}>Net</th>
@@ -148,7 +144,6 @@ function TableauResultats({ rows, prenomA = "A", prenomB = "B" }) {
                   <td style={dc(r.retraitCELI_B,"rgba(91,196,160,.75)")}>{d(r.retraitCELI_B)}</td>
                   <td style={{...dc(reerFerrB,"rgba(251,146,60,.8)"),...sep}}>{d(reerFerrB)}</td>
                   {/* Bilan */}
-                  <td style={{...S.td,color:"rgba(255,255,255,.35)",fontSize:10}}>{fmtk(r.cible)}</td>
                   <td style={{...S.td,color:"#C9A063",fontWeight:600}}>{r.totalRetire>0?fmtk(r.totalRetire):"—"}</td>
                   <td style={{...S.td,color:"#f87171"}}>−{fmtk(r.impot)}</td>
                   <td style={{...S.td,fontWeight:700}}>{fmtk(r.netRealise)}</td>
