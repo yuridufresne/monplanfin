@@ -226,9 +226,27 @@ export default function ModelisationRetraite({ embedded = false, profiles: profi
   const [taux,     setTaux]     = useState(tauxABF);
   const [espVie,   setEspVie]   = useState(espVieABF);
 
+  // Synchroniser taux et espVie quand les profils changent (mode embarqué)
+  const prevTauxABF = useMemo(() => tauxABF, [tauxABF]);
+  const [lastSyncedTaux, setLastSyncedTaux] = useState(tauxABF);
+  if (tauxABF !== lastSyncedTaux) {
+    setTaux(tauxABF);
+    setLastSyncedTaux(tauxABF);
+  }
+  const [lastSyncedEspVie, setLastSyncedEspVie] = useState(espVieABF);
+  if (espVieABF !== lastSyncedEspVie) {
+    setEspVie(espVieABF);
+    setLastSyncedEspVie(espVieABF);
+  }
+
   // Paramètres onglet avancé
   const [rend, setRend] = useState(7);
   const [cible, setCible] = useState(() => cibleABF > 0 ? cibleABF : Math.round((brutTotal||80000)*(tauxABF/100)));
+  const [lastSyncedCible, setLastSyncedCible] = useState(cibleABF);
+  if (cibleABF !== lastSyncedCible && cibleABF > 0) {
+    setCible(cibleABF);
+    setLastSyncedCible(cibleABF);
+  }
   const [plafondLissage, setPlafondLissage] = useState(90997);
   const [ageRetA, setAgeRetA] = useState(retA);
   const [ageRetB, setAgeRetB] = useState(retB);
