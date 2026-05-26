@@ -496,7 +496,7 @@ export default function ModelisationRetraite({ embedded = false, profiles: profi
           {/* Légende */}
           <div style={{display:"flex",flexWrap:"wrap",gap:12,marginBottom:10,fontSize:12,color:"rgba(255,255,255,.4)"}}>
             {[
-              {color:"#7F77DD",dash:true, label:"Si NIF atteint"},
+              {color:"#C9A063",dash:true, label:"Objectif NIF"},
               {color:"#378ADD",dash:true, label:"Projection actuelle"},
               {color:"#BA7517",dash:false,label:prenomA},
               ...(enCouple?[{color:"#1D9E75",dash:false,label:prenomB}]:[]),
@@ -533,7 +533,7 @@ export default function ModelisationRetraite({ embedded = false, profiles: profi
                   labelFormatter={l=>`Âge ${l} ans`}/>
                 <ReferenceLine x={retA} stroke="rgba(55,138,221,.4)" strokeDasharray="4 3"
                   label={{value:"Retraite "+retA+" ans",fill:"rgba(55,138,221,.5)",fontSize:10,position:"insideTopRight"}}/>
-                <Line dataKey="nif"    name="Si NIF atteint"      stroke="#7F77DD" strokeWidth={2} strokeDasharray="5 3" dot={false}/>
+                <Line dataKey="nif"    name="Objectif NIF"        stroke="#C9A063" strokeWidth={2} strokeDasharray="5 3" dot={false}/>
                 <Line dataKey="foyer"  name="Projection actuelle" stroke="#378ADD" strokeWidth={2} strokeDasharray="6 3" dot={false}/>
                 <Line dataKey="jean"   name={prenomA}             stroke="#BA7517" strokeWidth={1.5} dot={false}/>
                 {enCouple && <Line dataKey="marie" name={prenomB} stroke="#1D9E75" strokeWidth={1.5} dot={false}/>}
