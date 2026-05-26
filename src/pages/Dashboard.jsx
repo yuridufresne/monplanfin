@@ -11,6 +11,7 @@ import RetirementReport from "@/components/dashboard/RetirementReport";
 import DebtSimulator from "@/components/dashboard/DebtSimulator";
 import ReerLevierSimulator from "@/components/dashboard/ReerLevierSimulator";
 import NIFScore from "@/components/dashboard/NIFScore";
+import NIFCalculator from "@/components/dashboard/NIFCalculator";
 import { calcNIFFromProfiles } from "@/lib/calcNIF";
 import InfoTooltip from "@/components/ui/InfoTooltip";
 import FlipCard from "@/components/ui/FlipCard";
@@ -712,6 +713,11 @@ export default function Dashboard() {
 
               </div>
             </div>
+
+            {/* ── ZONE 2b — NIF Calculator ────────────────────────────── */}
+            <motion.div {...fadeUp(0.14)} className="mb-5">
+              <NIFCalculator profiles={profiles} />
+            </motion.div>
 
             {/* ── ZONE 3 — Dettes + Placements ────────────────────────── */}
             <div style={{ display:"grid", gridTemplateColumns: (detteFlipped || placementFlipped) ? "1fr" : "repeat(2,1fr)", gap:16, marginBottom:20, transition:"grid-template-columns 0.3s ease" }}>
