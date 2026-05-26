@@ -224,13 +224,14 @@ export default function ModelisationRetraite({ embedded = false, profiles: profi
   const cotReerB = ep?.cot_reer_b   || pB?.cotReer   || 0;
   const cotCeliB = ep?.cot_celi_b   || pB?.cotCeli   || 0;
 
-  // RRQ et PSV — valeurs annuelles
-  const rrqA  = (pA?.rrqAjuste || 0) * 12;
-  const rrqB  = (pB?.rrqAjuste || 0) * 12;
-  const svA   = (pA?.sv        || 0) * 12;
-  const svB   = (pB?.sv        || 0) * 12;
-  const pensA = pA?.pensionPD  || 0;
-  const pensB = pB?.pensionPD  || 0;
+  // RRQ et PSV — déjà en $/an depuis buildPayload (readPersonne ×12)
+  // NE PAS multiplier par 12 ici — c'est déjà annuel
+  const rrqA  = pA?.rrqAjuste || 0;   // $/an
+  const rrqB  = pB?.rrqAjuste || 0;   // $/an
+  const svA   = pA?.sv        || 0;   // $/an
+  const svB   = pB?.sv        || 0;   // $/an
+  const pensA = pA?.pensionPD  || 0;  // $/an
+  const pensB = pB?.pensionPD  || 0;  // $/an
 
   // Objectifs depuis payload
   const tauxABF  = obj?.taux_remplacement_vise || 70;
@@ -393,8 +394,9 @@ export default function ModelisationRetraite({ embedded = false, profiles: profi
     rendement:rend/100,
   }),[ageA,ageB,ageRetA,ageRetB,reerAv,celiAv,reerBv,celiBv,cotReerA,cotCeliA,cotReerB,cotCeliB,rend,enCouple]);
 
-  const rrqAvA = (pA?.rrqAjuste || 0);
-  const rrqAvB = enCouple ? (pB?.rrqAjuste || 0) : 0;
+  // rrqAjuste est en $/an → convertir en $/mois pour adjRRQ puis repasser en $/an
+  const rrqAvA = Math.round((pA?.rrqAjuste || 0) / 12);  // $/mois pour adjRRQ
+  const rrqAvB = enCouple ? Math.round((pB?.rrqAjuste || 0) / 12) : 0;
   const params = useMemo(()=>({
     ageA:ageRetA, ageRetraiteA:ageRetA, salaireA:brutA,
     rrqA:adjRRQ(rrqAvA,rrqAp)*12, svA:713.34*12, pensionA:pensA,
@@ -566,8 +568,8 @@ export default function ModelisationRetraite({ embedded = false, profiles: profi
 
               <div style={{ display:"grid", gridTemplateColumns:enCouple?"1fr 1fr":"1fr", gap:12, marginBottom:14 }}>
                 {[
-                  {label:prenomA, age:ageRetA, setAge:setAgeRetA, rrqAge:rrqAp, setRrqAge:setRrqAp, reer:reerAv, setReer:setReerAv, celi:celiAv, setCeli:setCeliAv, rrqBase:rrqA},
-                  ...(enCouple?[{label:prenomB, age:ageRetB, setAge:setAgeRetB, rrqAge:rrqBp, setRrqAge:setRrqBp, reer:reerBv, setReer:setReerBv, celi:celiBv, setCeli:setCeliBv, rrqBase:rrqB}]:[]),
+                  {label:prenomA, age:ageRetA, setAge:setAgeRetA, rrqAge:rrqAp, setRrqAge:setRrqAp, reer:reerAv, setReer:setReerAv, celi:celiAv, setCeli:setCeliAv, rrqBase:rrqAvA},
+                  ...(enCouple?[{label:prenomB, age:ageRetB, setAge:setAgeRetB, rrqAge:rrqBp, setRrqAge:setRrqBp, reer:reerBv, setReer:setReerBv, celi:celiBv, setCeli:setCeliBv, rrqBase:rrqAvB}]:[]),
                 ].map(({label,age,setAge,rrqAge,setRrqAge,reer,setReer,celi,setCeli,rrqBase})=>(
                   <div key={label} style={{ background:"rgba(255,255,255,.03)", border:"1px solid rgba(255,255,255,.08)", borderRadius:12, padding:"14px 16px" }}>
                     <div style={{ fontSize:11, fontWeight:700, color:"#C9A063", marginBottom:12 }}>{label}</div>
