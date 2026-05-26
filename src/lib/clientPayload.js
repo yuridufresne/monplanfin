@@ -20,6 +20,20 @@ export const IQPF = {
   CREDIT_PEN_FED: 2000 * 0.15, CREDIT_PEN_QC: 2000 * 0.14,
 };
 
+/**
+ * Ajustement PSV selon l'âge de début.
+ * - Avant 65 ans : réduction de 0,6%/mois (minimum 60 ans)
+ * - Après 65 ans  : bonification de 0,6%/mois (maximum 70 ans = +36%)
+ */
+export function adjPSV(psvBase, ageDebut) {
+  if (ageDebut <= 65) {
+    const moisAvant = Math.min(Math.max(0, (65 - ageDebut) * 12), 60);
+    return Math.round(psvBase * Math.max(0.64, 1 - moisAvant * 0.006));
+  }
+  const moisApres = Math.min((ageDebut - 65) * 12, 60);
+  return Math.round(psvBase * (1 + moisApres * 0.006));
+}
+
 function unwrap(raw) {
   if (!raw || typeof raw !== 'object') return {};
   if (Array.isArray(raw)) return {};
@@ -66,8 +80,13 @@ function readPersonne(ret = {}, profil = {}) {
     age: calcAge(profil.date_naissance || profil.dob),
     ageRetraite: parseInt(ret.age_retraite) || 65,
     rrqBase: rrqBrut, rrqAjuste: Math.round(rrqBrut * fRRQ), ageDebutRRQ: ageDeb,
-    // BUG #2 fix — PSV stockée en $/mois dans l'ABF → convertir en $/an
-    sv: (parseFloat(ret.sv) || IQPF.PSV_MENSUEL) * 12,
+    // PSV — ajustement selon âge de début (0,6%/mois avant/après 65 ans)
+    ...(() => {
+      const svMensuelBase = parseFloat(ret.sv) || IQPF.PSV_MENSUEL;
+      const ageDebutPSV   = parseInt(ret.age_debut_psv) || parseInt(ret.age_retraite) || 65;
+      const svMensuelAdj  = adjPSV(svMensuelBase, ageDebutPSV);
+      return { sv: svMensuelAdj * 12, svBase: svMensuelBase * 12, ageDebutPSV };
+    })(),
     pensionPD: (parseFloat((ret.fond_pension || {}).rente_mensuelle_estimee) || 0) * 12,
     pensionIndexee: (ret.fond_pension || {}).indexee !== false,
     salaire: 0,
