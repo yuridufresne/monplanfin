@@ -57,7 +57,7 @@ export default function FlipCard({ front, back, expandedHeight = 560, onFlip, fr
           border: "1px solid rgba(201,160,99,0.18)",
           borderRadius: 16, padding: "20px 22px",
           overflowY: "auto",
-          maxHeight: "min(580px, calc(100vh - 120px))",
+          height: "100%",
         }}>
           <button
             onClick={e => { e.stopPropagation(); handleFlip(); }}
