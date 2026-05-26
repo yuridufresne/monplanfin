@@ -340,7 +340,7 @@ export default function Dashboard() {
                   onFlip={() => {}}
                   front={<NIFCalculator profiles={profiles} />}
                   frontStyle={{ background: "transparent", border: "none", padding: 0 }}
-                  back={<NIFScore profiles={profiles} />}
+                  back={<div style={{padding:"0 4px"}}><ModelisationRetraite embedded profiles={profiles} /></div>}
                 />
               </motion.div>
 
