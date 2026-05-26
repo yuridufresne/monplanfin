@@ -533,7 +533,6 @@ export default function ModelisationRetraite({ embedded = false, profiles: profi
                   labelFormatter={l=>`Âge ${l} ans`}/>
                 <ReferenceLine x={retA} stroke="rgba(55,138,221,.4)" strokeDasharray="4 3"
                   label={{value:"Retraite "+retA+" ans",fill:"rgba(55,138,221,.5)",fontSize:10,position:"insideTopRight"}}/>
-                <Line dataKey="cible"  name="Cible brute"         stroke="#E24B4A" strokeWidth={2} dot={false}/>
                 <Line dataKey="nif"    name="Si NIF atteint"      stroke="#7F77DD" strokeWidth={2} strokeDasharray="5 3" dot={false}/>
                 <Line dataKey="foyer"  name="Projection actuelle" stroke="#378ADD" strokeWidth={2} strokeDasharray="6 3" dot={false}/>
                 <Line dataKey="jean"   name={prenomA}             stroke="#BA7517" strokeWidth={1.5} dot={false}/>
