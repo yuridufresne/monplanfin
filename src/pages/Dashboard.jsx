@@ -105,7 +105,6 @@ export default function Dashboard() {
   const [showReset, setShowReset] = useState(false);
   const [detteFlipped, setDetteFlipped] = useState(false);
   const [placementFlipped, setPlacementFlipped] = useState(false);
-  const [nifFlipped, setNifFlipped] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(setUser);
@@ -329,15 +328,13 @@ export default function Dashboard() {
             </motion.div>
 
             {/* ── ZONE 2 — NIF + Protection ───────────────────────────── */}
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-5" style={{ display: nifFlipped ? "block" : undefined }}>
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-5">
 
               {/* NIF — 3 cols */}
-              <motion.div {...fadeUp(0.1)} style={{ gridColumn: nifFlipped ? "1 / -1" : "span 3 / span 3" }}>
-                <FlipCard
-                  expandedHeight={900}
-                  onFlip={setNifFlipped}
-                  front={
-                    <div style={{ ...G.cardGold, padding: "1.4rem 1.5rem", height: "100%" }}>
+              <motion.div {...fadeUp(0.1)} style={{ gridColumn: "span 3 / span 3" }}>
+                <div
+                  style={{ ...G.cardGold, padding: "1.4rem 1.5rem", height: "100%" }}
+                >
                   {/* Métriques — alimentées par calcScenario(ageBase, 0.07, 0.05) */}
                   {(() => {
                     const ageBase0 = ageRetraite || 65;
@@ -652,12 +649,7 @@ export default function Dashboard() {
                       Modélisation complète →
                     </Link>
                   </div>
-                    </div>
-                  }
-                  back={
-                    <RetirementReport profiles={profiles} />
-                  }
-                />
+                </div>
               </motion.div>
 
               {/* Protection + Revenus garantis — 2 cols */}
