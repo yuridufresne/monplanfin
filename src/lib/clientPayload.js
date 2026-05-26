@@ -135,7 +135,19 @@ export function buildPayload(profiles = []) {
   const rrqFoyer     = pA.rrqAjuste + (pB?.rrqAjuste || 0);
   const svFoyer      = pA.sv        + (pB?.sv        || 0);
   const pensionFoyer = pA.pensionPD  + (pB?.pensionPD  || 0);
-  const garantisTotal = rrqFoyer + svFoyer + pensionFoyer; // $/an
+
+  // ── SRG par personne (Supplément de revenu garanti) ──
+  const revHorsPSV = rrqFoyer + pensionFoyer;
+  const srgSeuil = enCouple ? IQPF.SRG_SEUIL_COUPLE : IQPF.SRG_SEUIL_SEUL;
+  const srgMaxParPers = enCouple ? IQPF.SRG_MAX_COUPLE : IQPF.SRG_MAX_SEUL;
+  const srgParPersonne = revHorsPSV >= srgSeuil
+    ? 0
+    : Math.max(0, Math.round(srgMaxParPers - (revHorsPSV / 2) * 0.5));
+  const srgA = srgParPersonne;
+  const srgB = enCouple ? srgParPersonne : 0;
+  const srgFoyer = srgA + srgB;
+
+  const garantisTotal = rrqFoyer + svFoyer + pensionFoyer + srgFoyer; // $/an
 
   // Taux de remplacement — lire depuis retraite en priorité, puis objectifs, sinon défaut IQPF
   const revenuRetMensABF = parseFloat(ret.revenu_retraite_mensuel) || 0;
@@ -150,8 +162,17 @@ export function buildPayload(profiles = []) {
   const esperanceVie = Math.max(pA.esperanceVie, pB?.esperanceVie || 0) || IQPF.ESP_VIE;
   const nRetrait = Math.max(1, esperanceVie - pA.ageRetraite);
 
+  // ── Facteur d'indexation jusqu'à la retraite (sur âge personne A) ──
+  const fiRetraite = Math.pow(1 + IQPF.INFLATION, nA);
+
+  // ── Sous-totaux garantis par personne (aujourd'hui et indexé) ──
+  const garantisA_auj = pA.rrqAjuste + pA.sv + pA.pensionPD + srgA;
+  const garantisB_auj = pB ? (pB.rrqAjuste + pB.sv + pB.pensionPD + srgB) : 0;
+  const garantisA_idx = Math.round(garantisA_auj * fiRetraite);
+  const garantisB_idx = Math.round(garantisB_auj * fiRetraite);
+
   // ── Calcul en dollars FUTURS (nominaux) — cible ET garantis indexés ──
-  const fi = Math.pow(1 + IQPF.INFLATION, nA);
+  const fi = fiRetraite;
   const cibleFuture    = cibleAnnuelle * fi;      // dollars de l'année de retraite
   const garantisFuturs = garantisTotal * fi;       // RRQ+PSV+Pension indexés à l'inflation
   const manqueFutur    = Math.max(0, cibleFuture - garantisFuturs);
@@ -197,9 +218,27 @@ export function buildPayload(profiles = []) {
     conjoint_a: pA,
     conjoint_b: pB,
     revenus_garantis: {
-      rrq_foyer: rrqFoyer, sv_foyer: svFoyer, pension_foyer: pensionFoyer, total: garantisTotal, total_futur: Math.round(garantisFuturs), // tous en $/an
-      rrq_a: pA.rrqAjuste, sv_a: pA.sv, pension_a: pA.pensionPD,
-      rrq_b: pB?.rrqAjuste || 0, sv_b: pB?.sv || 0, pension_b: pB?.pensionPD || 0,
+      // Totaux foyer (aujourd'hui)
+      rrq_foyer: rrqFoyer, sv_foyer: svFoyer, pension_foyer: pensionFoyer,
+      srg_foyer: srgFoyer,
+      total: garantisTotal,
+      total_futur: Math.round(garantisFuturs),
+      // Détail personne A — aujourd'hui
+      rrq_a: pA.rrqAjuste, sv_a: pA.sv, pension_a: pA.pensionPD, srg_a: srgA,
+      sous_total_a: garantisA_auj,
+      // Détail personne B — aujourd'hui
+      rrq_b: pB?.rrqAjuste || 0, sv_b: pB?.sv || 0, pension_b: pB?.pensionPD || 0, srg_b: srgB,
+      sous_total_b: garantisB_auj,
+      // Valeurs INDEXÉES à la retraite (nominal)
+      rrq_a_idx: Math.round(pA.rrqAjuste * fiRetraite),
+      sv_a_idx:  Math.round(pA.sv * fiRetraite),
+      srg_a_idx: Math.round(srgA * fiRetraite),
+      rrq_b_idx: Math.round((pB?.rrqAjuste || 0) * fiRetraite),
+      sv_b_idx:  Math.round((pB?.sv || 0) * fiRetraite),
+      srg_b_idx: Math.round(srgB * fiRetraite),
+      sous_total_a_idx: garantisA_idx,
+      sous_total_b_idx: garantisB_idx,
+      total_idx: garantisA_idx + garantisB_idx,
     },
     epargne: {
       solde_reer_a: pA.soldeReer, cot_reer_a: pA.cotReer,
@@ -212,6 +251,11 @@ export function buildPayload(profiles = []) {
     kpis: {
       nif, nif_nominal: nifNominal, capital_projete: capitalProjecte,
       score_nif: scoreNIF, cot_supp_mens: cotSupp, manque_annuel: Math.round(manque),
+      cible_annuelle_idx: Math.round(cibleAnnuelle * fiRetraite),
+      investissement_actuel: epargneTotal,
+      cot_mensuelle_actuelle: cotTotale,
+      capital_projete_idx: capitalProjecte,
+      annee_retraite: 2026 + nA,
       carte_objectifs: {
         revenu_mensuel_actuel: Math.round(brutTotal / 12),
         taux_remplacement: tauxEffectif,
