@@ -214,6 +214,23 @@ export default function AssistantPrestations({ data, setData, stepData }) {
             )}
           </AnimatePresence>
 
+          {/* Âge de début PSV */}
+          <div>
+            <FieldLabel>À quel âge prévoyez-vous commencer à recevoir la SV ?</FieldLabel>
+            <div className="flex items-center gap-3">
+              <input
+                type="number" min={60} max={70}
+                value={data.age_debut_psv || data.age_retraite || "65"}
+                onChange={e => f("age_debut_psv")(e.target.value)}
+                className="w-28 px-4 py-2.5 rounded-xl text-[13px] outline-none font-mono"
+                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff" }}
+              />
+              <p className="text-[11px]" style={{ color: "rgba(148,163,184,0.5)" }}>
+                ans · Différer après 65 ans bonifie de +0,6%/mois (max +36% à 70 ans)
+              </p>
+            </div>
+          </div>
+
           {/* Résultats SV */}
           <AnimatePresence>
             {svCalc && (

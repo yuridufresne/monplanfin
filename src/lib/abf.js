@@ -38,12 +38,14 @@ export function readEpargne(comptes={}) {
 
 function readRetraitePersonne(ret={}) {
   return {
-    ageRetraite:  parseInt(ret.age_retraite)||65,
-    rrqMensuel:   parseFloat(ret.rrq)||0,
-    svMensuel:    parseFloat(ret.sv)||IQPF.PSV_MENSUEL,
-    pensionMens:  parseFloat((ret.fond_pension||{}).rente_mensuelle_estimee)||0,
-    epargne:      readEpargne(ret.comptes||{}),
-    esperanceVie: parseInt(ret.esperance_vie)||IQPF.ESP_VIE,
+    ageRetraite:   parseInt(ret.age_retraite)||65,
+    rrqMensuel:    parseFloat(ret.rrq)||0,
+    ageDebutRRQ:   parseInt(ret.age_debut_rrq)||parseInt(ret.age_retraite)||65,
+    svMensuel:     parseFloat(ret.sv)||IQPF.PSV_MENSUEL,
+    ageDebutPSV:   parseInt(ret.age_debut_psv)||parseInt(ret.age_retraite)||65,
+    pensionMens:   parseFloat((ret.fond_pension||{}).rente_mensuelle_estimee)||0,
+    epargne:       readEpargne(ret.comptes||{}),
+    esperanceVie:  parseInt(ret.esperance_vie)||IQPF.ESP_VIE,
   };
 }
 
