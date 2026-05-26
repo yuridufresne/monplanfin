@@ -15,12 +15,18 @@ const SCENARIOS = [
 function calcNIFMatrice({ ageActuel, ageRetraite, esperanceVie, cibleAnnuelle, rDec, revenuGarantiAnnuel, inflation }) {
   const nAv  = Math.max(0, ageRetraite - ageActuel);
   const nRet = Math.max(1, esperanceVie - ageRetraite);
-  const fi   = Math.pow(1 + inflation, nAv);
-  const manque = Math.max(0, cibleAnnuelle * fi - revenuGarantiAnnuel * fi);
+  // cibleAnnuelle et revenuGarantiAnnuel sont en dollars constants (aujourd'hui)
+  // → manque en dollars constants, puis NIF via taux réel (pas besoin de fi)
+  const manque = Math.max(0, cibleAnnuelle - revenuGarantiAnnuel);
   if (manque <= 0) return 0;
   const rReel = ((1 + rDec) / (1 + inflation)) - 1;
-  if (rReel <= 0.001) return Math.round(manque * nRet);
-  return Math.max(0, Math.round(manque * ((1 - Math.pow(1 + rReel, -nRet)) / rReel)));
+  // NIF en dollars constants
+  const nifConst = rReel > 0.001
+    ? manque * ((1 - Math.pow(1 + rReel, -nRet)) / rReel)
+    : manque * nRet;
+  // Convertir en nominal pour affichage
+  const fi = Math.pow(1 + inflation, nAv);
+  return Math.max(0, Math.round(nifConst * fi));
 }
 
 // ── Étape 3 — Capital projeté par scénario ───────────────────────────────────
