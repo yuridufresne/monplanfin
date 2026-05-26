@@ -501,7 +501,6 @@ export default function ModelisationRetraite({ embedded = false, profiles: profi
           {/* Légende */}
           <div style={{display:"flex",flexWrap:"wrap",gap:12,marginBottom:10,fontSize:12,color:"rgba(255,255,255,.4)"}}>
             {[
-              {color:"#E24B4A",dash:false,label:"Cible brute (indexée 2,5 %/an)"},
               {color:"#7F77DD",dash:true, label:"Si NIF atteint"},
               {color:"#378ADD",dash:true, label:"Projection actuelle"},
               {color:"#BA7517",dash:false,label:prenomA},
