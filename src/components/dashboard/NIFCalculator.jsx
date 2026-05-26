@@ -86,7 +86,7 @@ export default function NIFCalculator({ profiles }) {
                 <div style={{fontSize:11,fontWeight:500,color:"#fff",marginBottom:6}}>Hypothèses de calcul</div>
                 <div className="nif-tip-row"><span style={{color:C.txt55}}>Inflation</span><span style={{color:C.or,fontFamily:"var(--font-mono)"}}>{(IQPF.INFLATION*100).toFixed(1)} %/an</span></div>
                 <div className="nif-tip-row"><span style={{color:C.txt55}}>Indexation prestations</span><span style={{color:C.or,fontFamily:"var(--font-mono)"}}>{(IQPF.INFLATION*100).toFixed(1)} %/an</span></div>
-                <div className="nif-tip-row"><span style={{color:C.txt55}}>Rendement placements</span><span style={{color:C.or,fontFamily:"var(--font-mono)"}}>{IQPF.REND_ACCUM*100} % / {IQPF.REND_DECAISSE*100} %</span></div>
+                <div className="nif-tip-row"><span style={{color:C.txt55}}>Rendement placements</span><span style={{color:C.or,fontFamily:"var(--font-mono)"}}>{(IQPF.REND_ACCUM*100).toFixed(1)} % / {(IQPF.REND_DECAISSE*100).toFixed(1)} %</span></div>
               </span>
             </span>
           </div>
