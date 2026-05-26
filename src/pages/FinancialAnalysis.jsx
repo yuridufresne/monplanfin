@@ -630,6 +630,30 @@ function RetraitePanel({ data, setData, stepData }) {
         </Field>
       </div>
 
+      {/* Taux de remplacement */}
+      <div style={{marginBottom:4}}>
+        <label style={{fontSize:12.5,fontWeight:600,color:'#94A3B8',display:'block',marginBottom:6}}>
+          Taux de remplacement désiré (% du revenu brut actuel)
+          <span style={{fontSize:10,color:'rgba(148,163,184,0.5)',marginLeft:8}}>Défaut IQPF : 70 %</span>
+        </label>
+        <div style={{display:'flex',alignItems:'center',gap:12}}>
+          <input
+            type="range" min={50} max={100} step={5}
+            value={data.taux_remplacement || 70}
+            onChange={e => setData(p => ({...p, taux_remplacement: parseInt(e.target.value)}))}
+            style={{flex:1,accentColor:'#C9A063',cursor:'pointer'}}
+          />
+          <span style={{fontSize:18,fontWeight:700,minWidth:52,color:'#C9A063',fontFamily:'var(--font-mono)'}}>
+            {data.taux_remplacement || 70} %
+          </span>
+        </div>
+        <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:'rgba(148,163,184,0.4)',marginTop:3}}>
+          <span>50 % — Retraite frugale</span>
+          <span>70 % — IQPF standard</span>
+          <span>100 % — Maintien total</span>
+        </div>
+      </div>
+
       <AssistantPrestations data={data} setData={setData} stepData={stepData} />
 
       <Field label="Souhaitez-vous laisser un héritage ?">

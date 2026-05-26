@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { simulerDecaissement, projeterSoldesRetraite } from "@/lib/moteurDecaissement";
-import { buildPayload, debugPayload, IQPF } from "@/lib/clientPayload";
+import { buildPayload, IQPF } from "@/lib/clientPayload";
 import { ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { Link } from "react-router-dom";
 
@@ -240,9 +240,6 @@ export default function ModelisationRetraite({ embedded = false, profiles: profi
   const nifNominal = kpis?.nif_nominal || 0;
   const capProjeteDashboard = kpis?.capital_projete || 0;
   const garantisAnnuel = gar?.total || 0;
-
-  const debug = useMemo(() => debugPayload(profiles), [profiles]);
-  const [showDebug, setShowDebug] = useState(false);
 
   const [tab,      setTab]      = useState("plan");
   const [unlocked, setUnlocked] = useState(false);
@@ -488,19 +485,6 @@ export default function ModelisationRetraite({ embedded = false, profiles: profi
                 </div>
               ))}
             </div>
-          </div>
-
-          {/* Debug ABF */}
-          <div style={{marginBottom:10}}>
-            <button onClick={()=>setShowDebug(!showDebug)}
-              style={{fontSize:10,padding:'3px 8px',borderRadius:5,cursor:'pointer',opacity:.5,background:'rgba(255,255,255,.06)',border:'1px solid rgba(255,255,255,.1)',color:'#fff'}}>
-              {showDebug ? '▼' : '▶'} Debug ABF
-            </button>
-            {showDebug && (
-              <pre style={{fontSize:10,background:'rgba(0,0,0,.4)',padding:10,borderRadius:8,marginTop:6,overflow:'auto',maxHeight:300,color:'#5BC4A0',fontFamily:'monospace',whiteSpace:'pre-wrap'}}>
-                {JSON.stringify(debug, null, 2)}
-              </pre>
-            )}
           </div>
 
           {/* Légende */}

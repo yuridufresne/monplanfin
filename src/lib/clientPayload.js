@@ -116,14 +116,10 @@ export function buildPayload(profiles = []) {
   const pensionFoyer = pA.pensionPD  + (pB?.pensionPD  || 0);
   const garantisTotal = rrqFoyer + svFoyer + pensionFoyer; // $/an
 
-  // BUG #3 fix — taux de remplacement peut être dans "objectifs" plutôt que "retraite"
-  const objSection = dict.objectifs || {};
-  const revenuRetMensABF = parseFloat(ret.revenu_retraite_mensuel)
-    || parseFloat(objSection.revenu_retraite_mensuel) || 0;
-  const pctABF = parseFloat(ret.revenu_retraite_pct)
-    || parseFloat(objSection.taux_remplacement)
-    || parseFloat(objSection.revenu_retraite_pct)
-    || parseFloat(objSection.taux_remplacement_vise)
+  // Taux de remplacement — lire depuis retraite en priorité, puis objectifs, sinon défaut IQPF
+  const revenuRetMensABF = parseFloat(ret.revenu_retraite_mensuel) || 0;
+  const pctABF = parseFloat(ret.taux_remplacement)
+    || parseFloat(ret.revenu_retraite_pct)
     || (IQPF.TAUX_REMPLACEMENT * 100);
   const cibleAnnuelle = revenuRetMensABF > 0 ? revenuRetMensABF * 12 : Math.round(brutTotal * pctABF / 100);
   const tauxEffectif = brutTotal > 0 ? Math.round(cibleAnnuelle / brutTotal * 100) : pctABF;
