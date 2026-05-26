@@ -445,6 +445,44 @@ export default function Dashboard() {
                             <div style={{ height: "100%", width: `${Math.min(nifScore, 100)}%`, background: `linear-gradient(90deg, ${nifColor2}, ${nifColor2}cc)`, borderRadius: 99, transition: "width 1s ease" }} />
                           </div>
                         </div>
+
+                        {/* ── Objectifs & Hypothèses ── */}
+                        <div style={{ marginTop: 14, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                          {/* Objectif de revenu */}
+                          <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10, padding: "10px 12px" }}>
+                            <p style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.35)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>Objectif de revenu et prestations mensuels</p>
+                            {[
+                              { label: "Revenu actuel", value: fmt(Math.round((revBrut || 0) / 12)) },
+                              { label: "Objectif de revenu", value: `${nif.tauxRemplacement || 80} %` },
+                              { label: "Objectif selon valeur actuelle du $", value: fmt(Math.round((nif.depensesCibles || 0) / 12)), bold: true },
+                              { label: "Objectif selon valeur future du $", value: fmt(Math.round((nif.nifResult?.revenuCibleFutur || nif.depensesCibles * Math.pow(1.025, nif.anneesAccum || 0)) / 12)), bold: true, color: "#C9A063" },
+                              { label: "Prestations retraite du gouvernement", value: totalGarantiAnnuel > 0 ? "Incluses" : "Non saisies" },
+                            ].map(r => (
+                              <div key={r.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                                <span style={{ fontSize: 10, color: r.bold ? "rgba(255,255,255,0.75)" : "rgba(255,255,255,0.4)", fontWeight: r.bold ? 700 : 400 }}>{r.label}</span>
+                                <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: r.bold ? 700 : 500, color: r.color || (r.bold ? "#fff" : "rgba(255,255,255,0.6)") }}>{r.value}</span>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Hypothèses */}
+                          <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10, padding: "10px 12px" }}>
+                            <p style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.35)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>Hypothèses</p>
+                            {[
+                              { label: "Âge de retraite", value: `${ageRetraite || 65} ans`, bold: true, color: "#C9A063" },
+                              { label: "Espérance de vie", value: `${esperanceVie || 95} ans` },
+                              { label: "Épargne de retraite actuelle", value: fmt(nif.soldeTotal || 0) },
+                              { label: "Épargnes mensuelles actuelles", value: fmt(nif.cotMensuelle || 0) },
+                              { label: "Taux d'inflation", value: `${((nif.nifResult?.facteurInflation ? Math.pow(nif.nifResult.facteurInflation, 1/(nif.anneesAccum||1)) - 1 : 0.025) * 100).toFixed(1)}%` },
+                              { label: "Taux de rendement avant et pendant la retraite", value: "7% / 5%" },
+                            ].map(r => (
+                              <div key={r.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", gap: 8 }}>
+                                <span style={{ fontSize: 10, color: r.bold ? "rgba(255,255,255,0.75)" : "rgba(255,255,255,0.4)", fontWeight: r.bold ? 700 : 400, flex: 1 }}>{r.label}</span>
+                                <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: r.bold ? 700 : 500, color: r.color || "rgba(255,255,255,0.6)", flexShrink: 0 }}>{r.value}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       </>
                     );
                   })()}
