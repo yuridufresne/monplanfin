@@ -6,7 +6,6 @@ import InfoTooltip from "@/components/ui/InfoTooltip";
 import StepBudget from "@/components/abf/StepBudget";
 import StepAllocations from "@/components/abf/StepAllocations";
 import AddressAutocomplete from "@/components/ui/AddressAutocomplete";
-import AssistantPrestations from "@/components/abf/AssistantPrestations";
 
 const STEPS = [
   { key: "profil_personnel", label: "Profil", icon: User, title: "Renseignements personnels" },
@@ -56,19 +55,15 @@ function RadioGroup({ options, value, onChange }) {
   );
 }
 
-// ── Step forms ──────────────────────────────────────────────────────────────
-
 function StepProfilPersonnel({ data, setData }) {
   const f = (k) => (v) => setData(p => ({ ...p, [k]: v }));
   const fc = (k) => (v) => setData(p => ({ ...p, conjoint: { ...(p.conjoint || {}), [k]: v } }));
   const conjoint = data.conjoint || {};
-
   const enCouple = ["marie", "conjoint", "union_civile"].includes(data.situation);
   const memeAdresse = conjoint.meme_adresse === true;
 
   return (
     <div className="space-y-6">
-      {/* Principal */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <Field label="Prénom et nom"><Input value={data.nom} onChange={f("nom")} placeholder="Jean Tremblay" /></Field>
         <Field label="Date de naissance"><Input value={data.dob} onChange={f("dob")} type="date" /></Field>
@@ -94,7 +89,6 @@ function StepProfilPersonnel({ data, setData }) {
         </div>
       </div>
 
-      {/* Conjoint(e) — infos de base seulement */}
       {enCouple && (
         <div className="rounded-2xl p-5 space-y-4" style={{ background: "rgba(107,140,214,0.05)", border: "1px solid rgba(107,140,214,0.18)" }}>
           <div>
@@ -109,7 +103,6 @@ function StepProfilPersonnel({ data, setData }) {
             <Field label="Téléphone"><Input value={conjoint.cell} onChange={fc("cell")} placeholder="514-555-0001" /></Field>
           </div>
 
-          {/* Mode de calcul NIF */}
           <div className="space-y-2">
             <p className="text-[12.5px] font-semibold" style={{ color: "#94A3B8" }}>Mode de calcul NIF</p>
             <div className="flex flex-col gap-2">
@@ -136,11 +129,7 @@ function StepProfilPersonnel({ data, setData }) {
             </div>
           </div>
 
-          {/* Case à cocher même adresse */}
-          <button
-            onClick={() => fc("meme_adresse")(!memeAdresse)}
-            className="flex items-center gap-3 w-full text-left"
-          >
+          <button onClick={() => fc("meme_adresse")(!memeAdresse)} className="flex items-center gap-3 w-full text-left">
             <div className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 transition-all"
               style={memeAdresse
                 ? { background: "#6B8ED6", border: "1px solid #6B8ED6" }
@@ -174,59 +163,43 @@ const SIDE_TYPES = [
   { value: "autre", label: "Autre" },
 ];
 
-// ── Estimateur d'impôt retenu à la source (Québec 2026) ─────────────────────
-// Paliers simplifiés pour estimation de la retenue mensuelle recommandée
 const PALIERS_FED_EST = [
-  { min: 0,      max: 58523,   rate: 0.15 },
-  { min: 58523,  max: 117045,  rate: 0.205 },
-  { min: 117045, max: 181440,  rate: 0.26 },
-  { min: 181440, max: 258482,  rate: 0.29 },
-  { min: 258482, max: Infinity,rate: 0.33 },
+  { min: 0, max: 58523, rate: 0.15 },
+  { min: 58523, max: 117045, rate: 0.205 },
+  { min: 117045, max: 181440, rate: 0.26 },
+  { min: 181440, max: 258482, rate: 0.29 },
+  { min: 258482, max: Infinity, rate: 0.33 },
 ];
 const PALIERS_QC_EST = [
-  { min: 0,      max: 54345,   rate: 0.14 },
-  { min: 54345,  max: 108680,  rate: 0.19 },
-  { min: 108680, max: 132245,  rate: 0.24 },
-  { min: 132245, max: Infinity,rate: 0.2575 },
+  { min: 0, max: 54345, rate: 0.14 },
+  { min: 54345, max: 108680, rate: 0.19 },
+  { min: 108680, max: 132245, rate: 0.24 },
+  { min: 132245, max: Infinity, rate: 0.2575 },
 ];
 
 function estimerRetenueMensuelle(revenuBrut) {
   if (!revenuBrut || revenuBrut <= 0) return 0;
   const brut = parseFloat(revenuBrut) || 0;
-
-  // ── Impôt fédéral ────────────────────────────────────────────────
   let impFed = 0;
   for (const p of PALIERS_FED_EST) {
     if (brut <= p.min) break;
     impFed += (Math.min(brut, p.max) - p.min) * p.rate;
   }
   impFed = Math.max(0, (impFed - 16452 * 0.15) * (1 - 0.165));
-
-  // ── Impôt provincial (Québec) ────────────────────────────────────
   let impQc = 0;
   for (const p of PALIERS_QC_EST) {
     if (brut <= p.min) break;
     impQc += (Math.min(brut, p.max) - p.min) * p.rate;
   }
   impQc = Math.max(0, impQc - 18952 * 0.14);
-
-  // ── Cotisations sociales (salarié — part employé) ────────────────
-  // RRQ : 6,4% jusqu'au MGA (74 600$) + 4% supplémentaire jusqu'au MSGA (85 000$)
   const MGA = 74600; const MSGA = 85000; const EXEMPTION = 3500;
   const rrq = Math.min(Math.max(0, Math.min(brut, MGA) - EXEMPTION) * 0.064, 4551.40)
             + Math.min(Math.max(0, Math.min(brut, MSGA) - MGA) * 0.04, 416.00);
-
-  // RQAP : 0,494% jusqu'à 103 000$
   const rqap = Math.min(Math.min(brut, 103000) * 0.00494, 509.18);
-
-  // AE : 1,30% jusqu'à 68 900$
   const ae = Math.min(Math.min(brut, 68900) * 0.013, 895.70);
-
-  const totalAnnuel = impFed + impQc + rrq + rqap + ae;
-  return Math.round(totalAnnuel / 12);
+  return Math.round((impFed + impQc + rrq + rqap + ae) / 12);
 }
 
-// Alias pour compatibilité
 const estimerImpotMensuel = estimerRetenueMensuelle;
 
 function RevenuPanel({ data, setData }) {
@@ -236,7 +209,6 @@ function RevenuPanel({ data, setData }) {
   const updateEmploi = (i, k, v) => {
     const emploisActuels = data.emplois || [];
     let updated = emploisActuels.map((e, idx) => idx === i ? { ...e, [k]: v } : e);
-    // Auto-remplir impôt si le revenu change et que l'impôt n'a pas été modifié manuellement
     if (k === "revenu_brut") {
       const emploi = updated[i];
       if (!emploi.impot_modifie) {
@@ -245,7 +217,6 @@ function RevenuPanel({ data, setData }) {
       }
     }
     if (k === "impot_saisi") {
-      // Marquer comme modifié manuellement
       updated = updated.map((e, idx) => idx === i ? { ...e, impot_modifie: true } : e);
     }
     setData(p => ({ ...p, emplois: updated }));
@@ -262,12 +233,10 @@ function RevenuPanel({ data, setData }) {
 
   const totalBrut = emplois.reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0), 0)
     + sidehustles.reduce((s, e) => s + (parseFloat(e.revenu_mensuel_moyen) || 0) * 12, 0);
-
   const f = (k) => (v) => setData(p => ({ ...p, [k]: v }));
 
   return (
     <div className="space-y-7">
-      {/* EMPLOIS */}
       <div>
         <div className="flex items-center justify-between mb-3">
           <p className="text-[14px] font-semibold text-white">Emplois salariés / contrats</p>
@@ -299,26 +268,12 @@ function RevenuPanel({ data, setData }) {
                   hint={e.impot_modifie ? "Montant personnalisé" : "Estimation calculée — modifiez si différent"}
                 >
                   <div className="flex gap-2">
-                    <input
-                      type="number"
-                      value={e.impot_saisi || ""}
-                      onChange={ev => updateEmploi(i, "impot_saisi", ev.target.value)}
-                      placeholder="0"
+                    <input type="number" value={e.impot_saisi || ""} onChange={ev => updateEmploi(i, "impot_saisi", ev.target.value)} placeholder="0"
                       className="w-full px-4 py-2.5 rounded-xl text-[13px] outline-none transition-all"
-                      style={{
-                        background: "rgba(255,255,255,0.05)",
-                        border: `1px solid ${!e.impot_modifie && e.impot_saisi ? "rgba(91,196,160,0.3)" : "rgba(255,255,255,0.1)"}`,
-                        color: "#fff"
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => updateEmploi(i, "impot_freq", (e.impot_freq || "mensuel") === "mensuel" ? "annuel" : "mensuel")}
+                      style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${!e.impot_modifie && e.impot_saisi ? "rgba(91,196,160,0.3)" : "rgba(255,255,255,0.1)"}`, color: "#fff" }} />
+                    <button type="button" onClick={() => updateEmploi(i, "impot_freq", (e.impot_freq || "mensuel") === "mensuel" ? "annuel" : "mensuel")}
                       className="shrink-0 rounded-xl text-[11px] font-bold transition-all"
-                      style={{
-                        width: "70px",
-                        padding: "10px 12px",
-                        textAlign: "center",
+                      style={{ width: "70px", padding: "10px 12px", textAlign: "center",
                         ...(e.impot_freq || "mensuel") === "annuel"
                           ? { background: "rgba(201,160,99,0.2)", color: "#C9A063", border: "1px solid rgba(201,160,99,0.35)" }
                           : { background: "rgba(255,255,255,0.05)", color: "#94A3B8", border: "1px solid rgba(255,255,255,0.1)" }
@@ -338,7 +293,6 @@ function RevenuPanel({ data, setData }) {
         </div>
       </div>
 
-      {/* SIDE HUSTLES */}
       <div>
         <div className="flex items-center justify-between mb-3">
           <div>
@@ -346,9 +300,7 @@ function RevenuPanel({ data, setData }) {
             <p className="text-[12px] mt-0.5" style={{ color: "#94A3B8" }}>Uber, Airbnb, freelance, vente en ligne…</p>
           </div>
           <button onClick={addSide} className="text-[12px] font-semibold px-3 py-1.5 rounded-lg transition-all"
-            style={{ background: "rgba(201,160,99,0.1)", color: "#C9A063", border: "1px solid rgba(201,160,99,0.2)" }}>
-            + Ajouter
-          </button>
+            style={{ background: "rgba(201,160,99,0.1)", color: "#C9A063", border: "1px solid rgba(201,160,99,0.2)" }}>+ Ajouter</button>
         </div>
         {sidehustles.length === 0 && (
           <div className="rounded-xl px-4 py-3 text-[12px]" style={{ background: "rgba(255,255,255,0.02)", border: "1px dashed rgba(255,255,255,0.08)", color: "#94A3B8" }}>
@@ -361,9 +313,7 @@ function RevenuPanel({ data, setData }) {
               <button onClick={() => removeSide(i)} className="absolute top-3 right-3 text-[11px]" style={{ color: "rgba(248,113,113,0.7)" }}>✕ Retirer</button>
               <p className="text-[11px] font-bold tracking-wider uppercase mb-3" style={{ color: "rgba(245,158,11,0.6)" }}>Side hustle {i + 1}</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <Field label="Type d'activité">
-                  <RadioGroup value={s.type} onChange={v => updateSide(i, "type", v)} options={SIDE_TYPES} />
-                </Field>
+                <Field label="Type d'activité"><RadioGroup value={s.type} onChange={v => updateSide(i, "type", v)} options={SIDE_TYPES} /></Field>
                 <Field label="Description / Plateforme"><Input value={s.nom} onChange={v => updateSide(i, "nom", v)} placeholder="ex: Uber driver, boutique Etsy..." /></Field>
                 <Field label="Revenu mensuel moyen ($)" hint="Estimation des 3 derniers mois">
                   <Input value={s.revenu_mensuel_moyen} onChange={v => updateSide(i, "revenu_mensuel_moyen", v)} type="number" />
@@ -390,10 +340,8 @@ function RevenuPanel({ data, setData }) {
         </div>
       </div>
 
-      {/* TOTAL */}
       {totalBrut > 0 && (
-        <div className="rounded-xl px-5 py-4 flex items-center justify-between"
-          style={{ background: "rgba(201,160,99,0.07)", border: "1px solid rgba(201,160,99,0.2)" }}>
+        <div className="rounded-xl px-5 py-4 flex items-center justify-between" style={{ background: "rgba(201,160,99,0.07)", border: "1px solid rgba(201,160,99,0.2)" }}>
           <p className="text-[13px] font-semibold" style={{ color: "#C9A063" }}>Revenu brut annuel total estimé</p>
           <p className="font-financial text-[1.4rem] font-bold" style={{ color: "#C9A063" }}>
             {new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(totalBrut)}
@@ -401,7 +349,6 @@ function RevenuPanel({ data, setData }) {
         </div>
       )}
 
-      {/* RETOUR D'IMPÔT */}
       <Field label="Recevez-vous habituellement un retour d'impôt ?">
         <RadioGroup value={data.retour_impot} onChange={f("retour_impot")} options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]} />
       </Field>
@@ -414,51 +361,30 @@ function RevenuPanel({ data, setData }) {
 
 function StepRevenu({ data, setData, stepData }) {
   const [activeTab, setActiveTab] = useState("principal");
-
   const profilData = stepData?.profil_personnel || {};
   const enCouple = ["marie", "conjoint", "union_civile"].includes(profilData.situation);
   const nomPrincipal = profilData.nom ? profilData.nom.split(" ")[0] : "Principal(e)";
   const nomConjoint = profilData.conjoint?.nom ? profilData.conjoint.nom.split(" ")[0] : "Conjoint(e)";
-
-  // Données principal = racine de data, données conjoint = data.conjoint
-  const setConjointData = (updater) => setData(p => ({
-    ...p,
-    conjoint: typeof updater === "function" ? updater(p.conjoint || {}) : updater,
-  }));
+  const setConjointData = (updater) => setData(p => ({ ...p, conjoint: typeof updater === "function" ? updater(p.conjoint || {}) : updater }));
 
   return (
     <div className="space-y-5">
-      {/* Onglets Principal / Conjoint */}
       {enCouple && (
         <div className="flex gap-2 p-1 rounded-xl" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-          {[
-            { key: "principal", label: nomPrincipal, color: "#C9A063" },
-            { key: "conjoint", label: nomConjoint, color: "#6B8ED6" },
-          ].map(tab => (
-            <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-              className="flex-1 py-2 rounded-lg text-[13px] font-semibold transition-all"
-              style={activeTab === tab.key
-                ? { background: tab.color, color: tab.key === "principal" ? "#050810" : "#fff" }
-                : { color: "rgba(255,255,255,0.45)" }
-              }>
+          {[{ key: "principal", label: nomPrincipal, color: "#C9A063" }, { key: "conjoint", label: nomConjoint, color: "#6B8ED6" }].map(tab => (
+            <button key={tab.key} onClick={() => setActiveTab(tab.key)} className="flex-1 py-2 rounded-lg text-[13px] font-semibold transition-all"
+              style={activeTab === tab.key ? { background: tab.color, color: tab.key === "principal" ? "#050810" : "#fff" } : { color: "rgba(255,255,255,0.45)" }}>
               {tab.label}
             </button>
           ))}
         </div>
       )}
-
-      {/* Contenu */}
-      {(!enCouple || activeTab === "principal") && (
-        <RevenuPanel data={data} setData={setData} />
-      )}
-      {enCouple && activeTab === "conjoint" && (
-        <RevenuPanel data={data.conjoint || {}} setData={setConjointData} />
-      )}
+      {(!enCouple || activeTab === "principal") && <RevenuPanel data={data} setData={setData} />}
+      {enCouple && activeTab === "conjoint" && <RevenuPanel data={data.conjoint || {}} setData={setConjointData} />}
     </div>
   );
 }
 
-// ── Composant réutilisable pour les onglets Principal / Conjoint ─────────────
 function PersonTabs({ activeTab, setActiveTab, nomPrincipal, nomConjoint }) {
   return (
     <div className="flex gap-2 p-1 rounded-xl" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
@@ -466,12 +392,8 @@ function PersonTabs({ activeTab, setActiveTab, nomPrincipal, nomConjoint }) {
         { key: "principal", label: nomPrincipal, color: "#C9A063", textColor: "#050810" },
         { key: "conjoint", label: nomConjoint, color: "#6B8ED6", textColor: "#fff" },
       ].map(tab => (
-        <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-          className="flex-1 py-2 rounded-lg text-[13px] font-semibold transition-all"
-          style={activeTab === tab.key
-            ? { background: tab.color, color: tab.textColor }
-            : { color: "rgba(255,255,255,0.45)" }
-          }>
+        <button key={tab.key} onClick={() => setActiveTab(tab.key)} className="flex-1 py-2 rounded-lg text-[13px] font-semibold transition-all"
+          style={activeTab === tab.key ? { background: tab.color, color: tab.textColor } : { color: "rgba(255,255,255,0.45)" }}>
           {tab.label}
         </button>
       ))}
@@ -479,72 +401,31 @@ function PersonTabs({ activeTab, setActiveTab, nomPrincipal, nomConjoint }) {
   );
 }
 
-// ── Retraite / Épargne ────────────────────────────────────────────────────────
-
 const COMPTES_TYPES = [
-  {
-    key: "compte_non_enregistre",
-    label: "Compte épargne (non enregistré)",
-    tooltip: "Compte d'épargne ordinaire où vous versez votre argent. Aucun avantage fiscal. Les intérêts et gains en capital sont imposables."
-  },
-  {
-    key: "celi",
-    label: "CELI",
-    tooltip: "Compte d'épargne libre d'impôt. L'argent grandit sans impôt et vous pouvez le retirer en tout temps sans implications fiscales. Limite annuelle : 7 000$ (2024)."
-  },
-  {
-    key: "celiapp",
-    label: "CELIAPP",
-    tooltip: "Compte d'épargne libre d'impôt pour l'achat d'une première propriété. Cotisations déductibles, croissance libre d'impôt, retrait en franchise pour l'achat d'une maison."
-  },
-  {
-    key: "reer",
-    label: "REER",
-    tooltip: "Régime enregistré d'épargne-retraite. Cotisations déductibles du revenu imposable. Croissance à l'abri de l'impôt. Taxé au retrait. Idéal pour les revenus élevés."
-  },
-  {
-    key: "reee",
-    label: "REEE",
-    tooltip: "Régime enregistré d'épargne-études. Pour les études des enfants. Bénéficiez de subventions gouvernementales (SCEE 20%, IQEE 10%). Plafonds : 50 000$/enfant, 2 500$/an pour SCEE max."
-  },
-  {
-    key: "cri_lira",
-    label: "CRI / LIRA (Ancien fonds de pension)",
-    tooltip: "Compte de retraite immobilisé (CRI) ou Locked-In Retirement Account (LIRA). Fonds provenant d'un ancien régime de pension d'employeur. L'argent est « immobilisé » jusqu'à la retraite mais peut être transféré et géré selon vos objectifs."
-  },
-  {
-    key: "crypto",
-    label: "Crypto",
-    tooltip: "Crypto-monnaies (Bitcoin, Ethereum, etc.). Très volatiles. Les gains en capital sont imposables à 50% au Canada. Conservez vos preuves d'achat pour le fisc."
-  },
-  {
-    key: "ftq_csn",
-    label: "FTQ / CSN",
-    tooltip: "Fonds de travailleurs FTQ et Fonds du Québec de la CSN. Actions de sociétés québécoises. Déduction fiscale de 30% + crédits d'impôt. Rendements variables selon le marché."
-  },
+  { key: "compte_non_enregistre", label: "Compte épargne (non enregistré)", tooltip: "Compte d'épargne ordinaire où vous versez votre argent. Aucun avantage fiscal. Les intérêts et gains en capital sont imposables." },
+  { key: "celi", label: "CELI", tooltip: "Compte d'épargne libre d'impôt. L'argent grandit sans impôt et vous pouvez le retirer en tout temps sans implications fiscales. Limite annuelle : 7 000$ (2024)." },
+  { key: "celiapp", label: "CELIAPP", tooltip: "Compte d'épargne libre d'impôt pour l'achat d'une première propriété. Cotisations déductibles, croissance libre d'impôt, retrait en franchise pour l'achat d'une maison." },
+  { key: "reer", label: "REER", tooltip: "Régime enregistré d'épargne-retraite. Cotisations déductibles du revenu imposable. Croissance à l'abri de l'impôt. Taxé au retrait. Idéal pour les revenus élevés." },
+  { key: "reee", label: "REEE", tooltip: "Régime enregistré d'épargne-études. Pour les études des enfants. Bénéficiez de subventions gouvernementales (SCEE 20%, IQEE 10%). Plafonds : 50 000$/enfant, 2 500$/an pour SCEE max." },
+  { key: "cri_lira", label: "CRI / LIRA (Ancien fonds de pension)", tooltip: "Compte de retraite immobilisé (CRI) ou Locked-In Retirement Account (LIRA). Fonds provenant d'un ancien régime de pension d'employeur. L'argent est « immobilisé » jusqu'à la retraite mais peut être transféré et géré selon vos objectifs." },
+  { key: "crypto", label: "Crypto", tooltip: "Crypto-monnaies (Bitcoin, Ethereum, etc.). Très volatiles. Les gains en capital sont imposables à 50% au Canada. Conservez vos preuves d'achat pour le fisc." },
+  { key: "ftq_csn", label: "FTQ / CSN", tooltip: "Fonds de travailleurs FTQ et Fonds du Québec de la CSN. Actions de sociétés québécoises. Déduction fiscale de 30% + crédits d'impôt. Rendements variables selon le marché." },
 ];
 
 function CompteEpargneSection({ type, label, comptes, setComptes }) {
   const addCompte = () => setComptes(prev => ({ ...prev, [type]: [...(prev[type] || []), { institution: "", solde: "", cotisation_mensuelle: "" }] }));
   const removeCompte = (i) => setComptes(prev => ({ ...prev, [type]: (prev[type] || []).filter((_, idx) => idx !== i) }));
-  const updateCompte = (i, k, v) => setComptes(prev => ({
-    ...prev,
-    [type]: (prev[type] || []).map((c, idx) => idx === i ? { ...c, [k]: v } : c),
-  }));
+  const updateCompte = (i, k, v) => setComptes(prev => ({ ...prev, [type]: (prev[type] || []).map((c, idx) => idx === i ? { ...c, [k]: v } : c) }));
   const list = comptes[type] || [];
-
   const tooltipText = COMPTES_TYPES.find(t => t.key === type)?.tooltip;
   return (
     <div className="rounded-xl" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
       <div className="flex items-center justify-between px-4 py-3 rounded-t-xl" style={{ background: "rgba(255,255,255,0.03)" }}>
         <p className="text-[13px] font-semibold text-white">
-          {label}
-          {tooltipText && <InfoTooltip explanation={tooltipText} position="bottom" />}
+          {label}{tooltipText && <InfoTooltip explanation={tooltipText} position="bottom" />}
         </p>
         <button onClick={addCompte} className="text-[11px] font-semibold px-3 py-1 rounded-lg"
-          style={{ background: "rgba(201,160,99,0.1)", color: "#C9A063", border: "1px solid rgba(201,160,99,0.2)" }}>
-          + Ajouter
-        </button>
+          style={{ background: "rgba(201,160,99,0.1)", color: "#C9A063", border: "1px solid rgba(201,160,99,0.2)" }}>+ Ajouter</button>
       </div>
       {list.length > 0 && (
         <div className="px-4 pb-3 space-y-3 pt-2">
@@ -564,57 +445,121 @@ function CompteEpargneSection({ type, label, comptes, setComptes }) {
   );
 }
 
-function RetraitePanel({ data, setData, stepData }) {
+// ═══════════════ PrestationsBlock — RRQ + PSV refondu ═══════════════
+function PrestationsBlock({ data, setData, salaireActuelPanel }) {
+  const f = (k) => (v) => setData(p => ({ ...p, [k]: v }));
+  const rrqMode = data.rrq_mode || "estimer";
+  const ageRetraite = parseInt(data.age_retraite) || 65;
+  const anneesCotisationDefaut = Math.max(0, Math.min(40, ageRetraite - 25));
+  const anneesResidenceDefaut = Math.max(0, Math.min(40, ageRetraite - 18));
+  const salaireDefaut = salaireActuelPanel > 0 ? salaireActuelPanel : "";
+
+  return (
+    <div className="space-y-5">
+      <div className="rounded-xl p-4 space-y-4" style={{ background: "rgba(201,160,99,0.04)", border: "1px solid rgba(201,160,99,0.18)" }}>
+        <div>
+          <p className="text-[13px] font-semibold text-white">
+            RRQ — Régime de rentes du Québec
+            <InfoTooltip explanation="Le RRQ est un régime public obligatoire. Maximum en 2026 : 18 092 $/an à 65 ans pour qui a cotisé 40 ans au max des gains admissibles (74 600 $). Ajustable de 60 à 72 ans." position="right" />
+          </p>
+          <p className="text-[11.5px] mt-0.5" style={{ color: "#94A3B8" }}>Estimation automatique basée sur le salaire ou montant précis de votre relevé RRQ.</p>
+        </div>
+
+        <Field label="Mode de saisie">
+          <RadioGroup value={rrqMode} onChange={f("rrq_mode")} options={[
+            { value: "estimer", label: "Estimer automatiquement" },
+            { value: "specifier", label: "Spécifier (Mon Dossier RRQ)" },
+          ]} />
+        </Field>
+
+        {rrqMode === "estimer" ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <Field label="Salaire moyen de carrière ($/an)" hint="Par défaut = salaire actuel de la section Revenu. Ajustez si différent.">
+              <Input type="number" value={data.salaire_moyen_carriere} onChange={f("salaire_moyen_carriere")}
+                placeholder={salaireDefaut ? String(salaireDefaut) : "ex: 60 000"} />
+            </Field>
+            <Field
+              label={<span>Années de cotisation prévues <InfoTooltip explanation="Total prévu d'années où vous aurez contribué au RRQ avant la retraite. 40 ans = plein régime. N'incluez PAS les années de congé parental avec enfant <7 ans : la Clause d'exclusion liée à la parentalité (CELP) les neutralise automatiquement." position="right" /></span>}
+              hint={`Défaut : ${anneesCotisationDefaut} ans (départ à 25 ans)`}
+            >
+              <Input type="number" value={data.annees_cotisation_rrq} onChange={f("annees_cotisation_rrq")} placeholder={String(anneesCotisationDefaut)} />
+            </Field>
+          </div>
+        ) : (
+          <Field label="Rente mensuelle à 65 ans ($/mois)" hint="Montant indiqué sur votre relevé de participation (Mon Dossier RRQ), projeté à 65 ans.">
+            <Input type="number" value={data.rrq} onChange={f("rrq")} placeholder="1 500" />
+          </Field>
+        )}
+
+        <Field label={<span>Âge de début souhaité du RRQ <InfoTooltip explanation="Entre 60 et 72 ans. Avant 65 : réduction de 0,6 %/mois (max −36 % à 60). Après 65 : bonification de 0,7 %/mois (max +58,8 % à 72)." position="right" /></span>}>
+          <RadioGroup value={String(data.age_debut_rrq || ageRetraite || 65)} onChange={f("age_debut_rrq")} options={[
+            { value: "60", label: "60" },
+            { value: "65", label: "65 (réf.)" },
+            { value: "70", label: "70 (report)" },
+            { value: "72", label: "72 (max)" },
+          ]} />
+        </Field>
+      </div>
+
+      <div className="rounded-xl p-4 space-y-4" style={{ background: "rgba(107,140,214,0.04)", border: "1px solid rgba(107,140,214,0.18)" }}>
+        <div>
+          <p className="text-[13px] font-semibold text-white">
+            PSV — Sécurité de la vieillesse
+            <InfoTooltip explanation="Pension fédérale versée à partir de 65 ans. Maximum 2026 : 740,09 $/mois (8 881 $/an) pour 40 ans de résidence au Canada après 18 ans. Bonus automatique de +10 % à 75 ans. Récupérée (clawback) au-delà de 93 454 $ de revenu net." position="right" />
+          </p>
+          <p className="text-[11.5px] mt-0.5" style={{ color: "#94A3B8" }}>Calculée selon vos années de résidence au Canada.</p>
+        </div>
+
+        <Field label="Années de résidence au Canada après 18 ans" hint={`40 ans = pleine PSV. Minimum 10 ans pour le droit. Défaut : ${anneesResidenceDefaut} ans (résidence depuis 18 ans).`}>
+          <Input type="number" value={data.annees_residence_canada} onChange={f("annees_residence_canada")} placeholder={String(anneesResidenceDefaut)} />
+        </Field>
+
+        <Field label={<span>Âge de début souhaité de la PSV <InfoTooltip explanation="65 à 70 ans. Report = +0,6 %/mois après 65 (max +36 % à 70). À 75 ans, bonus automatique de 10 % appliqué par Service Canada." position="right" /></span>}>
+          <RadioGroup value={String(data.age_debut_psv || 65)} onChange={f("age_debut_psv")} options={[
+            { value: "65", label: "65 (réf.)" },
+            { value: "67", label: "67" },
+            { value: "70", label: "70 (report max)" },
+          ]} />
+        </Field>
+      </div>
+    </div>
+  );
+}
+
+function RetraitePanel({ data, setData, stepData, isPrincipal = true }) {
   const f = (k) => (v) => setData(p => ({ ...p, [k]: v }));
 
-  // Revenu brut annuel combiné (principal + conjoint) depuis l'étape Revenu
   const revData = stepData?.revenu || {};
-  const brutAnnuel = [
-    ...(revData.emplois || []),
-    ...(revData.conjoint?.emplois || []),
-  ].reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0), 0);
+  const emploisPanel = isPrincipal ? (revData.emplois || []) : (revData.conjoint?.emplois || []);
+  const salaireActuelPanel = emploisPanel.reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0), 0);
+
+  const brutAnnuel = [...(revData.emplois || []), ...(revData.conjoint?.emplois || [])].reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0), 0);
   const brutMensuel = brutAnnuel / 12;
 
   const handleMensuelChange = (v) => {
     const mensuel = parseFloat(v) || 0;
     const updates = { revenu_retraite_mensuel: v };
-    if (brutMensuel > 0 && mensuel > 0) {
-      updates.revenu_retraite_pct = Math.round((mensuel / brutMensuel) * 100);
-    }
+    if (brutMensuel > 0 && mensuel > 0) updates.revenu_retraite_pct = Math.round((mensuel / brutMensuel) * 100);
     setData(p => ({ ...p, ...updates }));
   };
-
   const handlePctChange = (v) => {
     const pct = parseFloat(v) || 0;
     const updates = { revenu_retraite_pct: v };
-    if (brutMensuel > 0 && pct > 0) {
-      updates.revenu_retraite_mensuel = Math.round(brutMensuel * pct / 100);
-    }
+    if (brutMensuel > 0 && pct > 0) updates.revenu_retraite_mensuel = Math.round(brutMensuel * pct / 100);
     setData(p => ({ ...p, ...updates }));
   };
 
   const comptes = data.comptes || {};
-  const setComptes = (updater) => setData(p => ({
-    ...p,
-    comptes: typeof updater === "function" ? updater(p.comptes || {}) : updater,
-  }));
-
+  const setComptes = (updater) => setData(p => ({ ...p, comptes: typeof updater === "function" ? updater(p.comptes || {}) : updater }));
   const fondPension = data.fond_pension || {};
   const setFondPension = (k, v) => setData(p => ({ ...p, fond_pension: { ...(p.fond_pension || {}), [k]: v } }));
 
-  const totalSolde = COMPTES_TYPES.reduce((s, t) => {
-    return s + (comptes[t.key] || []).reduce((ss, c) => ss + (parseFloat(c.solde) || 0), 0);
-  }, 0) + (parseFloat(fondPension.solde) || 0);
-
-  const totalCotisations = COMPTES_TYPES.reduce((s, t) => {
-    return s + (comptes[t.key] || []).reduce((ss, c) => ss + (parseFloat(c.cotisation_mensuelle) || 0), 0);
-  }, 0) + (parseFloat(fondPension.cotisation_salariale) || 0) + (parseFloat(fondPension.cotisation_patronale) || 0);
-
+  const totalSolde = COMPTES_TYPES.reduce((s, t) => s + (comptes[t.key] || []).reduce((ss, c) => ss + (parseFloat(c.solde) || 0), 0), 0) + (parseFloat(fondPension.solde) || 0);
+  const totalCotisations = COMPTES_TYPES.reduce((s, t) => s + (comptes[t.key] || []).reduce((ss, c) => ss + (parseFloat(c.cotisation_mensuelle) || 0), 0), 0) + (parseFloat(fondPension.cotisation_salariale) || 0) + (parseFloat(fondPension.cotisation_patronale) || 0);
   const fmt = (v) => new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v || 0);
 
   return (
     <div className="space-y-6">
-      {/* Objectifs retraite */}
       <div className="rounded-xl p-4" style={{ background: "rgba(201,160,99,0.06)", border: "1px solid rgba(201,160,99,0.15)" }}>
         <p className="text-[12px]" style={{ color: "#C9A063" }}>Ces informations sont essentielles pour calculer votre <strong style={{ color: "#fff" }}>Numéro d'indépendance financière (NIF)</strong> — le capital requis pour ne plus avoir besoin de travailler.</p>
       </div>
@@ -630,9 +575,7 @@ function RetraitePanel({ data, setData, stepData }) {
         </Field>
       </div>
 
-
-
-      <AssistantPrestations data={data} setData={setData} stepData={stepData} />
+      <PrestationsBlock data={data} setData={setData} salaireActuelPanel={salaireActuelPanel} />
 
       <Field label="Souhaitez-vous laisser un héritage ?">
         <RadioGroup value={data.heritage} onChange={f("heritage")} options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]} />
@@ -641,14 +584,12 @@ function RetraitePanel({ data, setData, stepData }) {
         <Field label="Montant d'héritage visé ($)"><Input value={data.montant_heritage} onChange={f("montant_heritage")} type="number" /></Field>
       )}
 
-      {/* Fonds de pension */}
       <div className="space-y-5">
         <p className="text-[14px] font-semibold text-white">
           Fonds de pension (employeur)
           <InfoTooltip explanation="Régime de retraite offert par votre employeur. Deux types : cotisation déterminée (vous connaissez votre contribution) ou prestation déterminée (vous connaissez votre revenu de retraite assuré)." position="right" />
         </p>
 
-        {/* ── EMPLOI ACTUEL ── */}
         <div className="rounded-xl p-4 space-y-4" style={{ background: "rgba(107,140,214,0.04)", border: "1px solid rgba(107,140,214,0.14)" }}>
           <p className="text-[11px] font-bold tracking-wider uppercase" style={{ color: "rgba(107,140,214,0.6)" }}>Emploi actuel</p>
           <Field label="Avez-vous un fonds de pension au travail ?">
@@ -656,13 +597,7 @@ function RetraitePanel({ data, setData, stepData }) {
           </Field>
           <AnimatePresence>
             {data.a_fond_pension === "oui" && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.25 }}
-                className="overflow-hidden"
-              >
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.25 }} className="overflow-hidden">
                 <div className="space-y-4 pt-1">
                   <Field label="Années de service reconnues (emploi actuel)">
                     <Input value={fondPension.annees_service} onChange={v => setFondPension("annees_service", v)} type="number" placeholder="ex: 8" />
@@ -683,110 +618,72 @@ function RetraitePanel({ data, setData, stepData }) {
                     </div>
                   )}
 
-                 {fondPension.type === "prestation_determinee" && (
-  <div className="space-y-4">
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-      <Field label="Prestation mensuelle estimée ($/mois)" hint="Montant indiqué sur votre relevé de régime à ce jour (rente accumulée actuelle).">
-        <Input value={fondPension.prestation_mensuelle} onChange={v => setFondPension("prestation_mensuelle", v)} type="number" />
-      </Field>
-      <Field label="Âge de retraite du régime">
-        <Input value={fondPension.age_retraite_regime} onChange={v => setFondPension("age_retraite_regime", v)} type="number" placeholder="65" />
-      </Field>
-    </div>
+                  {fondPension.type === "prestation_determinee" && (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <Field label="Prestation mensuelle estimée ($/mois)" hint="Montant indiqué sur votre relevé de régime à ce jour (rente accumulée actuelle).">
+                          <Input value={fondPension.prestation_mensuelle} onChange={v => setFondPension("prestation_mensuelle", v)} type="number" />
+                        </Field>
+                        <Field label="Âge de retraite du régime">
+                          <Input value={fondPension.age_retraite_regime} onChange={v => setFondPension("age_retraite_regime", v)} type="number" placeholder="65" />
+                        </Field>
+                      </div>
 
-    {/* Indexation */}
-    <Field label={
-      <span>
-        Cette pension est-elle indexée ?
-        <InfoTooltip
-          explanation="L'indexation protège votre rente contre l'inflation. Non indexée : montant fixe à vie (pouvoir d'achat qui diminue avec le temps). Indexée : augmente chaque année selon une formule — pleine (100 % IPC) ou partielle (ex. RREGOP au secteur public ≈ IPC moins 3 %, plancher 50 %). Vérifiez votre relevé de régime ou demandez à votre employeur."
-          position="right"
-        />
-      </span>
-    }>
-      <RadioGroup
-        value={fondPension.indexee}
-        onChange={v => setFondPension("indexee", v)}
-        options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]}
-      />
-    </Field>
+                      <Field label={
+                        <span>
+                          Cette pension est-elle indexée ?
+                          <InfoTooltip explanation="L'indexation protège votre rente contre l'inflation. Non indexée : montant fixe à vie (pouvoir d'achat qui diminue avec le temps). Indexée : augmente chaque année selon une formule — pleine (100 % IPC) ou partielle (ex. RREGOP au secteur public ≈ IPC moins 3 %, plancher 50 %). Vérifiez votre relevé de régime ou demandez à votre employeur." position="right" />
+                        </span>
+                      }>
+                        <RadioGroup value={fondPension.indexee} onChange={v => setFondPension("indexee", v)} options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]} />
+                      </Field>
 
-    {fondPension.indexee === "oui" && (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <Field label="À quel taux ?">
-          <RadioGroup
-            value={fondPension.indexation_taux}
-            onChange={v => setFondPension("indexation_taux", v)}
-            options={[
-              { value: "plein", label: "Plein IPC" },
-              { value: "75", label: "75 % IPC" },
-              { value: "50", label: "50 % IPC" },
-              { value: "rregop", label: "IPC − 3 % (RREGOP)" },
-            ]}
-          />
-        </Field>
-        <Field label="Indexation avant la retraite ?" hint="La rente accumulée augmente-t-elle d'ici votre retraite, ou reste-t-elle figée jusque-là ?">
-          <RadioGroup
-            value={fondPension.indexation_avant_retraite}
-            onChange={v => setFondPension("indexation_avant_retraite", v)}
-            options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]}
-          />
-        </Field>
-      </div>
-    )}
-  </div>
-)}
+                      {fondPension.indexee === "oui" && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <Field label="À quel taux ?">
+                            <RadioGroup value={fondPension.indexation_taux} onChange={v => setFondPension("indexation_taux", v)} options={[
+                              { value: "plein", label: "Plein IPC" },
+                              { value: "75", label: "75 % IPC" },
+                              { value: "50", label: "50 % IPC" },
+                              { value: "rregop", label: "IPC − 3 % (RREGOP)" },
+                            ]} />
+                          </Field>
+                          <Field label="Indexation avant la retraite ?" hint="La rente accumulée augmente-t-elle d'ici votre retraite, ou reste-t-elle figée jusque-là ?">
+                            <RadioGroup value={fondPension.indexation_avant_retraite} onChange={v => setFondPension("indexation_avant_retraite", v)} options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]} />
+                          </Field>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
 
-        {/* ── EMPLOIS ANTÉRIEURS ── */}
         <div className="rounded-xl p-4 space-y-4" style={{ background: "rgba(201,160,99,0.04)", border: "1px solid rgba(201,160,99,0.14)" }}>
           <p className="text-[11px] font-bold tracking-wider uppercase" style={{ color: "rgba(201,160,99,0.55)" }}>La chasse aux capitaux oubliés — Emplois antérieurs</p>
           <Field label="Avez-vous quitté un ancien employeur au cours de votre carrière avec qui vous aviez un fonds de pension ?">
-            <RadioGroup
-              value={data.a_ancien_employeur}
-              onChange={f("a_ancien_employeur")}
-              options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]}
-            />
+            <RadioGroup value={data.a_ancien_employeur} onChange={f("a_ancien_employeur")} options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]} />
           </Field>
 
           <AnimatePresence>
             {data.a_ancien_employeur === "oui" && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.25 }}
-                className="overflow-hidden"
-              >
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.25 }} className="overflow-hidden">
                 <div className="space-y-4 pt-1">
                   <Field label="Nombre d'années à cet ancien emploi">
                     <Input value={data.annees_ancien_emploi} onChange={f("annees_ancien_emploi")} type="number" placeholder="ex: 5" />
                   </Field>
-
                   <Field label="Y avait-il un fonds de pension ou un REER collectif avec cet employeur ?">
-                    <RadioGroup
-                      value={data.ancien_fond_pension}
-                      onChange={f("ancien_fond_pension")}
-                      options={[
-                        { value: "oui", label: "Oui" },
-                        { value: "non", label: "Non" },
-                        { value: "incertain", label: "Je ne suis pas certain(e)" },
-                      ]}
-                    />
+                    <RadioGroup value={data.ancien_fond_pension} onChange={f("ancien_fond_pension")} options={[
+                      { value: "oui", label: "Oui" },
+                      { value: "non", label: "Non" },
+                      { value: "incertain", label: "Je ne suis pas certain(e)" },
+                    ]} />
                   </Field>
-
                   <AnimatePresence>
                     {(data.ancien_fond_pension === "oui" || data.ancien_fond_pension === "incertain") && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -8 }}
-                        transition={{ duration: 0.2 }}
-                      >
+                      <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
                         <div className="rounded-xl px-4 py-4 flex gap-3" style={{ background: "rgba(201,160,99,0.08)", border: "1px solid rgba(201,160,99,0.35)" }}>
                           <span className="text-[18px] shrink-0 mt-0.5">💡</span>
                           <div>
@@ -806,7 +703,6 @@ function RetraitePanel({ data, setData, stepData }) {
         </div>
       </div>
 
-      {/* Comptes d'épargne */}
       <div>
         <p className="text-[14px] font-semibold text-white mb-1">
           Comptes d'épargne & placements
@@ -814,16 +710,12 @@ function RetraitePanel({ data, setData, stepData }) {
         </p>
         <p className="text-[12px] mb-3" style={{ color: "#94A3B8" }}>Ajoutez un compte par ligne si vous en avez plusieurs du même type.</p>
         <div className="space-y-2">
-          {COMPTES_TYPES.map(t => (
-            <CompteEpargneSection key={t.key} type={t.key} label={t.label} comptes={comptes} setComptes={setComptes} />
-          ))}
+          {COMPTES_TYPES.map(t => <CompteEpargneSection key={t.key} type={t.key} label={t.label} comptes={comptes} setComptes={setComptes} />)}
         </div>
       </div>
 
-      {/* Totaux */}
       {(totalSolde > 0 || totalCotisations > 0) && (
-        <div className="rounded-xl px-5 py-4 grid grid-cols-2 gap-4"
-          style={{ background: "rgba(91,196,160,0.06)", border: "1px solid rgba(91,196,160,0.2)" }}>
+        <div className="rounded-xl px-5 py-4 grid grid-cols-2 gap-4" style={{ background: "rgba(91,196,160,0.06)", border: "1px solid rgba(91,196,160,0.2)" }}>
           <div>
             <p className="text-[11px] mb-1" style={{ color: "#94A3B8" }}>Total épargne accumulée</p>
             <p className="font-financial text-[1.4rem] font-bold" style={{ color: "#5BC4A0" }}>{fmt(totalSolde)}</p>
@@ -849,13 +741,12 @@ function StepRetraite({ data, setData, stepData }) {
   return (
     <div className="space-y-5">
       {enCouple && <PersonTabs activeTab={activeTab} setActiveTab={setActiveTab} nomPrincipal={nomPrincipal} nomConjoint={nomConjoint} />}
-      {(!enCouple || activeTab === "principal") && <RetraitePanel data={data} setData={setData} stepData={stepData} />}
-      {enCouple && activeTab === "conjoint" && <RetraitePanel data={data.conjoint || {}} setData={setConjointData} stepData={stepData} />}
+      {(!enCouple || activeTab === "principal") && <RetraitePanel data={data} setData={setData} stepData={stepData} isPrincipal={true} />}
+      {enCouple && activeTab === "conjoint" && <RetraitePanel data={data.conjoint || {}} setData={setConjointData} stepData={stepData} isPrincipal={false} />}
     </div>
   );
 }
 
-// ── Dettes ───────────────────────────────────────────────────────────────────
 function DettesPanel({ data, setData }) {
   const f = (k) => (v) => setData(p => ({ ...p, [k]: v }));
   const hypotheques = data.hypotheques || [];
@@ -880,9 +771,7 @@ function DettesPanel({ data, setData }) {
             <p className="text-[12px] mt-0.5" style={{ color: "#94A3B8" }}>Résidence principale, chalet, immeuble locatif…</p>
           </div>
           <button onClick={addHypo} className="text-[12px] font-semibold px-3 py-1.5 rounded-lg"
-            style={{ background: "rgba(201,160,99,0.1)", color: "#C9A063", border: "1px solid rgba(201,160,99,0.2)" }}>
-            + Ajouter une hypothèque
-          </button>
+            style={{ background: "rgba(201,160,99,0.1)", color: "#C9A063", border: "1px solid rgba(201,160,99,0.2)" }}>+ Ajouter une hypothèque</button>
         </div>
         <Field label="Détenez-vous au moins une hypothèque ?">
           <RadioGroup value={data.a_hypotheque} onChange={f("a_hypotheque")} options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]} />
@@ -891,9 +780,7 @@ function DettesPanel({ data, setData }) {
           <div className="space-y-4 mt-4">
             {hypotheques.length === 0 && (
               <button onClick={addHypo} className="w-full py-3 rounded-xl text-[13px] font-medium transition-all"
-                style={{ border: "1px dashed rgba(201,160,99,0.3)", color: "#C9A063" }}>
-                + Ajouter ma première hypothèque
-              </button>
+                style={{ border: "1px dashed rgba(201,160,99,0.3)", color: "#C9A063" }}>+ Ajouter ma première hypothèque</button>
             )}
             {hypotheques.map((h, i) => (
               <div key={i} className="rounded-xl p-5 relative" style={{ background: "rgba(201,160,99,0.04)", border: "1px solid rgba(201,160,99,0.15)" }}>
@@ -926,11 +813,8 @@ function DettesPanel({ data, setData }) {
                   <Field label="Paiement mensuel ($)"><Input type="number" value={h.paiement_mensuel} onChange={v => updateHypo(i, "paiement_mensuel", v)} placeholder="1 850" /></Field>
                 </div>
                 {h.solde && (h.valeur_marchande || h.prix_achat) && (
-                  <div className="mt-4 rounded-lg px-4 py-2.5 flex items-center justify-between"
-                    style={{ background: "rgba(201,160,99,0.06)", border: "1px solid rgba(201,160,99,0.12)" }}>
-                    <span className="text-[12px]" style={{ color: "#94A3B8" }}>
-                      Équité estimée {h.valeur_marchande ? "(valeur marchande)" : "(prix d'achat)"}
-                    </span>
+                  <div className="mt-4 rounded-lg px-4 py-2.5 flex items-center justify-between" style={{ background: "rgba(201,160,99,0.06)", border: "1px solid rgba(201,160,99,0.12)" }}>
+                    <span className="text-[12px]" style={{ color: "#94A3B8" }}>Équité estimée {h.valeur_marchande ? "(valeur marchande)" : "(prix d'achat)"}</span>
                     <span className="font-financial text-[14px] font-bold" style={{ color: "#C9A063" }}>
                       {new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format((parseFloat(h.valeur_marchande) || parseFloat(h.prix_achat) || 0) - (parseFloat(h.solde) || 0))}
                     </span>
@@ -966,7 +850,6 @@ function DettesPanel({ data, setData }) {
           </div>
         )}
       </div>
-      {/* PENSION ALIMENTAIRE */}
       <div className="rounded-xl p-4 space-y-4" style={{ background: "rgba(245,158,11,0.04)", border: "1px solid rgba(245,158,11,0.15)" }}>
         <p className="text-[14px] font-semibold text-white">Pension alimentaire</p>
         <Field label="Payez-vous une pension alimentaire ?">
@@ -980,8 +863,7 @@ function DettesPanel({ data, setData }) {
       </div>
 
       {totalDettes > 0 && (
-        <div className="rounded-xl px-5 py-4 flex items-center justify-between"
-          style={{ background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.15)" }}>
+        <div className="rounded-xl px-5 py-4 flex items-center justify-between" style={{ background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.15)" }}>
           <p className="text-[13px] font-semibold" style={{ color: "#fca5a5" }}>Total des passifs</p>
           <p className="font-financial text-[1.4rem] font-bold" style={{ color: "#f87171" }}>
             {new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(totalDettes)}
@@ -1009,7 +891,6 @@ function StepDettes({ data, setData, stepData }) {
   );
 }
 
-// ── Assurance ─────────────────────────────────────────────────────────────────
 function AssurancePanel({ data, setData }) {
   const f = (k) => (v) => setData(p => ({ ...p, [k]: v }));
   return (
@@ -1068,59 +949,32 @@ function StepAssurance({ data, setData, stepData }) {
 
 function StepEtudes({ data, setData, stepData }) {
   const f = (k) => (v) => setData(p => ({ ...p, [k]: v }));
-
-  // Pré-remplir depuis les enfants saisis à l'étape Allocations
   const enfantsAlloc = (stepData?.allocations?.enfants || []).filter(e => {
     if (!e.date_naissance) return false;
     const age = (new Date() - new Date(e.date_naissance)) / (365.25 * 24 * 3600 * 1000);
     return age < 18;
   });
-
-  // REEE saisis dans l'étape Épargne (retraite.comptes.reee)
-  // On combine les REEE de tous les panels (principal + conjoint si couple)
-  const reeeEpargne = [
-    ...((stepData?.retraite?.comptes?.reee) || []),
-    ...((stepData?.retraite?.conjoint?.comptes?.reee) || []),
-  ];
+  const reeeEpargne = [...((stepData?.retraite?.comptes?.reee) || []), ...((stepData?.retraite?.conjoint?.comptes?.reee) || [])];
 
   const enfants = (() => {
     const existants = data.enfants || [];
-
-    // Si des enfants existent déjà dans Étude, on complète les champs REEE manquants
-    // depuis l'étape Épargne (par position : REEE[0] → enfant[0], etc.)
     if (existants.length > 0) {
       return existants.map((e, i) => {
         const reee = reeeEpargne[i];
         if (!reee) return e;
-        return {
-          ...e,
-          reee_solde: e.reee_solde || reee.solde || "",
-          reee_cotisation_mensuelle: e.reee_cotisation_mensuelle || reee.cotisation_mensuelle || "",
-          institution: e.institution || reee.institution || "",
-        };
+        return { ...e, reee_solde: e.reee_solde || reee.solde || "", reee_cotisation_mensuelle: e.reee_cotisation_mensuelle || reee.cotisation_mensuelle || "", institution: e.institution || reee.institution || "" };
       });
     }
-
-    // Aucun enfant dans Étude → pré-remplir depuis Allocations
     if (enfantsAlloc.length === 0) return [];
     return enfantsAlloc.map((e, i) => {
       const reee = reeeEpargne[i];
-      return {
-        prenom: e.prenom || "",
-        date_naissance: e.date_naissance || "",
-        reee_solde: reee?.solde || "",
-        reee_cotisation_mensuelle: reee?.cotisation_mensuelle || "",
-        institution: reee?.institution || "",
-        age_debut_etudes: "18",
-        type_reee: "individuel",
-      };
+      return { prenom: e.prenom || "", date_naissance: e.date_naissance || "", reee_solde: reee?.solde || "", reee_cotisation_mensuelle: reee?.cotisation_mensuelle || "", institution: reee?.institution || "", age_debut_etudes: "18", type_reee: "individuel" };
     });
   })();
 
   const updateEnfant = (i, k, v) => setData(p => ({ ...p, enfants: enfants.map((e, idx) => idx === i ? { ...e, [k]: v } : e) }));
   const addEnfant = () => setData(p => ({ ...p, enfants: [...enfants, { prenom: "", date_naissance: "", reee_solde: "", reee_cotisation_mensuelle: "", age_debut_etudes: "18", type_reee: "individuel" }] }));
   const removeEnfant = (i) => setData(p => ({ ...p, enfants: enfants.filter((_, idx) => idx !== i) }));
-
   const totalReee = enfants.reduce((s, e) => s + (parseFloat(e.reee_solde) || 0), 0);
   const totalCotisations = enfants.reduce((s, e) => s + (parseFloat(e.reee_cotisation_mensuelle) || 0), 0);
 
@@ -1134,7 +988,6 @@ function StepEtudes({ data, setData, stepData }) {
         ]} />
       </Field>
 
-      {/* Info box */}
       <div className="rounded-xl p-4 text-[12px] leading-relaxed" style={{ background: "rgba(201,160,99,0.06)", border: "1px solid rgba(201,160,99,0.15)", color: "#94A3B8" }}>
         <p className="font-semibold mb-1" style={{ color: "#C9A063" }}>💡 REEE — Subventions gouvernementales</p>
         <p>• <strong style={{ color: "#fff" }}>SCEE fédérale :</strong> 20% des cotisations, max 500$/an par enfant (plafond à vie : 7 200$)</p>
@@ -1142,21 +995,16 @@ function StepEtudes({ data, setData, stepData }) {
         <p>• Cotisation annuelle max pour SCEE : 2 500$/enfant</p>
       </div>
 
-      {/* Enfants */}
       <div>
         <div className="flex items-center justify-between mb-3">
           <p className="text-[14px] font-semibold text-white">Enfants</p>
           <button onClick={addEnfant} className="text-[12px] font-semibold px-3 py-1.5 rounded-lg"
-            style={{ background: "rgba(201,160,99,0.1)", color: "#C9A063", border: "1px solid rgba(201,160,99,0.2)" }}>
-            + Ajouter un enfant
-          </button>
+            style={{ background: "rgba(201,160,99,0.1)", color: "#C9A063", border: "1px solid rgba(201,160,99,0.2)" }}>+ Ajouter un enfant</button>
         </div>
 
         {enfants.length === 0 && (
           <button onClick={addEnfant} className="w-full py-3 rounded-xl text-[13px] font-medium"
-            style={{ border: "1px dashed rgba(201,160,99,0.3)", color: "#C9A063" }}>
-            + Ajouter mon premier enfant
-          </button>
+            style={{ border: "1px dashed rgba(201,160,99,0.3)", color: "#C9A063" }}>+ Ajouter mon premier enfant</button>
         )}
 
         <div className="space-y-4">
@@ -1168,45 +1016,31 @@ function StepEtudes({ data, setData, stepData }) {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Field label="Prénom">
-                  <Input value={e.prenom} onChange={v => updateEnfant(i, "prenom", v)} placeholder="ex: Emma" />
-                </Field>
-                <Field label="Date de naissance">
-                  <Input type="date" value={e.date_naissance} onChange={v => updateEnfant(i, "date_naissance", v)} />
-                </Field>
+                <Field label="Prénom"><Input value={e.prenom} onChange={v => updateEnfant(i, "prenom", v)} placeholder="ex: Emma" /></Field>
+                <Field label="Date de naissance"><Input type="date" value={e.date_naissance} onChange={v => updateEnfant(i, "date_naissance", v)} /></Field>
                 <Field label="Type de REEE">
                   <RadioGroup value={e.type_reee} onChange={v => updateEnfant(i, "type_reee", v)} options={[
                     { value: "individuel", label: "Individuel" },
                     { value: "familial", label: "Familial" },
                   ]} />
                 </Field>
-                <Field label="Âge prévu début des études">
-                  <Input type="number" value={e.age_debut_etudes} onChange={v => updateEnfant(i, "age_debut_etudes", v)} placeholder="18" />
-                </Field>
-                <Field label="Solde REEE actuel ($)">
-                  <Input type="number" value={e.reee_solde} onChange={v => updateEnfant(i, "reee_solde", v)} placeholder="0" />
-                </Field>
+                <Field label="Âge prévu début des études"><Input type="number" value={e.age_debut_etudes} onChange={v => updateEnfant(i, "age_debut_etudes", v)} placeholder="18" /></Field>
+                <Field label="Solde REEE actuel ($)"><Input type="number" value={e.reee_solde} onChange={v => updateEnfant(i, "reee_solde", v)} placeholder="0" /></Field>
                 <Field label="Cotisation mensuelle ($)" hint="Idéal : 208$/mois = 2 500$/an pour la SCEE max">
                   <Input type="number" value={e.reee_cotisation_mensuelle} onChange={v => updateEnfant(i, "reee_cotisation_mensuelle", v)} placeholder="208" />
                 </Field>
-                <Field label="Institution financière">
-                  <Input value={e.institution} onChange={v => updateEnfant(i, "institution", v)} placeholder="ex: Desjardins, Fidelity..." />
-                </Field>
+                <Field label="Institution financière"><Input value={e.institution} onChange={v => updateEnfant(i, "institution", v)} placeholder="ex: Desjardins, Fidelity..." /></Field>
                 <Field label="Bénéficiaire du régime déjà ouvert ?">
-                  <RadioGroup value={e.regime_ouvert} onChange={v => updateEnfant(i, "regime_ouvert", v)} options={[
-                    { value: "oui", label: "Oui" },
-                    { value: "non", label: "Non" },
-                  ]} />
+                  <RadioGroup value={e.regime_ouvert} onChange={v => updateEnfant(i, "regime_ouvert", v)} options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]} />
                 </Field>
               </div>
 
-              {/* Mini calc */}
               {e.date_naissance && e.reee_cotisation_mensuelle && (
                 (() => {
                   const ageActuel = Math.floor((new Date() - new Date(e.date_naissance)) / (365.25 * 24 * 3600 * 1000));
                   const annesRestantes = Math.max(0, (parseInt(e.age_debut_etudes) || 18) - ageActuel);
                   const totalCot = (parseFloat(e.reee_cotisation_mensuelle) || 0) * 12 * annesRestantes;
-                  const subventions = Math.min(totalCot * 0.30, 7200 + 3600); // SCEE + IQEE approx
+                  const subventions = Math.min(totalCot * 0.30, 7200 + 3600);
                   return (
                     <div className="mt-4 grid grid-cols-3 gap-3">
                       {[
@@ -1228,10 +1062,8 @@ function StepEtudes({ data, setData, stepData }) {
         </div>
       </div>
 
-      {/* Total */}
       {enfants.length > 0 && (
-        <div className="rounded-xl px-5 py-4 grid grid-cols-2 gap-4"
-          style={{ background: "rgba(201,160,99,0.07)", border: "1px solid rgba(201,160,99,0.2)" }}>
+        <div className="rounded-xl px-5 py-4 grid grid-cols-2 gap-4" style={{ background: "rgba(201,160,99,0.07)", border: "1px solid rgba(201,160,99,0.2)" }}>
           <div>
             <p className="text-[11px] mb-1" style={{ color: "#94A3B8" }}>Total REEE épargné</p>
             <p className="font-financial text-[1.3rem] font-bold" style={{ color: "#C9A063" }}>
@@ -1253,7 +1085,6 @@ function StepEtudes({ data, setData, stepData }) {
 function StepObjectifs({ data, setData }) {
   const f = (k) => (v) => setData(p => ({ ...p, [k]: v }));
   const [objectifs, setObjectifs] = useState(data.objectifs || [{ nom: "", montant: "", delai: "" }]);
-
   const updateObj = (i, k, v) => {
     const n = objectifs.map((o, idx) => idx === i ? { ...o, [k]: v } : o);
     setObjectifs(n); setData(p => ({ ...p, objectifs: n }));
@@ -1336,14 +1167,13 @@ export default function FinancialAnalysis() {
   const [completedSteps, setCompletedSteps] = useState(new Set());
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [autoSaveStatus, setAutoSaveStatus] = useState('idle'); // 'idle' | 'saving' | 'saved'
+  const [autoSaveStatus, setAutoSaveStatus] = useState('idle');
 
   const step = STEPS[currentStep];
   const StepComponent = STEP_COMPONENTS[step.key];
   const data = stepData[step.key] || {};
   const setData = (updater) => setStepData(prev => ({ ...prev, [step.key]: typeof updater === "function" ? updater(prev[step.key] || {}) : updater }));
 
-  // Autosave — déclenché 1.5s après le dernier changement de données
   useEffect(() => {
     if (!stepData[step.key] || Object.keys(stepData[step.key]).length === 0) return;
     setAutoSaveStatus('saving');
@@ -1351,16 +1181,9 @@ export default function FinancialAnalysis() {
       try {
         const existing = await base44.entities.FinancialProfile.filter({ section: step.key });
         if (existing.length > 0) {
-          await base44.entities.FinancialProfile.update(existing[0].id, {
-            data: stepData[step.key] || {},
-            completed: completedSteps.has(step.key)
-          });
+          await base44.entities.FinancialProfile.update(existing[0].id, { data: stepData[step.key] || {}, completed: completedSteps.has(step.key) });
         } else {
-          await base44.entities.FinancialProfile.create({
-            section: step.key,
-            data: stepData[step.key] || {},
-            completed: false
-          });
+          await base44.entities.FinancialProfile.create({ section: step.key, data: stepData[step.key] || {}, completed: false });
         }
         setAutoSaveStatus('saved');
         setTimeout(() => setAutoSaveStatus('idle'), 2000);
@@ -1388,28 +1211,19 @@ export default function FinancialAnalysis() {
     }
   };
 
-  // Désimbrique récursivement { data: { data: {...} } } jusqu'aux vraies données
   const unwrapData = (raw) => {
     if (!raw || typeof raw !== "object" || Array.isArray(raw)) return raw || {};
-    const hasBusinessFields = raw.emplois || raw.hypotheques || raw.dettes || raw.comptes ||
-      raw.montant_fonds || raw.nom || raw.enfants || raw.a_hypotheque || raw.a_dettes ||
-      raw.a_fonds || raw.a_objectifs || raw.objectifs || raw.a_assurance_vie;
+    const hasBusinessFields = raw.emplois || raw.hypotheques || raw.dettes || raw.comptes || raw.montant_fonds || raw.nom || raw.enfants || raw.a_hypotheque || raw.a_dettes || raw.a_fonds || raw.a_objectifs || raw.objectifs || raw.a_assurance_vie;
     if (hasBusinessFields) return raw;
-    if (raw.data && typeof raw.data === "object" && !Array.isArray(raw.data)) {
-      return unwrapData(raw.data);
-    }
+    if (raw.data && typeof raw.data === "object" && !Array.isArray(raw.data)) return unwrapData(raw.data);
     return raw;
   };
 
   useEffect(() => {
-    Promise.all([
-      base44.entities.FinancialProfile.list(),
-      base44.entities.BudgetEntry.list(),
-    ]).then(([profiles, budgetEntries]) => {
+    Promise.all([base44.entities.FinancialProfile.list(), base44.entities.BudgetEntry.list()]).then(([profiles, budgetEntries]) => {
       const map = {};
       const done = new Set();
       profiles.forEach(p => { map[p.section] = unwrapData(p.data); if (p.completed) done.add(p.section); });
-      // Marquer budget comme complété si des entrées existent
       if (budgetEntries.length > 0) done.add("budget");
       setStepData(map);
       setCompletedSteps(done);
@@ -1425,10 +1239,7 @@ export default function FinancialAnalysis() {
           </div>
           <h2 className="font-urbanist text-[2rem] font-bold text-white mb-3">Analyse complétée !</h2>
           <p className="text-[14px] font-light mb-8" style={{ color: "#94A3B8" }}>Votre analyse de besoins financiers a été sauvegardée. Consultez votre tableau de bord pour voir votre synthèse.</p>
-          <button onClick={() => { setCurrentStep(0); setSaved(false); }}
-            className="px-8 py-3 rounded-xl font-semibold text-[14px]" style={{ background: "#C9A063", color: "#050810" }}>
-            Revoir / Modifier
-          </button>
+          <button onClick={() => { setCurrentStep(0); setSaved(false); }} className="px-8 py-3 rounded-xl font-semibold text-[14px]" style={{ background: "#C9A063", color: "#050810" }}>Revoir / Modifier</button>
         </div>
       </div>
     );
@@ -1437,14 +1248,12 @@ export default function FinancialAnalysis() {
   return (
     <div style={{ background: "#050810", minHeight: "100vh" }}>
       <div className="max-w-4xl mx-auto px-6 lg:px-10 py-14 md:py-20">
-        {/* Header */}
         <div className="mb-10">
           <p className="text-[11px] font-semibold tracking-[0.14em] uppercase mb-2" style={{ color: "rgba(201,160,99,0.6)" }}>Confidentiel · Personnalisé · Gratuit</p>
           <h1 className="font-urbanist text-[2.25rem] font-bold text-white tracking-tight">Analyse de besoins financiers</h1>
           <p className="text-[14px] font-light mt-2" style={{ color: "#94A3B8" }}>Protection adéquate, libération des dettes, indépendance financière.</p>
         </div>
 
-        {/* Progress steps */}
         <div className="flex items-center gap-1 mb-10 overflow-x-auto pb-2">
           {STEPS.map((s, i) => {
             const Icon = s.icon;
@@ -1452,8 +1261,7 @@ export default function FinancialAnalysis() {
             const isDone = completedSteps.has(s.key);
             return (
               <React.Fragment key={s.key}>
-                <button onClick={() => setCurrentStep(i)}
-                  className="flex flex-col items-center gap-1.5 px-3 py-2 rounded-xl transition-all shrink-0"
+                <button onClick={() => setCurrentStep(i)} className="flex flex-col items-center gap-1.5 px-3 py-2 rounded-xl transition-all shrink-0"
                   style={isActive ? { background: "rgba(201,160,99,0.12)", border: "1px solid rgba(201,160,99,0.3)" } : { background: "transparent" }}>
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center"
                     style={{ background: isDone ? "rgba(91,196,160,0.15)" : isActive ? "rgba(201,160,99,0.2)" : "rgba(255,255,255,0.05)" }}>
@@ -1467,7 +1275,6 @@ export default function FinancialAnalysis() {
           })}
         </div>
 
-        {/* Step card */}
         <AnimatePresence mode="wait">
           <motion.div key={step.key} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }}>
             <div className="rounded-2xl overflow-hidden" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)" }}>
@@ -1482,9 +1289,7 @@ export default function FinancialAnalysis() {
                     </span>
                   )}
                   {autoSaveStatus === 'saved' && (
-                    <span style={{ fontSize:11, color:"rgba(91,196,160,0.7)", display:"flex", alignItems:"center", gap:4 }}>
-                      ✓ Sauvegardé
-                    </span>
+                    <span style={{ fontSize:11, color:"rgba(91,196,160,0.7)", display:"flex", alignItems:"center", gap:4 }}>✓ Sauvegardé</span>
                   )}
                   <span className="text-[12px]" style={{ color: "#94A3B8" }}>{currentStep + 1} / {STEPS.length}</span>
                 </span>
@@ -1493,9 +1298,7 @@ export default function FinancialAnalysis() {
                 <StepComponent data={data} setData={setData} stepData={stepData} />
               </div>
               <div className="px-8 py-5 flex justify-between" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                <button
-                  onClick={() => setCurrentStep(c => Math.max(0, c - 1))}
-                  disabled={currentStep === 0}
+                <button onClick={() => setCurrentStep(c => Math.max(0, c - 1))} disabled={currentStep === 0}
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-medium transition-all disabled:opacity-30"
                   style={{ border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.7)" }}>
                   <ChevronLeft className="w-4 h-4" /> Précédent
