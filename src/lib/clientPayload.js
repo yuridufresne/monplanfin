@@ -96,27 +96,46 @@ function calculPSV({ anneesResidence, ageDebut }) {
   const f = 1 + (ageEff - 65) * 12 * IQPF.PSV_REPORT_MOIS;
   return { psvBrute65, renteAjustee: psvBrute65 * f };
 }
-function readPersonne(ret = {}, profil = {}) {
+function readPersonne(ret = {}, profil = {}, salaireAnnuel = 0) {
   const ep = readEpargne(ret.comptes);
-  // BUG #1 fix — RRQ stockée en $/mois dans l'ABF → convertir en $/an
-  const rrqMensuel = parseFloat(ret.rrq) || 0;
-  const rrqBrut = rrqMensuel * 12;
-  const ageDeb = parseInt(ret.age_debut_rrq) || 65;
-  let fRRQ = 1;
-  if (ageDeb < 65) fRRQ = Math.max(0.64, 1 - (65 - ageDeb) * 12 * 0.006);
-  if (ageDeb > 65) fRRQ = 1 + Math.min((ageDeb - 65) * 12, 60) * 0.007;
+  const ageActuel = calcAge(profil.date_naissance || profil.dob);
+  const ageRetraite = parseInt(ret.age_retraite) || 65;
+  const ageDebutRRQ = parseInt(ret.age_debut_rrq) || ageRetraite || 65;
+  const ageDebutPSV = parseInt(ret.age_debut_psv) || ageRetraite || 65;
+
+  // ── RRQ : mode "specifier" (montant manuel) ou "estimer" (auto-calc) ──
+  let rrqAnnuel65, rrqAnnuelAjuste;
+  if (String(ret.rrq_mode || '').toLowerCase() === 'specifier') {
+    rrqAnnuel65 = (parseFloat(ret.rrq) || 0) * 12;
+    let f = 1;
+    if (ageDebutRRQ < 65) f = Math.max(0.64, 1 - Math.min((65 - ageDebutRRQ) * 12, 60) * IQPF.RRQ_RED_AVANT);
+    else if (ageDebutRRQ > 65) f = 1 + Math.min((ageDebutRRQ - 65) * 12, 84) * IQPF.RRQ_BONIF_APRES;
+    rrqAnnuelAjuste = rrqAnnuel65 * f;
+  } else {
+    const salaireMoyen = parseFloat(ret.salaire_moyen_carriere) || salaireAnnuel || 0;
+    const anneesDefaut = Math.max(0, Math.min(40, ageRetraite - 25));
+    const anneesCotisation = parseInt(ret.annees_cotisation_rrq) || anneesDefaut;
+    const r = calculRRQ({ salaireMoyen, anneesCotisation, ageDebut: ageDebutRRQ });
+    rrqAnnuel65 = r.renteBrute65;
+    rrqAnnuelAjuste = r.renteAjustee;
+  }
+
+  // ── PSV : par années de résidence Canada (après 18 ans) + âge début ──
+  const anneesResidenceDefaut = String(ret.sv_canada_continu || '').toLowerCase() === 'oui'
+    ? Math.max(0, Math.min(40, ageRetraite - 18))
+    : 0;
+  const anneesResidence = parseFloat(ret.annees_residence_canada) || anneesResidenceDefaut;
+  const psv = calculPSV({ anneesResidence, ageDebut: ageDebutPSV });
+
   return {
     prenom: profil.prenom || profil.nom?.split(' ')[0] || 'Client',
-    age: calcAge(profil.date_naissance || profil.dob),
-    ageRetraite: parseInt(ret.age_retraite) || 65,
-    rrqBase: rrqBrut, rrqAjuste: Math.round(rrqBrut * fRRQ), ageDebutRRQ: ageDeb,
-    // PSV — ajustement selon âge de début (0,6%/mois avant/après 65 ans)
-    ...(() => {
-      const svMensuelBase = parseFloat(ret.sv) || IQPF.PSV_MENSUEL;
-      const ageDebutPSV   = parseInt(ret.age_debut_psv) || parseInt(ret.age_retraite) || 65;
-      const svMensuelAdj  = adjPSV(svMensuelBase, ageDebutPSV);
-      return { sv: svMensuelAdj * 12, svBase: svMensuelBase * 12, ageDebutPSV };
-    })(),
+    age: ageActuel,
+    ageRetraite,
+    rrqBase: Math.round(rrqAnnuel65),                                  // valeur à 65 ans (pour le moteur)
+    rrqAjuste: Math.round(rrqAnnuelAjuste),                            // valeur avec ajustement âge
+    ageDebutRRQ,
+    sv: Math.round(psv.renteAjustee), svBase: Math.round(psv.psvBrute65), ageDebutPSV,
+    anneesResidence,
     pensionPD: (parseFloat((ret.fond_pension || {}).prestation_mensuelle ?? (ret.fond_pension || {}).rente_mensuelle_estimee) || 0) * 12,
     pensionIndexee: (ret.fond_pension || {}).indexee !== false,
     salaire: 0,
