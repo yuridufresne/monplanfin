@@ -93,7 +93,10 @@ function simuler(cfg, strat) {
       let rrq = 0;
       if (p.ageC >= ageRRQ) { if (p.rrqDeb === null) p.rrqDeb = annee; rrq = rrqAj(p.renteRRQ65, ageRRQ, annee, p.rrqDeb, inf); }
       const psv = psvM(p.ageC, agePSV, annee, inf);
-      const pens = (retraite && p.pension > 0) ? p.pension * f : 0;
+      // Pension PD : indexée à son taux propre depuis la retraite (p.pension = valeur À LA RETRAITE)
+      const yrsRet = Math.max(0, p.ageC - p.ageRetraite);
+      const fPens = Math.pow(1 + (p.tauxIdxPension ?? inf), yrsRet);
+      const pens = (retraite && p.pension > 0) ? p.pension * fPens : 0;
       let ferrMin = 0;
       if (p.ageC >= 72 && p.ferr > 0) ferrMin = Math.min(p.ferr, p.ferr * facteurFerr(p.ageC));
       return { p, retraite, sal, rrq, psv, pens, ferrMin, ferrAdd: 0, celiRet: 0 };
