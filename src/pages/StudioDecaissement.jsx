@@ -81,13 +81,11 @@ export default function StudioDecaissement({ embedded = false, profiles: profile
   }), [dAgeA, dAgeB, dRetA, dRetB, dReerA, dCeliA, dReerB, dCeliB, dCotReerA, dCotCeliA, dCotReerB, dCotCeliB, rendAcc, enCouple]);
 
   // ── Calcul des 3 stratégies (sur les soldes PROJETÉS à la retraite) ──────────
-  // ── Décalage d'âge : la simulation commence à la PREMIÈRE retraite du foyer ──
-  // Si Marie (36) et Jean (38) retraite tous deux à 65 → Jean retraite en 1er (2053),
-  // Marie continue à travailler 2 ans, retraite en 2055.
-  const gapPremiere = enCouple
-    ? Math.min(Math.max(0, dRetA - dAgeA), Math.max(0, dRetB - dAgeB))
-    : Math.max(0, dRetA - dAgeA);
-  const ageInitA = dAgeA + gapPremiere;
+  // Alignement avec le reste du système (dashboard NIF) : la simulation démarre
+  // à l'âge de retraite du conjoint A (Jean). Si Marie est plus jeune, elle a
+  // simplement l'âge correspondant à ce moment-là.
+  const gapPremiere = Math.max(0, dRetA - dAgeA);
+  const ageInitA = dRetA;
   const ageInitB = enCouple ? dAgeB + gapPremiere : null;
 
   const { resultats, recommandee } = useMemo(() => comparerStrategies({
