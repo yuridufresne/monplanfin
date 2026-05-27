@@ -89,7 +89,7 @@ function readPersonne(ret = {}, profil = {}) {
       const svMensuelAdj  = adjPSV(svMensuelBase, ageDebutPSV);
       return { sv: svMensuelAdj * 12, svBase: svMensuelBase * 12, ageDebutPSV };
     })(),
-    pensionPD: (parseFloat((ret.fond_pension || {}).rente_mensuelle_estimee) || 0) * 12,
+    pensionPD: (parseFloat((ret.fond_pension || {}).prestation_mensuelle ?? (ret.fond_pension || {}).rente_mensuelle_estimee) || 0) * 12,
     pensionIndexee: (ret.fond_pension || {}).indexee !== false,
     salaire: 0,
     esperanceVie: parseInt(ret.esperance_vie) || IQPF.ESP_VIE,
