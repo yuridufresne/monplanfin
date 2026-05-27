@@ -109,6 +109,9 @@ export default function NIFCalculator({ profiles }) {
         <Lbl indent>RRQ indexé</Lbl><Num color={C.vert}>{fmt(gar?.rrq_a_idx)}</Num>
         <Lbl indent>SV</Lbl><Num>{fmt(gar?.sv_a)}</Num>
         <Lbl indent>SV indexée</Lbl><Num color={C.vert}>{fmt(gar?.sv_a_idx)}</Num>
+        {gar?.clawback_a_idx > 0 && <>
+          <Lbl indent>Récupération PSV (clawback)</Lbl><Num color={C.rouge}>−{fmt(gar?.clawback_a_idx)}</Num>
+        </>}
         {gar?.pension_a > 0 && <>
           <Lbl indent>Pension (PD)</Lbl><Num>{fmt(gar?.pension_a)}</Num>
 <Lbl indent>Pension (PD) indexée</Lbl><Num color={C.vert}>{fmt(gar?.pension_a_idx)}</Num>        </>}
