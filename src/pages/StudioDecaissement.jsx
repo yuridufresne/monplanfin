@@ -96,11 +96,13 @@ export default function StudioDecaissement({ embedded = false, profiles: profile
       { nom: prenomA, ageInitial: ageInitA, ageRetraite: dRetA, renteRRQ65: dRrqA, soldeReer: projete.reerA, soldeCeli: projete.celiA,
         salaire: pA?.salaire || 0,
         pension: payload.revenus_garantis?.pension_a_idx || 0,
-        tauxIdxPension: payload.revenus_garantis?.taux_indexation_pension_a ?? inf },
+        tauxIdxPension: payload.revenus_garantis?.taux_indexation_pension_a ?? inf,
+        celiRoomDispo: pA?.celiRoomDispo || 0 },
       ...(enCouple ? [{ nom: prenomB, ageInitial: ageInitB, ageRetraite: dRetB, renteRRQ65: dRrqB, soldeReer: projete.reerB, soldeCeli: projete.celiB,
         salaire: pB?.salaire || 0,
         pension: payload.revenus_garantis?.pension_b_idx || 0,
-        tauxIdxPension: payload.revenus_garantis?.taux_indexation_pension_b ?? inf }] : []),
+        tauxIdxPension: payload.revenus_garantis?.taux_indexation_pension_b ?? inf,
+        celiRoomDispo: pB?.celiRoomDispo || 0 }] : []),
     ],
   }), [cible, rend, inf, esp, prenomA, prenomB, dRetA, dRetB, dAgeA, dAgeB, dRrqA, dRrqB, projete, enCouple, pA, pB, gapPremiere, ageInitA, ageInitB]);
 
