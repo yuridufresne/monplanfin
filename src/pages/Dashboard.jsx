@@ -331,7 +331,7 @@ export default function Dashboard() {
             </motion.div>
 
             {/* ── ZONE 2 — NIF + Protection ───────────────────────────── */}
-            <div className="grid gap-4 mb-5" style={{ gridTemplateColumns: nifFlipped ? "1fr" : "repeat(5, 1fr)" }}>
+            <div className="grid gap-4 mb-5" style={{ position: nifFlipped ? "fixed" : "relative", inset: nifFlipped ? 0 : "auto", zIndex: nifFlipped ? 50 : 1, background: nifFlipped ? "#050810" : "transparent", padding: nifFlipped ? "2rem 1rem" : "0", overflow: nifFlipped ? "auto" : "visible", gridTemplateColumns: nifFlipped ? "1fr" : "repeat(5, 1fr)", height: nifFlipped ? "100vh" : "auto" }}>
 
               {/* NIF — 3 cols */}
               <motion.div {...fadeUp(0.1)} style={{ gridColumn: nifFlipped ? "span 1 / -1" : "span 3 / span 3" }}>
