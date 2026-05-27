@@ -65,7 +65,7 @@ export default function StudioDecaissement({ embedded = false, profiles: profile
   const [cible, setCible]   = useState(dCible);
   const [rend, setRend]     = useState(0.045);   // rendement en DÉCAISSEMENT (prudent)
   const [rendAcc, setRendAcc] = useState(0.05);  // rendement en ACCUMULATION (avant retraite)
-  const [inf, setInf]       = useState(0.021);
+  const [inf, setInf]       = useState(0.023);
   const [esp, setEsp]       = useState(dEsp);
   const [tabStrat, setTabStrat] = useState(null);
 
@@ -164,7 +164,7 @@ export default function StudioDecaissement({ embedded = false, profiles: profile
             </select></div>
           <div><div style={S.label}>Inflation</div>
             <select value={inf} onChange={e => setInf(+e.target.value)} style={S.select}>
-              {[0.021, 0.025, 0.03].map(v => <option key={v} value={v} style={{ background: "#0D1628" }}>{(v * 100).toFixed(1).replace(".", ",")} %{v === 0.021 ? " (IQPF)" : ""}</option>)}
+              {[0.021, 0.023, 0.025, 0.03].map(v => <option key={v} value={v} style={{ background: "#0D1628" }}>{(v * 100).toFixed(1).replace(".", ",")} %{v === 0.023 ? " (système)" : v === 0.021 ? " (IQPF)" : ""}</option>)}
             </select></div>
           <div><div style={S.label}>Espérance de vie</div>
             <select value={esp} onChange={e => setEsp(+e.target.value)} style={S.select}>
