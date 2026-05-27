@@ -110,12 +110,14 @@ function facteurFerr(age) {
 }
 
 // ── Valeur future avec cotisations mensuelles ─────────────────────────────────
-function fv(solde, cotAnnuelle, rendement, annees) {
+// cotMensuelle est en $/mois (aligné avec buildPayload : cotReer, cotCeli viennent
+// directement de comptes.*.cotisation_mensuelle).
+function fv(solde, cotMensuelle, rendement, annees) {
   if (annees <= 0) return solde;
-  const rM = rendement / 12, nM = annees * 12, cM = cotAnnuelle / 12;
+  const rM = rendement / 12, nM = annees * 12;
   return rM > 0
-    ? solde * Math.pow(1 + rM, nM) + cM * (Math.pow(1 + rM, nM) - 1) / rM
-    : solde + cM * nM;
+    ? solde * Math.pow(1 + rM, nM) + cotMensuelle * (Math.pow(1 + rM, nM) - 1) / rM
+    : solde + cotMensuelle * nM;
 }
 
 /**
