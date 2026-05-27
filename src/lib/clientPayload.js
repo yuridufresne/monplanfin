@@ -150,6 +150,7 @@ function readPersonne(ret = {}, profil = {}, salaireAnnuel = 0) {
     svBase: Math.round(psv.psvBrute65),
     ageDebutPSV,
     anneesResidence,
+    celiRoomDispo: calculDroitsCELI(profil.date_naissance || profil.dob, ep.soldeCeli, 2026),
     pensionPD: (parseFloat((ret.fond_pension || {}).prestation_mensuelle ?? (ret.fond_pension || {}).rente_mensuelle_estimee) || 0) * 12,
     pensionIndexee: (ret.fond_pension || {}).indexee !== false,
     salaire: 0,
