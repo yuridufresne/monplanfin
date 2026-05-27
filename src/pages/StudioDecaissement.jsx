@@ -84,8 +84,12 @@ export default function StudioDecaissement({ embedded = false, profiles: profile
   const { resultats, recommandee } = useMemo(() => comparerStrategies({
     anneeDebut: 2026 + Math.max(0, dRetA - dAgeA), inflation: inf, rendement: rend, esperanceVie: esp, revenuCibleNet: cible,
     personnes: [
-      { nom: prenomA, ageInitial: dRetA, ageRetraite: dRetA, renteRRQ65: dRrqA, soldeReer: projete.reerA, soldeCeli: projete.celiA, salaire: 0, pension: pA?.pensionPD || 0 },
-      ...(enCouple ? [{ nom: prenomB, ageInitial: dRetB, ageRetraite: dRetB, renteRRQ65: dRrqB, soldeReer: projete.reerB, soldeCeli: projete.celiB, salaire: 0, pension: pB?.pensionPD || 0 }] : []),
+      { nom: prenomA, ageInitial: dRetA, ageRetraite: dRetA, renteRRQ65: dRrqA, soldeReer: projete.reerA, soldeCeli: projete.celiA, salaire: 0,
+        pension: payload.revenus_garantis?.pension_a_idx || 0,
+        tauxIdxPension: payload.revenus_garantis?.taux_indexation_pension_a ?? inf },
+      ...(enCouple ? [{ nom: prenomB, ageInitial: dRetB, ageRetraite: dRetB, renteRRQ65: dRrqB, soldeReer: projete.reerB, soldeCeli: projete.celiB, salaire: 0,
+        pension: payload.revenus_garantis?.pension_b_idx || 0,
+        tauxIdxPension: payload.revenus_garantis?.taux_indexation_pension_b ?? inf }] : []),
     ],
   }), [cible, rend, inf, esp, prenomA, prenomB, dRetA, dRetB, dAgeA, dRrqA, dRrqB, projete, enCouple, pA, pB]);
 
