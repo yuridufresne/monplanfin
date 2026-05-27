@@ -63,8 +63,8 @@ export default function StudioDecaissement({ embedded = false, profiles: profile
 
   // ── Paramètres ajustables ─────────────────────────────────────────────────────
   const [cible, setCible]   = useState(dCible);
-  const [rend, setRend]     = useState(0.045);   // rendement en DÉCAISSEMENT (prudent)
-  const [rendAcc, setRendAcc] = useState(0.05);  // rendement en ACCUMULATION (avant retraite)
+  const [rend, setRend]     = useState(IQPF?.REND_DECAISSE ?? 0.05);   // rendement en DÉCAISSEMENT
+  const [rendAcc, setRendAcc] = useState(IQPF?.REND_ACCUM ?? 0.07);    // rendement en ACCUMULATION (aligné carte NIF)
   const [inf, setInf]       = useState(0.023);
   const [esp, setEsp]       = useState(dEsp);
   const [tabStrat, setTabStrat] = useState(null);
@@ -159,7 +159,7 @@ export default function StudioDecaissement({ embedded = false, profiles: profile
           <div><div style={S.label}>Revenu cible NET ($/an)</div><input type="number" value={cible} onChange={e => setCible(+e.target.value)} style={S.input} /></div>
           <div><div style={S.label}>Rendement accumulation</div>
             <select value={rendAcc} onChange={e => setRendAcc(+e.target.value)} style={S.select}>
-              {[0.04, 0.045, 0.05, 0.055, 0.06, 0.07].map(v => <option key={v} value={v} style={{ background: "#0D1628" }}>{(v * 100).toFixed(1).replace(".", ",")} %{v === 0.05 ? " (IQPF)" : ""}</option>)}
+              {[0.04, 0.045, 0.05, 0.055, 0.06, 0.065, 0.07, 0.075].map(v => <option key={v} value={v} style={{ background: "#0D1628" }}>{(v * 100).toFixed(1).replace(".", ",")} %{v === 0.07 ? " (IQPF / NIF)" : v === 0.05 ? " (prudent)" : ""}</option>)}
             </select></div>
           <div><div style={S.label}>Rendement décaissement</div>
             <select value={rend} onChange={e => setRend(+e.target.value)} style={S.select}>
