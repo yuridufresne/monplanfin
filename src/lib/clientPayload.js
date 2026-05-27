@@ -110,6 +110,20 @@ function calculPSV({ anneesResidence, ageDebut }) {
   return { psvBrute65, renteAjustee: psvBrute65 * f };
 }
 
+// Droits CELI accumulés depuis 18 ans jusqu'à anneeRef, moins le solde actuel
+function calculDroitsCELI(dob, soldeCeli = 0, anneeRef = 2026) {
+  if (!dob) return Math.max(0, 7000 - soldeCeli);
+  const anneeNaissance = new Date(dob).getFullYear();
+  const annee18 = anneeNaissance + 18;
+  // Plafonds historiques CELI (ARC)
+  const plafonds = { 2009:5000,2010:5000,2011:5000,2012:5000,2013:5500,2014:5500,2015:10000,2016:5500,2017:5500,2018:5500,2019:6000,2020:6000,2021:6000,2022:6000,2023:6500,2024:7000,2025:7000,2026:7000 };
+  let total = 0;
+  for (let y = Math.max(2009, annee18); y <= anneeRef; y++) {
+    total += plafonds[y] || 7000;
+  }
+  return Math.max(0, total - soldeCeli);
+}
+
 function readPersonne(ret = {}, profil = {}, salaireAnnuel = 0) {
   const ep = readEpargne(ret.comptes);
   const ageActuel = calcAge(profil.date_naissance || profil.dob);
