@@ -211,8 +211,11 @@ export function buildPayload(profiles = []) {
   // ── Calcul en dollars FUTURS (nominaux) — cible ET garantis indexés ──
   const fi = fiRetraite;
   const cibleFuture    = cibleAnnuelle * fi;      // dollars de l'année de retraite
-  const garantisFuturs = garantisTotal * fi;       // RRQ+PSV+Pension indexés à l'inflation
-  const manqueFutur    = Math.max(0, cibleFuture - garantisFuturs);
+// garantisFuturs : RRQ+PSV+SRG à l'IPC + pension à son taux propre
+  const garantisFuturs =
+    (rrqFoyer + svFoyer + srgFoyer) * fi +
+    pA.pensionPD * fiPensionA +
+    (pB ? pB.pensionPD * fiPensionB : 0);  const manqueFutur    = Math.max(0, cibleFuture - garantisFuturs);
   const manque         = Math.max(0, cibleAnnuelle - garantisTotal); // conservé pour affichage
 
   // NIF = capital requis en dollars futurs pour couvrir le manque futur
