@@ -16,9 +16,7 @@ export default function NIFCalculator({ profiles }) {
   const anneeAuj = 2026;
   const nAnnees = Math.max(0, (pA?.ageRetraite || 65) - (pA?.age || 38));
   const anneeRet = kpis?.annee_retraite || (anneeAuj + nAnnees);
-  // Âge de Marie à la 1re retraite = son âge actuel + années restantes de Jean
   const ageRetMarie = pB ? (pB.age || 36) + nAnnees : null;
-  // NIF en dollars d'aujourd'hui = nif_nominal / facteur inflation
   const fi = payload.hypotheses?.inflation
     ? Math.pow(1 + payload.hypotheses.inflation, nAnnees)
     : 1;
@@ -105,12 +103,16 @@ export default function NIFCalculator({ profiles }) {
         {/* Section Jean / personne A */}
         <div style={{gridColumn:"1 / 5",background:C.orBg,padding:"8px 16px",textAlign:"center"}}>
           <span style={{fontSize:10,fontWeight:600,padding:"2px 8px",borderRadius:4,background:"rgba(201,160,99,0.18)",color:C.or,letterSpacing:"0.05em"}}>{(pA?.prenom||"CLIENT").toUpperCase()}</span>
-          <span style={{fontSize:11,color:C.txt40,marginLeft:8}}>Prestations gouvernementales</span>
+          <span style={{fontSize:11,color:C.txt40,marginLeft:8}}>Revenus garantis de retraite</span>
         </div>
         <Lbl indent>RRQ</Lbl><Num>{fmt(gar?.rrq_a)}</Num>
         <Lbl indent>RRQ indexé</Lbl><Num color={C.vert}>{fmt(gar?.rrq_a_idx)}</Num>
         <Lbl indent>SV</Lbl><Num>{fmt(gar?.sv_a)}</Num>
         <Lbl indent>SV indexée</Lbl><Num color={C.vert}>{fmt(gar?.sv_a_idx)}</Num>
+        {gar?.pension_a > 0 && <>
+          <Lbl indent>Pension (PD)</Lbl><Num>{fmt(gar?.pension_a)}</Num>
+          <Lbl indent>Pension (PD) indexée</Lbl><Num color={C.vert}>{fmt(Math.round((gar?.pension_a||0)*fi))}</Num>
+        </>}
         <Lbl indent>SRG</Lbl><Num color={gar?.srg_a>0?C.txt45:C.txt25}>{fmt(gar?.srg_a)}</Num>
         <Lbl indent>SRG indexé</Lbl><Num color={gar?.srg_a>0?C.vert:C.txt25}>{fmt(gar?.srg_a_idx)}</Num>
         <div style={{...cell,background:C.orBg2,paddingLeft:24,color:C.or,fontSize:12,fontWeight:500}}>Sous-total {pA?.prenom}</div>
@@ -122,12 +124,16 @@ export default function NIFCalculator({ profiles }) {
         {enCouple && <>
           <div style={{gridColumn:"1 / 5",background:C.vertBg,padding:"8px 16px",textAlign:"center"}}>
             <span style={{fontSize:10,fontWeight:600,padding:"2px 8px",borderRadius:4,background:"rgba(91,196,160,0.18)",color:C.vert,letterSpacing:"0.05em"}}>{(pB?.prenom||"CONJOINT").toUpperCase()}</span>
-            <span style={{fontSize:11,color:C.txt40,marginLeft:8}}>Prestations gouvernementales</span>
+            <span style={{fontSize:11,color:C.txt40,marginLeft:8}}>Revenus garantis de retraite</span>
           </div>
           <Lbl indent>RRQ</Lbl><Num>{fmt(gar?.rrq_b)}</Num>
           <Lbl indent>RRQ indexé</Lbl><Num color={C.vert}>{fmt(gar?.rrq_b_idx)}</Num>
           <Lbl indent>SV</Lbl><Num>{fmt(gar?.sv_b)}</Num>
           <Lbl indent>SV indexée</Lbl><Num color={C.vert}>{fmt(gar?.sv_b_idx)}</Num>
+          {gar?.pension_b > 0 && <>
+            <Lbl indent>Pension (PD)</Lbl><Num>{fmt(gar?.pension_b)}</Num>
+            <Lbl indent>Pension (PD) indexée</Lbl><Num color={C.vert}>{fmt(Math.round((gar?.pension_b||0)*fi))}</Num>
+          </>}
           <Lbl indent>SRG</Lbl><Num color={gar?.srg_b>0?C.txt45:C.txt25}>{fmt(gar?.srg_b)}</Num>
           <Lbl indent>SRG indexé</Lbl><Num color={gar?.srg_b>0?C.vert:C.txt25}>{fmt(gar?.srg_b_idx)}</Num>
           <div style={{...cell,background:C.vertBg2,paddingLeft:24,color:C.vert,fontSize:12,fontWeight:500}}>Sous-total {pB?.prenom}</div>
