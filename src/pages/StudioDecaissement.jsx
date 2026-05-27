@@ -159,7 +159,7 @@ export default function StudioDecaissement({ embedded = false, profiles: profile
           <div><div style={S.label}>Revenu cible NET ($/an)</div><input type="number" value={cible} onChange={e => setCible(+e.target.value)} style={S.input} /></div>
           <div><div style={S.label}>Rendement accumulation</div>
             <select value={rendAcc} onChange={e => setRendAcc(+e.target.value)} style={S.select}>
-              {[0.04, 0.045, 0.05, 0.055, 0.06, 0.065, 0.07, 0.075].map(v => <option key={v} value={v} style={{ background: "#0D1628" }}>{(v * 100).toFixed(1).replace(".", ",")} %{v === 0.07 ? " (IQPF / NIF)" : v === 0.05 ? " (prudent)" : ""}</option>)}
+              {[0.04, 0.045, 0.05, 0.055, 0.06, 0.065, 0.07, 0.075].map(v => <option key={v} value={v} style={{ background: "#0D1628" }}>{(v * 100).toFixed(1).replace(".", ",")} %</option>)}
             </select></div>
           <div><div style={S.label}>Rendement décaissement</div>
             <select value={rend} onChange={e => setRend(+e.target.value)} style={S.select}>
@@ -167,11 +167,11 @@ export default function StudioDecaissement({ embedded = false, profiles: profile
             </select></div>
           <div><div style={S.label}>Inflation</div>
             <select value={inf} onChange={e => setInf(+e.target.value)} style={S.select}>
-              {[0.021, 0.023, 0.025, 0.03].map(v => <option key={v} value={v} style={{ background: "#0D1628" }}>{(v * 100).toFixed(1).replace(".", ",")} %{v === 0.023 ? " (système)" : v === 0.021 ? " (IQPF)" : ""}</option>)}
+              {[0.021, 0.023, 0.025, 0.03].map(v => <option key={v} value={v} style={{ background: "#0D1628" }}>{(v * 100).toFixed(1).replace(".", ",")} %</option>)}
             </select></div>
           <div><div style={S.label}>Espérance de vie</div>
             <select value={esp} onChange={e => setEsp(+e.target.value)} style={S.select}>
-              {[90, 93, 95, 98, 100].map(v => <option key={v} value={v} style={{ background: "#0D1628" }}>{v} ans{v === 95 ? " (IQPF)" : ""}</option>)}
+              {[90, 93, 95, 98, 100].map(v => <option key={v} value={v} style={{ background: "#0D1628" }}>{v} ans</option>)}
             </select></div>
         </div>
         <div style={{ fontSize: 11, color: "rgba(255,255,255,.35)", marginTop: 12, lineHeight: 1.6 }}>
