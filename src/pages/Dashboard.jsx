@@ -18,7 +18,7 @@ import FlipCard from "@/components/ui/FlipCard";
 import DetteStrategie from "@/components/dashboard/DetteStrategie";
 import PlacementStrategie from "@/components/dashboard/PlacementStrategie";
 import PlanDecaissement from "@/components/dashboard/PlanDecaissement";
-import ModelisationRetraite from "@/pages/ModelisationRetraite";
+import StudioDecaissement from "@/pages/StudioDecaissement";
 
 // ── Formatters ────────────────────────────────────────────────────────────────
 const fmt = (v) => new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v || 0);
@@ -340,7 +340,7 @@ export default function Dashboard() {
                   onFlip={setNifFlipped}
                   front={<NIFCalculator profiles={profiles} />}
                   frontStyle={{ background: "transparent", border: "none", padding: 0 }}
-                  back={<div style={{padding:"0 4px"}}><ModelisationRetraite embedded profiles={profiles} /></div>}
+                  back={<div style={{padding:"0 4px"}}><StudioDecaissement embedded profiles={profiles} /></div>}
                 />
               </motion.div>
 

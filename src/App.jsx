@@ -17,7 +17,6 @@ import FinancialPlan from '@/pages/FinancialPlan';
 import FinancialAnalysis from '@/pages/FinancialAnalysis';
 import FeuilleResume from '@/pages/FeuilleResume';
 import AdvancedMode from '@/pages/AdvancedMode';
-import ModelisationRetraite from '@/pages/ModelisationRetraite';
 import StudioDecaissement from '@/pages/StudioDecaissement';
 
 const PUBLIC_PATHS = ['/', '/calculatrices'];
@@ -65,7 +64,7 @@ const AuthenticatedApp = () => {
         <Route path="/analyse" element={<FinancialAnalysis />} />
         <Route path="/resume" element={<FeuilleResume />} />
         <Route path="/avance" element={<AdvancedMode />} />
-        <Route path="/modelisation" element={<ModelisationRetraite />} />
+        <Route path="/modelisation" element={<StudioDecaissement />} />
         <Route path="/studio" element={<StudioDecaissement />} />
         <Route path="*" element={<PageNotFound />} />
       </Route>

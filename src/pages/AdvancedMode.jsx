@@ -8,7 +8,7 @@ import DebtSimulator from "@/components/dashboard/DebtSimulator";
 import ReerLevierSimulator from "@/components/dashboard/ReerLevierSimulator";
 import RetirementReport from "@/components/dashboard/RetirementReport";
 import NIFCalculator from "@/components/dashboard/NIFCalculator";
-import ModelisationRetraite from "@/pages/ModelisationRetraite";
+import StudioDecaissement from "@/pages/StudioDecaissement";
 
 const fmt = (v) =>
   new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v || 0);
@@ -378,7 +378,7 @@ export default function AdvancedMode() {
                 <h2 style={{ fontFamily: "var(--font-urbanist)", fontSize: 20, fontWeight: 700, color: "#fff" }}>Modélisation détaillée de la retraite</h2>
                 <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginTop: 4 }}>Simulez le décaissement année par année : FERR, PSV, RRQ, impôts, clawback et patrimoine à la succession.</p>
               </div>
-              <ModelisationRetraite profiles={profiles} />
+              <StudioDecaissement embedded profiles={profiles} />
             </div>
           )}
 
