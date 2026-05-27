@@ -325,6 +325,21 @@ export function buildPayload(profiles = []) {
       sv_b_idx:  Math.round((pB?.sv || 0) * fiRetraite),
       srg_b_idx: Math.round(srgB * fiRetraite),
       pension_b_idx: Math.round((pB?.pensionPD || 0) * fiPensionB),
+      // Récupération PSV estimée à la retraite (15 % du revenu net > seuil clawback)
+      clawback_a_idx: (() => {
+        if (!pA.sv) return 0;
+        const ferrPP = (capitalProjecte / (enCouple ? 2 : 1)) * 0.05;
+        const seuilIdx = IQPF.SEUIL_CLAWBACK_PSV * fiRetraite;
+        const incomeIdx = garantisA_idx + ferrPP;
+        return Math.min(Math.round(pA.sv * fiRetraite), Math.max(0, Math.round((incomeIdx - seuilIdx) * 0.15)));
+      })(),
+      clawback_b_idx: (() => {
+        if (!pB?.sv) return 0;
+        const ferrPP = (capitalProjecte / 2) * 0.05;
+        const seuilIdx = IQPF.SEUIL_CLAWBACK_PSV * fiRetraite;
+        const incomeIdx = garantisB_idx + ferrPP;
+        return Math.min(Math.round(pB.sv * fiRetraite), Math.max(0, Math.round((incomeIdx - seuilIdx) * 0.15)));
+      })(),
       // Pour transparence et pour le Studio :
       taux_indexation_pension_a: tauxIdxPensionA,
       taux_indexation_pension_b: tauxIdxPensionB,
