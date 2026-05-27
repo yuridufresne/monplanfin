@@ -185,8 +185,8 @@ export function buildPayload(profiles = []) {
     + (rev.conjoint?.sidehustles || []).reduce((s, sh) => s + (parseFloat(sh.revenu_mensuel_moyen) || 0) * 12, 0)
     : 0;
 
-  const pA = readPersonne(ret, profil); pA.salaire = brutA;
-  const pB = enCouple ? readPersonne(retCj, profilCj) : null;
+  const pA = readPersonne(ret, profil, brutA); pA.salaire = brutA;
+  const pB = enCouple ? readPersonne(retCj, profilCj, brutB) : null;
   if (pB) pB.salaire = brutB;
 
   const brutTotal = brutA + brutB;
