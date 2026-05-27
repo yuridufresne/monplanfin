@@ -131,7 +131,7 @@ export default function NIFCalculator({ profiles }) {
           <Lbl indent>SV indexée</Lbl><Num color={C.vert}>{fmt(gar?.sv_b_idx)}</Num>
           {gar?.pension_b > 0 && <>
             <Lbl indent>Pension (PD)</Lbl><Num>{fmt(gar?.pension_b)}</Num>
-            <Lbl indent>Pension (PD) indexée</Lbl><Num color={C.vert}>{fmt(Math.round((gar?.pension_b||0)*fi))}</Num>
+            <Lbl indent>Pension (PD) indexée</Lbl><Num color={C.vert}>{fmt(gar?.pension_b_idx)}</Num>
           </>}
           <Lbl indent>SRG</Lbl><Num color={gar?.srg_b>0?C.txt45:C.txt25}>{fmt(gar?.srg_b)}</Num>
           <Lbl indent>SRG indexé</Lbl><Num color={gar?.srg_b>0?C.vert:C.txt25}>{fmt(gar?.srg_b_idx)}</Num>
