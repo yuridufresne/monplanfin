@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { buildPayload, IQPF } from "@/lib/clientPayload";
 import { comparerStrategies } from "@/lib/moteurStrategies";
+import { projeterSoldesRetraite } from "@/lib/moteurDecaissement";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Link } from "react-router-dom";
 
@@ -42,12 +43,19 @@ export default function StudioDecaissement({ embedded = false, profiles: profile
   const prenomB = pB?.prenom || "Conjoint B";
 
   // Valeurs par défaut depuis le profil ABF (modifiables par l'utilisateur)
+  // ⚠️ Les soldes REER/CELI sont les soldes ACTUELS (à l'âge actuel), pas à la retraite.
+  const dAgeA = pA?.age || 38;
+  const dAgeB = pB?.age || 36;
   const dRetA = pA?.ageRetraite || 65;
   const dRetB = pB?.ageRetraite || 65;
-  const dReerA = ep?.solde_reer_a ?? pA?.soldeReer ?? 0;
-  const dCeliA = ep?.solde_celi_a ?? pA?.soldeCeli ?? 0;
-  const dReerB = ep?.solde_reer_b ?? pB?.soldeReer ?? 0;
-  const dCeliB = ep?.solde_celi_b ?? pB?.soldeCeli ?? 0;
+  const dReerA = ep?.solde_reer_a ?? pA?.soldeReer ?? 0;   // solde actuel
+  const dCeliA = ep?.solde_celi_a ?? pA?.soldeCeli ?? 0;   // solde actuel
+  const dReerB = ep?.solde_reer_b ?? pB?.soldeReer ?? 0;   // solde actuel
+  const dCeliB = ep?.solde_celi_b ?? pB?.soldeCeli ?? 0;   // solde actuel
+  const dCotReerA = ep?.cot_reer_a ?? pA?.cotReer ?? 0;
+  const dCotCeliA = ep?.cot_celi_a ?? pA?.cotCeli ?? 0;
+  const dCotReerB = ep?.cot_reer_b ?? pB?.cotReer ?? 0;
+  const dCotCeliB = ep?.cot_celi_b ?? pB?.cotCeli ?? 0;
   const dRrqA = pA?.rrqAjuste || 0;   // $/an
   const dRrqB = pB?.rrqAjuste || 0;   // $/an
   const dCible = obj?.cible_annuelle || Math.round((pA?.salaire || 0) + (pB?.salaire || 0)) * 0.7 || 75000;
@@ -55,19 +63,31 @@ export default function StudioDecaissement({ embedded = false, profiles: profile
 
   // ── Paramètres ajustables ─────────────────────────────────────────────────────
   const [cible, setCible]   = useState(dCible);
-  const [rend, setRend]     = useState(0.045);
+  const [rend, setRend]     = useState(0.045);   // rendement en DÉCAISSEMENT (prudent)
+  const [rendAcc, setRendAcc] = useState(0.05);  // rendement en ACCUMULATION (avant retraite)
   const [inf, setInf]       = useState(0.021);
   const [esp, setEsp]       = useState(dEsp);
   const [tabStrat, setTabStrat] = useState(null);
 
-  // ── Calcul des 3 stratégies ─────────────────────────────────────────────────
+  // ── Projection des soldes ACTUELS jusqu'à la retraite (accumulation) ──────────
+  // Indispensable : les soldes saisis sont à l'âge actuel (ex. 38 ans), pas à 65.
+  const projete = useMemo(() => projeterSoldesRetraite({
+    ageActuelA: dAgeA, ageRetraiteA: dRetA,
+    reerA: dReerA, celiA: dCeliA, cotReerA: dCotReerA, cotCeliA: dCotCeliA,
+    ageActuelB: enCouple ? dAgeB : null, ageRetraiteB: enCouple ? dRetB : null,
+    reerB: enCouple ? dReerB : 0, celiB: enCouple ? dCeliB : 0,
+    cotReerB: enCouple ? dCotReerB : 0, cotCeliB: enCouple ? dCotCeliB : 0,
+    rendement: rendAcc,
+  }), [dAgeA, dAgeB, dRetA, dRetB, dReerA, dCeliA, dReerB, dCeliB, dCotReerA, dCotCeliA, dCotReerB, dCotCeliB, rendAcc, enCouple]);
+
+  // ── Calcul des 3 stratégies (sur les soldes PROJETÉS à la retraite) ──────────
   const { resultats, recommandee } = useMemo(() => comparerStrategies({
-    anneeDebut: 2026, inflation: inf, rendement: rend, esperanceVie: esp, revenuCibleNet: cible,
+    anneeDebut: 2026 + Math.max(0, dRetA - dAgeA), inflation: inf, rendement: rend, esperanceVie: esp, revenuCibleNet: cible,
     personnes: [
-      { nom: prenomA, ageInitial: dRetA, ageRetraite: dRetA, renteRRQ65: dRrqA, soldeReer: dReerA, soldeCeli: dCeliA, salaire: pA?.salaire || 0 },
-      ...(enCouple ? [{ nom: prenomB, ageInitial: dRetB, ageRetraite: dRetB, renteRRQ65: dRrqB, soldeReer: dReerB, soldeCeli: dCeliB, salaire: pB?.salaire || 0 }] : []),
+      { nom: prenomA, ageInitial: dRetA, ageRetraite: dRetA, renteRRQ65: dRrqA, soldeReer: projete.reerA, soldeCeli: projete.celiA, salaire: 0 },
+      ...(enCouple ? [{ nom: prenomB, ageInitial: dRetB, ageRetraite: dRetB, renteRRQ65: dRrqB, soldeReer: projete.reerB, soldeCeli: projete.celiB, salaire: 0 }] : []),
     ],
-  }), [cible, rend, inf, esp, prenomA, prenomB, dRetA, dRetB, dRrqA, dRrqB, dReerA, dCeliA, dReerB, dCeliB, enCouple, pA, pB]);
+  }), [cible, rend, inf, esp, prenomA, prenomB, dRetA, dRetB, dAgeA, dRrqA, dRrqB, projete, enCouple]);
 
   const reco = resultats.find(r => r.strat === recommandee) || resultats[0];
   const tri  = [...resultats].sort((a, b) => b.metriques.legsNet - a.metriques.legsNet);
@@ -115,9 +135,13 @@ export default function StudioDecaissement({ embedded = false, profiles: profile
       {/* Paramètres globaux */}
       <div style={{ ...S.card, padding: "16px 18px", marginBottom: 18 }}>
         <div style={{ ...S.sec, marginBottom: 12 }}>Hypothèses</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 14 }}>
           <div><div style={S.label}>Revenu cible NET ($/an)</div><input type="number" value={cible} onChange={e => setCible(+e.target.value)} style={S.input} /></div>
-          <div><div style={S.label}>Rendement net</div>
+          <div><div style={S.label}>Rendement accumulation</div>
+            <select value={rendAcc} onChange={e => setRendAcc(+e.target.value)} style={S.select}>
+              {[0.04, 0.045, 0.05, 0.055, 0.06, 0.07].map(v => <option key={v} value={v} style={{ background: "#0D1628" }}>{(v * 100).toFixed(1).replace(".", ",")} %{v === 0.05 ? " (IQPF)" : ""}</option>)}
+            </select></div>
+          <div><div style={S.label}>Rendement décaissement</div>
             <select value={rend} onChange={e => setRend(+e.target.value)} style={S.select}>
               {[0.03, 0.035, 0.04, 0.045, 0.05, 0.055].map(v => <option key={v} value={v} style={{ background: "#0D1628" }}>{(v * 100).toFixed(1).replace(".", ",")} %</option>)}
             </select></div>
@@ -129,6 +153,10 @@ export default function StudioDecaissement({ embedded = false, profiles: profile
             <select value={esp} onChange={e => setEsp(+e.target.value)} style={S.select}>
               {[90, 93, 95, 98, 100].map(v => <option key={v} value={v} style={{ background: "#0D1628" }}>{v} ans{v === 95 ? " (IQPF)" : ""}</option>)}
             </select></div>
+        </div>
+        <div style={{ fontSize: 11, color: "rgba(255,255,255,.35)", marginTop: 12 }}>
+          Soldes projetés de l'âge actuel ({prenomA} {dAgeA} ans{enCouple ? `, ${prenomB} ${dAgeB} ans` : ""}) jusqu'à la retraite ({dRetA} ans) à {(rendAcc * 100).toFixed(1).replace(".", ",")} %/an.
+          {" "}À la retraite : REER/FERR {fmt(projete.reerA + (enCouple ? projete.reerB : 0))} · CELI {fmt(projete.celiA + (enCouple ? projete.celiB : 0))}.
         </div>
       </div>
 
@@ -259,7 +287,7 @@ export default function StudioDecaissement({ embedded = false, profiles: profile
       </div>
 
       <p style={{ fontSize: 11, color: "rgba(255,255,255,.25)", marginTop: 14, lineHeight: 1.7 }}>
-        Fiscalité QC + fédéral 2026 indexée annuellement · RRQ/PSV ajustés et récupération · facteurs FERR ARC · conversion REER→FERR à 71 ans, minimum à 72 · fractionnement de pension optimisé · surplus réinvesti (CELI jusqu'au plafond annuel, excédent en non-enregistré) · disposition réputée du FERR + gain en capital (50 %) à la succession. Normes IQPF 2025. À titre informatif — consultez un planificateur financier (Pl. Fin.) pour votre situation.
+        Soldes projetés de l'âge actuel à la retraite (accumulation), puis décaissement année par année. Fiscalité QC + fédéral 2026 indexée · RRQ/PSV ajustés et récupération · facteurs FERR ARC · conversion REER→FERR à 71 ans, minimum à 72 · fractionnement de pension optimisé · disposition réputée du FERR + gain en capital (50 %) à la succession. Normes IQPF 2025. À titre informatif — consultez un planificateur financier (Pl. Fin.) pour votre situation.
       </p>
     </div>
   );
