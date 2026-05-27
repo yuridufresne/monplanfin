@@ -102,7 +102,23 @@ function fv(s, c, r, n) {
   const rM = r / 12, nM = n * 12;
   return rM > 0 ? s * Math.pow(1 + rM, nM) + c * (Math.pow(1 + rM, nM) - 1) / rM : s + c * nM;
 }
-
+/**
+ * Taux d'indexation effectif d'une pension PD selon le formulaire.
+ * non → 0 (figée) · plein → IPC · 75/50 → ratio IPC · rregop → max(0.5×IPC, IPC−3%)
+ * Absent/non répondu → IPC complet (rétrocompatible avec données existantes).
+ */
+function tauxIndexationPension(fp, inflation) {
+  if (!fp || typeof fp !== 'object') return inflation;
+  const idx = String(fp.indexee || '').toLowerCase();
+  if (idx === 'non') return 0;
+  if (idx !== 'oui') return inflation;
+  const t = String(fp.indexation_taux || 'plein').toLowerCase();
+  if (t === 'plein') return inflation;
+  if (t === '75')    return inflation * 0.75;
+  if (t === '50')    return inflation * 0.50;
+  if (t === 'rregop') return Math.max(inflation * 0.5, inflation - 0.03);
+  return inflation;
+}
 export function buildPayload(profiles = []) {
   const dict = {};
   (profiles || []).forEach(p => { if (p?.section) dict[p.section] = unwrap(p.data || p); });
