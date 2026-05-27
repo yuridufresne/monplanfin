@@ -1,13 +1,9 @@
 /**
  * src/lib/moteurStrategies.js
  * Moteur de comparaison de strategies de decaissement - Quebec, fiscalite 2026 indexee.
+ * Gere : salaire, RRQ, PSV, pension PD, FERR, CELI, non-enregistre, succession.
  * Exporte comparerStrategies(cfg) et STRATEGIES. Normes IQPF 2025.
  */
-/* Moteur PRO — étend le moteur fiscal testé avec :
-   - 3 stratégies de décaissement (référence / meltdown REER / report RRQ-PSV 70)
-   - impôt à la succession (disposition réputée du FERR au dernier décès)
-   - métriques de firme : impôt à vie, impôt successoral, legs net après impôt
-   Réutilise la logique fiscale 2026 indexée déjà validée. */
 
 const PARAMS = {
   anneeBase: 2026,
@@ -78,7 +74,6 @@ function facteurFerr(age) { if (age < 71) return 1 / (90 - age); if (age >= 95) 
 // ── Simulation d'UNE stratégie ────────────────────────────────────────────────
 function simuler(cfg, strat) {
   const inf = cfg.inflation, rend = cfg.rendement, espVie = cfg.esperanceVie, anneeDebut = cfg.anneeDebut;
-  // surcharge des âges RRQ/PSV selon stratégie
   const ageRRQ = strat.reportPensions ? 70 : 65;
   const agePSV = strat.reportPensions ? 70 : 65;
 
@@ -86,7 +81,7 @@ function simuler(cfg, strat) {
   const cible = cfg.revenuCibleNet;
   const lignes = []; let impotVie = 0, clawVie = 0, anneesDef = 0;
   let annee = anneeDebut;
-  const CELI_ROOM_BASE = 7000; // plafond annuel CELI ~2026, indexé
+  const CELI_ROOM_BASE = 7000;
 
   while (Math.max(...P.map(p => p.ageC)) <= espVie) {
     const f = fIdx(annee, inf), cibleA = cible * f;
@@ -98,17 +93,17 @@ function simuler(cfg, strat) {
       let rrq = 0;
       if (p.ageC >= ageRRQ) { if (p.rrqDeb === null) p.rrqDeb = annee; rrq = rrqAj(p.renteRRQ65, ageRRQ, annee, p.rrqDeb, inf); }
       const psv = psvM(p.ageC, agePSV, annee, inf);
+      const pens = (retraite && p.pension > 0) ? p.pension * f : 0;
       let ferrMin = 0;
       if (p.ageC >= 72 && p.ferr > 0) ferrMin = Math.min(p.ferr, p.ferr * facteurFerr(p.ageC));
-      return { p, retraite, sal, rrq, psv, ferrMin, ferrAdd: 0, celiRet: 0 };
+      return { p, retraite, sal, rrq, psv, pens, ferrMin, ferrAdd: 0, celiRet: 0 };
     });
 
     const evalNet = () => {
       const pf = E.map(e => ({
-        ri: e.sal + e.rrq + e.psv + e.ferrMin + e.ferrAdd,
-        rp: e.p.ageC >= 65 ? e.ferrMin + e.ferrAdd : 0, age: e.p.ageC, psv: e.psv,
+        ri: e.sal + e.rrq + e.psv + e.pens + e.ferrMin + e.ferrAdd,
+        rp: e.pens + (e.p.ageC >= 65 ? e.ferrMin + e.ferrAdd : 0), age: e.p.ageC, psv: e.psv,
       }));
-      // fractionnement de pension optimisé (65+)
       if (pf.length === 2 && pf[0].age >= 65 && pf[1].age >= 65) {
         const hi = pf[0].rp >= pf[1].rp ? 0 : 1, lo = 1 - hi;
         let best = 0, bestImp = impot(pf[hi].ri, pf[hi].rp, pf[hi].age, annee, inf) + impot(pf[lo].ri, pf[lo].rp, pf[lo].age, annee, inf);
@@ -121,17 +116,16 @@ function simuler(cfg, strat) {
       }
       let imp = 0, claw = 0;
       pf.forEach(x => { imp += impot(x.ri, x.rp, x.age, annee, inf); claw += psvRecup(x.ri, x.psv, annee, inf); });
-      const brut = E.reduce((s, e) => s + e.sal + e.rrq + e.psv + e.ferrMin + e.ferrAdd, 0);
+      const brut = E.reduce((s, e) => s + e.sal + e.rrq + e.psv + e.pens + e.ferrMin + e.ferrAdd, 0);
       const celi = E.reduce((s, e) => s + e.celiRet, 0);
       return { net: brut - imp - claw + celi, imp, claw };
     };
 
-    // allocation d'un pool de retrait FERR additionnel + CELI selon priorité
     const allouer = (pool) => {
       E.forEach(e => { e.ferrAdd = 0; e.celiRet = 0; }); let reste = pool;
-      const parRev = [...E].sort((a, b) => (a.sal + a.rrq + a.psv + a.ferrMin) - (b.sal + b.rrq + b.psv + b.ferrMin));
+      const parRev = [...E].sort((a, b) => (a.sal + a.rrq + a.psv + a.pens + a.ferrMin) - (b.sal + b.rrq + b.psv + b.pens + b.ferrMin));
       for (const e of parRev) { if (reste <= 0) break;
-        const rev = e.sal + e.rrq + e.psv + e.ferrMin + e.ferrAdd;
+        const rev = e.sal + e.rrq + e.psv + e.pens + e.ferrMin + e.ferrAdd;
         const marge = Math.max(0, seuilClaw * 0.95 - rev), dispo = Math.max(0, e.p.ferr - e.ferrMin);
         const r = Math.min(reste, dispo, marge); e.ferrAdd += r; reste -= r; }
       const parCeli = [...E].sort((a, b) => (b.p.celi - b.celiRet) - (a.p.celi - a.celiRet));
@@ -140,12 +134,11 @@ function simuler(cfg, strat) {
       return { ...evalNet(), reste };
     };
 
-    // MELTDOWN : forcer un retrait REER pour « remplir » jusqu'au plafond cible (avant 72)
     if (strat.meltdown) {
       E.forEach(e => {
         if (e.p.ageC < 72 && e.p.ferr > 0) {
-          const rev = e.sal + e.rrq + e.psv;
-          const cible1 = Math.min(seuilClaw * 0.95, 58523 * f); // remplir le 1er palier fédéral / sous clawback
+          const rev = e.sal + e.rrq + e.psv + e.pens;
+          const cible1 = Math.min(seuilClaw * 0.95, 58523 * f);
           const force = Math.max(0, Math.min(e.p.ferr, cible1 - rev));
           e.ferrAdd = Math.max(e.ferrAdd, force);
         }
@@ -165,7 +158,6 @@ function simuler(cfg, strat) {
     const deficit = net < cibleA - 1; if (deficit) anneesDef++;
     impotVie += imp; clawVie += claw;
 
-    // Surplus après impôt (FERR min forcé, meltdown, ou rentes > cible) → réinvesti
     let surplus = Math.max(0, net - cibleA);
     const celiRoom = CELI_ROOM_BASE * f;
 
@@ -174,7 +166,6 @@ function simuler(cfg, strat) {
       p.ferr = Math.max(0, p.ferr - e.ferrMin - e.ferrAdd);
       p.celi = Math.max(0, p.celi - e.celiRet);
     });
-    // répartir le surplus : CELI (room) d'abord, reste en non-enregistré
     if (surplus > 0) {
       for (const p of P) {
         if (surplus <= 0) break;
@@ -182,11 +173,9 @@ function simuler(cfg, strat) {
       }
       if (surplus > 0) { P[0].nonReg += surplus; P[0].nonRegBook += surplus; }
     }
-    // croissance de fin d'année + traînée fiscale sur le non-enregistré (rendement imposable annuel)
     P.forEach(p => {
       p.ferr *= 1 + rend; p.celi *= 1 + rend;
       const gainNonReg = p.nonReg * rend;
-      // ~40 % du rendement est imposable annuellement (intérêts/dividendes/gains réalisés)
       const imposableAnnuel = gainNonReg * 0.40;
       const impotDrag = impot(imposableAnnuel, 0, 90, annee, inf) > 0 ? imposableAnnuel * 0.30 : 0;
       impotVie += Math.round(impotDrag);
@@ -195,23 +184,20 @@ function simuler(cfg, strat) {
 
     lignes.push({
       annee, ages: P.map(p => p.ageC),
-      detail: E.map(e => ({ sal: Math.round(e.sal), rrq: Math.round(e.rrq), psv: Math.round(e.psv), ferrMin: Math.round(e.ferrMin), ferrAdd: Math.round(e.ferrAdd), celi: Math.round(e.celiRet) })),
-      retire: Math.round(E.reduce((s, e) => s + e.sal + e.rrq + e.psv + e.ferrMin + e.ferrAdd + e.celiRet, 0)),
+      detail: E.map(e => ({ sal: Math.round(e.sal), rrq: Math.round(e.rrq), psv: Math.round(e.psv), pens: Math.round(e.pens), ferrMin: Math.round(e.ferrMin), ferrAdd: Math.round(e.ferrAdd), celi: Math.round(e.celiRet) })),
+      retire: Math.round(E.reduce((s, e) => s + e.sal + e.rrq + e.psv + e.pens + e.ferrMin + e.ferrAdd + e.celiRet, 0)),
       impot: Math.round(imp), clawback: Math.round(claw), net: Math.round(net), cible: Math.round(cibleA), ecart: Math.round(net - cibleA), deficit,
       patrimoine: P.map(p => ({ ferr: Math.round(p.ferr), celi: Math.round(p.celi), nonReg: Math.round(p.nonReg) })),
     });
     P.forEach(p => p.ageC++); annee++;
   }
 
-  // ── IMPÔT SUCCESSORAL : disposition réputée au dernier décès ──────────────────
-  // FERR résiduel = pleinement imposable. Non-enregistré = 50 % du gain en capital imposable.
-  // CELI = transmis sans impôt.
+  // ── IMPÔT SUCCESSORAL : disposition réputée au dernier décès ──
   const ferrResiduel = P.reduce((s, p) => s + p.ferr, 0);
   const celiResiduel = P.reduce((s, p) => s + p.celi, 0);
   const nonRegResiduel = P.reduce((s, p) => s + p.nonReg, 0);
   const gainNonReg = P.reduce((s, p) => s + Math.max(0, p.nonReg - p.nonRegBook), 0);
   const anneeDeces = annee;
-  // assiette imposable au décès : FERR + 50 % du gain en capital (empilés sur une déclaration)
   const assietteDeces = ferrResiduel + 0.5 * gainNonReg;
   const impotSucc = impot(assietteDeces, 0, espVie, anneeDeces, inf);
   const legsNet = celiResiduel + nonRegResiduel + ferrResiduel - impotSucc;
@@ -241,7 +227,6 @@ const STRATEGIES = [
 
 function comparerStrategies(cfg) {
   const resultats = STRATEGIES.map(s => simuler(cfg, s));
-  // recommandation : maximise le legs net après impôt, parmi celles sans déficit (sinon le moins de déficit)
   const sansDef = resultats.filter(r => r.metriques.anneesDeficit === 0);
   const pool = sansDef.length ? sansDef : resultats;
   const reco = pool.reduce((best, r) => r.metriques.legsNet > best.metriques.legsNet ? r : best, pool[0]);
