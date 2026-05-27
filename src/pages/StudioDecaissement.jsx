@@ -174,9 +174,10 @@ export default function StudioDecaissement({ embedded = false, profiles: profile
               {[90, 93, 95, 98, 100].map(v => <option key={v} value={v} style={{ background: "#0D1628" }}>{v} ans{v === 95 ? " (IQPF)" : ""}</option>)}
             </select></div>
         </div>
-        <div style={{ fontSize: 11, color: "rgba(255,255,255,.35)", marginTop: 12 }}>
-          Soldes projetés de l'âge actuel ({prenomA} {dAgeA} ans{enCouple ? `, ${prenomB} ${dAgeB} ans` : ""}) jusqu'à la retraite ({dRetA} ans) à {(rendAcc * 100).toFixed(1).replace(".", ",")} %/an.
-          {" "}À la retraite : REER/FERR {fmt(projete.reerA + (enCouple ? projete.reerB : 0))} · CELI {fmt(projete.celiA + (enCouple ? projete.celiB : 0))}.
+        <div style={{ fontSize: 11, color: "rgba(255,255,255,.35)", marginTop: 12, lineHeight: 1.6 }}>
+          <b style={{ color: "rgba(255,255,255,.55)" }}>Soldes actuels :</b> REER {fmt(dReerA + (enCouple ? dReerB : 0))} (+{fmt(dCotReerA + (enCouple ? dCotReerB : 0))}/mois) · CELI {fmt(dCeliA + (enCouple ? dCeliB : 0))} (+{fmt(dCotCeliA + (enCouple ? dCotCeliB : 0))}/mois).
+          <br />Projetés de l'âge actuel ({prenomA} {dAgeA} ans{enCouple ? `, ${prenomB} ${dAgeB} ans` : ""}) jusqu'à la retraite ({dRetA} ans) à {(rendAcc * 100).toFixed(1).replace(".", ",")} %/an
+          → <b style={{ color: COL.gold }}>REER/FERR {fmt(projete.reerA + (enCouple ? projete.reerB : 0))} · CELI {fmt(projete.celiA + (enCouple ? projete.celiB : 0))}</b>.
         </div>
       </div>
 
