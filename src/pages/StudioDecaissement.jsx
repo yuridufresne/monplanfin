@@ -84,10 +84,10 @@ export default function StudioDecaissement({ embedded = false, profiles: profile
   const { resultats, recommandee } = useMemo(() => comparerStrategies({
     anneeDebut: 2026 + Math.max(0, dRetA - dAgeA), inflation: inf, rendement: rend, esperanceVie: esp, revenuCibleNet: cible,
     personnes: [
-      { nom: prenomA, ageInitial: dRetA, ageRetraite: dRetA, renteRRQ65: dRrqA, soldeReer: projete.reerA, soldeCeli: projete.celiA, salaire: 0 },
-      ...(enCouple ? [{ nom: prenomB, ageInitial: dRetB, ageRetraite: dRetB, renteRRQ65: dRrqB, soldeReer: projete.reerB, soldeCeli: projete.celiB, salaire: 0 }] : []),
+      { nom: prenomA, ageInitial: dRetA, ageRetraite: dRetA, renteRRQ65: dRrqA, soldeReer: projete.reerA, soldeCeli: projete.celiA, salaire: 0, pension: pA?.pensionPD || 0 },
+      ...(enCouple ? [{ nom: prenomB, ageInitial: dRetB, ageRetraite: dRetB, renteRRQ65: dRrqB, soldeReer: projete.reerB, soldeCeli: projete.celiB, salaire: 0, pension: pB?.pensionPD || 0 }] : []),
     ],
-  }), [cible, rend, inf, esp, prenomA, prenomB, dRetA, dRetB, dAgeA, dRrqA, dRrqB, projete, enCouple]);
+  }), [cible, rend, inf, esp, prenomA, prenomB, dRetA, dRetB, dAgeA, dRrqA, dRrqB, projete, enCouple, pA, pB]);
 
   const reco = resultats.find(r => r.strat === recommandee) || resultats[0];
   const tri  = [...resultats].sort((a, b) => b.metriques.legsNet - a.metriques.legsNet);
@@ -261,7 +261,7 @@ export default function StudioDecaissement({ embedded = false, profiles: profile
         <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "ui-monospace,monospace", fontSize: 12, whiteSpace: "nowrap" }}>
           <thead>
             <tr>
-              {["Âges", "RRQ", "PSV", "FERR min", "REER/FERR+", "CELI", "Impôt", "Net", "Écart", "REER/FERR", "Non-enr.", "CELI"].map((h, i) => (
+              {["Âges", "RRQ", "PSV", "Pension", "FERR min", "REER/FERR+", "CELI", "Impôt", "Net", "Écart", "REER/FERR", "Non-enr.", "CELI"].map((h, i) => (
                 <th key={i} style={{ position: "sticky", top: 0, background: "#0b1120", color: "rgba(255,255,255,.4)", fontWeight: 500, padding: "9px 11px", textAlign: i === 0 ? "left" : "right", borderBottom: "1px solid rgba(255,255,255,.1)", fontSize: 10.5 }}>{h}</th>
               ))}
             </tr>
@@ -274,7 +274,7 @@ export default function StudioDecaissement({ embedded = false, profiles: profile
               return (
                 <tr key={i} style={{ background: l.deficit ? "rgba(248,113,113,.08)" : (i % 2 ? "rgba(255,255,255,.015)" : "transparent") }}>
                   <td style={{ padding: "7px 11px", textAlign: "left", color: COL.nonreg, fontWeight: 600, borderBottom: "1px solid rgba(255,255,255,.04)" }}>{l.ages[0]}/{l.ages[1] ?? l.ages[0]}</td>
-                  {c(tot("rrq"))}{c(tot("psv"))}{c(tot("ferrMin"))}{c(tot("ferrAdd"), COL.ferr)}{c(tot("celi"), COL.celi)}
+                  {c(tot("rrq"))}{c(tot("psv"))}{c(tot("pens"), COL.gold)}{c(tot("ferrMin"))}{c(tot("ferrAdd"), COL.ferr)}{c(tot("celi"), COL.celi)}
                   {c(l.impot)}
                   <td style={{ padding: "7px 11px", textAlign: "right", fontWeight: 700, borderBottom: "1px solid rgba(255,255,255,.04)" }}>{fmtk(l.net)}</td>
                   <td style={{ padding: "7px 11px", textAlign: "right", color: l.ecart < -1 ? COL.red : COL.celi, borderBottom: "1px solid rgba(255,255,255,.04)" }}>{l.ecart === 0 ? "0 $" : (l.ecart > 0 ? "+" : "") + fmtk(l.ecart)}</td>
