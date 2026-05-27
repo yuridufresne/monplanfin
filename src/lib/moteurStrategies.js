@@ -1,7 +1,7 @@
 /**
  * src/lib/moteurStrategies.js
  * Moteur de comparaison de strategies de decaissement - Quebec, fiscalite 2026 indexee.
- * Gere : salaire, RRQ, PSV, pension PD, FERR, CELI, non-enregistre, succession.
+ * Gere : salaire, RRQ, PSV, pension PD, FERR, CELI (avec room dynamique), non-enregistre, succession.
  * Exporte comparerStrategies(cfg) et STRATEGIES. Normes IQPF 2025.
  */
 
@@ -77,7 +77,7 @@ function simuler(cfg, strat) {
   const ageRRQ = strat.reportPensions ? 70 : 65;
   const agePSV = strat.reportPensions ? 70 : 65;
 
-  const P = cfg.personnes.map(p => ({ ...p, ferr: p.soldeReer, celi: p.soldeCeli, nonReg: 0, nonRegBook: 0, ageC: p.ageInitial, rrqDeb: null }));
+  const P = cfg.personnes.map(p => ({ ...p, ferr: p.soldeReer, celi: p.soldeCeli, nonReg: 0, nonRegBook: 0, ageC: p.ageInitial, rrqDeb: null, celiRoom: p.celiRoomDispo || 0, celiRetiraitN1: 0 }));
   const cible = cfg.revenuCibleNet;
   const lignes = []; let impotVie = 0, clawVie = 0, anneesDef = 0;
   let annee = anneeDebut;
@@ -86,6 +86,13 @@ function simuler(cfg, strat) {
   while (Math.max(...P.map(p => p.ageC)) <= espVie) {
     const f = fIdx(annee, inf), cibleA = cible * f;
     const seuilClaw = PARAMS.psv.seuilRecup * f;
+
+    // ── CELI : nouveau plafond annuel (indexé) + restoration des retraits N-1 ──
+    P.forEach(p => {
+      p.celiRoom += CELI_ROOM_BASE * f;
+      p.celiRoom += p.celiRetiraitN1;
+      p.celiRetiraitN1 = 0;
+    });
 
     const E = P.map(p => {
       const retraite = p.ageC >= p.ageRetraite;
@@ -162,18 +169,26 @@ function simuler(cfg, strat) {
     impotVie += imp; clawVie += claw;
 
     let surplus = Math.max(0, net - cibleA);
-    const celiRoom = CELI_ROOM_BASE * f;
 
     P.forEach((p, i) => {
       const e = E[i];
       p.ferr = Math.max(0, p.ferr - e.ferrMin - e.ferrAdd);
       p.celi = Math.max(0, p.celi - e.celiRet);
+      // Tracker les retraits CELI pour restoration de room l'année suivante
+      p.celiRetiraitN1 += e.celiRet;
     });
     if (surplus > 0) {
+      // 1) Maximiser CELI selon la room réelle disponible par personne
       for (const p of P) {
         if (surplus <= 0) break;
-        const versCeli = Math.min(surplus, celiRoom); p.celi += versCeli; surplus -= versCeli;
+        const versCeli = Math.min(surplus, p.celiRoom);
+        if (versCeli > 0) {
+          p.celi += versCeli;
+          p.celiRoom -= versCeli;
+          surplus -= versCeli;
+        }
       }
+      // 2) Reste va en non-enregistré (CELI plein partout)
       if (surplus > 0) { P[0].nonReg += surplus; P[0].nonRegBook += surplus; }
     }
     P.forEach(p => {
