@@ -81,17 +81,28 @@ export default function StudioDecaissement({ embedded = false, profiles: profile
   }), [dAgeA, dAgeB, dRetA, dRetB, dReerA, dCeliA, dReerB, dCeliB, dCotReerA, dCotCeliA, dCotReerB, dCotCeliB, rendAcc, enCouple]);
 
   // ── Calcul des 3 stratégies (sur les soldes PROJETÉS à la retraite) ──────────
+  // ── Décalage d'âge : la simulation commence à la PREMIÈRE retraite du foyer ──
+  // Si Marie (36) et Jean (38) retraite tous deux à 65 → Jean retraite en 1er (2053),
+  // Marie continue à travailler 2 ans, retraite en 2055.
+  const gapPremiere = enCouple
+    ? Math.min(Math.max(0, dRetA - dAgeA), Math.max(0, dRetB - dAgeB))
+    : Math.max(0, dRetA - dAgeA);
+  const ageInitA = dAgeA + gapPremiere;
+  const ageInitB = enCouple ? dAgeB + gapPremiere : null;
+
   const { resultats, recommandee } = useMemo(() => comparerStrategies({
-    anneeDebut: 2026 + Math.max(0, dRetA - dAgeA), inflation: inf, rendement: rend, esperanceVie: esp, revenuCibleNet: cible,
+    anneeDebut: 2026 + gapPremiere, inflation: inf, rendement: rend, esperanceVie: esp, revenuCibleNet: cible,
     personnes: [
-      { nom: prenomA, ageInitial: dRetA, ageRetraite: dRetA, renteRRQ65: dRrqA, soldeReer: projete.reerA, soldeCeli: projete.celiA, salaire: 0,
+      { nom: prenomA, ageInitial: ageInitA, ageRetraite: dRetA, renteRRQ65: dRrqA, soldeReer: projete.reerA, soldeCeli: projete.celiA,
+        salaire: pA?.salaire || 0,
         pension: payload.revenus_garantis?.pension_a_idx || 0,
         tauxIdxPension: payload.revenus_garantis?.taux_indexation_pension_a ?? inf },
-      ...(enCouple ? [{ nom: prenomB, ageInitial: dRetB, ageRetraite: dRetB, renteRRQ65: dRrqB, soldeReer: projete.reerB, soldeCeli: projete.celiB, salaire: 0,
+      ...(enCouple ? [{ nom: prenomB, ageInitial: ageInitB, ageRetraite: dRetB, renteRRQ65: dRrqB, soldeReer: projete.reerB, soldeCeli: projete.celiB,
+        salaire: pB?.salaire || 0,
         pension: payload.revenus_garantis?.pension_b_idx || 0,
         tauxIdxPension: payload.revenus_garantis?.taux_indexation_pension_b ?? inf }] : []),
     ],
-  }), [cible, rend, inf, esp, prenomA, prenomB, dRetA, dRetB, dAgeA, dRrqA, dRrqB, projete, enCouple, pA, pB]);
+  }), [cible, rend, inf, esp, prenomA, prenomB, dRetA, dRetB, dAgeA, dAgeB, dRrqA, dRrqB, projete, enCouple, pA, pB, gapPremiere, ageInitA, ageInitB]);
 
   const reco = resultats.find(r => r.strat === recommandee) || resultats[0];
   const tri  = [...resultats].sort((a, b) => b.metriques.legsNet - a.metriques.legsNet);
