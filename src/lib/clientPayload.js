@@ -194,8 +194,19 @@ export function buildPayload(profiles = []) {
   // ── Sous-totaux garantis par personne (aujourd'hui et indexé) ──
   const garantisA_auj = pA.rrqAjuste + pA.sv + pA.pensionPD + srgA;
   const garantisB_auj = pB ? (pB.rrqAjuste + pB.sv + pB.pensionPD + srgB) : 0;
-  const garantisA_idx = Math.round(garantisA_auj * fiRetraite);
-  const garantisB_idx = Math.round(garantisB_auj * fiRetraite);
+ // Sous-totaux indexés : RRQ/PSV/SRG à l'IPC, pension à son taux propre
+  const garantisA_idx = Math.round(
+    pA.rrqAjuste * fiRetraite +
+    pA.sv         * fiRetraite +
+    srgA          * fiRetraite +
+    pA.pensionPD  * fiPensionA
+  );
+  const garantisB_idx = pB ? Math.round(
+    pB.rrqAjuste * fiRetraite +
+    pB.sv         * fiRetraite +
+    srgB          * fiRetraite +
+    pB.pensionPD  * fiPensionB
+  ) : 0;
 
   // ── Calcul en dollars FUTURS (nominaux) — cible ET garantis indexés ──
   const fi = fiRetraite;
