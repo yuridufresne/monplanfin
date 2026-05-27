@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { buildPayload, IQPF } from "@/lib/clientPayload";
 import { comparerStrategies } from "@/lib/moteurStrategies";
 import { projeterSoldesRetraite } from "@/lib/moteurDecaissement";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { ComposedChart, Area, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Link } from "react-router-dom";
 
 /**
@@ -112,12 +112,15 @@ export default function StudioDecaissement({ embedded = false, profiles: profile
   const gain = reco.metriques.legsNet - pire.metriques.legsNet;
   const stratAffichee = tabStrat ? resultats.find(r => r.strat === tabStrat) : reco;
 
-  // Données du graphique d'aire empilée (patrimoine de la stratégie affichée)
+  // Données du graphique d'aire empilée (patrimoine + prestations de la stratégie affichée)
   const glide = useMemo(() => stratAffichee.lignes.map(l => ({
     age: l.ages[0],
     FERR: l.patrimoine.reduce((s, p) => s + p.ferr, 0),
     NonReg: l.patrimoine.reduce((s, p) => s + (p.nonReg || 0), 0),
     CELI: l.patrimoine.reduce((s, p) => s + p.celi, 0),
+    RRQ: l.detail.reduce((s, d) => s + (d.rrq || 0), 0),
+    PSV: l.detail.reduce((s, d) => s + (d.psv || 0), 0),
+    Pension: l.detail.reduce((s, d) => s + (d.pens || 0), 0),
   })), [stratAffichee]);
 
   const maxCost = Math.max(...resultats.map(r => r.metriques.impotVie + r.metriques.clawbackVie + r.metriques.impotSucc), 1);
@@ -221,21 +224,30 @@ export default function StudioDecaissement({ embedded = false, profiles: profile
         <div style={{ ...S.card, padding: "16px 18px" }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: COL.ivory }}>Trajectoire du patrimoine</div>
           <div style={{ fontSize: 12, color: "rgba(255,255,255,.35)", marginBottom: 10 }}>Stratégie : {stratAffichee.strat}</div>
-          <ResponsiveContainer width="100%" height={260}>
-            <AreaChart data={glide} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
+          <ResponsiveContainer width="100%" height={290}>
+            <ComposedChart data={glide} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,.06)" />
               <XAxis dataKey="age" tick={{ fontSize: 10, fill: "rgba(255,255,255,.3)" }} tickFormatter={v => v % 5 === 0 ? v : ""} />
-              <YAxis tickFormatter={v => v >= 1e6 ? (v / 1e6).toFixed(1) + "M" : Math.round(v / 1000) + "k"} tick={{ fontSize: 10, fill: "rgba(255,255,255,.3)" }} width={42} />
+              <YAxis yAxisId="left" tickFormatter={v => v >= 1e6 ? (v / 1e6).toFixed(1) + "M" : Math.round(v / 1000) + "k"} tick={{ fontSize: 10, fill: "rgba(255,255,255,.3)" }} width={42} />
+              <YAxis yAxisId="right" orientation="right" tickFormatter={v => Math.round(v / 1000) + "k"} tick={{ fontSize: 10, fill: "rgba(255,255,255,.3)" }} width={38} />
               <Tooltip contentStyle={{ background: "#0D1628", border: "1px solid rgba(255,255,255,.12)", borderRadius: 8, fontSize: 11 }} formatter={v => fmt(v)} labelFormatter={l => `Âge ${l} ans`} />
-              <Area type="monotone" dataKey="FERR" stackId="1" stroke={COL.ferr} fill={COL.ferr} fillOpacity={0.55} />
-              <Area type="monotone" dataKey="NonReg" stackId="1" stroke={COL.nonreg} fill={COL.nonreg} fillOpacity={0.5} />
-              <Area type="monotone" dataKey="CELI" stackId="1" stroke={COL.celi} fill={COL.celi} fillOpacity={0.5} />
-            </AreaChart>
+              <Area yAxisId="left" type="monotone" dataKey="FERR" stackId="patrimoine" stroke={COL.ferr} fill={COL.ferr} fillOpacity={0.55} />
+              <Area yAxisId="left" type="monotone" dataKey="NonReg" stackId="patrimoine" stroke={COL.nonreg} fill={COL.nonreg} fillOpacity={0.5} />
+              <Area yAxisId="left" type="monotone" dataKey="CELI" stackId="patrimoine" stroke={COL.celi} fill={COL.celi} fillOpacity={0.5} />
+              <Bar yAxisId="right" dataKey="RRQ" stackId="prestations" fill={COL.gold} fillOpacity={0.85} />
+              <Bar yAxisId="right" dataKey="PSV" stackId="prestations" fill="#6F8FD6" fillOpacity={0.85} />
+              <Bar yAxisId="right" dataKey="Pension" stackId="prestations" fill="#A87DD3" fillOpacity={0.85} />
+            </ComposedChart>
           </ResponsiveContainer>
-          <div style={{ display: "flex", gap: 16, fontSize: 12, color: COL.dim, marginTop: 6 }}>
+          <div style={{ display: "flex", gap: 14, fontSize: 11.5, color: COL.dim, marginTop: 6, flexWrap: "wrap" }}>
+            <span style={{ fontWeight: 600, color: "rgba(255,255,255,.5)" }}>Patrimoine (gauche) :</span>
             <span><i style={{ display: "inline-block", width: 10, height: 10, borderRadius: 3, background: COL.ferr, marginRight: 5 }} />REER/FERR</span>
             <span><i style={{ display: "inline-block", width: 10, height: 10, borderRadius: 3, background: COL.nonreg, marginRight: 5 }} />Non-enregistré</span>
             <span><i style={{ display: "inline-block", width: 10, height: 10, borderRadius: 3, background: COL.celi, marginRight: 5 }} />CELI</span>
+            <span style={{ fontWeight: 600, color: "rgba(255,255,255,.5)", marginLeft: 8 }}>Prestations (droite) :</span>
+            <span><i style={{ display: "inline-block", width: 10, height: 10, borderRadius: 3, background: COL.gold, marginRight: 5 }} />RRQ</span>
+            <span><i style={{ display: "inline-block", width: 10, height: 10, borderRadius: 3, background: "#6F8FD6", marginRight: 5 }} />PSV</span>
+            <span><i style={{ display: "inline-block", width: 10, height: 10, borderRadius: 3, background: "#A87DD3", marginRight: 5 }} />Pension</span>
           </div>
         </div>
 
