@@ -320,7 +320,9 @@ export function simulerDecaissement({
           }
           if (er > 0.01 && eRA > 0) {
             rra = brutPourNet(er, rbaRaw, eRA, pFed, pQC);
+            // eRA déjà déduit ici — on marque lissageActifA pour éviter double-déduction ligne 378
             eRA = Math.max(0, eRA - rra);
+            lissageActifA = true;
           }
 
         } else {
