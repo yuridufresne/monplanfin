@@ -70,7 +70,32 @@ function readEpargne(comptes = {}) {
     },
   };
 }
+/**
+ * Calcul RRQ estimé à 65 ans selon salaire moyen + années de cotisation,
+ * puis ajustement selon âge de début (60-72).
+ */
+function calculRRQ({ salaireMoyen, anneesCotisation, ageDebut }) {
+  const ratioSalaire = Math.min(1, Math.max(0, (salaireMoyen || 0) / IQPF.MGA_2026));
+  const ratioAnnees  = Math.min(1, Math.max(0, (anneesCotisation || 0) / 40));
+  const renteBrute65 = IQPF.RRQ_MAX_65 * ratioSalaire * ratioAnnees;
+  let f = 1;
+  if (ageDebut < 65) f = Math.max(0.64, 1 - Math.min((65 - ageDebut) * 12, 60) * IQPF.RRQ_RED_AVANT);
+  else if (ageDebut > 65) f = 1 + Math.min((ageDebut - 65) * 12, 84) * IQPF.RRQ_BONIF_APRES;
+  return { renteBrute65, renteAjustee: renteBrute65 * f };
+}
 
+/**
+ * Calcul PSV selon années de résidence au Canada (après 18 ans) et âge de début.
+ * Pleine PSV à 40 ans. Minimum 10 ans pour droit. Report 65→70 = +0,6%/mois.
+ */
+function calculPSV({ anneesResidence, ageDebut }) {
+  if ((anneesResidence || 0) < 10) return { psvBrute65: 0, renteAjustee: 0 };
+  const ratio = Math.min(1, anneesResidence / IQPF.PSV_RESIDENCE_PLEIN);
+  const psvBrute65 = IQPF.PSV_ANNUEL * ratio;
+  const ageEff = Math.max(65, Math.min(70, ageDebut || 65));
+  const f = 1 + (ageEff - 65) * 12 * IQPF.PSV_REPORT_MOIS;
+  return { psvBrute65, renteAjustee: psvBrute65 * f };
+}
 function readPersonne(ret = {}, profil = {}) {
   const ep = readEpargne(ret.comptes);
   // BUG #1 fix — RRQ stockée en $/mois dans l'ABF → convertir en $/an
