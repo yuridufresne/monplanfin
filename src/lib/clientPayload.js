@@ -181,6 +181,16 @@ export function buildPayload(profiles = []) {
   // ── Facteur d'indexation jusqu'à la retraite (sur âge personne A) ──
   const fiRetraite = Math.pow(1 + IQPF.INFLATION, nA);
 
+  // ── Indexation des pensions PD (taux effectif + indexation avant retraite) ──
+  const fpA = ret.fond_pension || {};
+  const fpB = retCj.fond_pension || {};
+  const tauxIdxPensionA = tauxIndexationPension(fpA, IQPF.INFLATION);
+  const tauxIdxPensionB = tauxIndexationPension(fpB, IQPF.INFLATION);
+  const indexAvantA = String(fpA.indexation_avant_retraite || 'oui').toLowerCase() !== 'non';
+  const indexAvantB = String(fpB.indexation_avant_retraite || 'oui').toLowerCase() !== 'non';
+  const fiPensionA = indexAvantA ? Math.pow(1 + tauxIdxPensionA, nA) : 1;
+  const fiPensionB = (pB && indexAvantB) ? Math.pow(1 + tauxIdxPensionB, nB) : 1;
+
   // ── Sous-totaux garantis par personne (aujourd'hui et indexé) ──
   const garantisA_auj = pA.rrqAjuste + pA.sv + pA.pensionPD + srgA;
   const garantisB_auj = pB ? (pB.rrqAjuste + pB.sv + pB.pensionPD + srgB) : 0;
