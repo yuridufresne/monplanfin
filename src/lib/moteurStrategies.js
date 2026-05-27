@@ -57,7 +57,8 @@ function rrqAj(base65, ageDeb, annee, anneeDeb, inf) {
   let fa = 1;
   if (ageDeb < 65) fa = 1 - 0.006 * (65 - ageDeb) * 12;
   else if (ageDeb > 65) fa = 1 + 0.007 * Math.min(60, (ageDeb - 65) * 12);
-  return base65 * fa * Math.pow(1 + inf, Math.max(0, annee - anneeDeb));
+  // RRQ indexé depuis l'année de base (2026), pas seulement depuis le début du versement
+  return base65 * fa * Math.pow(1 + inf, Math.max(0, annee - PARAMS.anneeBase));
 }
 function psvM(age, ageDeb, annee, inf) {
   if (age < ageDeb || age < 65) return 0;
