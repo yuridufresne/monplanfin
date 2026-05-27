@@ -2,7 +2,7 @@
  * src/lib/clientPayload.js — SOURCE UNIQUE DE VÉRITÉ
  * Toutes les sections lisent ICI :
  *   - Indépendance financière (NIF)
- *   - Revenus garantis retraite
+ *   - Revenus garantis retraite (RRQ + PSV refondus 2026)
  *   - Placements & épargne
  *   - Plan de décaissement
  */
@@ -11,23 +11,26 @@ export const IQPF = {
   INFLATION: 0.023, INFLATION_SALAIRE: 0.031,
   REND_ACCUM: 0.07, REND_DECAISSE: 0.05,
   TAUX_REMPLACEMENT: 0.70, ESP_VIE: 95,
-  PSV_MENSUEL: 740.09, PSV_ANNUEL: 740.09 * 12,           // valeurs 2026 officielles
-  RRQ_MAX_65: 18091.80, MGA_2026: 74600,                    // ajout RRQ
-  RRQ_RED_AVANT: 0.006, RRQ_BONIF_APRES: 0.007,             // facteurs RRQ
-  PSV_REPORT_MOIS: 0.006, PSV_RESIDENCE_PLEIN: 40,          // facteurs PSV
-  SEUIL_CLAWBACK_PSV: 93454,                                 // 2026 (était 90997)
-  CELI_NOUVEAU_2026: 7000, REER_PLAFOND_2026: 32490,
+  // ── PSV 2026 (officiel — corrigé de 713.34) ──
+  PSV_MENSUEL: 740.09, PSV_ANNUEL: 740.09 * 12,
+  // ── RRQ 2026 (officiel Retraite Québec) ──
+  RRQ_MAX_65: 18091.80, MGA_2026: 74600,
+  // Facteurs d'ajustement
+  RRQ_RED_AVANT: 0.006,
+  RRQ_BONIF_APRES: 0.007,
+  PSV_REPORT_MOIS: 0.006,
+  PSV_RESIDENCE_PLEIN: 40,
+  // Clawback
+  SEUIL_CLAWBACK_PSV: 93454, TAUX_CLAWBACK: 0.15,
+  // SRG
   SRG_MAX_SEUL: 8265, SRG_SEUIL_SEUL: 21952,
   SRG_MAX_COUPLE: 5414, SRG_SEUIL_COUPLE: 22056,
+  // Plafonds
+  CELI_NOUVEAU_2026: 7000, REER_PLAFOND_2026: 32490,
   CREDIT_AGE_FED: 8790 * 0.15, CREDIT_AGE_QC: 3561 * 0.14,
   CREDIT_PEN_FED: 2000 * 0.15, CREDIT_PEN_QC: 2000 * 0.14,
 };
 
-/**
- * Ajustement PSV selon l'âge de début.
- * - Avant 65 ans : réduction de 0,6%/mois (minimum 60 ans)
- * - Après 65 ans  : bonification de 0,6%/mois (maximum 70 ans = +36%)
- */
 export function adjPSV(psvBase, ageDebut) {
   if (ageDebut <= 65) {
     const moisAvant = Math.min(Math.max(0, (65 - ageDebut) * 12), 60);
@@ -55,7 +58,6 @@ function sumC(comptes = {}, type, field) {
 }
 
 function readEpargne(comptes = {}) {
-  // REEE exclu — épargne-études, pas capital de retraite
   return {
     soldeReer: sumC(comptes, 'reer', 'solde'),
     cotReer: sumC(comptes, 'reer', 'cotisation_mensuelle'),
@@ -63,20 +65,35 @@ function readEpargne(comptes = {}) {
     cotCeli: sumC(comptes, 'celi', 'cotisation_mensuelle'),
     soldeCri: sumC(comptes, 'cri', 'solde'),
     soldeFrv: sumC(comptes, 'frv', 'solde'),
-    // REEE intentionnellement exclu du capital de retraite
     comptes: {
       reer: comptes.reer || [], celi: comptes.celi || [], reee: comptes.reee || [],
       cri: comptes.cri || [], frv: comptes.frv || [], celiapp: comptes.celiapp || [],
     },
   };
 }
-/**
- * Calcul RRQ estimé à 65 ans selon salaire moyen + années de cotisation,
- * puis ajustement selon âge de début (60-72).
- */
+
+function fv(s, c, r, n) {
+  if (n <= 0) return s;
+  const rM = r / 12, nM = n * 12;
+  return rM > 0 ? s * Math.pow(1 + rM, nM) + c * (Math.pow(1 + rM, nM) - 1) / rM : s + c * nM;
+}
+
+function tauxIndexationPension(fp, inflation) {
+  if (!fp || typeof fp !== 'object') return inflation;
+  const idx = String(fp.indexee || '').toLowerCase();
+  if (idx === 'non') return 0;
+  if (idx !== 'oui') return inflation;
+  const t = String(fp.indexation_taux || 'plein').toLowerCase();
+  if (t === 'plein') return inflation;
+  if (t === '75')    return inflation * 0.75;
+  if (t === '50')    return inflation * 0.50;
+  if (t === 'rregop') return Math.max(inflation * 0.5, inflation - 0.03);
+  return inflation;
+}
+
 function calculRRQ({ salaireMoyen, anneesCotisation, ageDebut }) {
   const ratioSalaire = Math.min(1, Math.max(0, (salaireMoyen || 0) / IQPF.MGA_2026));
-  const ratioAnnees  = Math.min(1, Math.max(0, (anneesCotisation || 0) / 40));
+  const ratioAnnees = Math.min(1, Math.max(0, (anneesCotisation || 0) / 40));
   const renteBrute65 = IQPF.RRQ_MAX_65 * ratioSalaire * ratioAnnees;
   let f = 1;
   if (ageDebut < 65) f = Math.max(0.64, 1 - Math.min((65 - ageDebut) * 12, 60) * IQPF.RRQ_RED_AVANT);
@@ -84,10 +101,6 @@ function calculRRQ({ salaireMoyen, anneesCotisation, ageDebut }) {
   return { renteBrute65, renteAjustee: renteBrute65 * f };
 }
 
-/**
- * Calcul PSV selon années de résidence au Canada (après 18 ans) et âge de début.
- * Pleine PSV à 40 ans. Minimum 10 ans pour droit. Report 65→70 = +0,6%/mois.
- */
 function calculPSV({ anneesResidence, ageDebut }) {
   if ((anneesResidence || 0) < 10) return { psvBrute65: 0, renteAjustee: 0 };
   const ratio = Math.min(1, anneesResidence / IQPF.PSV_RESIDENCE_PLEIN);
@@ -96,6 +109,7 @@ function calculPSV({ anneesResidence, ageDebut }) {
   const f = 1 + (ageEff - 65) * 12 * IQPF.PSV_REPORT_MOIS;
   return { psvBrute65, renteAjustee: psvBrute65 * f };
 }
+
 function readPersonne(ret = {}, profil = {}, salaireAnnuel = 0) {
   const ep = readEpargne(ret.comptes);
   const ageActuel = calcAge(profil.date_naissance || profil.dob);
@@ -103,7 +117,6 @@ function readPersonne(ret = {}, profil = {}, salaireAnnuel = 0) {
   const ageDebutRRQ = parseInt(ret.age_debut_rrq) || ageRetraite || 65;
   const ageDebutPSV = parseInt(ret.age_debut_psv) || ageRetraite || 65;
 
-  // ── RRQ : mode "specifier" (montant manuel) ou "estimer" (auto-calc) ──
   let rrqAnnuel65, rrqAnnuelAjuste;
   if (String(ret.rrq_mode || '').toLowerCase() === 'specifier') {
     rrqAnnuel65 = (parseFloat(ret.rrq) || 0) * 12;
@@ -120,7 +133,6 @@ function readPersonne(ret = {}, profil = {}, salaireAnnuel = 0) {
     rrqAnnuelAjuste = r.renteAjustee;
   }
 
-  // ── PSV : par années de résidence Canada (après 18 ans) + âge début ──
   const anneesResidenceDefaut = String(ret.sv_canada_continu || '').toLowerCase() === 'oui'
     ? Math.max(0, Math.min(40, ageRetraite - 18))
     : 0;
@@ -131,10 +143,12 @@ function readPersonne(ret = {}, profil = {}, salaireAnnuel = 0) {
     prenom: profil.prenom || profil.nom?.split(' ')[0] || 'Client',
     age: ageActuel,
     ageRetraite,
-    rrqBase: Math.round(rrqAnnuel65),                                  // valeur à 65 ans (pour le moteur)
-    rrqAjuste: Math.round(rrqAnnuelAjuste),                            // valeur avec ajustement âge
+    rrqBase: Math.round(rrqAnnuel65),
+    rrqAjuste: Math.round(rrqAnnuelAjuste),
     ageDebutRRQ,
-    sv: Math.round(psv.renteAjustee), svBase: Math.round(psv.psvBrute65), ageDebutPSV,
+    sv: Math.round(psv.renteAjustee),
+    svBase: Math.round(psv.psvBrute65),
+    ageDebutPSV,
     anneesResidence,
     pensionPD: (parseFloat((ret.fond_pension || {}).prestation_mensuelle ?? (ret.fond_pension || {}).rente_mensuelle_estimee) || 0) * 12,
     pensionIndexee: (ret.fond_pension || {}).indexee !== false,
@@ -144,28 +158,6 @@ function readPersonne(ret = {}, profil = {}, salaireAnnuel = 0) {
   };
 }
 
-function fv(s, c, r, n) {
-  if (n <= 0) return s;
-  const rM = r / 12, nM = n * 12;
-  return rM > 0 ? s * Math.pow(1 + rM, nM) + c * (Math.pow(1 + rM, nM) - 1) / rM : s + c * nM;
-}
-/**
- * Taux d'indexation effectif d'une pension PD selon le formulaire.
- * non → 0 (figée) · plein → IPC · 75/50 → ratio IPC · rregop → max(0.5×IPC, IPC−3%)
- * Absent/non répondu → IPC complet (rétrocompatible avec données existantes).
- */
-function tauxIndexationPension(fp, inflation) {
-  if (!fp || typeof fp !== 'object') return inflation;
-  const idx = String(fp.indexee || '').toLowerCase();
-  if (idx === 'non') return 0;
-  if (idx !== 'oui') return inflation;
-  const t = String(fp.indexation_taux || 'plein').toLowerCase();
-  if (t === 'plein') return inflation;
-  if (t === '75')    return inflation * 0.75;
-  if (t === '50')    return inflation * 0.50;
-  if (t === 'rregop') return Math.max(inflation * 0.5, inflation - 0.03);
-  return inflation;
-}
 export function buildPayload(profiles = []) {
   const dict = {};
   (profiles || []).forEach(p => { if (p?.section) dict[p.section] = unwrap(p.data || p); });
@@ -193,13 +185,10 @@ export function buildPayload(profiles = []) {
   const epargneTotal = pA.soldeReer + pA.soldeCeli + (pB ? pB.soldeReer + pB.soldeCeli : 0);
   const cotTotale = pA.cotReer + pA.cotCeli + (pB ? pB.cotReer + pB.cotCeli : 0);
 
-  // rrqAjuste et sv sont maintenant en $/an (corrigés dans readPersonne)
-  // pensionPD est déjà en $/an (rente_mensuelle_estimee × 12 dans readPersonne)
   const rrqFoyer     = pA.rrqAjuste + (pB?.rrqAjuste || 0);
   const svFoyer      = pA.sv        + (pB?.sv        || 0);
   const pensionFoyer = pA.pensionPD  + (pB?.pensionPD  || 0);
 
-  // ── SRG par personne (Supplément de revenu garanti) ──
   const revHorsPSV = rrqFoyer + pensionFoyer;
   const srgSeuil = enCouple ? IQPF.SRG_SEUIL_COUPLE : IQPF.SRG_SEUIL_SEUL;
   const srgMaxParPers = enCouple ? IQPF.SRG_MAX_COUPLE : IQPF.SRG_MAX_SEUL;
@@ -210,9 +199,8 @@ export function buildPayload(profiles = []) {
   const srgB = enCouple ? srgParPersonne : 0;
   const srgFoyer = srgA + srgB;
 
-  const garantisTotal = rrqFoyer + svFoyer + pensionFoyer + srgFoyer; // $/an
+  const garantisTotal = rrqFoyer + svFoyer + pensionFoyer + srgFoyer;
 
-  // Taux de remplacement — lire depuis retraite en priorité, puis objectifs, sinon défaut IQPF
   const revenuRetMensABF = parseFloat(ret.revenu_retraite_mensuel) || 0;
   const pctABF = parseFloat(ret.taux_remplacement)
     || parseFloat(ret.revenu_retraite_pct)
@@ -225,10 +213,8 @@ export function buildPayload(profiles = []) {
   const esperanceVie = Math.max(pA.esperanceVie, pB?.esperanceVie || 0) || IQPF.ESP_VIE;
   const nRetrait = Math.max(1, esperanceVie - pA.ageRetraite);
 
-  // ── Facteur d'indexation jusqu'à la retraite (sur âge personne A) ──
   const fiRetraite = Math.pow(1 + IQPF.INFLATION, nA);
 
-  // ── Indexation des pensions PD (taux effectif + indexation avant retraite) ──
   const fpA = ret.fond_pension || {};
   const fpB = retCj.fond_pension || {};
   const tauxIdxPensionA = tauxIndexationPension(fpA, IQPF.INFLATION);
@@ -238,10 +224,9 @@ export function buildPayload(profiles = []) {
   const fiPensionA = indexAvantA ? Math.pow(1 + tauxIdxPensionA, nA) : 1;
   const fiPensionB = (pB && indexAvantB) ? Math.pow(1 + tauxIdxPensionB, nB) : 1;
 
-  // ── Sous-totaux garantis par personne (aujourd'hui et indexé) ──
   const garantisA_auj = pA.rrqAjuste + pA.sv + pA.pensionPD + srgA;
   const garantisB_auj = pB ? (pB.rrqAjuste + pB.sv + pB.pensionPD + srgB) : 0;
- // Sous-totaux indexés : RRQ/PSV/SRG à l'IPC, pension à son taux propre
+
   const garantisA_idx = Math.round(
     pA.rrqAjuste * fiRetraite +
     pA.sv         * fiRetraite +
@@ -255,29 +240,26 @@ export function buildPayload(profiles = []) {
     pB.pensionPD  * fiPensionB
   ) : 0;
 
-  // ── Calcul en dollars FUTURS (nominaux) — cible ET garantis indexés ──
   const fi = fiRetraite;
-  const cibleFuture    = cibleAnnuelle * fi;      // dollars de l'année de retraite
-// garantisFuturs : RRQ+PSV+SRG à l'IPC + pension à son taux propre
+  const cibleFuture    = cibleAnnuelle * fi;
   const garantisFuturs =
     (rrqFoyer + svFoyer + srgFoyer) * fi +
     pA.pensionPD * fiPensionA +
-    (pB ? pB.pensionPD * fiPensionB : 0);  const manqueFutur    = Math.max(0, cibleFuture - garantisFuturs);
-  const manque         = Math.max(0, cibleAnnuelle - garantisTotal); // conservé pour affichage
+    (pB ? pB.pensionPD * fiPensionB : 0);
+  const manqueFutur    = Math.max(0, cibleFuture - garantisFuturs);
+  const manque         = Math.max(0, cibleAnnuelle - garantisTotal);
 
-  // NIF = capital requis en dollars futurs pour couvrir le manque futur
   const rReel = ((1 + IQPF.REND_DECAISSE) / (1 + IQPF.INFLATION)) - 1;
   const nif_4pct  = manqueFutur / 0.04;
   const nif_rente = rReel > 0.001
     ? manqueFutur * ((1 - Math.pow(1 + rReel, -nRetrait)) / rReel)
     : manqueFutur * nRetrait;
-  const nif = Math.round((nif_4pct + nif_rente) / 2); // déjà en dollars futurs nominaux
+  const nif = Math.round((nif_4pct + nif_rente) / 2);
 
   const capA = fv(pA.soldeReer + pA.soldeCeli, pA.cotReer + pA.cotCeli, IQPF.REND_ACCUM, nA);
   const capB = pB ? fv(pB.soldeReer + pB.soldeCeli, pB.cotReer + pB.cotCeli, IQPF.REND_ACCUM, nB) : 0;
   const capitalProjecte = Math.round(capA + capB);
 
-  // NIF est déjà nominal — pas besoin de re-multiplier par fi
   const nifNominal = nif;
   const scoreNIF = nifNominal > 0 ? Math.min(Math.round(capitalProjecte / nifNominal * 100), 999) : 100;
 
@@ -286,6 +268,18 @@ export function buildPayload(profiles = []) {
   const manqueCapital = Math.max(0, nifNominal - capitalProjecte);
   const cotSupp = manqueCapital > 0 && annuFactor > 0
     ? Math.max(0, Math.round(manqueCapital / annuFactor))
+    : 0;
+
+  // ── Clawback PSV estimé à la retraite ──
+  const ferrParPersonne = (capitalProjecte / (enCouple ? 2 : 1)) * 0.05;
+  const seuilClawIdx = IQPF.SEUIL_CLAWBACK_PSV * fiRetraite;
+  const incomeA_est = garantisA_idx + ferrParPersonne;
+  const incomeB_est = pB ? garantisB_idx + ferrParPersonne : 0;
+  const clawbackA = pA.sv > 0
+    ? Math.min(Math.round(pA.sv * fiRetraite), Math.max(0, Math.round((incomeA_est - seuilClawIdx) * IQPF.TAUX_CLAWBACK)))
+    : 0;
+  const clawbackB = pB?.sv > 0
+    ? Math.min(Math.round((pB.sv) * fiRetraite), Math.max(0, Math.round((incomeB_est - seuilClawIdx) * IQPF.TAUX_CLAWBACK)))
     : 0;
 
   return {
@@ -305,42 +299,24 @@ export function buildPayload(profiles = []) {
     conjoint_a: pA,
     conjoint_b: pB,
     revenus_garantis: {
-      // Totaux foyer (aujourd'hui)
       rrq_foyer: rrqFoyer, sv_foyer: svFoyer, pension_foyer: pensionFoyer,
       srg_foyer: srgFoyer,
       total: garantisTotal,
       total_futur: Math.round(garantisFuturs),
-      // Détail personne A — aujourd'hui
       rrq_a: pA.rrqAjuste, sv_a: pA.sv, pension_a: pA.pensionPD, srg_a: srgA,
       sous_total_a: garantisA_auj,
-      // Détail personne B — aujourd'hui
       rrq_b: pB?.rrqAjuste || 0, sv_b: pB?.sv || 0, pension_b: pB?.pensionPD || 0, srg_b: srgB,
       sous_total_b: garantisB_auj,
-      // Valeurs INDEXÉES à la retraite (nominal)
       rrq_a_idx: Math.round(pA.rrqAjuste * fiRetraite),
-    sv_a_idx:  Math.round(pA.sv * fiRetraite),
+      sv_a_idx:  Math.round(pA.sv * fiRetraite),
       srg_a_idx: Math.round(srgA * fiRetraite),
       pension_a_idx: Math.round(pA.pensionPD * fiPensionA),
       rrq_b_idx: Math.round((pB?.rrqAjuste || 0) * fiRetraite),
       sv_b_idx:  Math.round((pB?.sv || 0) * fiRetraite),
       srg_b_idx: Math.round(srgB * fiRetraite),
       pension_b_idx: Math.round((pB?.pensionPD || 0) * fiPensionB),
-      // Récupération PSV estimée à la retraite (15 % du revenu net > seuil clawback)
-      clawback_a_idx: (() => {
-        if (!pA.sv) return 0;
-        const ferrPP = (capitalProjecte / (enCouple ? 2 : 1)) * 0.05;
-        const seuilIdx = IQPF.SEUIL_CLAWBACK_PSV * fiRetraite;
-        const incomeIdx = garantisA_idx + ferrPP;
-        return Math.min(Math.round(pA.sv * fiRetraite), Math.max(0, Math.round((incomeIdx - seuilIdx) * 0.15)));
-      })(),
-      clawback_b_idx: (() => {
-        if (!pB?.sv) return 0;
-        const ferrPP = (capitalProjecte / 2) * 0.05;
-        const seuilIdx = IQPF.SEUIL_CLAWBACK_PSV * fiRetraite;
-        const incomeIdx = garantisB_idx + ferrPP;
-        return Math.min(Math.round(pB.sv * fiRetraite), Math.max(0, Math.round((incomeIdx - seuilIdx) * 0.15)));
-      })(),
-      // Pour transparence et pour le Studio :
+      clawback_a_idx: clawbackA,
+      clawback_b_idx: clawbackB,
       taux_indexation_pension_a: tauxIdxPensionA,
       taux_indexation_pension_b: tauxIdxPensionB,
       facteur_pension_a_retraite: fiPensionA,
@@ -387,44 +363,27 @@ export function buildPayload(profiles = []) {
   };
 }
 
-/**
- * debugPayload — pour diagnostiquer les valeurs lues depuis l'ABF
- * À retirer après correction
- */
 export function debugPayload(profiles = []) {
   const dict = {};
-  (profiles || []).forEach(p => {
-    if (p?.section) dict[p.section] = unwrap(p.data || p);
-  });
-
+  (profiles || []).forEach(p => { if (p?.section) dict[p.section] = unwrap(p.data || p); });
   const profil = dict.profil_personnel || {};
   const rev    = dict.revenu           || {};
   const ret    = dict.retraite         || {};
   const retCj  = ret.conjoint          || {};
-
   return {
     raw: {
-      revenu_retraite_pct:      ret.revenu_retraite_pct,
-      revenu_retraite_mensuel:  ret.revenu_retraite_mensuel,
-      rrq_a: ret.rrq,
-      rrq_b: retCj.rrq,
-      sv_a:  ret.sv,
-      sv_b:  retCj.sv,
+      revenu_retraite_pct: ret.revenu_retraite_pct,
+      revenu_retraite_mensuel: ret.revenu_retraite_mensuel,
+      rrq_a: ret.rrq, rrq_b: retCj.rrq,
+      rrq_mode_a: ret.rrq_mode, rrq_mode_b: retCj.rrq_mode,
+      salaire_moyen_a: ret.salaire_moyen_carriere, salaire_moyen_b: retCj.salaire_moyen_carriere,
+      annees_cot_a: ret.annees_cotisation_rrq, annees_cot_b: retCj.annees_cotisation_rrq,
+      annees_residence_a: ret.annees_residence_canada, annees_residence_b: retCj.annees_residence_canada,
       esperance_vie: ret.esperance_vie,
       situation: profil.situation,
-      reer_solde_a: (ret.comptes?.reer || []).map(c => c.solde),
-      cot_reer_a:   (ret.comptes?.reer || []).map(c => c.cotisation_mensuelle),
-      celi_solde_a: (ret.comptes?.celi || []).map(c => c.solde),
-      cot_celi_a:   (ret.comptes?.celi || []).map(c => c.cotisation_mensuelle),
-      celi_solde_b: (retCj.comptes?.celi || []).map(c => c.solde),
-      cot_celi_b:   (retCj.comptes?.celi || []).map(c => c.cotisation_mensuelle),
       emplois_a: (rev.emplois || []).map(e => ({ revenu_brut: e.revenu_brut })),
       emplois_b: (rev.conjoint?.emplois || []).map(e => ({ revenu_brut: e.revenu_brut })),
-      objectifs_section: dict.objectifs || {},
-      objectifs_keys: Object.keys(dict.objectifs || {}),
     },
     sections: Object.keys(dict),
-    retraite_keys: Object.keys(ret),
-    retraite_conjoint_keys: Object.keys(retCj),
   };
 }
