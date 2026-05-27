@@ -683,14 +683,59 @@ function RetraitePanel({ data, setData, stepData }) {
                     </div>
                   )}
 
-                  {fondPension.type === "prestation_determinee" && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <Field label="Prestation estimée à la retraite ($/mois)"><Input value={fondPension.prestation_mensuelle} onChange={v => setFondPension("prestation_mensuelle", v)} type="number" /></Field>
-                      <Field label="Âge de retraite du régime"><Input value={fondPension.age_retraite_regime} onChange={v => setFondPension("age_retraite_regime", v)} type="number" placeholder="65" /></Field>
-                      <Field label="Cotisation salariale mensuelle ($)"><Input value={fondPension.cotisation_salariale} onChange={v => setFondPension("cotisation_salariale", v)} type="number" /></Field>
-                      <Field label="Cotisation patronale mensuelle ($)"><Input value={fondPension.cotisation_patronale} onChange={v => setFondPension("cotisation_patronale", v)} type="number" /></Field>
-                    </div>
-                  )}
+                 {fondPension.type === "prestation_determinee" && (
+  <div className="space-y-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <Field label="Prestation mensuelle estimée ($/mois)" hint="Montant indiqué sur votre relevé de régime à ce jour (rente accumulée actuelle).">
+        <Input value={fondPension.prestation_mensuelle} onChange={v => setFondPension("prestation_mensuelle", v)} type="number" />
+      </Field>
+      <Field label="Âge de retraite du régime">
+        <Input value={fondPension.age_retraite_regime} onChange={v => setFondPension("age_retraite_regime", v)} type="number" placeholder="65" />
+      </Field>
+    </div>
+
+    {/* Indexation */}
+    <Field label={
+      <span>
+        Cette pension est-elle indexée ?
+        <InfoTooltip
+          explanation="L'indexation protège votre rente contre l'inflation. Non indexée : montant fixe à vie (pouvoir d'achat qui diminue avec le temps). Indexée : augmente chaque année selon une formule — pleine (100 % IPC) ou partielle (ex. RREGOP au secteur public ≈ IPC moins 3 %, plancher 50 %). Vérifiez votre relevé de régime ou demandez à votre employeur."
+          position="right"
+        />
+      </span>
+    }>
+      <RadioGroup
+        value={fondPension.indexee}
+        onChange={v => setFondPension("indexee", v)}
+        options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]}
+      />
+    </Field>
+
+    {fondPension.indexee === "oui" && (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <Field label="À quel taux ?">
+          <RadioGroup
+            value={fondPension.indexation_taux}
+            onChange={v => setFondPension("indexation_taux", v)}
+            options={[
+              { value: "plein", label: "Plein IPC" },
+              { value: "75", label: "75 % IPC" },
+              { value: "50", label: "50 % IPC" },
+              { value: "rregop", label: "IPC − 3 % (RREGOP)" },
+            ]}
+          />
+        </Field>
+        <Field label="Indexation avant la retraite ?" hint="La rente accumulée augmente-t-elle d'ici votre retraite, ou reste-t-elle figée jusque-là ?">
+          <RadioGroup
+            value={fondPension.indexation_avant_retraite}
+            onChange={v => setFondPension("indexation_avant_retraite", v)}
+            options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]}
+          />
+        </Field>
+      </div>
+    )}
+  </div>
+)}
                 </div>
               </motion.div>
             )}
