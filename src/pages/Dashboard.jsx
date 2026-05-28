@@ -103,6 +103,55 @@ function ScoreArc({ score }) {
 
 const fadeUp = (d = 0) => ({ initial: { opacity: 0, y: 14 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.45, delay: d, ease: [0.22, 1, 0.36, 1] } });
 
+// ── Face arrière de la carte Protection : les 3 options d'assurance ──────────
+function ProtectionPaliers({ reco }) {
+  if (!reco) return null;
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+        <p style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>Vos 3 options d'assurance</p>
+        <Link to="/protection" onClick={e => e.stopPropagation()} style={{ fontSize: 11, color: "#C9A063", textDecoration: "none" }}>Détail →</Link>
+      </div>
+      <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.4)", marginBottom: 14, lineHeight: 1.5 }}>
+        « Achetez de la temporaire et investissez la différence » · vue foyer
+      </p>
+      <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+        {reco.paliers.map(p => {
+          const prime = p.multiTerm ? p.multiTerm.primeInitiale : p.prime;
+          const win = p.recommandee;
+          return (
+            <div key={p.id} style={{
+              padding: "11px 13px", borderRadius: 12, position: "relative",
+              background: win ? "rgba(201,160,99,0.08)" : "rgba(255,255,255,0.03)",
+              border: win ? "1px solid rgba(201,160,99,0.3)" : "1px solid rgba(255,255,255,0.07)",
+            }}>
+              {win && <span style={{ position: "absolute", top: -8, right: 12, fontSize: 8.5, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: "linear-gradient(135deg,#C9A063,#B8954F)", color: "#1a1206", textTransform: "uppercase", letterSpacing: ".08em" }}>◆ Recommandée</span>}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <div>
+                  <p style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".08em", color: "rgba(201,160,99,0.6)" }}>{p.tagline}</p>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: win ? "#C9A063" : "#fff", marginTop: 2 }}>{p.label}</p>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <p style={{ fontFamily: "var(--font-mono)", fontSize: 15, fontWeight: 700, color: win ? "#C9A063" : "#fff", lineHeight: 1 }}>{fmtk(p.couverture)}</p>
+                  <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#5BC4A0", marginTop: 3 }}>{prime ? `${fmt(prime)}/mois` : "—"}</p>
+                </div>
+              </div>
+              {p.multiTerm && p.multiTerm.couches.length > 1 && (
+                <p style={{ fontSize: 9.5, color: "rgba(255,255,255,0.35)", marginTop: 7 }}>
+                  {p.multiTerm.couches.length} termes · {p.multiTerm.couches.map(c => c.terme).join(" + ")}
+                  {p.multiTerm.economiePct > 0 && <span style={{ color: "#5BC4A0" }}> · −{p.multiTerm.economiePct}%</span>}
+                </p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <Link to="/protection" onClick={e => e.stopPropagation()} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 14, padding: "10px", borderRadius: 10, background: "linear-gradient(135deg, #C9A063, #e6c07a)", color: "#050810", fontSize: 12.5, fontWeight: 700, textDecoration: "none" }}>
+        Plan familial complet →
+      </Link>
+    </div>
+  );
+}
 // ═══════════════════════════════════════════════════════════════════════════════
 export default function Dashboard() {
   const [user, setUser] = useState(null);
