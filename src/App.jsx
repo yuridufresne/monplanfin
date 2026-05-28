@@ -18,6 +18,7 @@ import FinancialAnalysis from '@/pages/FinancialAnalysis';
 import FeuilleResume from '@/pages/FeuilleResume';
 import AdvancedMode from '@/pages/AdvancedMode';
 import StudioDecaissement from '@/pages/StudioDecaissement';
+import ProtectionAssurance from '@/pages/ProtectionAssurance';
 
 const PUBLIC_PATHS = ['/', '/calculatrices'];
 
@@ -66,6 +67,7 @@ const AuthenticatedApp = () => {
         <Route path="/avance" element={<AdvancedMode />} />
       
         <Route path="/studio" element={<StudioDecaissement />} />
+        <Route path="/protection" element={<ProtectionAssurance />} />
         <Route path="*" element={<PageNotFound />} />
       </Route>
     </Routes>

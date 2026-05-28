@@ -16,6 +16,28 @@
  */
 
 // ────────────────────────────────────────────────────────────────────────────
+//  PAYLOAD PAR DÉFAUT
+// ────────────────────────────────────────────────────────────────────────────
+export const defaultProtectionPayload = {
+  prenom: "",
+  age: 35,
+  sexe: "homme",
+  fumeur: false,
+  hypotheque_solde: 0,
+  hypotheque_annees_restantes: 25,
+  dettes_autres: 0,
+  salaire_brut: 0,
+  nb_enfants: 0,
+  epargne_actuelle: 0,
+  frais_funeraires: 18000,
+  annees_remplacement_secur: 3,
+  annees_remplacement_optimal: undefined,
+  cout_etudes_par_enfant: 60000,
+  duree_pref_principale: "T20",
+  assurance_existante: 0,
+};
+
+// ────────────────────────────────────────────────────────────────────────────
 //  TABLES DE PRIX — $/mois pour 500 000 $ couverture (non-fumeur, classe std)
 //  Source : moyennes pondérées des 6 principaux assureurs canadiens (jan 2026)
 // ────────────────────────────────────────────────────────────────────────────
