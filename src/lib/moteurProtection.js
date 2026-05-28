@@ -13,8 +13,6 @@
  * Canada Life, Manulife, Empire Life, iA, Desjardins). À titre indicatif.
  */
 
-export { defaultProtectionPayload } from "./protectionPayload";
-
 // ────────────────────────────────────────────────────────────────────────────
 //  TABLES DE PRIX — $/mois pour 500 000 $ couverture (non-fumeur, classe std)
 // ────────────────────────────────────────────────────────────────────────────
