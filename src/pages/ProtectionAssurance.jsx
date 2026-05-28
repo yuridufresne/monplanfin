@@ -96,12 +96,12 @@ export default function ProtectionAssurance() {
 
   const [payloadA, setPayloadA] = useState(initA);
   const [payloadB, setPayloadB] = useState(initB);
-  const [mode, setMode] = useState("A"); // "A" | "B" | "couple"
+  const [mode, setMode] = useState("couple"); // défaut : plan familial (couple)
   const [avenantActif, setAvenantActif] = useState(false);
   const [avenantMontant, setAvenantMontant] = useState(10000);
 
   useEffect(() => { setPayloadA(initA); setPayloadB(initB); }, [initA, initB]);
-  useEffect(() => { if (!enCouple && mode !== "A") setMode("A"); }, [enCouple, mode]);
+  useEffect(() => { if (!enCouple) setMode("A"); }, [enCouple]);
 
   // En mode couple : études réparties 50/50 entre les deux parents
   const recoA = useMemo(() => calculerRecommandations(
