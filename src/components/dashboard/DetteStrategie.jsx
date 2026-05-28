@@ -152,8 +152,8 @@ export default function DetteStrategie({ dettes=[] }) {
 
 
       {/* Tableau */}
-      <div style={{borderRadius:12,overflow:"hidden",border:"1px solid rgba(255,255,255,0.08)"}}>
-        <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr 1fr",gap:0,background:"rgba(255,255,255,0.04)",padding:"8px 14px",borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
+      <div style={{borderRadius:12,overflow:"hidden",border:"1px solid rgba(255,255,255,0.08)",overflowX:"auto"}}>
+        <div style={{display:"grid",gridTemplateColumns:"minmax(160px,2fr) minmax(80px,1fr) minmax(90px,1fr) minmax(95px,1fr) minmax(85px,1fr) minmax(85px,1fr)",gap:0,background:"rgba(255,255,255,0.04)",padding:"8px 14px",borderBottom:"1px solid rgba(255,255,255,0.07)",minWidth:"700px"}}>
           {["Dette","Min","+ Accéléré","= Versement","Libéré", isActuel?"Intérêts":"Évités"].map(h=>(
             <div key={h} style={{fontSize:9,fontWeight:600,color:"rgba(255,255,255,0.25)",textTransform:"uppercase",letterSpacing:"0.07em",textAlign:h==="Dette"?"left":"right"}}>{h}</div>
           ))}
@@ -161,11 +161,11 @@ export default function DetteStrategie({ dettes=[] }) {
 
         {rows.map((r,i)=>(
           <div key={i}>
-            <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr 1fr",gap:0,padding:"12px 14px",background:i%2===0?"rgba(255,255,255,0.015)":"transparent",borderBottom:i<rows.length-1?"1px solid rgba(255,255,255,0.05)":"none",alignItems:"center"}}>
+            <div style={{display:"grid",gridTemplateColumns:"minmax(160px,2fr) minmax(80px,1fr) minmax(90px,1fr) minmax(95px,1fr) minmax(85px,1fr) minmax(85px,1fr)",gap:0,padding:"12px 14px",background:i%2===0?"rgba(255,255,255,0.015)":"transparent",borderBottom:i<rows.length-1?"1px solid rgba(255,255,255,0.05)":"none",alignItems:"center",minWidth:"700px"}}>
               <div style={{display:"flex",alignItems:"center",gap:8}}>
                 <div style={{width:22,height:22,borderRadius:"50%",background:"rgba(201,160,99,0.1)",border:"1px solid rgba(201,160,99,0.22)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:"#C9A063",flexShrink:0}}>{i+1}</div>
-                <div>
-                  <div style={{fontSize:12,fontWeight:600,color:"#fff"}}>{r.type||r.nom||"Dette"}</div>
+                <div style={{minWidth:0}}>
+                  <div style={{fontSize:12,fontWeight:600,color:"#fff",overflow:"hidden",textOverflow:"ellipsis"}}>{r.type||r.nom||"Dette"}</div>
                   <div style={{fontSize:10,color:C(r.taux)}}>{r.taux}% · {fmt(+r.solde)}</div>
                 </div>
               </div>
@@ -186,7 +186,7 @@ export default function DetteStrategie({ dettes=[] }) {
               </div>
             </div>
             {!isActuel&&i<rows.length-1&&(
-              <div style={{display:"flex",alignItems:"center",justifyContent:"center",padding:"2px 14px",background:i%2===0?"rgba(255,255,255,0.015)":"transparent"}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"center",padding:"2px 14px",background:i%2===0?"rgba(255,255,255,0.015)":"transparent",minWidth:"700px"}}>
                 <div style={{display:"flex",alignItems:"center",gap:6,padding:"2px 8px",borderRadius:4,background:"rgba(91,196,160,0.06)",border:"1px solid rgba(91,196,160,0.12)"}}>
                   <svg width="14" height="10" viewBox="0 0 14 10">
                     <path d="M2 2 L10 2 L10 8" fill="none" stroke="#5BC4A0" strokeWidth="1.2" strokeDasharray="2.5 1.5" strokeLinecap="round"/>
@@ -200,7 +200,7 @@ export default function DetteStrategie({ dettes=[] }) {
         ))}
 
         {/* Ligne totale */}
-        <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr 1fr",gap:0,padding:"12px 14px",background:"rgba(201,160,99,0.05)",borderTop:"1px solid rgba(201,160,99,0.15)",alignItems:"center"}}>
+        <div style={{display:"grid",gridTemplateColumns:"minmax(160px,2fr) minmax(80px,1fr) minmax(90px,1fr) minmax(95px,1fr) minmax(85px,1fr) minmax(85px,1fr)",gap:0,padding:"12px 14px",background:"rgba(201,160,99,0.05)",borderTop:"1px solid rgba(201,160,99,0.15)",alignItems:"center",minWidth:"700px"}}>
           <div style={{fontSize:12,fontWeight:700,color:"rgba(255,255,255,0.8)"}}>Total</div>
           <div style={{textAlign:"right",fontSize:12,fontWeight:700,color:"rgba(255,255,255,0.7)",fontVariantNumeric:"tabular-nums"}}>{fmtD(minTotal)}</div>
           <div style={{textAlign:"right",fontSize:12,fontWeight:700,color:!isActuel&&extra>0?"#5BC4A0":"rgba(255,255,255,0.25)",fontVariantNumeric:"tabular-nums"}}>{!isActuel&&extra>0?fmtD(extra):"—"}</div>
