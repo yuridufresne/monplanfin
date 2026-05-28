@@ -20,7 +20,6 @@ import PlacementStrategie from "@/components/dashboard/PlacementStrategie";
 import PlanDecaissement from "@/components/dashboard/PlanDecaissement";
 import StudioDecaissement from "@/pages/StudioDecaissement";
 import { calculerRecommandations } from "@/lib/moteurProtection";
-import ProtectionPaliers from "@/components/dashboard/ProtectionPaliers";
 
 // ── Formatters ────────────────────────────────────────────────────────────────
 const fmt = (v) => new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v || 0);
