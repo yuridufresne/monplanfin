@@ -152,9 +152,36 @@ export default function StudioDecaissement({ embedded = false, profiles: profile
 
       {/* Paramètres globaux */}
       <div style={{ ...S.card, padding: "16px 18px", marginBottom: 18 }}>
+        <style>{`
+          .studio-info{position:relative;display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;border:1px solid rgba(201,160,99,.4);color:#C9A063;font-size:11px;font-style:italic;font-weight:700;cursor:help}
+          .studio-info:hover .studio-tip{opacity:1;visibility:visible}
+          .studio-tip{position:absolute;top:calc(100% + 8px);left:0;background:#0A1119;border:1px solid rgba(201,160,99,.35);border-radius:10px;padding:12px 14px;width:340px;opacity:0;visibility:hidden;transition:all .15s;z-index:99;box-shadow:0 8px 24px rgba(0,0,0,.6);text-align:left;font-style:normal;font-weight:400;pointer-events:none}
+          .studio-tip-title{font-size:11px;font-weight:700;color:#fff;margin-bottom:8px;letter-spacing:.05em;text-transform:uppercase}
+          .studio-tip-row{display:flex;justify-content:space-between;gap:10px;padding:5px 0;font-size:11.5px;border-bottom:.5px solid rgba(255,255,255,.06)}
+          .studio-tip-row:last-child{border-bottom:none}
+          .studio-tip-k{color:rgba(255,255,255,.55)}
+          .studio-tip-v{color:#fff;font-family:ui-monospace,monospace;text-align:right}
+          .studio-tip-tag{display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:3px;margin-left:6px;letter-spacing:.05em;vertical-align:middle}
+          .studio-tag-abf{background:rgba(201,160,99,.18);color:#C9A063}
+          .studio-tag-sys{background:rgba(111,143,214,.18);color:#6F8FD6}
+        `}</style>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
           <div style={S.sec}>Hypothèses</div>
-          <div style={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 18, height: 18, borderRadius: "50%", border: "1px solid rgba(255,255,255,.2)", color: "rgba(255,255,255,.4)", fontSize: 11, fontWeight: 700, cursor: "help" }} title="Données provenant par défaut de votre profil ABF et des paramètres système">i</div>
+          <div className="studio-info">i
+            <div className="studio-tip">
+              <div className="studio-tip-title">Provenance des données</div>
+              <div className="studio-tip-row"><span className="studio-tip-k">Revenu cible NET<span className="studio-tip-tag studio-tag-abf">ABF</span></span><span className="studio-tip-v">{fmt(dCible)}</span></div>
+              <div className="studio-tip-row"><span className="studio-tip-k">Rendement accumulation<span className="studio-tip-tag studio-tag-sys">IQPF</span></span><span className="studio-tip-v">{((IQPF?.REND_ACCUM ?? 0.07) * 100).toFixed(1).replace(".", ",")} %</span></div>
+              <div className="studio-tip-row"><span className="studio-tip-k">Rendement décaissement<span className="studio-tip-tag studio-tag-sys">IQPF</span></span><span className="studio-tip-v">{((IQPF?.REND_DECAISSE ?? 0.05) * 100).toFixed(1).replace(".", ",")} %</span></div>
+              <div className="studio-tip-row"><span className="studio-tip-k">Inflation<span className="studio-tip-tag studio-tag-sys">IQPF</span></span><span className="studio-tip-v">2,3 %</span></div>
+              <div className="studio-tip-row"><span className="studio-tip-k">Espérance de vie<span className="studio-tip-tag studio-tag-abf">ABF</span></span><span className="studio-tip-v">{dEsp} ans</span></div>
+              <div className="studio-tip-row"><span className="studio-tip-k">Âge retraite<span className="studio-tip-tag studio-tag-abf">ABF</span></span><span className="studio-tip-v">{dRetA}{enCouple ? ` / ${dRetB}` : ""} ans</span></div>
+              <div className="studio-tip-row"><span className="studio-tip-k">RRQ / PSV / pension<span className="studio-tip-tag studio-tag-abf">ABF</span></span><span className="studio-tip-v">calculés</span></div>
+              <div style={{ marginTop: 8, fontSize: 10.5, color: "rgba(255,255,255,.4)", lineHeight: 1.5 }}>
+                <b style={{ color: "#C9A063" }}>ABF</b> = votre profil · <b style={{ color: "#6F8FD6" }}>IQPF</b> = normes 2025
+              </div>
+            </div>
+          </div>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 14 }}>
           <div><div style={S.label}>Revenu cible NET ($/an)</div><input type="number" value={cible} onChange={e => setCible(+e.target.value)} style={S.input} /></div>
