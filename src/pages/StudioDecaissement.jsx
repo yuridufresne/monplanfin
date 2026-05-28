@@ -152,7 +152,10 @@ export default function StudioDecaissement({ embedded = false, profiles: profile
 
       {/* Paramètres globaux */}
       <div style={{ ...S.card, padding: "16px 18px", marginBottom: 18 }}>
-        <div style={{ ...S.sec, marginBottom: 12 }}>Hypothèses</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+          <div style={S.sec}>Hypothèses</div>
+          <div style={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 18, height: 18, borderRadius: "50%", border: "1px solid rgba(255,255,255,.2)", color: "rgba(255,255,255,.4)", fontSize: 11, fontWeight: 700, cursor: "help" }} title="Données provenant par défaut de votre profil ABF et des paramètres système">i</div>
+        </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 14 }}>
           <div><div style={S.label}>Revenu cible NET ($/an)</div><input type="number" value={cible} onChange={e => setCible(+e.target.value)} style={S.input} /></div>
           <div><div style={S.label}>Rendement accumulation</div>
