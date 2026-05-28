@@ -487,12 +487,9 @@ export default function Dashboard() {
                   }
                   back={
                     <PlacementStrategie
-                      retraiteABF={retraiteABF}
-                      retraiteConj={retraiteConj}
+                      profiles={profiles}
                       revenuBrut={revBrut}
                       tauxMarginal={0.475}
-                      prenomA={profil.prenom || profil.nom?.split(" ")[0] || ""}
-                      prenomB={profil.conjoint?.prenom || profil.conjoint?.nom?.split(" ")[0] || ""}
                     />
                   }
                 />
