@@ -6,7 +6,7 @@ import { buildPayload, IQPF } from "@/lib/clientPayload";
 import { comparerStrategies } from "@/lib/moteurStrategies";
 import { projeterSoldesRetraite } from "@/lib/moteurDecaissement";
 import { ComposedChart, Area, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 /**
  * src/pages/StudioDecaissement.jsx
@@ -70,6 +70,7 @@ export default function StudioDecaissement({ embedded = false, profiles: profile
   const [esp, setEsp]       = useState(dEsp);
   const [tabStrat, setTabStrat] = useState(null);
   const [premiumUnlocked, setPremiumUnlocked] = useState(false); // ⇨ TODO: wire to subscription state
+  const navigate = useNavigate();
 
   // ── Projection des soldes ACTUELS jusqu'à la retraite (accumulation) ──────────
   // Indispensable : les soldes saisis sont à l'âge actuel (ex. 38 ans), pas à 65.
