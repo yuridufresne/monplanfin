@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 
 const fmt   = n => Math.round(n).toLocaleString("fr-CA") + " $";
 const fmtD  = n => (+n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " $";
@@ -107,12 +108,15 @@ export default function DetteStrategie({ dettes=[] }) {
       {/* Contrôles */}
       <div style={{display:"flex",gap:12,alignItems:"center",marginBottom:14,flexWrap:"wrap"}}>
         <div style={{display:"flex",gap:2,background:"rgba(255,255,255,0.05)",borderRadius:8,padding:2}}>
-          {[{k:"actuel",l:"Actuel"},{k:"avalanche",l:"Avalanche"},{k:"neige",l:"Boule de neige"}].map(({k,l})=>(
-            <button key={k} onClick={()=>setStrat(k)} style={{padding:"5px 12px",borderRadius:6,fontSize:11,fontWeight:600,cursor:"pointer",border:"none",transition:"all .2s",
-              background:strat===k?(k==="actuel"?"rgba(248,113,113,0.18)":"rgba(201,160,99,0.2)"):"transparent",
-              color:strat===k?(k==="actuel"?"#f87171":"#C9A063"):"rgba(255,255,255,0.35)"}}>
-              {l}
-            </button>
+          {[{k:"actuel",l:"Actuel"},{k:"avalanche",l:"Avalanche",t:"Rembourser les taux les plus hauts en premier. Économise le plus en intérêts totaux — stratégie mathématiquement optimale."},{k:"neige",l:"Boule de neige",t:"Rembourser les petits soldes en premier. Libère des dettes rapidement pour une motivation psychologique."}].map(({k,l,t})=>(
+            <div key={k} style={{display:"flex",alignItems:"center",gap:2}}>
+              <button onClick={()=>setStrat(k)} style={{padding:"5px 12px",borderRadius:6,fontSize:11,fontWeight:600,cursor:"pointer",border:"none",transition:"all .2s",
+                background:strat===k?(k==="actuel"?"rgba(248,113,113,0.18)":"rgba(201,160,99,0.2)"):"transparent",
+                color:strat===k?(k==="actuel"?"#f87171":"#C9A063"):"rgba(255,255,255,0.35)"}}>
+                {l}
+              </button>
+              {t && <InfoTooltip text={t} />}
+            </div>
           ))}
         </div>
         {!isActuel && (
