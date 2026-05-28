@@ -242,6 +242,29 @@ export default function Dashboard() {
   }, [bySection, enCouple]);
   const besoinAssurance = Math.max(0, 10 * revBrut + totalDebt - reerSolde - celiSolde);
 
+  // ── Recommandations Protection (vue foyer pour la carte flip) ──────────────
+  const recoProtection = useMemo(() => {
+    const hypoTotal = hypotheques.reduce((s, h) => s + (parseFloat(h.solde) || 0), 0);
+    const dettesAutresTotal = autresDettes.reduce((s, d) => s + (parseFloat(d.solde) || 0), 0);
+    const anneesHypo = parseInt(hypotheques[0]?.amortissement_restant) || 25;
+    const nbEnf = (allocABF.enfants || []).length || (reee > 0 ? 1 : 0);
+    return calculerRecommandations({
+      age: ageActuel || 38,
+      sexe: "homme",
+      fumeur: false,
+      hypotheque_solde: hypoTotal,
+      hypotheque_annees_restantes: anneesHypo,
+      dettes_autres: dettesAutresTotal,
+      frais_funeraires: 18000,
+      salaire_brut: revBrut,
+      nb_enfants: nbEnf,
+      cout_etudes_par_enfant: 60000,
+      epargne_actuelle: reerSolde + celiSolde,
+      annees_remplacement_secur: 3,
+      duree_pref_principale: "T20",
+    });
+  }, [hypotheques, autresDettes, allocABF, reee, ageActuel, revBrut, reerSolde, celiSolde]);
+
   const isEmpty = profiles.length === 0 && budgetEntries.length === 0;
 
   return (
