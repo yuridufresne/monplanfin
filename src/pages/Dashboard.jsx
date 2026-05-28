@@ -291,28 +291,39 @@ export default function Dashboard() {
   }, [bySection, enCouple]);
   const besoinAssurance = Math.max(0, 10 * revBrut + totalDebt - reerSolde - celiSolde);
 
-  // ── Recommandations Protection (vue foyer pour la carte flip) ──────────────
+  // ── Recommandations Protection — PLAN FAMILIAL (Jean + Marie séparés) ──────
   const recoProtection = useMemo(() => {
+    const revABF = bySection.revenu || {};
     const hypoTotal = hypotheques.reduce((s, h) => s + (parseFloat(h.solde) || 0), 0);
     const dettesAutresTotal = autresDettes.reduce((s, d) => s + (parseFloat(d.solde) || 0), 0);
     const anneesHypo = parseInt(hypotheques[0]?.amortissement_restant) || 25;
     const nbEnf = (allocABF.enfants || []).length || (reee > 0 ? 1 : 0);
-    return calculerRecommandations({
-      age: ageActuel || 38,
-      sexe: "homme",
-      fumeur: false,
-      hypotheque_solde: hypoTotal,
-      hypotheque_annees_restantes: anneesHypo,
-      dettes_autres: dettesAutresTotal,
-      frais_funeraires: 18000,
-      salaire_brut: revBrut,
-      nb_enfants: nbEnf,
-      cout_etudes_par_enfant: 60000,
-      epargne_actuelle: reerSolde + celiSolde,
-      annees_remplacement_secur: 3,
-      duree_pref_principale: "T20",
-    });
-  }, [hypotheques, autresDettes, allocABF, reee, ageActuel, revBrut, reerSolde, celiSolde]);
+    const ageDe = (dob) => dob ? Math.floor((Date.now() - new Date(dob)) / (365.25 * 24 * 3600 * 1000)) : 38;
+
+    // Hypothèque + dettes aux DEUX noms (responsabilité conjointe) · études 50/50
+    const etudesParEnfant = enCouple ? 30000 : 60000;
+    const salaireA = (revABF.emplois || []).reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0), 0);
+    const salaireB = enCouple ? ((revABF.conjoint?.emplois || []).reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0), 0)) : 0;
+    const epargneA = [...(comptes.reer || []), ...(comptes.celi || [])].reduce((s, c) => s + (parseFloat(c.solde) || 0), 0);
+    const epargneB = [...(comptesConj.reer || []), ...(comptesConj.celi || [])].reduce((s, c) => s + (parseFloat(c.solde) || 0), 0);
+
+    const base = {
+      hypotheque_solde: hypoTotal, hypotheque_annees_restantes: anneesHypo,
+      dettes_autres: dettesAutresTotal, frais_funeraires: 18000,
+      nb_enfants: nbEnf, cout_etudes_par_enfant: etudesParEnfant,
+      annees_remplacement_secur: 3, duree_pref_principale: "T20", fumeur: false,
+    };
+    const recoA = calculerRecommandations({ ...base, age: ageDe(profil.dob), sexe: "homme", salaire_brut: salaireA, epargne_actuelle: epargneA });
+    const recoB = enCouple
+      ? calculerRecommandations({ ...base, age: ageDe(profil.conjoint?.dob), sexe: "femme", salaire_brut: salaireB, epargne_actuelle: epargneB })
+      : null;
+
+    return {
+      recoA, recoB, enCouple,
+      nomA: (profil.nom || "").split(" ")[0] || "Conjoint A",
+      nomB: (profil.conjoint?.nom || "").split(" ")[0] || "Conjoint B",
+    };
+  }, [bySection, hypotheques, autresDettes, allocABF, reee, profil, enCouple, comptes, comptesConj]);
 
   const isEmpty = profiles.length === 0 && budgetEntries.length === 0;
 
