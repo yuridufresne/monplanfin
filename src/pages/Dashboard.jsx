@@ -410,7 +410,7 @@ export default function Dashboard() {
               {/* Dettes */}
               <motion.div {...fadeUp(0.16)}>
                 <FlipCard
-                  expandedHeight={560}
+                  expandedHeight={900}
                   onFlip={setDetteFlipped}
                   front={
                     <>
