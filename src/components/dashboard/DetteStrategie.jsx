@@ -97,7 +97,7 @@ export default function DetteStrategie({ dettes=[] }) {
   );
 
   return (
-    <div>
+     <div style={{width:"100%",boxSizing:"border-box"}}>
       {/* Header */}
       <div style={{marginBottom:14}}>
         <div style={{fontSize:14,fontWeight:700,color:"#C9A063",letterSpacing:"-0.3px"}}>Programme d'élimination des dettes</div>
