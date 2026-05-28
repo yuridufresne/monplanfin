@@ -373,23 +373,31 @@ export default function Dashboard() {
               {/* Protection + Revenus garantis — 2 cols */}
               <div style={{ gridColumn: nifFlipped ? "span 1 / -1" : "span 2 / span 2", display: nifFlipped ? "none" : "flex", flexDirection: "column", gap: 12 }}>
 
-                {/* Protection */}
+                {/* Protection — flip vers les 3 options */}
                 <motion.div {...fadeUp(0.12)}>
-                  <div style={{ ...G.card, padding: "1.1rem 1.25rem" }}>
-                    <SectionHeader title="Protection" badge={<Badge color="red">À compléter</Badge>} link />
-                    <Row left="Assurance vie" right={hasAssurance ? "✓ Active" : "Aucune ❌"} dot={hasAssurance ? "#5BC4A0" : "#f87171"} />
-                    <Row left="Testament" right={hasTestament ? "✓ Rédigé" : "Aucun ❌"} dot={hasTestament ? "#5BC4A0" : "#f87171"} />
-                    <Row left="Fonds urgence" right={moisFonds >= 3 ? `${moisFonds.toFixed(1)} mois ✓` : `${moisFonds.toFixed(1)} mois ❌`} dot={moisFonds >= 3 ? "#5BC4A0" : "#f87171"} />
-                    {besoinAssurance > 0 && (
-                      <div style={{ marginTop: 10, padding: "8px 10px", borderRadius: 10, background: "rgba(201,160,99,0.07)", border: "1px solid rgba(201,160,99,0.15)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                        <p style={{ ...MUTED }}>Besoin estimé</p>
-                        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                          <p style={{ fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 700, color: "#C9A063" }}>~{fmt(besoinAssurance)}</p>
-                          <InfoTooltip text="Formule : 10× revenu brut + dettes − épargne actuelle. Estimation indicative — consultez un conseiller AMF pour une analyse complète." />
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  <FlipCard
+                    expandedHeight={540}
+                    onFlip={setProtectionFlipped}
+                    front={
+                      <>
+                        <SectionHeader title="Protection" badge={<Badge color="red">À compléter</Badge>} link />
+                        <Row left="Assurance vie" right={hasAssurance ? "✓ Active" : "Aucune ❌"} dot={hasAssurance ? "#5BC4A0" : "#f87171"} />
+                        <Row left="Testament" right={hasTestament ? "✓ Rédigé" : "Aucun ❌"} dot={hasTestament ? "#5BC4A0" : "#f87171"} />
+                        <Row left="Fonds urgence" right={moisFonds >= 3 ? `${moisFonds.toFixed(1)} mois ✓` : `${moisFonds.toFixed(1)} mois ❌`} dot={moisFonds >= 3 ? "#5BC4A0" : "#f87171"} />
+                        {besoinAssurance > 0 && (
+                          <div style={{ marginTop: 10, padding: "8px 10px", borderRadius: 10, background: "rgba(201,160,99,0.07)", border: "1px solid rgba(201,160,99,0.15)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                            <p style={{ ...MUTED }}>Besoin estimé</p>
+                            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                              <p style={{ fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 700, color: "#C9A063" }}>~{fmt(besoinAssurance)}</p>
+                              <InfoTooltip text="Formule : 10× revenu brut + dettes − épargne actuelle. Estimation indicative — consultez un conseiller AMF pour une analyse complète." />
+                            </div>
+                          </div>
+                        )}
+                        <p style={{ fontSize: 10.5, color: "rgba(201,160,99,0.6)", marginTop: 12, textAlign: "center", fontWeight: 600 }}>↻ Cliquez pour voir les 3 options recommandées</p>
+                      </>
+                    }
+                    back={<ProtectionPaliers reco={recoProtection} />}
+                  />
                 </motion.div>
 
                 {/* Revenus garantis */}
