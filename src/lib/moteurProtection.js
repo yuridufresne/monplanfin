@@ -2,19 +2,19 @@
  * src/lib/moteurProtection.js
  * Moteur de recommandation d'assurance vie — Québec 2026.
  *
- * Philosophie : « Buy term and invest the difference » pour 95% des cas.
- * Génère 3 paliers (Urgence / Sécuritaire / Optimale) + une stratégie
- * multi-term (layering en escalier) pour le palier Optimale.
+ * Philosophie : « Buy term and invest the difference ».
+ * Génère 3 paliers (Urgence / Sécuritaire / Optimale), CHACUN avec sa propre
+ * stratégie multi-term en escalier (layering par composante de besoin).
  *
- * Edge case : pour les clients 60+, lève un drapeau `recommanderPermanente`
- * pour évaluer une petite T100 (frais funéraires + impôt successoral FERR).
+ * Edge case : pour les 60+, lève un drapeau permanente (T100) pour les
+ * frais de dernier recours + impôt successoral FERR.
  *
- * Tables de prime basées sur les rates publics 2026 (PolicyMe, Sun Life,
+ * Tables de prime basées sur les tarifs publics 2026 (PolicyMe, Sun Life,
  * Canada Life, Manulife, Empire Life, iA, Desjardins). À titre indicatif.
  */
 
 // ────────────────────────────────────────────────────────────────────────────
-//  TABLES DE PRIX — $/mois pour 500 000 $ couverture (non-fumeur, classe std)
+//  TABLES DE PRIX — $/mois pour 500 000 $ (non-fumeur, classe standard)
 // ────────────────────────────────────────────────────────────────────────────
 const TARIF_BASE_500K = {
   T10: {
@@ -37,13 +37,15 @@ const TARIF_BASE_500K = {
     homme: { 25: 34, 30: 42, 35: 55, 40: 88, 45: 145 },
     femme: { 25: 27, 30: 33, 35: 43, 40: 70, 45: 120 },
   },
-  T100: { // permanent — sans cash value
+  T100: {
     homme: { 30: 270, 35: 320, 40: 410, 45: 540, 50: 720, 55: 980, 60: 1350, 65: 1850, 70: 2600 },
     femme: { 30: 220, 35: 265, 40: 340, 45: 450, 50: 600, 55: 820, 60: 1130, 65: 1550, 70: 2200 },
   },
 };
 
-/** Interpolation linéaire entre 2 âges-pivots dans la table de prime. */
+const TERME_ANS = { T10: 10, T20: 20, T25: 25, T30: 30 };
+
+/** Interpolation linéaire entre 2 âges-pivots. */
 function interpolerPrime(table, age) {
   const ages = Object.keys(table).map(Number).sort((a, b) => a - b);
   if (age <= ages[0]) return table[ages[0]];
@@ -57,19 +59,12 @@ function interpolerPrime(table, age) {
   return table[ages[0]];
 }
 
-/**
- * Estime la prime mensuelle pour un montant et une durée donnés.
- * Formule : prime_base_500k × facteur_volume × multiplicateur_fumeur
- * Le ratio coût/couverture n'est pas strictement linéaire (rabais volume
- * au-delà de 500k, surcoût sous 100k).
- */
+/** Prime mensuelle estimée pour un montant + durée. */
 export function estimerPrime({ duree, age, sexe = "homme", fumeur = false, couverture }) {
   const tableDuree = TARIF_BASE_500K[duree];
   if (!tableDuree) return null;
   const tableAge = tableDuree[sexe] || tableDuree.homme;
-  const agesOfferts = Object.keys(tableAge).map(Number);
-  if (age > Math.max(...agesOfferts)) return null; // hors-marché
-
+  if (age > Math.max(...Object.keys(tableAge).map(Number))) return null; // hors-marché
   const base500k = interpolerPrime(tableAge, age);
   const ratio = couverture / 500000;
   let facteurVolume = ratio;
@@ -77,105 +72,82 @@ export function estimerPrime({ duree, age, sexe = "homme", fumeur = false, couve
   else if (ratio < 0.5) facteurVolume = ratio * 1.25;
   else if (ratio > 2) facteurVolume = ratio * 0.85;
   else if (ratio > 1) facteurVolume = ratio * 0.92;
-
-  const facteurFumeur = fumeur ? 2.4 : 1;
-  return Math.round(base500k * facteurVolume * facteurFumeur);
+  return Math.round(base500k * facteurVolume * (fumeur ? 2.4 : 1));
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-//  CALCUL DES PALIERS
-// ────────────────────────────────────────────────────────────────────────────
-
-/**
- * Palier 1 — URGENCE (minimum vital).
- * Formule : Hypothèque + Dettes + Frais funéraires − (épargne liquide × 50%)
- */
-function calculUrgence(p) {
-  const besoin = (p.hypotheque_solde || 0)
-    + (p.dettes_autres || 0)
-    + (p.frais_funeraires || 18000);
-  const epargneDispo = (p.epargne_actuelle || 0) * 0.5;
-  const dejaCouvert = p.assurance_existante || 0;
-  return Math.max(0, besoin - epargneDispo - dejaCouvert);
-}
-
-/**
- * Palier 2 — SÉCURITAIRE (transitoire).
- * Formule : Urgence + (salaire_net × annees_remplacement)
- *   salaire_net ≈ salaire_brut × 0.72 (approximation après impôt QC)
- */
-function calculSecuritaire(p, urgence) {
-  const salaireNet = (p.salaire_brut || 0) * 0.72;
-  const remplacement = salaireNet * (p.annees_remplacement_secur || 3);
-  return urgence + Math.round(remplacement);
-}
-
-/**
- * Palier 3 — OPTIMALE (paix d'esprit).
- * Formule : Urgence + capital_remplacement_revenu + études
- *
- * Le remplacement de revenu utilise une approche "capital actualisé" :
- * le capital qui, placé à un taux réel de 3%, génère le revenu net pendant
- * N années (N = jusqu'à 65 ans, plafonné 20 ans). Plafonné à 10× le salaire
- * net (standard industrie DIME) pour éviter le surdimensionnement.
- */
-function calculOptimal(p, urgence) {
-  const salaireNet = (p.salaire_brut || 0) * 0.72;
-  const annees = p.annees_remplacement_optimal
-    ?? Math.min(20, Math.max(5, 65 - (p.age || 35)));
-  const rReel = 0.03; // taux de rendement réel (net d'inflation)
-  const facteurRente = rReel > 0 ? (1 - Math.pow(1 + rReel, -annees)) / rReel : annees;
-  let remplacement = salaireNet * facteurRente;
-  remplacement = Math.min(remplacement, salaireNet * 10); // plafond industrie
-  const etudes = (p.nb_enfants || 0) * (p.cout_etudes_par_enfant || 60000);
-  return urgence + Math.round(remplacement) + Math.round(etudes);
-}
-
-// ────────────────────────────────────────────────────────────────────────────
-//  STRATÉGIE MULTI-TERM (LAYERING) — escalier décroissant.
+//  LAYERING PAR COMPOSANTE — escalier décroissant.
 //
-//  On superpose des couches dont la DURÉE correspond à la durée du besoin.
-//  À mesure que les besoins disparaissent (enfants autonomes, hypothèque
-//  remboursée), les couches courtes expirent et la prime CHUTE par paliers.
-//  L'économie se mesure sur le COÛT TOTAL sur la durée, pas la prime initiale.
-//
-//    Couche 1 (T10) : pointe — jeunes enfants + plein revenu
-//    Couche 2 (T20) : transition — ados, hypothèque mi-amortie
-//    Couche 3 (T30) : socle — hypothèque résiduelle
+//  Chaque besoin (dette, hypothèque, revenu, études, funéraires) a une DURÉE
+//  de vie propre → on l'assigne à un terme. On regroupe par terme, on fusionne
+//  les couches < 25 000 $, puis on calcule l'économie sur le coût total.
+//  Les couches courtes expirent en premier → la prime chute par paliers.
 // ────────────────────────────────────────────────────────────────────────────
-function strategieMultiTerm(p, montantOptimal) {
-  const age = p.age || 35;
-  const sexe = p.sexe || "homme";
-  const fumeur = p.fumeur || false;
+function layeringParComposantes(p, montantNet, composantesBrutes) {
+  const age = p.age || 35, sexe = p.sexe || "homme", fumeur = p.fumeur || false;
+  const annéesHypo = p.hypotheque_annees_restantes || 25;
+  const termeLong = age <= 50 ? "T30" : "T20"; // terme dispo le plus long selon l'âge
+  const termeHypo = annéesHypo <= 12 ? "T10" : annéesHypo <= 22 ? "T20" : termeLong;
 
-  const socle  = Math.max(0, (p.hypotheque_solde || 0) * 0.6);
-  const moyen  = Math.round((montantOptimal - socle) * 0.45);
-  const pointe = Math.max(0, montantOptimal - socle - moyen);
+  const valides = composantesBrutes.filter(c => c.montant > 0);
+  const brut = valides.reduce((s, c) => s + c.montant, 0);
+  if (brut <= 0 || montantNet <= 0) return null;
 
-  const couches = [
-    { duree: "T10", couverture: pointe, raison: "Pointe — jeunes enfants + plein revenu", expireAns: 10 },
-    { duree: "T20", couverture: moyen,  raison: "Transition — ados, hypothèque mi-amortie", expireAns: 20 },
-    { duree: "T30", couverture: socle,  raison: "Socle — hypothèque résiduelle", expireAns: 30 },
-  ].filter(c => c.couverture >= 25000);
+  // Résolution du terme + montant net proportionnel (somme = montant du palier)
+  const items = valides.map(c => ({
+    terme: c.terme === "HYPO" ? termeHypo : c.terme === "LONG" ? termeLong : c.terme,
+    label: c.label,
+    montant: montantNet * (c.montant / brut),
+  }));
 
-  couches.forEach(c => {
-    c.prime = estimerPrime({ duree: c.duree, age, sexe, fumeur, couverture: c.couverture });
+  // Regrouper par terme (montant + libellés)
+  const parTerme = {};
+  items.forEach(it => {
+    if (!parTerme[it.terme]) parTerme[it.terme] = { montant: 0, labels: new Set() };
+    parTerme[it.terme].montant += it.montant;
+    parTerme[it.terme].labels.add(it.label);
   });
 
+  let couches = Object.entries(parTerme)
+    .map(([terme, d]) => ({ terme, couverture: Math.round(d.montant / 25000) * 25000, labels: [...d.labels], expireAns: TERME_ANS[terme] }))
+    .filter(c => c.couverture > 0)
+    .sort((a, b) => a.expireAns - b.expireAns);
+
+  // Fusion des couches < 25k vers le terme supérieur (ou inférieur si dernière)
+  const MIN = 25000;
+  for (let i = 0; i < couches.length; i++) {
+    if (couches[i].couverture < MIN) {
+      const cible = i + 1 < couches.length ? i + 1 : i - 1;
+      if (cible >= 0) {
+        couches[cible].couverture += couches[i].couverture;
+        couches[i].labels.forEach(l => { if (!couches[cible].labels.includes(l)) couches[cible].labels.push(l); });
+      }
+      couches[i].couverture = 0;
+    }
+  }
+  couches = couches.filter(c => c.couverture >= MIN);
+  if (couches.length === 0) return null;
+
+  couches.forEach(c => {
+    c.raison = c.labels.join(" + ");
+    c.prime = estimerPrime({ duree: c.terme, age, sexe, fumeur, couverture: c.couverture });
+  });
+
+  // Coût total escalier (chaque couche paie tant qu'elle est active)
   let coutTotalLayering = 0;
-  const dureeMax = Math.max(...couches.map(c => c.expireAns), 0);
+  const dureeMax = Math.max(...couches.map(c => c.expireAns));
   for (let annee = 1; annee <= dureeMax; annee++) {
-    couches.forEach(c => {
-      if (annee <= c.expireAns && c.prime) coutTotalLayering += c.prime * 12;
-    });
+    couches.forEach(c => { if (annee <= c.expireAns && c.prime) coutTotalLayering += c.prime * 12; });
   }
 
-  const primeUnique = estimerPrime({ duree: "T30", age, sexe, fumeur, couverture: montantOptimal })
-    || estimerPrime({ duree: "T20", age, sexe, fumeur, couverture: montantOptimal });
+  // Comparaison : 1 seule police (terme le plus long, montant total)
+  const totalCouv = couches.reduce((s, c) => s + c.couverture, 0);
+  const primeUnique = estimerPrime({ duree: couches[couches.length - 1].terme, age, sexe, fumeur, couverture: totalCouv });
   const coutTotalUnique = (primeUnique || 0) * 12 * dureeMax;
 
   return {
     couches,
+    totalCouverture: totalCouv,
     primeInitiale: couches.reduce((s, c) => s + (c.prime || 0), 0),
     coutTotalLayering,
     coutTotalUnique,
@@ -186,28 +158,80 @@ function strategieMultiTerm(p, montantOptimal) {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-//  EDGE CASE — Recommandation permanente (T100)
-//
-//  Déclenche si âge ≥ 65, OU âge ≥ 60 avec besoin permanent ≥ 40k$,
-//  OU ratio prime (T20 / T100) > 40%.
-//  Besoin = frais funéraires + impôt successoral estimé sur FERR résiduel.
+//  CALCUL DES MONTANTS PAR PALIER
 // ────────────────────────────────────────────────────────────────────────────
+
+/** Urgence = Hypothèque + Dettes + Funéraires − (épargne liquide × 50%) */
+function calculUrgence(p) {
+  const besoin = (p.hypotheque_solde || 0) + (p.dettes_autres || 0) + (p.frais_funeraires || 18000);
+  return Math.max(0, besoin - (p.epargne_actuelle || 0) * 0.5 - (p.assurance_existante || 0));
+}
+
+/** Sécuritaire = Urgence + (salaire_net × annees_remplacement) */
+function calculSecuritaire(p, urgence) {
+  return urgence + Math.round((p.salaire_brut || 0) * 0.72 * (p.annees_remplacement_secur || 3));
+}
+
+/**
+ * Optimale = Urgence + capital_remplacement_revenu + études.
+ * Le revenu utilise un capital actualisé (taux réel 3%) sur N années
+ * (jusqu'à 65 ans, plafonné 20 ans), borné à 10× le salaire net (DIME).
+ */
+function calculOptimal(p, urgence) {
+  const salaireNet = (p.salaire_brut || 0) * 0.72;
+  const annees = p.annees_remplacement_optimal ?? Math.min(20, Math.max(5, 65 - (p.age || 35)));
+  const rReel = 0.03;
+  const facteurRente = rReel > 0 ? (1 - Math.pow(1 + rReel, -annees)) / rReel : annees;
+  let remplacement = Math.min(salaireNet * facteurRente, salaireNet * 10);
+  const etudes = (p.nb_enfants || 0) * (p.cout_etudes_par_enfant || 60000);
+  return urgence + Math.round(remplacement) + Math.round(etudes);
+}
+
+// ── Composantes (besoins bruts) par palier, avec terme naturel + libellé ──
+function composantesUrgence(p) {
+  return [
+    { terme: "T10", label: "Dettes", montant: p.dettes_autres || 0 },
+    { terme: "HYPO", label: "Hypothèque", montant: p.hypotheque_solde || 0 },
+    { terme: "LONG", label: "Frais funéraires", montant: p.frais_funeraires || 18000 },
+  ];
+}
+function composantesSecuritaire(p) {
+  const revTrans = Math.round((p.salaire_brut || 0) * 0.72 * (p.annees_remplacement_secur || 3));
+  return [
+    { terme: "T10", label: "Dettes", montant: p.dettes_autres || 0 },
+    { terme: "T10", label: "Revenu transitoire", montant: revTrans },
+    { terme: "HYPO", label: "Hypothèque", montant: p.hypotheque_solde || 0 },
+    { terme: "LONG", label: "Frais funéraires", montant: p.frais_funeraires || 18000 },
+  ];
+}
+function composantesOptimal(p) {
+  const salaireNet = (p.salaire_brut || 0) * 0.72;
+  const annees = p.annees_remplacement_optimal ?? Math.min(20, Math.max(5, 65 - (p.age || 35)));
+  const rReel = 0.03;
+  const facteurRente = rReel > 0 ? (1 - Math.pow(1 + rReel, -annees)) / rReel : annees;
+  const revenu = Math.min(salaireNet * facteurRente, salaireNet * 10);
+  const etudes = (p.nb_enfants || 0) * (p.cout_etudes_par_enfant || 60000);
+  return [
+    { terme: "T10", label: "Dettes", montant: p.dettes_autres || 0 },
+    { terme: "T10", label: "Pointe de revenu", montant: Math.round(revenu * 0.5) },
+    { terme: "T20", label: "Revenu prolongé", montant: Math.round(revenu * 0.5) },
+    { terme: "T20", label: "Études", montant: etudes },
+    { terme: "HYPO", label: "Hypothèque", montant: p.hypotheque_solde || 0 },
+    { terme: "LONG", label: "Frais funéraires", montant: p.frais_funeraires || 18000 },
+  ];
+}
+
+// ── Edge case permanente (T100) ──
 function evaluerPermanente(p) {
   const age = p.age || 35;
   if (age < 60) return { recommandee: false };
-
-  const sexe = p.sexe || "homme";
-  const fumeur = p.fumeur || false;
-
-  const ferrEstime = (p.epargne_actuelle || 0) * 0.5; // ~50% du capital en FERR
-  const impotSucc = ferrEstime * 0.30;                 // palier marginal moyen QC à 75 ans
-  const besoinPermanent = Math.max(25000, Math.min(150000,
-    (p.frais_funeraires || 18000) + impotSucc));
-
+  const sexe = p.sexe || "homme", fumeur = p.fumeur || false;
+  const ferrEstime = (p.epargne_actuelle || 0) * 0.5;
+  const impotSucc = ferrEstime * 0.30;
+  const besoinPermanent = Math.max(25000, Math.min(150000, (p.frais_funeraires || 18000) + impotSucc));
   const primeT100 = estimerPrime({ duree: "T100", age, sexe, fumeur, couverture: besoinPermanent });
-  const primeT20  = estimerPrime({ duree: "T20",  age, sexe, fumeur, couverture: besoinPermanent });
+  const primeT20 = estimerPrime({ duree: "T20", age, sexe, fumeur, couverture: besoinPermanent });
   const ratio = primeT20 && primeT100 ? primeT20 / primeT100 : 0;
-
   return {
     recommandee: age >= 65 || (age >= 60 && besoinPermanent >= 40000) || ratio > 0.40,
     couverture: Math.round(besoinPermanent / 5000) * 5000,
@@ -224,16 +248,14 @@ function evaluerPermanente(p) {
 //  FONCTION PRINCIPALE
 // ────────────────────────────────────────────────────────────────────────────
 export function calculerRecommandations(p) {
-  const age = p.age || 35;
-  const sexe = p.sexe || "homme";
-  const fumeur = p.fumeur || false;
+  const age = p.age || 35, sexe = p.sexe || "homme", fumeur = p.fumeur || false;
   const dureePref = p.duree_pref_principale || "T20";
-
   const urgence = calculUrgence(p);
   const securitaire = calculSecuritaire(p, urgence);
   const optimal = calculOptimal(p, urgence);
-
   const round25 = v => Math.round(v / 25000) * 25000;
+  const salaireNet = (p.salaire_brut || 0) * 0.72;
+  const anOptimal = p.annees_remplacement_optimal ?? Math.min(20, Math.max(5, 65 - age));
 
   const paliers = [
     {
@@ -250,6 +272,7 @@ export function calculerRecommandations(p) {
         { label: "Frais funéraires", montant: p.frais_funeraires || 18000 },
         { label: "Moins : épargne liquide", montant: -Math.round((p.epargne_actuelle || 0) * 0.5) },
       ],
+      multiTerm: layeringParComposantes(p, round25(urgence), composantesUrgence(p)),
     },
     {
       id: "securitaire",
@@ -262,9 +285,9 @@ export function calculerRecommandations(p) {
       recommandee: true,
       composantes: [
         { label: "Tout l'Urgence", montant: urgence },
-        { label: `Revenu net × ${p.annees_remplacement_secur || 3} ans`,
-          montant: Math.round((p.salaire_brut || 0) * 0.72 * (p.annees_remplacement_secur || 3)) },
+        { label: `Revenu net × ${p.annees_remplacement_secur || 3} ans`, montant: Math.round(salaireNet * (p.annees_remplacement_secur || 3)) },
       ],
+      multiTerm: layeringParComposantes(p, round25(securitaire), composantesSecuritaire(p)),
     },
     {
       id: "optimal",
@@ -276,12 +299,10 @@ export function calculerRecommandations(p) {
       prime: estimerPrime({ duree: dureePref, age, sexe, fumeur, couverture: round25(optimal) }),
       composantes: [
         { label: "Tout l'Urgence", montant: urgence },
-        { label: `Revenu (capital actualisé)`,
-          montant: Math.round(calculOptimal(p, 0) - (p.nb_enfants || 0) * (p.cout_etudes_par_enfant || 60000)) },
-        { label: `Études de ${p.nb_enfants || 0} enfant(s)`,
-          montant: (p.nb_enfants || 0) * (p.cout_etudes_par_enfant || 60000) },
+        { label: `Revenu (capital, ~${anOptimal} ans)`, montant: Math.round(optimal - urgence - (p.nb_enfants || 0) * (p.cout_etudes_par_enfant || 60000)) },
+        { label: `Études de ${p.nb_enfants || 0} enfant(s)`, montant: (p.nb_enfants || 0) * (p.cout_etudes_par_enfant || 60000) },
       ],
-      multiTerm: strategieMultiTerm(p, round25(optimal)),
+      multiTerm: layeringParComposantes(p, round25(optimal), composantesOptimal(p)),
     },
   ];
 
@@ -290,7 +311,7 @@ export function calculerRecommandations(p) {
     permanente: evaluerPermanente(p),
     hypotheses: {
       taux_remplacement_net: 0.72,
-      annees_jusqu_independance: Math.min(20, Math.max(5, 65 - age)),
+      annees_jusqu_independance: anOptimal,
       cout_etudes_par_enfant: p.cout_etudes_par_enfant || 60000,
       frais_funeraires: p.frais_funeraires || 18000,
     },
