@@ -245,6 +245,17 @@ function evaluerPermanente(p) {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
+//  AVENANT ENFANT (child term rider)
+//  Forfait unique couvrant TOUS les enfants (présents et futurs), indépendant
+//  du nombre d'enfants. Convertible en police adulte sans examen médical.
+//  Prix marché 2026 : 10k→~5$, 25k→~8$, 50k→~13$/mois → prime = 3 + montant/5000
+// ────────────────────────────────────────────────────────────────────────────
+export function primeAvenantEnfant(montant) {
+  if (!montant || montant < 5000) return 0;
+  return Math.round(3 + montant / 5000);
+}
+
+// ────────────────────────────────────────────────────────────────────────────
 //  FONCTION PRINCIPALE
 // ────────────────────────────────────────────────────────────────────────────
 export function calculerRecommandations(p) {
