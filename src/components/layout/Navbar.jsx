@@ -14,6 +14,7 @@ const privateLinks = [
   { label: "Feuille Résumé", path: "/resume" },
   { label: "Placements", path: "/placements" },
   { label: "Plan financier", path: "/plan" },
+  { label: "Studio de décaissement", path: "/studio" },
 ];
 
 export default function Navbar() {
