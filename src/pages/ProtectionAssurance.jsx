@@ -51,34 +51,41 @@ export default function ProtectionAssurance() {
     const aReee = !!(ret.comptes?.reee?.length || ret.conjoint?.comptes?.reee?.length);
     const nbEnfants = aReee ? 1 : 0;
 
-    const hypoA = (dettes.hypotheques || [])[0] || {};
+    const conj = profil.conjoint || {};
+    const revC = rev.conjoint || {};
+    const detC = dettes.conjoint || {};
+    const retC = ret.conjoint || {};
+
+    // Par défaut : hypothèque ET dettes aux DEUX noms (responsabilité conjointe).
+    // Chaque conjoint couvre le montant complet → le survivant est libéré au
+    // premier décès. Le conseiller ajuste dans le questionnaire si une dette
+    // est en réalité individuelle.
+    const hypoMenage = (dettes.hypotheques || [])[0] || (detC.hypotheques || [])[0] || {};
+    const hypoSolde = parseFloat(hypoMenage.solde) || 0;
+    const hypoAnnees = parseInt(hypoMenage.amortissement_restant) || 25;
+    const dettesMenage = sommeDettes(dettes.dettes) + sommeDettes(detC.dettes);
 
     const pA = {
       ...defaultProtectionPayload,
       prenom: profil.nom?.split(" ")[0] || "Conjoint A",
       age: ageDe(profil.dob),
       sexe: "homme",
-      hypotheque_solde: parseFloat(hypoA.solde) || 0,
-      hypotheque_annees_restantes: parseInt(hypoA.amortissement_restant) || 25,
-      dettes_autres: sommeDettes(dettes.dettes),
+      hypotheque_solde: hypoSolde,
+      hypotheque_annees_restantes: hypoAnnees,
+      dettes_autres: dettesMenage,
       salaire_brut: (rev.emplois || []).reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0), 0),
       nb_enfants: nbEnfants,
       epargne_actuelle: sommeComptes({ reer: ret.comptes?.reer, celi: ret.comptes?.celi }),
     };
 
-    const conj = profil.conjoint || {};
-    const revC = rev.conjoint || {};
-    const detC = dettes.conjoint || {};
-    const retC = ret.conjoint || {};
-    const hypoB = detC.a_hypotheque === "oui" ? ((detC.hypotheques || [])[0] || {}) : {};
     const pB = {
       ...defaultProtectionPayload,
       prenom: conj.nom?.split(" ")[0] || "Conjoint B",
       age: ageDe(conj.dob),
       sexe: "femme",
-      hypotheque_solde: parseFloat(hypoB.solde) || 0,
-      hypotheque_annees_restantes: parseInt(hypoB.amortissement_restant) || 0,
-      dettes_autres: sommeDettes(detC.dettes),
+      hypotheque_solde: hypoSolde,
+      hypotheque_annees_restantes: hypoAnnees,
+      dettes_autres: dettesMenage,
       salaire_brut: (revC.emplois || []).reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0), 0),
       nb_enfants: nbEnfants,
       epargne_actuelle: sommeComptes({ reer: retC.comptes?.reer, celi: retC.comptes?.celi }),
