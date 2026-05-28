@@ -202,20 +202,46 @@ export default function StudioDecaissement({ embedded = false, profiles: profile
               {[90, 93, 95, 98, 100].map(v => <option key={v} value={v} style={{ background: "#0D1628" }}>{v} ans</option>)}
             </select></div>
         </div>
-        <div style={{ fontSize: 11, color: "rgba(255,255,255,.35)", marginTop: 12, lineHeight: 1.6 }}>
-          <b style={{ color: "rgba(255,255,255,.55)" }}>Soldes actuels :</b>
-          <div style={{ marginTop: 6, paddingLeft: 8 }}>
-            <div><b style={{ color: COL.nonreg }}>{prenomA}</b> ({dAgeA} ans) — REER {fmt(dReerA)} {dCotReerA > 0 && <span style={{ color: "rgba(255,255,255,.3)" }}>(+{fmt(dCotReerA)}/mois)</span>} · CELI {fmt(dCeliA)} {dCotCeliA > 0 && <span style={{ color: "rgba(255,255,255,.3)" }}>(+{fmt(dCotCeliA)}/mois)</span>}</div>
-            {enCouple && (
-              <div><b style={{ color: COL.celi }}>{prenomB}</b> ({dAgeB} ans) — REER {fmt(dReerB)} {dCotReerB > 0 && <span style={{ color: "rgba(255,255,255,.3)" }}>(+{fmt(dCotReerB)}/mois)</span>} · CELI {fmt(dCeliB)} {dCotCeliB > 0 && <span style={{ color: "rgba(255,255,255,.3)" }}>(+{fmt(dCotCeliB)}/mois)</span>}</div>
-            )}
-          </div>
-          <div style={{ marginTop: 8 }}>
-            Projetés jusqu'à la retraite ({dRetA}{enCouple ? `/${dRetB}` : ""} ans) à {(rendAcc * 100).toFixed(1).replace(".", ",")} %/an :
-            <div style={{ marginTop: 4, paddingLeft: 8 }}>
-              <div><b style={{ color: COL.nonreg }}>{prenomA}</b> → <b style={{ color: COL.gold }}>REER/FERR {fmt(projete.reerA)} · CELI {fmt(projete.celiA)}</b></div>
+        <div style={{ fontSize: 11, color: "rgba(255,255,255,.35)", marginTop: 14 }}>
+          <div style={{ marginBottom: 10 }}>
+            <div style={{ color: "rgba(255,255,255,.5)", fontSize: 10, fontWeight: 600, letterSpacing: ".05em", textTransform: "uppercase", marginBottom: 8 }}>Soldes actuels</div>
+            <div style={{ display: "grid", gap: 6 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "120px 1fr", gap: 12, padding: "6px 0" }}>
+                <div><b style={{ color: COL.nonreg }}>{prenomA}</b> <span style={{ color: "rgba(255,255,255,.4)" }}>({dAgeA} a.)</span></div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, fontSize: 11 }}>
+                  <div><span style={{ color: "rgba(255,255,255,.4)" }}>REER</span> <b style={{ color: "#fff" }}>{fmt(dReerA)}</b> {dCotReerA > 0 && <span style={{ color: "rgba(255,255,255,.25)", fontSize: 10 }}>+{fmt(dCotReerA)}/m</span>}</div>
+                  <div><span style={{ color: "rgba(255,255,255,.4)" }}>CELI</span> <b style={{ color: "#fff" }}>{fmt(dCeliA)}</b> {dCotCeliA > 0 && <span style={{ color: "rgba(255,255,255,.25)", fontSize: 10 }}>+{fmt(dCotCeliA)}/m</span>}</div>
+                </div>
+              </div>
               {enCouple && (
-                <div><b style={{ color: COL.celi }}>{prenomB}</b> → <b style={{ color: COL.gold }}>REER/FERR {fmt(projete.reerB)} · CELI {fmt(projete.celiB)}</b></div>
+                <div style={{ display: "grid", gridTemplateColumns: "120px 1fr", gap: 12, padding: "6px 0", borderTop: "1px solid rgba(255,255,255,.06)" }}>
+                  <div><b style={{ color: COL.celi }}>{prenomB}</b> <span style={{ color: "rgba(255,255,255,.4)" }}>({dAgeB} a.)</span></div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, fontSize: 11 }}>
+                    <div><span style={{ color: "rgba(255,255,255,.4)" }}>REER</span> <b style={{ color: "#fff" }}>{fmt(dReerB)}</b> {dCotReerB > 0 && <span style={{ color: "rgba(255,255,255,.25)", fontSize: 10 }}>+{fmt(dCotReerB)}/m</span>}</div>
+                    <div><span style={{ color: "rgba(255,255,255,.4)" }}>CELI</span> <b style={{ color: "#fff" }}>{fmt(dCeliB)}</b> {dCotCeliB > 0 && <span style={{ color: "rgba(255,255,255,.25)", fontSize: 10 }}>+{fmt(dCotCeliB)}/m</span>}</div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+          <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid rgba(255,255,255,.08)" }}>
+            <div style={{ color: "rgba(255,255,255,.5)", fontSize: 10, fontWeight: 600, letterSpacing: ".05em", textTransform: "uppercase", marginBottom: 8 }}>Projetés à la retraite ({dRetA}{enCouple ? `/${dRetB}` : ""} ans) @ {(rendAcc * 100).toFixed(1).replace(".", ",")} %/an</div>
+            <div style={{ display: "grid", gap: 6 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "120px 1fr", gap: 12, padding: "6px 0" }}>
+                <div><b style={{ color: COL.nonreg }}>{prenomA}</b></div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, fontSize: 11 }}>
+                  <div><span style={{ color: "rgba(255,255,255,.4)" }}>REER/FERR</span> <b style={{ color: COL.gold }}>{fmt(projete.reerA)}</b></div>
+                  <div><span style={{ color: "rgba(255,255,255,.4)" }}>CELI</span> <b style={{ color: COL.gold }}>{fmt(projete.celiA)}</b></div>
+                </div>
+              </div>
+              {enCouple && (
+                <div style={{ display: "grid", gridTemplateColumns: "120px 1fr", gap: 12, padding: "6px 0", borderTop: "1px solid rgba(255,255,255,.06)" }}>
+                  <div><b style={{ color: COL.celi }}>{prenomB}</b></div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, fontSize: 11 }}>
+                    <div><span style={{ color: "rgba(255,255,255,.4)" }}>REER/FERR</span> <b style={{ color: COL.gold }}>{fmt(projete.reerB)}</b></div>
+                    <div><span style={{ color: "rgba(255,255,255,.4)" }}>CELI</span> <b style={{ color: COL.gold }}>{fmt(projete.celiB)}</b></div>
+                  </div>
+                </div>
               )}
             </div>
           </div>
