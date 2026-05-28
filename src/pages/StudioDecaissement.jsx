@@ -203,9 +203,22 @@ export default function StudioDecaissement({ embedded = false, profiles: profile
             </select></div>
         </div>
         <div style={{ fontSize: 11, color: "rgba(255,255,255,.35)", marginTop: 12, lineHeight: 1.6 }}>
-          <b style={{ color: "rgba(255,255,255,.55)" }}>Soldes actuels :</b> REER {fmt(dReerA + (enCouple ? dReerB : 0))} (+{fmt(dCotReerA + (enCouple ? dCotReerB : 0))}/mois) · CELI {fmt(dCeliA + (enCouple ? dCeliB : 0))} (+{fmt(dCotCeliA + (enCouple ? dCotCeliB : 0))}/mois).
-          <br />Projetés de l'âge actuel ({prenomA} {dAgeA} ans{enCouple ? `, ${prenomB} ${dAgeB} ans` : ""}) jusqu'à la retraite ({dRetA} ans) à {(rendAcc * 100).toFixed(1).replace(".", ",")} %/an
-          → <b style={{ color: COL.gold }}>REER/FERR {fmt(projete.reerA + (enCouple ? projete.reerB : 0))} · CELI {fmt(projete.celiA + (enCouple ? projete.celiB : 0))}</b>.
+          <b style={{ color: "rgba(255,255,255,.55)" }}>Soldes actuels :</b>
+          <div style={{ marginTop: 6, paddingLeft: 8 }}>
+            <div><b style={{ color: COL.nonreg }}>{prenomA}</b> ({dAgeA} ans) — REER {fmt(dReerA)} {dCotReerA > 0 && <span style={{ color: "rgba(255,255,255,.3)" }}>(+{fmt(dCotReerA)}/mois)</span>} · CELI {fmt(dCeliA)} {dCotCeliA > 0 && <span style={{ color: "rgba(255,255,255,.3)" }}>(+{fmt(dCotCeliA)}/mois)</span>}</div>
+            {enCouple && (
+              <div><b style={{ color: COL.celi }}>{prenomB}</b> ({dAgeB} ans) — REER {fmt(dReerB)} {dCotReerB > 0 && <span style={{ color: "rgba(255,255,255,.3)" }}>(+{fmt(dCotReerB)}/mois)</span>} · CELI {fmt(dCeliB)} {dCotCeliB > 0 && <span style={{ color: "rgba(255,255,255,.3)" }}>(+{fmt(dCotCeliB)}/mois)</span>}</div>
+            )}
+          </div>
+          <div style={{ marginTop: 8 }}>
+            Projetés jusqu'à la retraite ({dRetA}{enCouple ? `/${dRetB}` : ""} ans) à {(rendAcc * 100).toFixed(1).replace(".", ",")} %/an :
+            <div style={{ marginTop: 4, paddingLeft: 8 }}>
+              <div><b style={{ color: COL.nonreg }}>{prenomA}</b> → <b style={{ color: COL.gold }}>REER/FERR {fmt(projete.reerA)} · CELI {fmt(projete.celiA)}</b></div>
+              {enCouple && (
+                <div><b style={{ color: COL.celi }}>{prenomB}</b> → <b style={{ color: COL.gold }}>REER/FERR {fmt(projete.reerB)} · CELI {fmt(projete.celiB)}</b></div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
