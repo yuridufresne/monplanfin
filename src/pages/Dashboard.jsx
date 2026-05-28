@@ -104,7 +104,27 @@ const fadeUp = (d = 0) => ({ initial: { opacity: 0, y: 14 }, animate: { opacity:
 
 // ── Face arrière de la carte Protection : les 3 options d'assurance ──────────
 function ProtectionPaliers({ reco }) {
-  if (!reco) return null;
+  if (!reco?.recoA?.paliers) return null;
+  const { recoA, recoB, enCouple } = reco;
+  // Fusion des paliers A + B pour vue foyer (couverture et prime additionnées)
+  const paliersFoyer = recoA.paliers.map((pA, i) => {
+    const pB = enCouple && recoB ? recoB.paliers[i] : null;
+    const primeA = pA.multiTerm ? pA.multiTerm.primeInitiale : (pA.prime || 0);
+    const primeB = pB ? (pB.multiTerm ? pB.multiTerm.primeInitiale : (pB.prime || 0)) : 0;
+    const nbCouchesA = pA.multiTerm?.couches?.length || 1;
+    const nbCouchesB = pB?.multiTerm?.couches?.length || 0;
+    return {
+      id: pA.id,
+      label: pA.label,
+      tagline: pA.tagline,
+      couverture: pA.couverture + (pB?.couverture || 0),
+      prime: primeA + primeB,
+      recommandee: pA.recommandee,
+      nbTermes: Math.max(nbCouchesA, nbCouchesB),
+      termes: pA.multiTerm?.couches?.map(c => c.terme).join(" + ") || pA.duree,
+      economiePct: pA.multiTerm?.economiePct || 0,
+    };
+  });
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
@@ -112,11 +132,11 @@ function ProtectionPaliers({ reco }) {
         <Link to="/protection" onClick={e => e.stopPropagation()} style={{ fontSize: 11, color: "#C9A063", textDecoration: "none" }}>Détail →</Link>
       </div>
       <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.4)", marginBottom: 14, lineHeight: 1.5 }}>
-        « Achetez de la temporaire et investissez la différence » · vue foyer
+        « Achetez de la temporaire et investissez la différence » · {enCouple ? "vue foyer (couple)" : "vue individuelle"}
       </p>
       <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
-        {reco.paliers.map(p => {
-          const prime = p.multiTerm ? p.multiTerm.primeInitiale : p.prime;
+        {paliersFoyer.map(p => {
+          const prime = p.prime;
           const win = p.recommandee;
           return (
             <div key={p.id} style={{
@@ -135,10 +155,10 @@ function ProtectionPaliers({ reco }) {
                   <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#5BC4A0", marginTop: 3 }}>{prime ? `${fmt(prime)}/mois` : "—"}</p>
                 </div>
               </div>
-              {p.multiTerm && p.multiTerm.couches.length > 1 && (
+              {p.nbTermes > 1 && (
                 <p style={{ fontSize: 9.5, color: "rgba(255,255,255,0.35)", marginTop: 7 }}>
-                  {p.multiTerm.couches.length} termes · {p.multiTerm.couches.map(c => c.terme).join(" + ")}
-                  {p.multiTerm.economiePct > 0 && <span style={{ color: "#5BC4A0" }}> · −{p.multiTerm.economiePct}%</span>}
+                  {p.nbTermes} termes · {p.termes}
+                  {p.economiePct > 0 && <span style={{ color: "#5BC4A0" }}> · −{p.economiePct}%</span>}
                 </p>
               )}
             </div>
