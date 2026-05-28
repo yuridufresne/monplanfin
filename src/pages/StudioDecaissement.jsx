@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { buildPayload, IQPF } from "@/lib/clientPayload";
@@ -290,7 +291,10 @@ export default function StudioDecaissement({ embedded = false, profiles: profile
       {/* Graphiques */}
       <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 14, marginBottom: 18 }}>
         <div style={{ ...S.card, padding: "16px 18px" }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: COL.ivory }}>Trajectoire du patrimoine</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: COL.ivory }}>Trajectoire du patrimoine</div>
+            <InfoTooltip text="Soldes au début de chaque année de retraite. Les projections incluent les rendements, les retraits et l'inflation." />
+          </div>
           <div style={{ fontSize: 12, color: "rgba(255,255,255,.35)", marginBottom: 10 }}>Stratégie : {stratAffichee.strat}</div>
           <ResponsiveContainer width="100%" height={290}>
             <ComposedChart data={glide} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
