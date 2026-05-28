@@ -183,22 +183,22 @@ export default function StudioDecaissement({ embedded = false, profiles: profile
             </div>
           </div>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 14 }}>
-          <div><div style={S.label}>Revenu cible NET ($/an)</div><input type="number" value={cible} onChange={e => setCible(+e.target.value)} style={S.input} /></div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 14, opacity: 0.6, pointerEvents: "none" }}>
+          <div><div style={S.label}>Revenu cible NET ($/an)</div><input type="number" value={cible} onChange={e => setCible(+e.target.value)} style={S.input} disabled /></div>
           <div><div style={S.label}>Rendement accumulation</div>
-            <select value={rendAcc} onChange={e => setRendAcc(+e.target.value)} style={S.select}>
+            <select value={rendAcc} onChange={e => setRendAcc(+e.target.value)} style={S.select} disabled>
               {[0.03, 0.035, 0.04, 0.045, 0.05, 0.055, 0.06, 0.065, 0.07, 0.075, 0.08, 0.085, 0.09].map(v => <option key={v} value={v} style={{ background: "#0D1628" }}>{(v * 100).toFixed(1).replace(".", ",")} %</option>)}
             </select></div>
           <div><div style={S.label}>Rendement décaissement</div>
-            <select value={rend} onChange={e => setRend(+e.target.value)} style={S.select}>
+            <select value={rend} onChange={e => setRend(+e.target.value)} style={S.select} disabled>
               {[0.03, 0.035, 0.04, 0.045, 0.05, 0.055, 0.06, 0.065, 0.07, 0.075, 0.08, 0.085, 0.09].map(v => <option key={v} value={v} style={{ background: "#0D1628" }}>{(v * 100).toFixed(1).replace(".", ",")} %</option>)}
             </select></div>
           <div><div style={S.label}>Inflation</div>
-            <select value={inf} onChange={e => setInf(+e.target.value)} style={S.select}>
+            <select value={inf} onChange={e => setInf(+e.target.value)} style={S.select} disabled>
               {[0.021, 0.023, 0.025, 0.03].map(v => <option key={v} value={v} style={{ background: "#0D1628" }}>{(v * 100).toFixed(1).replace(".", ",")} %</option>)}
             </select></div>
           <div><div style={S.label}>Espérance de vie</div>
-            <select value={esp} onChange={e => setEsp(+e.target.value)} style={S.select}>
+            <select value={esp} onChange={e => setEsp(+e.target.value)} style={S.select} disabled>
               {[90, 93, 95, 98, 100].map(v => <option key={v} value={v} style={{ background: "#0D1628" }}>{v} ans</option>)}
             </select></div>
         </div>
