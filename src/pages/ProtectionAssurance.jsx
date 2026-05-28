@@ -4,13 +4,12 @@ import { base44 } from "@/api/base44Client";
 import { Link } from "react-router-dom";
 import { calculerRecommandations } from "@/lib/moteurProtection";
 import { defaultProtectionPayload } from "@/lib/protectionPayload";
-import { AlertTriangle, Layers } from "lucide-react";
+import { AlertTriangle, Layers, TrendingDown } from "lucide-react";
 
 /**
  * src/pages/ProtectionAssurance.jsx
- * Module Protection — assurance vie. 3 paliers (Urgence / Sécuritaire /
- * Optimale) en cartes pricing + stratégie multi-term + edge case permanente.
- * Pré-rempli depuis le profil ABF.
+ * Module Protection — assurance vie. 3 paliers en cartes pricing, CHACUN
+ * avec sa stratégie multi-terme (escalier). Edge case permanente pour 60+.
  */
 
 const COL = {
@@ -31,7 +30,6 @@ export default function ProtectionAssurance() {
     queryFn: () => base44.entities.FinancialProfile.list(),
   });
 
-  // ── Pré-remplissage depuis le profil ABF ──
   const initialPayload = useMemo(() => {
     const unwrap = (raw) => raw?.data?.data || raw?.data || raw || {};
     const m = {};
@@ -75,7 +73,7 @@ export default function ProtectionAssurance() {
 
   return (
     <div style={{ background: COL.bg, minHeight: "100vh", padding: "24px 20px", color: "#fff", fontFamily: "Inter,sans-serif" }}>
-      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+      <div style={{ maxWidth: 1240, margin: "0 auto" }}>
 
         {/* ─── Header ─── */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 10, marginBottom: 22 }}>
@@ -85,13 +83,13 @@ export default function ProtectionAssurance() {
               De combien d'assurance avez-vous vraiment besoin ?
             </div>
             <div style={{ fontSize: 13, color: "rgba(255,255,255,.45)", maxWidth: 720, lineHeight: 1.5 }}>
-              Philosophie : <i>« Achetez de la temporaire et investissez la différence »</i>. Trois niveaux de protection — du minimum vital à la paix d'esprit totale.
+              Philosophie : <i>« Achetez de la temporaire et investissez la différence »</i>. Trois niveaux de protection, chacun optimisé en plusieurs termes pour réduire le coût total.
             </div>
           </div>
           <Link to="/dashboard" style={{ fontSize: 11, color: "rgba(255,255,255,.35)", textDecoration: "none", padding: "6px 12px", borderRadius: 8, border: "1px solid rgba(255,255,255,.08)", background: "rgba(255,255,255,.03)" }}>← Tableau de bord</Link>
         </div>
 
-        {/* ─── Questionnaire compact ─── */}
+        {/* ─── Questionnaire ─── */}
         <div style={{ ...S.card, padding: "18px 20px", marginBottom: 20 }}>
           <div style={S.sec}>Votre situation</div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 14, marginTop: 12 }}>
@@ -110,23 +108,20 @@ export default function ProtectionAssurance() {
             </Champ>
             <Champ label="Salaire brut ($/an)"><input type="number" value={payload.salaire_brut} onChange={e => set("salaire_brut")(+e.target.value)} style={S.input} /></Champ>
             <Champ label="Hypothèque ($)"><input type="number" value={payload.hypotheque_solde} onChange={e => set("hypotheque_solde")(+e.target.value)} style={S.input} /></Champ>
+            <Champ label="Années restantes hypo."><input type="number" value={payload.hypotheque_annees_restantes} onChange={e => set("hypotheque_annees_restantes")(+e.target.value)} style={S.input} /></Champ>
             <Champ label="Autres dettes ($)"><input type="number" value={payload.dettes_autres} onChange={e => set("dettes_autres")(+e.target.value)} style={S.input} /></Champ>
             <Champ label="Nombre d'enfants"><input type="number" value={payload.nb_enfants} onChange={e => set("nb_enfants")(+e.target.value)} style={S.input} /></Champ>
             <Champ label="Épargne / placements ($)"><input type="number" value={payload.epargne_actuelle} onChange={e => set("epargne_actuelle")(+e.target.value)} style={S.input} /></Champ>
           </div>
         </div>
 
-        {/* ─── Edge Case : Permanente recommandée ─── */}
+        {/* ─── Edge Case : Permanente ─── */}
         {reco.permanente.recommandee && (
           <div style={{ padding: "16px 20px", marginBottom: 18, borderRadius: 14, border: "1px solid rgba(234,179,8,.3)", background: "linear-gradient(135deg, rgba(234,179,8,.08), rgba(234,179,8,.02))", display: "flex", gap: 14, alignItems: "flex-start" }}>
             <AlertTriangle style={{ color: COL.amber, flexShrink: 0, marginTop: 2 }} size={22} />
             <div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: COL.amber, marginBottom: 4 }}>
-                Évaluer une assurance permanente (T100)
-              </div>
-              <div style={{ fontSize: 12.5, color: "rgba(255,255,255,.65)", lineHeight: 1.6, marginBottom: 8 }}>
-                {reco.permanente.raison}
-              </div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: COL.amber, marginBottom: 4 }}>Évaluer une assurance permanente (T100)</div>
+              <div style={{ fontSize: 12.5, color: "rgba(255,255,255,.65)", lineHeight: 1.6, marginBottom: 8 }}>{reco.permanente.raison}</div>
               <div style={{ fontSize: 12, color: "#fff" }}>
                 Couverture suggérée : <b style={{ color: COL.amber }}>{fmt(reco.permanente.couverture)}</b> ·
                 Prime T100 estimée : <b style={{ color: COL.amber }}>{fmt(reco.permanente.prime)}/mois</b>
@@ -138,13 +133,10 @@ export default function ProtectionAssurance() {
           </div>
         )}
 
-        {/* ─── Cartes Pricing (3 paliers) ─── */}
+        {/* ─── Cartes Pricing (3 paliers avec layering intégré) ─── */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14, marginBottom: 18 }}>
           {reco.paliers.map(p => <CartePalier key={p.id} palier={p} S={S} />)}
         </div>
-
-        {/* ─── Stratégie Multi-Term (escalier) ─── */}
-        <StrategieMultiTerm reco={reco} S={S} />
 
         {/* ─── Disclaimer ─── */}
         <p style={{ fontSize: 11, color: "rgba(255,255,255,.25)", marginTop: 18, lineHeight: 1.7 }}>
@@ -170,12 +162,14 @@ function Champ({ label, children }) {
 
 function CartePalier({ palier, S }) {
   const win = palier.recommandee;
+  const mt = palier.multiTerm;
   return (
     <div style={{
-      ...S.card, padding: "20px 20px 22px", position: "relative",
+      ...S.card, padding: "20px 18px 20px", position: "relative",
       border: win ? "1.5px solid rgba(201,160,99,.55)" : S.card.border,
       boxShadow: win ? "0 18px 50px -20px rgba(201,160,99,.45)" : undefined,
       background: win ? "linear-gradient(150deg, rgba(201,160,99,.07), rgba(255,255,255,.02))" : S.card.background,
+      display: "flex", flexDirection: "column",
     }}>
       {win && (
         <span style={{ position: "absolute", top: -11, left: "50%", transform: "translateX(-50%)", fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: "#1a1206", background: `linear-gradient(150deg, ${COL.gold}, ${COL.gold2})`, padding: "4px 14px", borderRadius: 14, fontWeight: 700, whiteSpace: "nowrap" }}>
@@ -185,76 +179,67 @@ function CartePalier({ palier, S }) {
       <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: "rgba(201,160,99,.55)", marginBottom: 4 }}>{palier.tagline}</div>
       <div style={{ fontSize: 18, fontWeight: 700, color: win ? COL.gold : COL.ivory, marginBottom: 12 }}>{palier.label}</div>
 
-      <div style={{ padding: "16px 0", borderTop: "1px solid rgba(255,255,255,.08)", borderBottom: "1px solid rgba(255,255,255,.08)", marginBottom: 14 }}>
-        <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 28, fontWeight: 700, color: win ? COL.gold : "#fff", lineHeight: 1, marginBottom: 4 }}>
+      <div style={{ padding: "14px 0", borderTop: "1px solid rgba(255,255,255,.08)", borderBottom: "1px solid rgba(255,255,255,.08)", marginBottom: 12 }}>
+        <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 26, fontWeight: 700, color: win ? COL.gold : "#fff", lineHeight: 1, marginBottom: 4 }}>
           {fmtk(palier.couverture)}
         </div>
-        <div style={{ fontSize: 11, color: COL.dim }}>couverture {palier.duree}</div>
+        <div style={{ fontSize: 11, color: COL.dim }}>couverture totale</div>
       </div>
-
-      <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 16, fontWeight: 600, color: COL.celi, marginBottom: 4 }}>
-        {palier.prime ? `${fmt(palier.prime)}/mois` : "—"}
-      </div>
-      <div style={{ fontSize: 11, color: COL.dim, marginBottom: 16 }}>prime estimée</div>
 
       <div style={{ fontSize: 12, color: "rgba(255,255,255,.55)", marginBottom: 14, lineHeight: 1.5, minHeight: 54 }}>
         {palier.description}
       </div>
 
-      <div style={{ borderTop: "1px solid rgba(255,255,255,.06)", paddingTop: 12 }}>
-        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: COL.dim, marginBottom: 8 }}>Composition</div>
-        {palier.composantes.map((c, i) => (
-          <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "4px 0", fontSize: 12 }}>
-            <span style={{ color: "rgba(255,255,255,.6)" }}>{c.label}</span>
-            <span style={{ fontFamily: "ui-monospace,monospace", color: c.montant < 0 ? COL.red : "#fff" }}>
-              {c.montant < 0 ? "−" : ""}{fmtk(Math.abs(c.montant))}
+      {/* ── Stratégie multi-terme (escalier) ── */}
+      {mt && mt.couches.length >= 1 && (
+        <div style={{ borderTop: "1px solid rgba(255,255,255,.06)", paddingTop: 12, marginBottom: 4 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+            <Layers size={13} color={COL.celi} />
+            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: COL.celi }}>
+              Stratégie {mt.couches.length > 1 ? `${mt.couches.length} termes` : "1 terme"}
             </span>
+            {mt.economiePct > 0 && (
+              <span style={{ marginLeft: "auto", fontSize: 9, fontWeight: 700, padding: "2px 7px", borderRadius: 5, background: "rgba(91,196,160,.15)", border: "1px solid rgba(91,196,160,.3)", color: COL.celi, display: "inline-flex", alignItems: "center", gap: 3 }}>
+                <TrendingDown size={10} /> −{mt.economiePct}%
+              </span>
+            )}
           </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
-function StrategieMultiTerm({ reco, S }) {
-  const optimal = reco.paliers.find(p => p.id === "optimal");
-  const mt = optimal?.multiTerm;
-  if (!mt || mt.couches.length < 2) return null;
-
-  return (
-    <div style={{ ...S.card, padding: "18px 20px", marginBottom: 18, background: "linear-gradient(135deg, rgba(91,196,160,.05), rgba(7,14,28,.4))", border: "1px solid rgba(91,196,160,.2)" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6, flexWrap: "wrap" }}>
-        <Layers size={18} color={COL.celi} />
-        <div style={{ fontSize: 15, fontWeight: 700, color: COL.celi }}>Stratégie optimisée — Multi-Term (escalier)</div>
-        <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 8px", borderRadius: 5, background: `linear-gradient(135deg, ${COL.celi}, #4DAE8F)`, color: "#050810", letterSpacing: ".08em" }}>−{mt.economiePct}%</span>
-      </div>
-      <div style={{ fontSize: 12.5, color: "rgba(255,255,255,.55)", marginBottom: 14, lineHeight: 1.5 }}>
-        On superpose plusieurs termes de durées différentes. À mesure que vos besoins baissent (enfants autonomes, hypothèque remboursée), les couches courtes expirent et <b style={{ color: COL.celi }}>votre prime chute par paliers</b>.
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: `repeat(${mt.couches.length}, 1fr)`, gap: 12, marginBottom: 14 }}>
-        {mt.couches.map((c, i) => (
-          <div key={i} style={{ padding: "14px 16px", borderRadius: 12, background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,255,255,.08)" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-              <div style={{ width: 22, height: 22, borderRadius: 6, background: "rgba(91,196,160,.15)", border: "1px solid rgba(91,196,160,.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: COL.celi }}>{i + 1}</div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{c.duree}</div>
+          {mt.couches.map((c, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: i < mt.couches.length - 1 ? "1px solid rgba(255,255,255,.04)" : "none" }}>
+              <div style={{ width: 38, fontFamily: "ui-monospace,monospace", fontSize: 12, fontWeight: 700, color: COL.gold, flexShrink: 0 }}>{c.terme}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: "ui-monospace,monospace", fontSize: 13, fontWeight: 600, color: "#fff" }}>{fmtk(c.couverture)}</div>
+                <div style={{ fontSize: 10, color: COL.dim, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.raison}</div>
+              </div>
+              <div style={{ fontFamily: "ui-monospace,monospace", fontSize: 12, fontWeight: 600, color: COL.celi, flexShrink: 0 }}>{c.prime ? `${fmt(c.prime)}/m` : "—"}</div>
             </div>
-            <div style={{ fontSize: 11, color: COL.dim, marginBottom: 4, minHeight: 30, lineHeight: 1.4 }}>{c.raison}</div>
-            <div style={{ fontFamily: "ui-monospace,monospace", fontSize: 17, fontWeight: 700, color: COL.gold, marginBottom: 2 }}>{fmtk(c.couverture)}</div>
-            <div style={{ fontFamily: "ui-monospace,monospace", fontSize: 12, color: COL.celi }}>{c.prime ? `${fmt(c.prime)}/mois` : "—"}</div>
-          </div>
-        ))}
-      </div>
+          ))}
 
-      <div style={{ padding: "12px 14px", borderRadius: 10, background: "rgba(91,196,160,.08)", border: "1px solid rgba(91,196,160,.2)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
-        <div>
-          <div style={{ fontSize: 11, color: COL.dim, marginBottom: 2 }}>Prime de départ (toutes couches actives)</div>
-          <div style={{ fontFamily: "ui-monospace,monospace", fontSize: 18, fontWeight: 700, color: COL.celi }}>{fmt(mt.primeInitiale)}/mois</div>
+          {/* Récap prime + économie */}
+          <div style={{ marginTop: 10, padding: "10px 12px", borderRadius: 10, background: "rgba(91,196,160,.06)", border: "1px solid rgba(91,196,160,.18)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+              <span style={{ fontSize: 11, color: COL.dim }}>Prime de départ</span>
+              <span style={{ fontFamily: "ui-monospace,monospace", fontSize: 15, fontWeight: 700, color: COL.celi }}>{fmt(mt.primeInitiale)}/mois</span>
+            </div>
+            {mt.economie > 0 && (
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 4 }}>
+                <span style={{ fontSize: 10.5, color: COL.dim }}>Économie sur {mt.dureeMax} ans</span>
+                <span style={{ fontFamily: "ui-monospace,monospace", fontSize: 11.5, fontWeight: 600, color: COL.celi }}>{fmt(mt.economie)}</span>
+              </div>
+            )}
+          </div>
+          {mt.couches.length > 1 && (
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,.3)", marginTop: 8, lineHeight: 1.5, fontStyle: "italic" }}>
+              La prime baisse à mesure que les termes courts expirent et que vos besoins diminuent.
+            </div>
+          )}
         </div>
-        <div style={{ textAlign: "right" }}>
-          <div style={{ fontSize: 11, color: COL.dim, marginBottom: 2 }}>Économie sur {mt.dureeMax} ans vs police unique</div>
-          <div style={{ fontFamily: "ui-monospace,monospace", fontSize: 16, fontWeight: 700, color: COL.celi }}>{fmt(mt.economie)} ({mt.economiePct}%)</div>
-        </div>
+      )}
+
+      {/* Comparaison police unique */}
+      <div style={{ marginTop: "auto", paddingTop: 10, fontSize: 10.5, color: "rgba(255,255,255,.3)" }}>
+        Alternative simple : 1 seule police {palier.duree} {palier.prime ? `≈ ${fmt(palier.prime)}/mois` : ""}
       </div>
     </div>
   );
