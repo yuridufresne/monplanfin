@@ -69,6 +69,7 @@ export default function StudioDecaissement({ embedded = false, profiles: profile
   const [inf, setInf]       = useState(0.023);
   const [esp, setEsp]       = useState(dEsp);
   const [tabStrat, setTabStrat] = useState(null);
+  const [premiumUnlocked, setPremiumUnlocked] = useState(false); // ⇨ TODO: wire to subscription state
 
   // ── Projection des soldes ACTUELS jusqu'à la retraite (accumulation) ──────────
   // Indispensable : les soldes saisis sont à l'âge actuel (ex. 38 ans), pas à 65.
@@ -385,6 +386,49 @@ export default function StudioDecaissement({ embedded = false, profiles: profile
             })}
           </tbody>
         </table>
+      </div>
+
+      {/* ═══════════════ CTA — Simulateur avancé (Premium) ═══════════════ */}
+      <div style={{
+        marginTop: 18, padding: "20px 22px", borderRadius: 16,
+        border: "1px solid rgba(201,160,99,.25)",
+        background: "linear-gradient(135deg, rgba(201,160,99,.07), rgba(7,14,28,.4))",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        flexWrap: "wrap", gap: 16,
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14, flex: "1 1 320px" }}>
+          <div style={{
+            width: 48, height: 48, borderRadius: 12, flexShrink: 0,
+            background: "linear-gradient(135deg, rgba(201,160,99,.18), rgba(201,160,99,.05))",
+            border: "1px solid rgba(201,160,99,.3)",
+            display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22,
+          }}>{premiumUnlocked ? "🔓" : "🔒"}</div>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
+              <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 8px", borderRadius: 5, background: `linear-gradient(135deg, ${COL.gold}, ${COL.gold2})`, color: "#050810", letterSpacing: ".08em" }}>◆ PREMIUM</span>
+            </div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: COL.ivory, marginBottom: 2 }}>
+              Simulateur de décaissement avancé
+            </div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,.5)", lineHeight: 1.5 }}>
+              Modélisation à la Pl. Fin. : crédits/paliers indexés annuellement, fractionnement, optimisation FERR/CELI/CRI, scénarios de décès, export PDF/Excel.
+            </div>
+          </div>
+        </div>
+        <button
+          onClick={() => premiumUnlocked ? null : setPremiumUnlocked(true)}
+          style={{
+            padding: "11px 22px", borderRadius: 12, fontSize: 13, fontWeight: 700,
+            background: premiumUnlocked ? "rgba(91,196,160,.15)" : `linear-gradient(135deg, ${COL.gold}, ${COL.gold2})`,
+            color: premiumUnlocked ? COL.celi : "#050810",
+            border: premiumUnlocked ? "1px solid rgba(91,196,160,.4)" : "none",
+            cursor: premiumUnlocked ? "default" : "pointer",
+            letterSpacing: ".02em", whiteSpace: "nowrap",
+            boxShadow: premiumUnlocked ? "none" : "0 8px 24px -8px rgba(201,160,99,.5)",
+          }}
+        >
+          {premiumUnlocked ? "✓ Débloqué" : "◆ Débloquer — 19,99 $/mois"}
+        </button>
       </div>
 
       <p style={{ fontSize: 11, color: "rgba(255,255,255,.25)", marginTop: 14, lineHeight: 1.7 }}>
