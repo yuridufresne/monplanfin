@@ -19,9 +19,11 @@ import DetteStrategie from "@/components/dashboard/DetteStrategie";
 import PlacementStrategie from "@/components/dashboard/PlacementStrategie";
 import PlanDecaissement from "@/components/dashboard/PlanDecaissement";
 import StudioDecaissement from "@/pages/StudioDecaissement";
+import { calculerRecommandations } from "@/lib/moteurProtection";
 
 // ── Formatters ────────────────────────────────────────────────────────────────
 const fmt = (v) => new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v || 0);
+const fmtk = (v) => { const a = Math.abs(Math.round(v || 0)); return a >= 1e6 ? (a / 1e6).toFixed(2) + " M$" : a >= 1000 ? Math.round(a / 1000) + " k$" : a + " $"; };
 const fmtPct = (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)} %`;
 
 // ── Style tokens ──────────────────────────────────────────────────────────────
@@ -108,6 +110,7 @@ export default function Dashboard() {
   const [detteFlipped, setDetteFlipped] = useState(false);
   const [placementFlipped, setPlacementFlipped] = useState(false);
   const [nifFlipped, setNifFlipped] = useState(false);
+  const [protectionFlipped, setProtectionFlipped] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(setUser);
