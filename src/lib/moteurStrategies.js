@@ -88,6 +88,9 @@ function simuler(cfg, strat) {
     const f = fIdx(annee, inf), cibleA = cible * f;
     const seuilClaw = PARAMS.psv.seuilRecup * f;
 
+    // Snapshot des soldes en DÉBUT d'année (avant retraits et croissance)
+    const patrimoineDebut = P.map(p => ({ ferr: Math.round(p.ferr), celi: Math.round(p.celi), nonReg: Math.round(p.nonReg) }));
+
     // ── CELI : nouveau plafond annuel (indexé) + restoration des retraits N-1 ──
     P.forEach(p => {
       p.celiRoom += CELI_ROOM_BASE * f;
@@ -206,7 +209,7 @@ function simuler(cfg, strat) {
       detail: E.map(e => ({ sal: Math.round(e.sal), rrq: Math.round(e.rrq), psv: Math.round(e.psv), pens: Math.round(e.pens), ferrMin: Math.round(e.ferrMin), ferrAdd: Math.round(e.ferrAdd), celi: Math.round(e.celiRet) })),
       retire: Math.round(E.reduce((s, e) => s + e.sal + e.rrq + e.psv + e.pens + e.ferrMin + e.ferrAdd + e.celiRet, 0)),
       impot: Math.round(imp), clawback: Math.round(claw), net: Math.round(net), cible: Math.round(cibleA), ecart: Math.round(net - cibleA), deficit,
-      patrimoine: P.map(p => ({ ferr: Math.round(p.ferr), celi: Math.round(p.celi), nonReg: Math.round(p.nonReg) })),
+      patrimoine: patrimoineDebut,
     });
     P.forEach(p => p.ageC++); annee++;
   }
