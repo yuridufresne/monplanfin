@@ -148,9 +148,21 @@ export default function StudioDecaissement({ embedded = false, profiles: profile
           </div>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <button style={{ fontSize: 13, fontWeight: 700, padding: "10px 18px", borderRadius: 10, background: premiumUnlocked ? "rgba(91,196,160,.15)" : `linear-gradient(135deg, ${COL.gold}, ${COL.gold2})`, color: premiumUnlocked ? COL.celi : "#050810", border: premiumUnlocked ? `1px solid ${COL.celi}` : "none", cursor: "pointer", boxShadow: premiumUnlocked ? "none" : `0 8px 24px -8px ${COL.gold}` }} onClick={() => !premiumUnlocked && setPremiumUnlocked(true)}>
-            {premiumUnlocked ? "✓ Modélisation avancée" : "🔒 Modélisation avancée"}
-          </button>
+          {!embedded && (
+            <button 
+              onClick={() => navigate("/avance")}
+              style={{ 
+                fontSize: 13, fontWeight: 700, padding: "10px 18px", borderRadius: 10, 
+                background: `linear-gradient(135deg, ${COL.gold}, ${COL.gold2})`, 
+                color: "#050810", 
+                border: "none", 
+                cursor: "pointer", 
+                boxShadow: `0 8px 24px -8px ${COL.gold}`,
+                whiteSpace: "nowrap",
+              }}>
+              🔒 Modélisation avancée
+            </button>
+          )}
           {!embedded && (
             <Link to="/dashboard" style={{ fontSize: 11, color: "rgba(255,255,255,.35)", textDecoration: "none", padding: "6px 12px", borderRadius: 8, border: "1px solid rgba(255,255,255,.08)", background: "rgba(255,255,255,.03)" }}>← Tableau de bord</Link>
           )}
