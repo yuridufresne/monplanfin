@@ -16,6 +16,7 @@ const privateLinks = [
   { label: "Plan financier", path: "/plan" },
   { label: "Studio de décaissement", path: "/studio" },
   { label: "Protection", path: "/protection" },
+  { label: "Immobilier", path: "/immobilier" },
 ];
 
 export default function Navbar() {
