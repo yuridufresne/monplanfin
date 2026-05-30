@@ -259,6 +259,21 @@ export default function SoumettreDossierModal({ onClose, profiles, user }) {
                 style={{ ...inputStyle, resize: "vertical", minHeight: 70, fontFamily: "inherit" }} />
             </Section>
 
+            {/* ─── Réassurance AMF ─── */}
+            <div style={{ marginTop: 18, padding: "12px 16px", borderRadius: 12, background: "rgba(91,196,160,0.06)", border: "1px solid rgba(91,196,160,0.22)" }}>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                <Shield size={18} color="#5BC4A0" style={{ flexShrink: 0, marginTop: 1 }} />
+                <div>
+                  <p style={{ fontSize: 12.5, fontWeight: 600, color: "#fff", marginBottom: 3 }}>
+                    Nos conseillers sont accrédités par l'AMF
+                  </p>
+                  <p style={{ fontSize: 11.5, color: "rgba(255,255,255,0.6)", lineHeight: 1.6 }}>
+                    Tous nos partenaires conseillers détiennent un permis valide de l'<strong style={{ color: "#fff" }}>Autorité des marchés financiers du Québec</strong>. Vous pouvez vérifier leur certification sur le <a href="https://lautorite.qc.ca/grand-public/registres/registre-des-entreprises-et-des-individus-autorises-a-exercer" target="_blank" rel="noopener noreferrer" style={{ color: "#5BC4A0", textDecoration: "underline" }}>registre officiel de l'AMF</a>.
+                  </p>
+                </div>
+              </div>
+            </div>
+
             {/* ─── Consentement explicite (Loi 25) ─── */}
             <div style={{ marginTop: 20, padding: "14px 16px", borderRadius: 12, background: "rgba(201,160,99,0.05)", border: "1px solid rgba(201,160,99,0.2)" }}>
               <label style={{ display: "flex", gap: 12, cursor: "pointer", alignItems: "flex-start" }}>
