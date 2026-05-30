@@ -422,3 +422,301 @@ const selectStyle = {
   padding: "8px 12px", borderRadius: 9, background: "#080d18",
   border: "1px solid rgba(255,255,255,0.08)", color: "#fff", fontSize: 12.5, cursor: "pointer", outline: "none",
 };
+
+// ══════════════════════════════════════════════════════════════
+// SNAPSHOT COMPLET — Vue détaillée de tout l'ABF du client
+// ══════════════════════════════════════════════════════════════
+
+function SnapshotComplet({ snapshot }) {
+  const fmt$ = (v) => (v !== undefined && v !== null && v !== "" && parseFloat(v) !== 0)
+    ? new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(parseFloat(v))
+    : "—";
+  const fmtAge = (dob) => {
+    if (!dob) return "—";
+    const d = new Date(dob);
+    if (isNaN(d.getTime())) return "—";
+    return `${Math.floor((Date.now() - d) / (365.25 * 24 * 3600 * 1000))} ans`;
+  };
+
+  const profil      = snapshot.profil_personnel || {};
+  const revenu      = snapshot.revenu           || {};
+  const dettes      = snapshot.dettes           || {};
+  const immo        = snapshot.immobilier       || {};
+  const retraite    = snapshot.retraite         || {};
+  const assurance   = snapshot.assurance        || {};
+  const objectifs   = snapshot.objectifs        || {};
+  const fondsUrg    = snapshot.fonds_urgence    || {};
+  const allocations = snapshot.allocations      || {};
+
+  const enCouple = ["marie", "conjoint", "union_civile"].includes(profil.situation || "");
+  const conjoint = enCouple ? (profil.conjoint || {}) : {};
+
+  // Synthèse immobilier
+  const hypos = immo.hypotheques || dettes.hypotheques || [];
+  const valeurImmo = hypos.reduce((s, h) => s + (parseFloat(h.valeur_marchande || h.prix_achat) || 0), 0);
+  const dettesImmo = hypos.reduce((s, h) => s + (parseFloat(h.solde) || 0), 0);
+  const equiteImmo = valeurImmo - dettesImmo;
+
+  // Synthèse épargne
+  const comptes  = retraite.comptes || {};
+  const comptesC = enCouple ? (retraite.conjoint?.comptes || {}) : {};
+  const sumSoldes = (key) => [...(comptes[key] || []), ...(comptesC[key] || [])].reduce((s, c) => s + (parseFloat(c.solde) || 0), 0);
+  const sumCot    = (key) => [...(comptes[key] || []), ...(comptesC[key] || [])].reduce((s, c) => s + (parseFloat(c.cotisation_mensuelle) || 0), 0);
+  const totalReer    = sumSoldes("reer");
+  const totalCeli    = sumSoldes("celi");
+  const totalReee    = sumSoldes("reee");
+  const totalCeliapp = sumSoldes("celiapp");
+  const totalCri     = sumSoldes("cri");
+  const totalFrv     = sumSoldes("frv");
+  const cotReer = sumCot("reer"); const cotCeli = sumCot("celi"); const cotReee = sumCot("reee");
+
+  // Synthèse revenus
+  const emplois  = revenu.emplois || [];
+  const emploisC = enCouple ? (revenu.conjoint?.emplois || []) : [];
+  const totalSalaireBrut = [...emplois, ...emploisC].reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0), 0);
+
+  // Synthèse dettes
+  const autresDettes = [...(dettes.dettes || []), ...(enCouple ? (dettes.conjoint?.dettes || []) : [])];
+  const totalAutresDettes = autresDettes.reduce((s, d) => s + (parseFloat(d.solde) || 0), 0);
+  const totalPaiementsDettes = autresDettes.reduce((s, d) => s + (parseFloat(d.paiement_min) || 0), 0);
+
+  const enfants = allocations.enfants || [];
+
+  return (
+    <div style={{ marginTop: 16 }}>
+      <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: "#C9A063", marginBottom: 12 }}>
+        📋 Dossier financier complet
+      </p>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+
+        {/* ── 1. Identité ── */}
+        <SectionSnap titre="👤 Identité & profil" color="#6B8ED6">
+          <GridSnap>
+            <Info label="Nom" value={profil.nom} />
+            <Info label="Date naissance" value={profil.dob} sub={fmtAge(profil.dob)} />
+            <Info label="Sexe" value={profil.sexe} />
+            <Info label="Situation" value={profil.situation} />
+            <Info label="Email" value={profil.email} />
+            <Info label="Téléphone" value={profil.cell || profil.telephone} />
+            <Info label="Adresse" value={profil.adresse} colSpan={2} />
+            <Info label="Province" value={profil.province} />
+            <Info label="Nb enfants" value={enfants.length || (allocations.a_enfants ? "Oui" : null)} />
+            {enCouple && (
+              <>
+                <Info label="Conjoint(e)" value={conjoint.nom} />
+                <Info label="DOB conjoint" value={conjoint.dob} sub={fmtAge(conjoint.dob)} />
+              </>
+            )}
+          </GridSnap>
+        </SectionSnap>
+
+        {/* ── 2. Revenus ── */}
+        {(emplois.length > 0 || emploisC.length > 0) && (
+          <SectionSnap titre="💼 Revenus & emplois" color="#5BC4A0">
+            {emplois.map((e, i) => (
+              <SubBlock key={`a${i}`} titre={`${(profil.nom || "Principal").split(" ")[0]} — Emploi ${i + 1}`}>
+                <GridSnap>
+                  <Info label="Employeur" value={e.employeur} />
+                  <Info label="Salaire brut" value={fmt$(e.revenu_brut) + "/an"} color="#5BC4A0" />
+                  <Info label="Type contrat" value={e.type_contrat || e.type_revenu} />
+                  <Info label="Années" value={e.annees_service} />
+                </GridSnap>
+              </SubBlock>
+            ))}
+            {enCouple && emploisC.map((e, i) => (
+              <SubBlock key={`b${i}`} titre={`${(conjoint.nom || "Conjoint").split(" ")[0]} — Emploi ${i + 1}`}>
+                <GridSnap>
+                  <Info label="Employeur" value={e.employeur} />
+                  <Info label="Salaire brut" value={fmt$(e.revenu_brut) + "/an"} color="#5BC4A0" />
+                  <Info label="Type contrat" value={e.type_contrat || e.type_revenu} />
+                  <Info label="Années" value={e.annees_service} />
+                </GridSnap>
+              </SubBlock>
+            ))}
+            <ResumeLigne color="#5BC4A0" label="Total ménage brut" value={fmt$(totalSalaireBrut) + "/an"} />
+          </SectionSnap>
+        )}
+
+        {/* ── 3. Immobilier ── */}
+        {hypos.length > 0 && (
+          <SectionSnap titre="🏠 Patrimoine immobilier" color="#C9A063">
+            {hypos.map((h, i) => (
+              <SubBlock key={i} titre={`${h.usage === "principale" ? "Résidence principale" : h.usage === "locatif" ? "Immeuble locatif" : "Résidence secondaire"}`}>
+                <GridSnap>
+                  <Info label="Adresse" value={h.adresse} colSpan={2} />
+                  <Info label="Prix d'achat" value={fmt$(h.prix_achat)} sub={h.annee_achat ? `en ${h.annee_achat}` : null} />
+                  <Info label="Valeur marchande" value={fmt$(h.valeur_marchande)} color="#5BC4A0" />
+                  <Info label="Solde hypo" value={fmt$(h.solde)} color="#f87171" />
+                  <Info label="Taux" value={h.taux ? `${h.taux}% (${h.type_taux || "?"})` : null} />
+                  <Info label="Paiement" value={fmt$(h.paiement_mensuel) + "/m"} />
+                  <Info label="Amort. restant" value={h.amortissement_restant ? `${h.amortissement_restant} ans` : null} />
+                  <Info label="Renouvellement" value={h.date_renouvellement} />
+                </GridSnap>
+              </SubBlock>
+            ))}
+            <div style={{ marginTop: 8, padding: "8px 12px", background: "rgba(201,160,99,0.06)", borderRadius: 8, fontSize: 11.5, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+              <span><strong style={{ color: "#5BC4A0" }}>Valeur:</strong> {fmt$(valeurImmo)}</span>
+              <span><strong style={{ color: "#f87171" }}>Hypothèques:</strong> {fmt$(dettesImmo)}</span>
+              <span><strong style={{ color: "#C9A063" }}>Équité nette:</strong> {fmt$(equiteImmo)}</span>
+            </div>
+          </SectionSnap>
+        )}
+
+        {/* ── 4. Dettes ── */}
+        {(autresDettes.length > 0 || dettes.cote_credit) && (
+          <SectionSnap titre="💳 Dettes & cote de crédit" color="#f87171">
+            <GridSnap>
+              {dettes.cote_credit && <Info label={`Cote ${(profil.nom || "Principal").split(" ")[0]}`} value={dettes.cote_credit} color="#C9A063" />}
+              {enCouple && dettes.conjoint?.cote_credit && <Info label={`Cote ${(conjoint.nom || "Conjoint").split(" ")[0]}`} value={dettes.conjoint.cote_credit} color="#C9A063" />}
+            </GridSnap>
+            {autresDettes.length > 0 && (
+              <div style={{ marginTop: 10 }}>
+                {autresDettes.map((d, i) => (
+                  <div key={i} style={{ padding: "8px 10px", background: "rgba(248,113,113,0.05)", borderRadius: 6, marginBottom: 4, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8, fontSize: 11.5 }}>
+                    <span style={{ color: "rgba(255,255,255,0.75)" }}>{d.type || "Dette"} {d.taux ? `· ${d.taux}%` : ""}</span>
+                    <span style={{ color: "#f87171", fontWeight: 600 }}>{fmt$(d.solde)} · {fmt$(d.paiement_min)}/m</span>
+                  </div>
+                ))}
+                <ResumeLigne color="#f87171" label="Total dettes" value={fmt$(totalAutresDettes)} sub={`Paiements: ${fmt$(totalPaiementsDettes)}/m`} />
+              </div>
+            )}
+          </SectionSnap>
+        )}
+
+        {/* ── 5. Épargne ── */}
+        {(totalReer + totalCeli + totalReee + totalCeliapp + totalCri + totalFrv) > 0 && (
+          <SectionSnap titre="💎 Patrimoine & épargne enregistrée" color="#5BC4A0">
+            <GridSnap>
+              {totalReer    > 0 && <Info label="REER"    value={fmt$(totalReer)}    sub={cotReer > 0 ? `+${fmt$(cotReer)}/m` : null}    color="#C9A063" />}
+              {totalCeli    > 0 && <Info label="CELI"    value={fmt$(totalCeli)}    sub={cotCeli > 0 ? `+${fmt$(cotCeli)}/m` : null}    color="#5BC4A0" />}
+              {totalReee    > 0 && <Info label="REEE"    value={fmt$(totalReee)}    sub={cotReee > 0 ? `+${fmt$(cotReee)}/m` : null}    color="#A87DD3" />}
+              {totalCeliapp > 0 && <Info label="CELIAPP" value={fmt$(totalCeliapp)} color="#F8A332" />}
+              {totalCri     > 0 && <Info label="CRI"     value={fmt$(totalCri)}     color="#6B8ED6" />}
+              {totalFrv     > 0 && <Info label="FRV"     value={fmt$(totalFrv)}     color="#60A5FA" />}
+            </GridSnap>
+            <ResumeLigne color="#5BC4A0" label="Total épargne" value={fmt$(totalReer + totalCeli + totalReee + totalCeliapp + totalCri + totalFrv)} />
+          </SectionSnap>
+        )}
+
+        {/* ── 6. Retraite ── */}
+        {(retraite.age_retraite || retraite.rrq_age_debut || retraite.pension_pd) && (
+          <SectionSnap titre="🎯 Planification retraite" color="#A87DD3">
+            <GridSnap>
+              <Info label="Âge cible retraite" value={retraite.age_retraite ? `${retraite.age_retraite} ans` : null} color="#A87DD3" />
+              <Info label="RRQ — début" value={retraite.rrq_age_debut ? `${retraite.rrq_age_debut} ans` : null} />
+              <Info label="PSV — début" value={retraite.psv_age_debut ? `${retraite.psv_age_debut} ans` : null} />
+              <Info label="Espérance vie" value={retraite.esperance_vie ? `${retraite.esperance_vie} ans` : null} />
+              {retraite.pension_pd > 0 && <Info label="Pension PD" value={fmt$(retraite.pension_pd) + "/an"} color="#A87DD3" />}
+              {enCouple && retraite.conjoint?.age_retraite && (
+                <Info label={`Retraite ${(conjoint.nom || "Conjoint").split(" ")[0]}`} value={`${retraite.conjoint.age_retraite} ans`} />
+              )}
+              {enCouple && retraite.conjoint?.pension_pd > 0 && (
+                <Info label={`Pension PD ${(conjoint.nom || "Conjoint").split(" ")[0]}`} value={fmt$(retraite.conjoint.pension_pd) + "/an"} color="#A87DD3" />
+              )}
+            </GridSnap>
+          </SectionSnap>
+        )}
+
+        {/* ── 7. Assurance ── */}
+        {(assurance.assurance_vie !== undefined || profil.testament !== undefined || profil.mandat !== undefined) && (
+          <SectionSnap titre="🛡️ Assurance & succession" color="#6B8ED6">
+            <GridSnap>
+              <Info label="Assurance vie" value={assurance.assurance_vie === true ? "✓ Oui" : assurance.assurance_vie === false ? "❌ Non" : null} />
+              {assurance.assurance_vie && assurance.assurance_vie_montant && <Info label="Capital assuré" value={fmt$(assurance.assurance_vie_montant)} />}
+              <Info label="Invalidité" value={assurance.assurance_invalidite === true ? "✓ Oui" : assurance.assurance_invalidite === false ? "❌ Non" : null} />
+              <Info label="Soins critiques" value={assurance.assurance_critique === true ? "✓ Oui" : assurance.assurance_critique === false ? "❌ Non" : null} />
+              <Info label="Testament" value={profil.testament === true ? "✓ Rédigé" : profil.testament === false ? "❌ Aucun" : null} />
+              <Info label="Mandat protection" value={profil.mandat === true ? "✓ Oui" : profil.mandat === false ? "❌ Non" : null} />
+            </GridSnap>
+          </SectionSnap>
+        )}
+
+        {/* ── 8. Enfants & études ── */}
+        {enfants.length > 0 && (
+          <SectionSnap titre="🎓 Enfants & études" color="#A87DD3">
+            {enfants.map((e, i) => (
+              <SubBlock key={i} titre={`Enfant ${i + 1}`}>
+                <GridSnap>
+                  <Info label="Prénom" value={e.prenom || e.nom} />
+                  <Info label="Date naissance" value={e.date_naissance} sub={fmtAge(e.date_naissance)} />
+                  <Info label="REEE solde" value={fmt$(e.reee_solde)} />
+                  <Info label="REEE cot." value={e.reee_cotisation ? `${fmt$(e.reee_cotisation)}/m` : null} />
+                </GridSnap>
+              </SubBlock>
+            ))}
+          </SectionSnap>
+        )}
+
+        {/* ── 9. Fonds d'urgence ── */}
+        {fondsUrg.montant_fonds > 0 && (
+          <SectionSnap titre="🚨 Fonds d'urgence" color="#f59e0b">
+            <GridSnap>
+              <Info label="Montant disponible" value={fmt$(fondsUrg.montant_fonds)} color="#f59e0b" />
+              <Info label="Lieu de conservation" value={fondsUrg.lieu_conservation} />
+            </GridSnap>
+          </SectionSnap>
+        )}
+
+        {/* ── 10. Objectifs ── */}
+        {objectifs.objectifs && objectifs.objectifs.length > 0 && (
+          <SectionSnap titre="✨ Objectifs financiers" color="#C9A063">
+            {objectifs.objectifs.map((o, i) => (
+              <div key={i} style={{ padding: "10px 12px", background: "rgba(201,160,99,0.05)", borderRadius: 8, marginBottom: 6 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3, flexWrap: "wrap", gap: 6 }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "#fff" }}>{o.titre || o.type || `Objectif ${i + 1}`}</span>
+                  <span style={{ fontSize: 11.5, color: "#C9A063", fontWeight: 600 }}>{fmt$(o.montant)}</span>
+                </div>
+                {o.echeance && <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.4)" }}>Échéance : {o.echeance}</p>}
+                {o.description && <p style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", marginTop: 3 }}>{o.description}</p>}
+              </div>
+            ))}
+          </SectionSnap>
+        )}
+
+      </div>
+    </div>
+  );
+}
+
+function SectionSnap({ titre, color, children }) {
+  return (
+    <div style={{ padding: "12px 14px", borderRadius: 12, background: `${color}08`, border: `1px solid ${color}25` }}>
+      <p style={{ fontSize: 11, fontWeight: 700, color, letterSpacing: ".06em", marginBottom: 10 }}>{titre}</p>
+      {children}
+    </div>
+  );
+}
+
+function SubBlock({ titre, children }) {
+  return (
+    <div style={{ padding: "9px 11px", background: "rgba(255,255,255,0.02)", borderRadius: 8, marginBottom: 6, border: "1px solid rgba(255,255,255,0.04)" }}>
+      <p style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: ".06em", textTransform: "uppercase", marginBottom: 6 }}>{titre}</p>
+      {children}
+    </div>
+  );
+}
+
+function GridSnap({ children }) {
+  return <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 8 }}>{children}</div>;
+}
+
+function Info({ label, value, sub, color = "#fff", colSpan = 1 }) {
+  if (value === undefined || value === null || value === "" || value === "—") return null;
+  return (
+    <div style={{ padding: "7px 10px", background: "rgba(255,255,255,0.03)", borderRadius: 6, gridColumn: colSpan > 1 ? `span ${colSpan}` : undefined, border: "1px solid rgba(255,255,255,0.04)" }}>
+      <p style={{ fontSize: 9.5, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: ".04em", textTransform: "uppercase", marginBottom: 3 }}>{label}</p>
+      <p style={{ fontSize: 12, fontWeight: 600, color, lineHeight: 1.3, wordBreak: "break-word" }}>{value}</p>
+      {sub && <p style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>{sub}</p>}
+    </div>
+  );
+}
+
+function ResumeLigne({ color, label, value, sub }) {
+  return (
+    <div style={{ marginTop: 8, padding: "8px 12px", background: `${color}10`, borderRadius: 8, fontSize: 12, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 6 }}>
+      <strong style={{ color }}>{label}</strong>
+      <span style={{ color: "#fff", fontWeight: 600 }}>{value} {sub && <span style={{ color: "rgba(255,255,255,0.4)", fontWeight: 400 }}>· {sub}</span>}</span>
+    </div>
+  );
+}
