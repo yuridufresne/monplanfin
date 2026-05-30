@@ -239,7 +239,10 @@ export default function Dashboard() {
 
   // ── Budget ─────────────────────────────────────────────────────────────────
   const toMonthly = (a, f) => f === "annuel" ? a / 12 : f === "hebdomadaire" ? a * 52 / 12 : f === "bimensuel" ? a * 2 : a;
-  const totalExpenses = budgetEntries.filter(e => e.type === "depense").reduce((s, e) => s + toMonthly(parseFloat(e.amount) || 0, e.frequency), 0);
+  // Exclure les impôts à la source (déjà déduits du revenu net via calcRevenuDisponible)
+  const totalExpenses = budgetEntries
+    .filter(e => e.type === "depense" && e.label !== "Impôts (retenues à la source)")
+    .reduce((s, e) => s + toMonthly(parseFloat(e.amount) || 0, e.frequency), 0);
   const flux = totalRevenue - totalExpenses;
   const savingsRate = totalRevenue > 0 ? (flux / totalRevenue) * 100 : 0;
 

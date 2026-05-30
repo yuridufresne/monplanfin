@@ -252,20 +252,9 @@ export default function BudgetGrid({ onClose, onSaved }) {
       const bySection = {};
       profiles.forEach(p => { bySection[p.section] = p.data || {}; });
 
-      // Impôts — chercher dans toutes les structures possibles
-      const revProfile = profiles.find(p => p.section === "revenu");
-      if (revProfile) {
-        const raw = revProfile.data || {};
-        // Supporter { emplois: [...] } et { data: { emplois: [...] } }
-        const emplois = raw.emplois || raw.data?.emplois || [];
-        let totalImpot = 0;
-        for (const e of emplois) {
-          const saisi = parseFloat(e.impot_saisi || e.impot_mensuel) || 0;
-          const freq = e.impot_freq || "mensuel";
-          totalImpot += freq === "annuel" ? saisi / 12 : saisi;
-        }
-        if (totalImpot > 0) prefill["Impôts (retenues à la source)"] = totalImpot.toFixed(0);
-      }
+      // ⚠ Les impôts à la source sont déjà déduits du revenu net dans calcRevenuDisponible.
+      // On NE les pré-remplit PAS dans le budget pour éviter le double comptage.
+      // (Si le user les veut comme info, ils sont visibles dans la section Revenus de l'ABF.)
 
       const dettesData = bySection["dettes"];
       if (dettesData?.a_pension === "oui" && dettesData?.pension_mensuelle) {

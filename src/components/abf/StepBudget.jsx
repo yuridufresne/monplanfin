@@ -79,22 +79,28 @@ export default function StepBudget() {
     [profiles]
   );
 
+  // Les impôts à la source sont DÉJÀ déduits du revenu net (via calcRevenuDisponible)
+  // → on les exclut des dépenses pour éviter le double comptage
+  const INFO_ONLY_LABELS = ["Impôts (retenues à la source)"];
+  const isInfoOnly = (e) => INFO_ONLY_LABELS.includes(e.label);
+
   const revenus = entries.filter(e => e.type === "revenu");
-  const depenses = entries.filter(e => e.type === "depense");
+  const depenses = entries.filter(e => e.type === "depense" && !isInfoOnly(e));
+  const impotInfo = entries.find(e => e.label === "Impôts (retenues à la source)");
   const totalDep = depenses.reduce((s, e) => s + toMonthly(e.amount, e.frequency), 0);
   const balance = totalRev - totalDep;
 
   const pieData = Object.entries(
     depenses.reduce((acc, e) => {
-      if (e.label === "Impôts (retenues à la source)" || e.label === "Pension alimentaire") {
-        acc["impots_obligations"] = (acc["impots_obligations"] || 0) + toMonthly(e.amount, e.frequency);
+      if (e.label === "Pension alimentaire") {
+        acc["obligations"] = (acc["obligations"] || 0) + toMonthly(e.amount, e.frequency);
       } else {
         acc[e.category] = (acc[e.category] || 0) + toMonthly(e.amount, e.frequency);
       }
       return acc;
     }, {})
   ).map(([name, value]) => ({
-    name: name === "impots_obligations" ? "Impôts & Obligations" : (CATEGORY_LABELS[name] || name),
+    name: name === "obligations" ? "Obligations" : (CATEGORY_LABELS[name] || name),
     value: Math.round(value)
   }));
 
@@ -106,6 +112,15 @@ export default function StepBudget() {
       <div className="rounded-xl p-4" style={{ background: "rgba(201,160,99,0.06)", border: "1px solid rgba(201,160,99,0.15)" }}>
         <p className="text-[12px]" style={{ color: "#C9A063" }}>Complétez votre budget mensuel. Utilisez la grille budgétaire pour remplir rapidement tous les postes, ou ajoutez manuellement.</p>
       </div>
+
+      {/* Note info sur les impôts (s'il y en a un en BD) */}
+      {impotInfo && (
+        <div className="rounded-xl p-3" style={{ background: "rgba(107,140,214,0.06)", border: "1px solid rgba(107,140,214,0.18)" }}>
+          <p className="text-[11.5px]" style={{ color: "#6B8ED6", lineHeight: 1.5 }}>
+            ℹ️ Vos <strong>impôts à la source</strong> ({fmt(toMonthly(impotInfo.amount, impotInfo.frequency))}/mois) sont <strong>déjà déduits</strong> du revenu net affiché — ils ne sont pas comptés dans les dépenses pour éviter le double comptage.
+          </p>
+        </div>
+      )}
 
       {/* Actions */}
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
