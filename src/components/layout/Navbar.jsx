@@ -144,6 +144,18 @@ export default function Navbar() {
                       <span style={{ fontFamily: "var(--font-urbanist)", fontWeight: 800, fontSize: 10, color: "#050810" }}>MP</span>
                     </div>
                     <span style={{ fontFamily: "var(--font-urbanist)", fontWeight: 700, fontSize: 14, color: "#fff" }}>MonPlanFin</span>
+                    <span style={{
+                      padding: "2px 6px",
+                      borderRadius: 4,
+                      background: "rgba(245,158,11,0.15)",
+                      border: "1px solid rgba(245,158,11,0.35)",
+                      color: "#f59e0b",
+                      fontSize: 8,
+                      fontWeight: 800,
+                      letterSpacing: ".15em",
+                      textTransform: "uppercase",
+                      lineHeight: 1.4,
+                    }}>Beta</span>
                   </div>
                 </div>
                 <div style={{ flex: 1, padding: "0 12px", display: "flex", flexDirection: "column", gap: 4 }}>
