@@ -227,8 +227,13 @@ export function buildPayload(profiles = []) {
   const cibleAnnuelle = revenuRetMensABF > 0 ? revenuRetMensABF * 12 : Math.round(brutTotal * pctABF / 100);
   const tauxEffectif = brutTotal > 0 ? Math.round(cibleAnnuelle / brutTotal * 100) : pctABF;
 
-  const nA = Math.max(0, pA.ageRetraite - (pA.age || 0));
-  const nB = pB ? Math.max(0, pB.ageRetraite - (pB.age || 0)) : 0;
+  // Fallback si date de naissance manquante : 38 ans par défaut (évite calculs absurdes)
+  // Sans ce fallback, age=null → nA=65 → indexation ×4.4 au lieu de ×2.2
+  const FALLBACK_AGE = 38;
+  const ageEffA = pA.age != null ? pA.age : FALLBACK_AGE;
+  const ageEffB = pB ? (pB.age != null ? pB.age : FALLBACK_AGE) : null;
+  const nA = Math.max(1, pA.ageRetraite - ageEffA);
+  const nB = pB ? Math.max(1, pB.ageRetraite - ageEffB) : 0;
   const esperanceVie = Math.max(pA.esperanceVie, pB?.esperanceVie || 0) || IQPF.ESP_VIE;
   const nRetrait = Math.max(1, esperanceVie - pA.ageRetraite);
 

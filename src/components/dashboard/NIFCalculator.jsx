@@ -53,9 +53,10 @@ export default function NIFCalculator({ profiles }) {
   const pensionFuturLabelB = getPensionFuturLabel(fpB);
 
   const anneeAuj = 2026;
-  const nAnnees = Math.max(0, (pA?.ageRetraite || 65) - (pA?.age || 38));
-  const anneeRet = kpis?.annee_retraite || (anneeAuj + nAnnees);
-  const ageRetMarie = pB ? (pB.age || 36) + nAnnees : null;
+  // Utilise kpis.annee_retraite comme source unique de vérité (calculée dans buildPayload)
+  const anneeRet = kpis?.annee_retraite || (anneeAuj + 35);
+  const nAnnees = anneeRet - anneeAuj;
+  const ageRetMarie = pB?.ageRetraite || null;
   const fi = payload.hypotheses?.inflation
     ? Math.pow(1 + payload.hypotheses.inflation, nAnnees)
     : 1;
@@ -95,12 +96,33 @@ export default function NIFCalculator({ profiles }) {
         </div>
       </div>
 
+      {/* ⚠ Warning si profil incomplet */}
+      {pA?.age == null && (
+        <div style={{
+          background: "rgba(245,158,11,0.08)",
+          border: "1px solid rgba(245,158,11,0.3)",
+          borderRadius: 10,
+          padding: "10px 14px",
+          marginBottom: 12,
+          fontSize: 12.5,
+          color: "#f59e0b",
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+        }}>
+          <span style={{fontSize:14}}>⚠</span>
+          <span>
+            <strong>Date de naissance manquante</strong> — les projections utilisent un âge par défaut (38 ans). Complétez votre <a href="/analyse" style={{color:"#f59e0b",textDecoration:"underline"}}>profil personnel</a> pour des chiffres précis.
+          </span>
+        </div>
+      )}
+
       <div style={{display:"grid",gridTemplateColumns:"1.3fr 0.9fr 1.3fr 0.9fr",gap:1,background:"rgba(255,255,255,0.06)",borderRadius:12,overflow:"hidden"}}>
 
         {/* En-têtes colonnes */}
         <div style={{...cell,background:C.headBg,padding:"14px 16px"}}>
           <div style={{fontSize:13,fontWeight:500,color:"#fff"}}>Valeur réelle aujourd'hui</div>
-          <div style={{fontSize:12,color:C.txt40,marginTop:2}}>{anneeAuj} · {pA?.prenom} {pA?.age}{pB?` / ${pB.prenom} ${pB.age}`:""}</div>
+          <div style={{fontSize:12,color:C.txt40,marginTop:2}}>{anneeAuj} · {pA?.prenom}{pA?.age != null ? ` ${pA.age}` : ""}{pB ? ` / ${pB.prenom}${pB.age != null ? ` ${pB.age}` : ""}` : ""}</div>
         </div>
         <div style={{...cell,background:C.headBg,display:"flex",alignItems:"center",justifyContent:"flex-end"}}>
           <span style={{fontSize:11,color:C.txt30,textTransform:"uppercase",letterSpacing:".05em"}}>$ auj.</span>
