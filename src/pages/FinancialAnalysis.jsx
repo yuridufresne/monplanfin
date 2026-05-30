@@ -508,25 +508,12 @@ function PrestationsBlock({ data, setData, salaireActuelPanel }) {
             PSV — Sécurité de la vieillesse
             <InfoTooltip explanation="Pension fédérale versée à partir de 65 ans. Maximum 2026 : 740,09 $/mois (8 881 $/an) pour 40 ans de résidence au Canada après 18 ans. Bonus automatique de +10 % à 75 ans. Récupérée (clawback) au-delà de 93 454 $ de revenu net." position="right" />
           </p>
-          <p className="text-[11.5px] mt-0.5" style={{ color: "#94A3B8" }}>La PSV est calculée selon vos années TOTALES de résidence entre 18 ans et le début de votre PSV.</p>
+          <p className="text-[11.5px] mt-0.5" style={{ color: "#94A3B8" }}>Calculée selon vos années de résidence au Canada.</p>
         </div>
 
-        <Field label={<span>Résidence au Canada de 18 ans jusqu'à votre PSV <InfoTooltip explanation="La PSV est calculée à l'âge où vous la commencez (65+), pas aujourd'hui. La question est donc prospective : compte tenu de votre passé et de vos plans futurs, combien d'années totales aurez-vous résidé au Canada entre vos 18 ans et le début de votre PSV ? 40 ans ou + = PSV pleine. Moins de 10 ans = aucune PSV." position="right" /></span>}>
-          <RadioGroup value={data.sv_residence_prevue || (data.sv_canada_continu === "oui" ? "pleine" : "")} onChange={f("sv_residence_prevue")} options={[
-            { value: "pleine", label: "Résidence continue prévue (PSV pleine)" },
-            { value: "partielle", label: "Résidence partielle (immigration / expatriation)" },
-            { value: "aucune", label: "Pas admissible" },
-          ]} />
+        <Field label="Années de résidence au Canada après 18 ans" hint={`40 ans = pleine PSV. Minimum 10 ans pour le droit. Défaut : ${anneesResidenceDefaut} ans (résidence depuis 18 ans).`}>
+          <Input type="number" value={data.annees_residence_canada} onChange={f("annees_residence_canada")} placeholder={String(anneesResidenceDefaut)} />
         </Field>
-
-        {data.sv_residence_prevue === "partielle" && (
-          <Field
-            label="Années TOTALES prévues au Canada entre 18 ans et début PSV"
-            hint="Ex : arrivé(e) à 30 ans et resté(e) jusqu'à 65 ans = 35 ans. Minimum 10 ans pour avoir droit à la PSV."
-          >
-            <Input type="number" value={data.annees_residence_canada} onChange={f("annees_residence_canada")} placeholder="ex: 35" />
-          </Field>
-        )}
 
         <Field label={<span>Âge de début souhaité de la PSV <InfoTooltip explanation="65 à 70 ans. Report = +0,6 %/mois après 65 (max +36 % à 70). À 75 ans, bonus automatique de 10 % appliqué par Service Canada." position="right" /></span>}>
           <RadioGroup value={String(data.age_debut_psv || 65)} onChange={f("age_debut_psv")} options={[
@@ -1258,68 +1245,44 @@ export default function FinancialAnalysis() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [autoSaveStatus, setAutoSaveStatus] = useState('idle');
-  const [currentUserEmail, setCurrentUserEmail] = useState(null);
 
   const step = STEPS[currentStep];
   const StepComponent = STEP_COMPONENTS[step.key];
   const data = stepData[step.key] || {};
   const setData = (updater) => setStepData(prev => ({ ...prev, [step.key]: typeof updater === "function" ? updater(prev[step.key] || {}) : updater }));
 
-  // Ref qui contient toujours le state le plus récent (évite les closures périmées après await)
-  const stepDataRef = React.useRef(stepData);
-  useEffect(() => { stepDataRef.current = stepData; }, [stepData]);
-
-  // Sauvegarde immédiate d'une section donnée (utilisé avant navigation)
-  const flushSection = async (sectionKey) => {
-    const payload = stepDataRef.current[sectionKey];
-    if (!payload || Object.keys(payload).length === 0) return;
-    if (!currentUserEmail) return; // attends qu'on connaisse le user
-    try {
-      // CRITIQUE : filtrer par created_by — sinon admin écrase les records d'autres users
-      const existing = await base44.entities.FinancialProfile.filter({ section: sectionKey, created_by: currentUserEmail });
-      if (existing.length > 0) {
-        await base44.entities.FinancialProfile.update(existing[0].id, { data: payload, completed: completedSteps.has(sectionKey) });
-      } else {
-        await base44.entities.FinancialProfile.create({ section: sectionKey, data: payload, completed: false });
-      }
-    } catch(e) { console.error("flushSection error:", e); }
-  };
-
   useEffect(() => {
     if (!stepData[step.key] || Object.keys(stepData[step.key]).length === 0) return;
     setAutoSaveStatus('saving');
     const timer = setTimeout(async () => {
-      await flushSection(step.key);
-      setAutoSaveStatus('saved');
-      setTimeout(() => setAutoSaveStatus('idle'), 2000);
+      try {
+        const existing = await base44.entities.FinancialProfile.filter({ section: step.key });
+        if (existing.length > 0) {
+          await base44.entities.FinancialProfile.update(existing[0].id, { data: stepData[step.key] || {}, completed: completedSteps.has(step.key) });
+        } else {
+          await base44.entities.FinancialProfile.create({ section: step.key, data: stepData[step.key] || {}, completed: false });
+        }
+        setAutoSaveStatus('saved');
+        setTimeout(() => setAutoSaveStatus('idle'), 2000);
+      } catch(e) {
+        setAutoSaveStatus('idle');
+      }
     }, 1500);
     return () => clearTimeout(timer);
   }, [stepData[step.key]]);
 
-  // Naviguer vers une étape en sauvegardant l'étape courante d'abord
-  const goToStep = async (newIndex) => {
-    await flushSection(step.key);
-    setCurrentStep(newIndex);
-  };
-
   const saveStep = async () => {
-    if (!currentUserEmail) { alert("Impossible de sauvegarder : utilisateur non identifié."); return; }
     setSaving(true);
     try {
-      const payload = stepDataRef.current[step.key] || {};
-      // CRITIQUE : filtrer par created_by
-      const existing = await base44.entities.FinancialProfile.filter({ section: step.key, created_by: currentUserEmail });
+      const existing = await base44.entities.FinancialProfile.filter({ section: step.key });
       if (existing.length > 0) {
-        await base44.entities.FinancialProfile.update(existing[0].id, { data: payload, completed: true });
+        await base44.entities.FinancialProfile.update(existing[0].id, { data: stepData[step.key] || {}, completed: true });
       } else {
-        await base44.entities.FinancialProfile.create({ section: step.key, data: payload, completed: true });
+        await base44.entities.FinancialProfile.create({ section: step.key, data: stepData[step.key] || {}, completed: true });
       }
       setCompletedSteps(prev => new Set([...prev, step.key]));
       if (currentStep < STEPS.length - 1) setCurrentStep(c => c + 1);
       else setSaved(true);
-    } catch (e) {
-      console.error("saveStep error:", e);
-      alert("Erreur lors de la sauvegarde — voir la console.");
     } finally {
       setSaving(false);
     }
@@ -1334,15 +1297,7 @@ export default function FinancialAnalysis() {
   };
 
   useEffect(() => {
-    base44.auth.me().then(u => setCurrentUserEmail(u?.email || null)).catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    if (!currentUserEmail) return;
-    Promise.all([
-      base44.entities.FinancialProfile.filter({ created_by: currentUserEmail }),
-      base44.entities.BudgetEntry.list() // BudgetEntry est déjà RLS-protégé, list() OK
-    ]).then(([profiles, budgetEntries]) => {
+    Promise.all([base44.entities.FinancialProfile.list(), base44.entities.BudgetEntry.list()]).then(([profiles, budgetEntries]) => {
       const map = {};
       const done = new Set();
       profiles.forEach(p => { map[p.section] = unwrapData(p.data); if (p.completed) done.add(p.section); });
@@ -1350,7 +1305,7 @@ export default function FinancialAnalysis() {
       setStepData(map);
       setCompletedSteps(done);
     });
-  }, [currentUserEmail]);
+  }, []);
 
   if (saved) {
     return (
@@ -1382,8 +1337,8 @@ export default function FinancialAnalysis() {
             const isActive = i === currentStep;
             const isDone = completedSteps.has(s.key);
             return (
-              <div key={s.key} className="flex items-center">
-                <button onClick={() => goToStep(i)} className="flex flex-col items-center gap-1.5 px-3 py-2 rounded-xl transition-all shrink-0"
+              <React.Fragment key={s.key}>
+                <button onClick={() => setCurrentStep(i)} className="flex flex-col items-center gap-1.5 px-3 py-2 rounded-xl transition-all shrink-0"
                   style={isActive ? { background: "rgba(201,160,99,0.12)", border: "1px solid rgba(201,160,99,0.3)" } : { background: "transparent" }}>
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center"
                     style={{ background: isDone ? "rgba(91,196,160,0.15)" : isActive ? "rgba(201,160,99,0.2)" : "rgba(255,255,255,0.05)" }}>
@@ -1392,7 +1347,7 @@ export default function FinancialAnalysis() {
                   <span className="text-[10px] font-semibold" style={{ color: isActive ? "#C9A063" : isDone ? "#5BC4A0" : "#94A3B8" }}>{s.label}</span>
                 </button>
                 {i < STEPS.length - 1 && <div className="w-4 h-[1px] shrink-0" style={{ background: isDone ? "rgba(91,196,160,0.4)" : "rgba(255,255,255,0.1)" }} />}
-              </div>
+              </React.Fragment>
             );
           })}
         </div>
@@ -1420,7 +1375,7 @@ export default function FinancialAnalysis() {
                 <StepComponent data={data} setData={setData} stepData={stepData} />
               </div>
               <div className="px-8 py-5 flex justify-between" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                <button onClick={() => goToStep(Math.max(0, currentStep - 1))} disabled={currentStep === 0}
+                <button onClick={() => setCurrentStep(c => Math.max(0, c - 1))} disabled={currentStep === 0}
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-medium transition-all disabled:opacity-30"
                   style={{ border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.7)" }}>
                   <ChevronLeft className="w-4 h-4" /> Précédent
