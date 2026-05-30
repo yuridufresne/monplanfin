@@ -6,6 +6,7 @@ import InfoTooltip from "@/components/ui/InfoTooltip";
 import StepBudget from "@/components/abf/StepBudget";
 import StepAllocations from "@/components/abf/StepAllocations";
 import AddressAutocomplete from "@/components/ui/AddressAutocomplete";
+import StepImmobilier from "@/components/abf/StepImmobilier";
 
 const STEPS = [
   { key: "profil_personnel", label: "Profil", icon: User, title: "Renseignements personnels" },
@@ -1189,6 +1190,7 @@ const STEP_COMPONENTS = {
   revenu: StepRevenu,
   retraite: StepRetraite,
   dettes: StepDettes,
+  immobilier: StepImmobilier,
   assurance: StepAssurance,
   etudes: StepEtudes,
   allocations: StepAllocations,
