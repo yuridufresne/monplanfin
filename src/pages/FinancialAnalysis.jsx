@@ -1335,7 +1335,14 @@ export default function FinancialAnalysis() {
 
   useEffect(() => {
     base44.auth.me().then(u => setCurrentUserEmail(u?.email || null)).catch(() => {});
-    Promise.all([base44.entities.FinancialProfile.list(), base44.entities.BudgetEntry.list()]).then(([profiles, budgetEntries]) => {
+  }, []);
+
+  useEffect(() => {
+    if (!currentUserEmail) return;
+    Promise.all([
+      base44.entities.FinancialProfile.filter({ created_by: currentUserEmail }),
+      base44.entities.BudgetEntry.list() // BudgetEntry est déjà RLS-protégé, list() OK
+    ]).then(([profiles, budgetEntries]) => {
       const map = {};
       const done = new Set();
       profiles.forEach(p => { map[p.section] = unwrapData(p.data); if (p.completed) done.add(p.section); });
@@ -1343,7 +1350,7 @@ export default function FinancialAnalysis() {
       setStepData(map);
       setCompletedSteps(done);
     });
-  }, []);
+  }, [currentUserEmail]);
 
   if (saved) {
     return (
