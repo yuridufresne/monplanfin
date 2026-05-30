@@ -29,6 +29,7 @@ export const defaultImmobilierPayload = {
   mise_de_fonds_liquide: 0,
   reer_disponible_rap: 0,
   celiapp_disponible: 0,
+  celi_disponible: 0,
   don_familial: 0,
   mise_de_fonds_souhaitee: 0,  // 0 = utiliser tout dispo, sinon = montant choisi par client
 
@@ -95,6 +96,11 @@ export function payloadDepuisABF(bySection) {
   const celiappA = sommeComptes(retraite.comptes?.celiapp);
   const celiappB = enCouple ? sommeComptes(retraite.conjoint?.comptes?.celiapp) : 0;
 
+  // CELI disponible (sans limite, libre d'impôt)
+  const celiA = sommeComptes(retraite.comptes?.celi);
+  const celiB = enCouple ? sommeComptes(retraite.conjoint?.comptes?.celi) : 0;
+  const celiTotal = celiA + celiB;
+
   // Hypothèques : priorité à la section "immobilier" (nouvelle), fallback "dettes" (ancienne saisie)
   const hypothequesImmo = immobilier.hypotheques || [];
   const hypothequesAll = hypothequesImmo.length > 0
@@ -126,6 +132,7 @@ export function payloadDepuisABF(bySection) {
     // RAP/CELIAPP NON admissibles si déjà propriétaire dans les 4 dernières années
     reer_disponible_rap: dejaProprio ? 0 : rapDispo,
     celiapp_disponible: dejaProprio ? 0 : (celiappA + celiappB),
+    celi_disponible: dejaProprio ? 0 : celiTotal,
 
     premier_acheteur: !dejaProprio,
     statut_propriete: dejaProprio ? "vendre" : "premier",

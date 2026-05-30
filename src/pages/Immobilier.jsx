@@ -165,6 +165,9 @@ export default function Immobilier() {
                   <input type="number" value={payload.celiapp_disponible} onChange={e => set("celiapp_disponible")(+e.target.value)} style={S.input} />
                 </Champ>
               )}
+              <Champ label="CELI ($)" hint="Sans limite · libre d'impôt">
+                <input type="number" value={payload.celi_disponible} onChange={e => set("celi_disponible")(+e.target.value)} style={S.input} />
+              </Champ>
               <Champ label="Don familial ($)" hint="Avec lettre signée">
                 <input type="number" value={payload.don_familial} onChange={e => set("don_familial")(+e.target.value)} style={S.input} />
               </Champ>

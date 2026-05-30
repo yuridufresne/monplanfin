@@ -111,6 +111,7 @@ export function calculerQualification(p) {
   const miseDeFondsDispo = (p.mise_de_fonds_liquide || 0)
                          + Math.min(p.reer_disponible_rap || 0, 120000)
                          + (p.celiapp_disponible || 0)
+                         + (p.celi_disponible || 0)
                          + (p.don_familial || 0)
                          + equiteNette;
   // Stratégie : "auto" = max possible, sinon force un % du prix (5/10/15/20)
