@@ -21,6 +21,7 @@ import StudioDecaissement from '@/pages/StudioDecaissement';
 import ProtectionAssurance from '@/pages/ProtectionAssurance';
 import Immobilier from '@/pages/Immobilier';
 import Conditions from '@/pages/Conditions';
+import Confidentialite from '@/pages/Confidentialite';
 
 const PUBLIC_PATHS = ['/', '/calculatrices'];
 
@@ -72,6 +73,7 @@ const AuthenticatedApp = () => {
         <Route path="/protection" element={<ProtectionAssurance />} />
         <Route path="/immobilier" element={<Immobilier />} />
         <Route path="/conditions" element={<Conditions />} />
+        <Route path="/confidentialite" element={<Confidentialite />} />
         <Route path="*" element={<PageNotFound />} />
       </Route>
     </Routes>
