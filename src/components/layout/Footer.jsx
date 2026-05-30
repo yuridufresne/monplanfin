@@ -47,8 +47,11 @@ export default function Footer() {
           <p style={{ fontSize: 12, color: "rgba(255,255,255,0.65)", lineHeight: 1.7, marginBottom: 8, fontWeight: 300 }}>
             <strong style={{ color: "#fff", fontWeight: 600 }}>MonPlanFin est un outil d'estimation à but informatif.</strong> Il ne remplace pas les conseils personnalisés d'un conseiller en sécurité financière, d'un planificateur financier agréé (Pl. Fin.) ou d'un fiscaliste. Les estimations sont basées sur les règles fiscales et bancaires en vigueur (BSIF, ARC, AMF, SCHL) mais peuvent varier selon votre dossier précis. Toute décision financière importante devrait être validée avec un professionnel certifié.
           </p>
-          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.7, fontWeight: 300 }}>
+          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.7, fontWeight: 300, marginBottom: 8 }}>
             <strong style={{ color: "#fff", fontWeight: 600 }}>Consentement marketing :</strong> en créant un compte, vous consentez à ce que vos renseignements soient partagés avec nos partenaires conseillers associés, qui peuvent vous contacter pour vous offrir des services complémentaires. Vous pouvez retirer ce consentement en tout temps via la <Link to="/contact" style={{ color: "#C9A063", textDecoration: "underline" }}>page Nous joindre</Link>.
+          </p>
+          <p style={{ fontSize: 12, color: "rgba(91,196,160,0.85)", lineHeight: 1.7, fontWeight: 400 }}>
+            🛡️ <strong style={{ color: "#fff", fontWeight: 600 }}>Tous nos conseillers partenaires sont accrédités par l'AMF.</strong> Vérifiez leur permis sur le <a href="https://lautorite.qc.ca/grand-public/registres/registre-des-entreprises-et-des-individus-autorises-a-exercer" target="_blank" rel="noopener noreferrer" style={{ color: "#5BC4A0", textDecoration: "underline" }}>registre officiel de l'Autorité des marchés financiers du Québec</a>.
           </p>
         </div>
 
