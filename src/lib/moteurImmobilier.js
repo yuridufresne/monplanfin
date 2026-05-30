@@ -1,137 +1,254 @@
 /**
- * src/lib/immobilierPayload.js
- * Modèle de données du module Immobilier — pré-qualification hypothécaire.
+ * src/lib/moteurImmobilier.js
+ * Moteur de pré-qualification hypothécaire — Québec 2026.
  *
- * Pré-rempli automatiquement depuis l'ABF (revenu, dettes, cote crédit,
- * REER pour RAP, CELIAPP, hypothèques existantes). L'utilisateur complète
- * ensuite les champs spécifiques au projet d'achat.
- *
- * Deux scénarios supportés :
- *  - "premier" : premier achat (jamais été propriétaire)
- *  - "vendre"  : déjà propriétaire, vendra avant d'acheter
- *                → l'équité nette s'ajoute à la mise de fonds
+ * Conforme aux règles 2026 :
+ *  - Stress test BSIF : taux qualificatif = max(taux contractuel + 2%, 5.25%)
+ *  - ABD max 35% (non assurée) / 39% (assurée)
+ *  - ATD max 42% (non assurée) / 44% (assurée)
+ *  - Mise de fonds min : 5% (≤500k), 10% (500k-1.5M), 20% (>1.5M)
+ *  - Prime SCHL : 4.0% / 3.1% / 2.8% selon mise, ajoutée au prêt + TVQ
+ *  - Modulation taux selon cote Equifax (≥700 = modulation auto)
+ *  - Droits de mutation QC + paliers Montréal 2026
+ *  - Remboursement mutation 1er acheteur (jusqu'à 5 875$, prop. <1M$, avril 2026+)
+ *  - Crédit fédéral 1er acheteur : 1 500$
+ *  - Vendre avant d'acheter : équité nette ajoutée à la mise de fonds
  */
 
-export const defaultImmobilierPayload = {
-  // ── Profil du ménage (auto-rempli depuis l'ABF) ──────────────────────────
-  enCouple: false,
-  prenom_a: "",
-  prenom_b: "",
-  age_a: 35,
-  age_b: 35,
+// ────────────────────────────────────────────────────────────────────────────
+//  CONSTANTES MARCHÉ 2026
+// ────────────────────────────────────────────────────────────────────────────
+const TAUX_PLANCHER_QUALIFICATIF = 5.25;
+const PRIME_SCHL = { 5: 4.00, 10: 3.10, 15: 2.80 };
+const TVQ = 0.09975;
 
-  // ── Revenus (annuels bruts, en $) ────────────────────────────────────────
-  salaire_brut_a: 0,
-  salaire_brut_b: 0,
-  allocations_familiales_annuel: 0,
-  autres_revenus_annuel: 0,
+const PALIERS_MUTATION_QC = [
+  { min: 0, max: 58900, taux: 0.005 },
+  { min: 58900, max: 294600, taux: 0.010 },
+  { min: 294600, max: Infinity, taux: 0.015 },
+];
+const PALIERS_MUTATION_MONTREAL = [
+  { min: 0, max: 58900, taux: 0.005 },
+  { min: 58900, max: 294600, taux: 0.010 },
+  { min: 294600, max: 528700, taux: 0.015 },
+  { min: 528700, max: 1057900, taux: 0.020 },
+  { min: 1057900, max: 2058900, taux: 0.025 },
+  { min: 2058900, max: 3000000, taux: 0.0325 },
+  { min: 3000000, max: Infinity, taux: 0.040 },
+];
 
-  // ── Dettes mensuelles (paiements, pas soldes) ────────────────────────────
-  paiement_dettes_mensuel: 0,
-  pension_alimentaire_payee: 0,
-  autres_charges_mensuelles: 0,
+// ────────────────────────────────────────────────────────────────────────────
+//  MODULATION TAUX SELON COTE DE CRÉDIT
+// ────────────────────────────────────────────────────────────────────────────
+export function modulerTaux(tauxBase, cote) {
+  if (cote >= 760) return { taux: tauxBase,        statut: "excellent", color: "#5BC4A0", message: "Excellent dossier — meilleurs taux du marché" };
+  if (cote >= 720) return { taux: tauxBase + 0.10, statut: "tres_bon",  color: "#5BC4A0", message: "Très bon dossier — taux compétitifs" };
+  if (cote >= 700) return { taux: tauxBase + 0.20, statut: "bon",       color: "#C9A063", message: "Bon dossier — qualification standard" };
+  if (cote >= 680) return { taux: tauxBase + 0.50, statut: "moyen",     color: "#f59e0b", message: "Dossier moyen — taux supérieur, dossier à surveiller" };
+  if (cote >= 640) return { taux: tauxBase + 1.00, statut: "limite",    color: "#f59e0b", message: "Dossier limite — prêteurs alternatifs probables" };
+  return                  { taux: tauxBase + 2.00, statut: "risque",    color: "#f87171", message: "Cote trop basse — refus probable, plan de redressement nécessaire" };
+}
 
-  // ── Cote de crédit (la plus basse du couple) ─────────────────────────────
-  cote_credit: 720,
+// ────────────────────────────────────────────────────────────────────────────
+//  CALCULS UTILITAIRES
+// ────────────────────────────────────────────────────────────────────────────
+function calculerMutation(prix, region) {
+  const paliers = region === "montreal" ? PALIERS_MUTATION_MONTREAL : PALIERS_MUTATION_QC;
+  let mutation = 0;
+  for (const p of paliers) {
+    if (prix <= p.min) break;
+    mutation += (Math.min(prix, p.max) - p.min) * p.taux;
+  }
+  return Math.round(mutation);
+}
 
-  // ── Mise de fonds disponible ─────────────────────────────────────────────
-  mise_de_fonds_liquide: 0,
-  reer_disponible_rap: 0,
-  celiapp_disponible: 0,
-  don_familial: 0,
-
-  // ── Statut emploi (impact qualification) ─────────────────────────────────
-  statut_emploi_a: "permanent",
-  statut_emploi_b: "permanent",
-  annees_emploi_a: 5,
-  annees_emploi_b: 5,
-
-  // ── Projet d'achat ───────────────────────────────────────────────────────
-  premier_acheteur: true,
-  type_propriete: "principale",
-  region: "quebec",
-
-  // ── Coûts du logement projeté (estimations) ──────────────────────────────
-  chauffage_mensuel: 150,
-  frais_condo_mensuel: 0,
-  taxes_fonc_pct: 1.0,
-
-  // ── Paramètres du marché (modifiables) ───────────────────────────────────
-  taux_hypothecaire: 4.04,
-  amortissement: 25,
-
-  // ── Situation actuelle (premier achat OU vendre avant d'acheter) ─────────
-  statut_propriete: "premier",        // "premier" | "vendre"
-  valeur_marchande_actuelle: 0,
-  solde_hypotheque_actuelle: 0,
-  frais_vente_pct: 6,
-};
+function calculerPrimeSCHL(montantPret, prix) {
+  const misePct = ((prix - montantPret) / prix) * 100;
+  if (misePct >= 20) return 0;
+  let primePct;
+  if (misePct >= 15) primePct = PRIME_SCHL[15];
+  else if (misePct >= 10) primePct = PRIME_SCHL[10];
+  else if (misePct >= 5) primePct = PRIME_SCHL[5];
+  else return -1;
+  return Math.round(montantPret * primePct / 100);
+}
 
 /**
- * Construit le payload depuis le profil ABF.
- * @param {object} bySection - les sections ABF unwrapped
- * @returns {object} payload immobilier pré-rempli
+ * Paiement hypothécaire mensuel — taux composé semi-annuellement
+ * (norme canadienne), payé mensuellement.
  */
-export function payloadDepuisABF(bySection) {
-  const profil = bySection.profil_personnel || {};
-  const revenu = bySection.revenu || {};
-  const dettes = bySection.dettes || {};
-  const retraite = bySection.retraite || {};
-  const allocations = bySection.allocations || {};
-  const enCouple = ["marie", "conjoint", "union_civile"].includes(profil.situation || "");
+function paiementMensuel(montant, tauxAnnuel, anneesAmortissement) {
+  if (montant <= 0) return 0;
+  const tauxSemestriel = tauxAnnuel / 100 / 2;
+  const tauxMensuelEff = Math.pow(1 + tauxSemestriel, 2/12) - 1;
+  const n = anneesAmortissement * 12;
+  if (tauxMensuelEff === 0) return montant / n;
+  return montant * (tauxMensuelEff * Math.pow(1 + tauxMensuelEff, n))
+                 / (Math.pow(1 + tauxMensuelEff, n) - 1);
+}
 
-  const ageDe = (dob) => dob ? Math.floor((Date.now() - new Date(dob)) / (365.25 * 24 * 3600 * 1000)) : 35;
-  const sommeEmplois = (emplois) => (emplois || []).reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0), 0);
-  const sommeComptes = (liste) => (liste || []).reduce((s, c) => s + (parseFloat(c.solde) || 0), 0);
-  const sommePaiements = (arr) => (arr || []).reduce((s, d) => s + (parseFloat(d.paiement_min) || 0), 0);
+// ────────────────────────────────────────────────────────────────────────────
+//  FONCTION PRINCIPALE — TROUVE LE PRIX MAX QUALIFIABLE
+// ────────────────────────────────────────────────────────────────────────────
+export function calculerQualification(p) {
+  // 1. Revenu mensuel qualifiable
+  const salaireTotal = (p.salaire_brut_a || 0) + (p.salaire_brut_b || 0);
+  const allocations = p.allocations_familiales_annuel || 0;
+  const autres = p.autres_revenus_annuel || 0;
+  const revenuAnnuelBrut = salaireTotal + allocations + autres;
+  const revenuMensuelBrut = revenuAnnuelBrut / 12;
 
-  // Cote la plus basse du couple (règle bancaire standard)
-  const coteA = parseInt(dettes.cote_credit) || 720;
-  const coteB = enCouple ? (parseInt(dettes.conjoint?.cote_credit) || 720) : 999;
-  const coteMinimale = Math.min(coteA, coteB);
+  // Coefficient pénalisant le statut d'emploi
+  let coefEmploi = 1.0;
+  if (p.statut_emploi_a === "probation" || p.statut_emploi_b === "probation") coefEmploi *= 0.95;
+  if (p.statut_emploi_a === "autonome" && (p.annees_emploi_a || 0) < 2) coefEmploi *= 0.85;
+  if (p.statut_emploi_b === "autonome" && (p.annees_emploi_b || 0) < 2) coefEmploi *= 0.85;
+  const revenuMensuelQualifiable = revenuMensuelBrut * coefEmploi;
 
-  // Allocations familiales (Desjardins les prend dans la qualification)
-  const allocAnnuel = (allocations.enfants || []).reduce((s, e) => {
-    return s + (parseFloat(e.ace_annuel) || 0) + (parseFloat(e.afe_annuel) || 0);
-  }, 0);
+  // 2. Dettes mensuelles totales
+  const dettesTotal = (p.paiement_dettes_mensuel || 0)
+                    + (p.pension_alimentaire_payee || 0)
+                    + (p.autres_charges_mensuelles || 0);
 
-  // REER disponible pour RAP (max 60k$/personne)
-  const reerA = sommeComptes(retraite.comptes?.reer);
-  const reerB = enCouple ? sommeComptes(retraite.conjoint?.comptes?.reer) : 0;
-  const rapDispo = Math.min(reerA, 60000) + Math.min(reerB, 60000);
+  // 3. Taux modulé selon cote
+  const mod = modulerTaux(p.taux_hypothecaire || 4.04, p.cote_credit || 720);
+  const tauxContractuel = mod.taux;
+  const tauxQualificatif = Math.max(tauxContractuel + 2, TAUX_PLANCHER_QUALIFICATIF);
 
-  // CELIAPP disponible (max 40k$/personne)
-  const celiappA = sommeComptes(retraite.comptes?.celiapp);
-  const celiappB = enCouple ? sommeComptes(retraite.conjoint?.comptes?.celiapp) : 0;
+  // 4. Mise de fonds totale (liquide + RAP + CELIAPP + don + équité nette si vente)
+  const equiteNette = p.statut_propriete === "vendre"
+    ? Math.max(0, (p.valeur_marchande_actuelle || 0) * (1 - (p.frais_vente_pct || 6) / 100) - (p.solde_hypotheque_actuelle || 0))
+    : 0;
 
-  // Détection d'une hypothèque principale dans l'ABF (résidence actuelle)
-  const hypoActuelle = (dettes.hypotheques || []).find(h => h.usage === "principale")
-                    || (enCouple ? (dettes.conjoint?.hypotheques || []).find(h => h.usage === "principale") : null);
-  const dejaProprio = !!hypoActuelle;
+  const miseDeFondsBrute = (p.mise_de_fonds_liquide || 0)
+                         + Math.min(p.reer_disponible_rap || 0, 120000)
+                         + (p.celiapp_disponible || 0)
+                         + (p.don_familial || 0)
+                         + equiteNette;
+
+  // 5. Recherche binaire du PRIX MAX qualifiable
+  const trouverPrixMax = () => {
+    let lo = 50000, hi = 5000000, best = 0;
+    while (hi - lo > 100) {
+      const prix = (lo + hi) / 2;
+      let miseMinRequise;
+      if (prix <= 500000) miseMinRequise = prix * 0.05;
+      else if (prix <= 1500000) miseMinRequise = 500000 * 0.05 + (prix - 500000) * 0.10;
+      else miseMinRequise = prix * 0.20;
+
+      const miseEffective = Math.min(miseDeFondsBrute, prix);
+      if (miseEffective < miseMinRequise) { hi = prix; continue; }
+
+      const pretBase = prix - miseEffective;
+      const misePct = (miseEffective / prix) * 100;
+      const assuree = misePct < 20;
+
+      let primeSCHL = 0;
+      if (assuree) {
+        primeSCHL = calculerPrimeSCHL(pretBase, prix);
+        if (primeSCHL === -1) { hi = prix; continue; }
+      }
+      const pretTotal = pretBase + primeSCHL;
+
+      const taxesFonc = prix * (p.taxes_fonc_pct || 1.0) / 100 / 12;
+      const chauffage = p.chauffage_mensuel || 150;
+      const condo50 = (p.frais_condo_mensuel || 0) * 0.5;
+      const paiementHypoStress = paiementMensuel(pretTotal, tauxQualificatif, p.amortissement || 25);
+      const pith = paiementHypoStress + taxesFonc + chauffage + condo50;
+
+      const abdMax = assuree ? 0.39 : 0.35;
+      const atdMax = assuree ? 0.44 : 0.42;
+      const abd = pith / revenuMensuelQualifiable;
+      const atd = (pith + dettesTotal) / revenuMensuelQualifiable;
+
+      if (abd <= abdMax && atd <= atdMax) { best = prix; lo = prix; }
+      else { hi = prix; }
+    }
+    return best;
+  };
+
+  const prixMax = trouverPrixMax();
+
+  // 6. Détails du scénario à prix max
+  let miseMinRequise;
+  if (prixMax <= 500000) miseMinRequise = prixMax * 0.05;
+  else if (prixMax <= 1500000) miseMinRequise = 500000 * 0.05 + (prixMax - 500000) * 0.10;
+  else miseMinRequise = prixMax * 0.20;
+
+  const miseEffective = Math.min(miseDeFondsBrute, prixMax);
+  const misePct = prixMax > 0 ? (miseEffective / prixMax) * 100 : 0;
+  const assuree = misePct < 20 && prixMax > 0;
+  const pretBase = Math.max(0, prixMax - miseEffective);
+  const primeSCHL = assuree ? Math.max(0, calculerPrimeSCHL(pretBase, prixMax)) : 0;
+  const pretTotal = pretBase + primeSCHL;
+  const paiementHypoReel = paiementMensuel(pretTotal, tauxContractuel, p.amortissement || 25);
+  const paiementHypoStress = paiementMensuel(pretTotal, tauxQualificatif, p.amortissement || 25);
+  const taxesFonc = prixMax * (p.taxes_fonc_pct || 1.0) / 100 / 12;
+  const condo50 = (p.frais_condo_mensuel || 0) * 0.5;
+  const chauffage = p.chauffage_mensuel || 150;
+  const pithReel = paiementHypoReel + taxesFonc + chauffage + condo50;
+
+  // 7. Frais d'achat estimés
+  const mutation = calculerMutation(prixMax, p.region || "quebec");
+  const tvqSurSCHL = primeSCHL * TVQ;
+  const remboursementMutation = p.premier_acheteur && prixMax > 0 && prixMax < 1000000
+    ? Math.min(mutation, 5875) : 0;
+
+  const fraisAchat = {
+    "Droits de mutation": mutation,
+    "Frais de notaire": 1500,
+    "Inspection": 600,
+    "Évaluation": 350,
+    "TVQ sur prime SCHL": Math.round(tvqSurSCHL),
+    "Déménagement": 1000,
+    "Ajustements (taxes, services)": 500,
+    "Remboursement mutation 1er acheteur": -remboursementMutation,
+    "Crédit fédéral 1er acheteur": p.premier_acheteur ? -1500 : 0,
+  };
+  const fraisTotal = Object.values(fraisAchat).reduce((s, v) => s + v, 0);
+
+  // 8. Optimisations CELIAPP/RAP non utilisées (opportunité de lead)
+  const reerDispo = p.reer_disponible_rap || 0;
+  const celiappDispo = p.celiapp_disponible || 0;
+  const rapMaxTheorique = p.enCouple ? 120000 : 60000;
+  const celiappMaxTheorique = p.enCouple ? 80000 : 40000;
+  const opportuniteRAP = Math.max(0, Math.min(rapMaxTheorique, reerDispo) - reerDispo);
+  const potentielSiCELIAPPMaxime = p.premier_acheteur ? (celiappMaxTheorique - celiappDispo) : 0;
 
   return {
-    ...defaultImmobilierPayload,
-    enCouple,
-    prenom_a: (profil.nom || "").split(" ")[0] || "Conjoint A",
-    prenom_b: enCouple ? ((profil.conjoint?.nom || "").split(" ")[0] || "Conjoint B") : "",
-    age_a: ageDe(profil.dob),
-    age_b: enCouple ? ageDe(profil.conjoint?.dob) : 0,
-
-    salaire_brut_a: sommeEmplois(revenu.emplois),
-    salaire_brut_b: enCouple ? sommeEmplois(revenu.conjoint?.emplois) : 0,
-    allocations_familiales_annuel: allocAnnuel,
-
-    paiement_dettes_mensuel: sommePaiements(dettes.dettes) + (enCouple ? sommePaiements(dettes.conjoint?.dettes) : 0),
-    pension_alimentaire_payee: parseFloat(dettes.pension_mensuelle) || 0,
-
-    cote_credit: coteMinimale === 999 ? 720 : coteMinimale,
-
-    reer_disponible_rap: rapDispo,
-    celiapp_disponible: celiappA + celiappB,
-
-    premier_acheteur: !dejaProprio,
-    statut_propriete: dejaProprio ? "vendre" : "premier",
-    valeur_marchande_actuelle: dejaProprio ? (parseFloat(hypoActuelle?.valeur_marchande) || parseFloat(hypoActuelle?.prix_achat) || 0) : 0,
-    solde_hypotheque_actuelle: dejaProprio ? (parseFloat(hypoActuelle?.solde) || 0) : 0,
+    prixMax: Math.round(prixMax / 1000) * 1000,
+    mod,
+    tauxContractuel,
+    tauxQualificatif,
+    revenuMensuelBrut,
+    revenuMensuelQualifiable,
+    revenuAnnuelBrut,
+    dettesTotal,
+    coefEmploi,
+    miseDeFondsBrute,
+    miseEffective,
+    misePct,
+    miseMinRequise,
+    equiteNette,
+    assuree,
+    pretBase,
+    primeSCHL,
+    pretTotal,
+    paiementHypoReel,
+    paiementHypoStress,
+    taxesFonc,
+    chauffage,
+    condo50,
+    pithReel,
+    abd: pithReel > 0 ? pithReel / revenuMensuelQualifiable : 0,
+    atd: pithReel > 0 ? (pithReel + dettesTotal) / revenuMensuelQualifiable : 0,
+    fraisAchat,
+    fraisTotal,
+    cashTotalRequis: miseEffective + Math.max(0, fraisTotal),
+    opportunites: {
+      celiappMaxRestant: potentielSiCELIAPPMaxime,
+      premierAcheteur: !!p.premier_acheteur,
+      conseilsDettes: dettesTotal > 1500,
+    },
   };
 }
