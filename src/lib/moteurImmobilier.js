@@ -114,11 +114,20 @@ export function calculerQualification(p) {
   const tauxContractuel = mod.taux;
   const tauxQualificatif = Math.max(tauxContractuel + 2, TAUX_PLANCHER_QUALIFICATIF);
 
-  // 4. Mise de fonds totale (liquide + RAP + CELIAPP + don)
+  // 4. Équité nette de la vente (si "vendre avant d'acheter")
+  let equiteNette = 0;
+  let fraisVente = 0;
+  if (p.statut_propriete === "vendre" && (p.valeur_marchande_actuelle || 0) > 0) {
+    fraisVente = (p.valeur_marchande_actuelle || 0) * (p.frais_vente_pct || 6) / 100;
+    equiteNette = Math.max(0, (p.valeur_marchande_actuelle || 0) - (p.solde_hypotheque_actuelle || 0) - fraisVente);
+  }
+
+  // 5. Mise de fonds totale (liquide + RAP + CELIAPP + don + équité)
   const miseDeFondsBrute = (p.mise_de_fonds_liquide || 0)
-                         + Math.min(p.reer_disponible_rap || 0, 120000) // 60k × 2
+                         + Math.min(p.reer_disponible_rap || 0, 120000)
                          + (p.celiapp_disponible || 0)
-                         + (p.don_familial || 0);
+                         + (p.don_familial || 0)
+                         + equiteNette;
 
   // 5. Recherche binaire du PRIX MAX qualifiable
   const trouverPrixMax = () => {
