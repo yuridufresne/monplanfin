@@ -204,12 +204,18 @@ export default function BudgetGrid({ onClose, onSaved }) {
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
   const [openSections, setOpenSections] = useState({ 0: true });
+  const [currentUserEmail, setCurrentUserEmail] = useState(null);
+
+  useEffect(() => {
+    base44.auth.me().then(u => setCurrentUserEmail(u?.email || null)).catch(() => setCurrentUserEmail(null));
+  }, []);
 
   // Pré-remplir depuis les BudgetEntries existantes (priorité) puis l'ABF
   useEffect(() => {
+    if (!currentUserEmail) return;
     Promise.all([
-      base44.entities.BudgetEntry.list(),
-      base44.entities.FinancialProfile.list(),
+      base44.entities.BudgetEntry.filter({ created_by: currentUserEmail }),
+      base44.entities.FinancialProfile.filter({ created_by: currentUserEmail }),
     ]).then(([existing, profiles]) => {
       setExistingEntries(existing);
 
@@ -336,7 +342,7 @@ export default function BudgetGrid({ onClose, onSaved }) {
         setOpenSections(prev => ({ ...prev, 8: true }));
       }
     });
-  }, []);
+  }, [currentUserEmail]);
 
   const toggleSection = (i) => setOpenSections(p => ({ ...p, [i]: !p[i] }));
   const set = (key, val) => setValues(p => ({ ...p, [key]: val }));
@@ -351,6 +357,7 @@ export default function BudgetGrid({ onClose, onSaved }) {
   const fmt = (v) => new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v);
 
   const handleSave = async () => {
+    if (!currentUserEmail) { alert("Utilisateur non identifié"); return; }
     setSaving(true);
 
     const entries = allRows
@@ -383,6 +390,11 @@ export default function BudgetGrid({ onClose, onSaved }) {
       })),
     ]);
 
+    // CRITIQUE : recharger les entrées pour synchroniser l'état local
+    // (évite les doublons sur saves répétés sans fermeture du modal)
+    const fresh = await base44.entities.BudgetEntry.filter({ created_by: currentUserEmail });
+    setExistingEntries(fresh);
+
     qc.invalidateQueries({ queryKey: ["budgetEntries"] });
 
     setSaving(false);
@@ -394,7 +406,8 @@ export default function BudgetGrid({ onClose, onSaved }) {
 
   const handleResetNonABF = async () => {
     if (!window.confirm("Supprimer toutes les entrées budgétaires qui ne proviennent pas de l'ABF ?")) return;
-    const toDelete = existingEntries.filter(e => e.source !== "abf");
+    // existingEntries est déjà filtré par created_by au chargement, on délète UNIQUEMENT les siennes
+    const toDelete = existingEntries.filter(e => e.source !== "abf" && e.created_by === currentUserEmail);
     await Promise.all(toDelete.map(e => base44.entities.BudgetEntry.delete(e.id)));
     // Recharger les entrées et réinitialiser les valeurs non-ABF dans la grille
     const abfReadOnlyLabels = new Set(SECTIONS.flatMap(s => s.rows).filter(r => r.abfReadOnly).map(r => r.label));

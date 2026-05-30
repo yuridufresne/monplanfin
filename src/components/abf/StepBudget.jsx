@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
@@ -35,11 +35,24 @@ export default function StepBudget() {
   const [showGrid, setShowGrid] = useState(false);
   const [editing, setEditing] = useState(null);
   const [activeTab, setActiveTab] = useState("revenus");
+  const [currentUserEmail, setCurrentUserEmail] = useState(null);
   const qc = useQueryClient();
 
-  const { data: entries = [] } = useQuery({ queryKey: ["budgetEntries"], queryFn: () => base44.entities.BudgetEntry.list() });
-  const { data: profiles = [] } = useQuery({ queryKey: ["financialProfiles"], queryFn: () => base44.entities.FinancialProfile.list() });
-  const deleteMutation = useMutation({ mutationFn: (id) => base44.entities.BudgetEntry.delete(id), onSuccess: () => qc.invalidateQueries({ queryKey: ["budgetEntries"] }) });
+  useEffect(() => {
+    base44.auth.me().then(u => setCurrentUserEmail(u?.email || null)).catch(() => setCurrentUserEmail(null));
+  }, []);
+
+  const { data: entries = [] } = useQuery({
+    queryKey: ["budgetEntries", currentUserEmail],
+    queryFn: () => base44.entities.BudgetEntry.filter({ created_by: currentUserEmail }),
+    enabled: !!currentUserEmail,
+  });
+  const { data: profiles = [] } = useQuery({
+    queryKey: ["financialProfiles", currentUserEmail],
+    queryFn: () => base44.entities.FinancialProfile.filter({ created_by: currentUserEmail }),
+    enabled: !!currentUserEmail,
+  });
+  const deleteMutation = useMutation({ mutationFn: (id) => base44.entities.BudgetEntry.delete(id), onSuccess: () => qc.invalidateQueries({ queryKey: ["budgetEntries", currentUserEmail] }) });
 
   const handleSaveEntry = async (form) => {
     if (editing) {
@@ -55,8 +68,8 @@ export default function StepBudget() {
     qc.invalidateQueries({ queryKey: ["budgetEntries"] });
     setShowForm(false);
     setEditing(null);
-    if (form.type === "revenu") {
-      const allEntries = await base44.entities.BudgetEntry.filter({ type: "revenu" });
+    if (form.type === "revenu" && currentUserEmail) {
+      const allEntries = await base44.entities.BudgetEntry.filter({ type: "revenu", created_by: currentUserEmail });
       await syncBudgetRevenuToABF(allEntries);
     }
   };
