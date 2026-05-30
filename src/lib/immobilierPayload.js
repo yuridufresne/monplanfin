@@ -68,6 +68,7 @@ export function payloadDepuisABF(bySection) {
   const dettes = bySection.dettes || {};
   const retraite = bySection.retraite || {};
   const allocations = bySection.allocations || {};
+  const immobilier = bySection.immobilier || {};
   const enCouple = ["marie", "conjoint", "union_civile"].includes(profil.situation || "");
 
   const ageDe = (dob) => dob ? Math.floor((Date.now() - new Date(dob)) / (365.25 * 24 * 3600 * 1000)) : 35;
