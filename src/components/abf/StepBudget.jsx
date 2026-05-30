@@ -74,33 +74,50 @@ export default function StepBudget() {
     }
   };
 
-  const { revenuNetMensuel, allocMensuel, totalMensuel: totalRev } = useMemo(
-    () => calcRevenuDisponible(profiles),
-    [profiles]
-  );
+  // Vue "brute" : revenu avant impôts + impôts comptés comme dépense
+  const { revenuBrutMensuel, allocMensuel, totalRev } = useMemo(() => {
+    const calc = calcRevenuDisponible(profiles);
+    let brutAnnuel = 0;
+    profiles.forEach(p => {
+      const section = p?.section || p?.data?.section;
+      const data = p.data || p;
+      if (section === "revenu") {
+        const emplois = data.emplois || [];
+        const sides = data.sidehustles || [];
+        brutAnnuel += emplois.reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0), 0);
+        brutAnnuel += sides.reduce((s, sh) => s + (parseFloat(sh.revenu_mensuel_moyen) || 0) * 12, 0);
+        if (data.conjoint) {
+          brutAnnuel += (data.conjoint.emplois || []).reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0), 0);
+          brutAnnuel += (data.conjoint.sidehustles || []).reduce((s, sh) => s + (parseFloat(sh.revenu_mensuel_moyen) || 0) * 12, 0);
+        }
+      }
+    });
+    const brutMens = brutAnnuel / 12;
+    return {
+      revenuBrutMensuel: brutMens,
+      allocMensuel: calc.allocMensuel || 0,
+      totalRev: brutMens + (calc.allocMensuel || 0),
+    };
+  }, [profiles]);
 
-  // Les impôts à la source sont DÉJÀ déduits du revenu net (via calcRevenuDisponible)
-  // → on les exclut des dépenses pour éviter le double comptage
-  const INFO_ONLY_LABELS = ["Impôts (retenues à la source)"];
-  const isInfoOnly = (e) => INFO_ONLY_LABELS.includes(e.label);
-
+  // Vue brute : tous les postes sont des dépenses (impôts inclus pour vue pédagogique)
   const revenus = entries.filter(e => e.type === "revenu");
-  const depenses = entries.filter(e => e.type === "depense" && !isInfoOnly(e));
+  const depenses = entries.filter(e => e.type === "depense");
   const impotInfo = entries.find(e => e.label === "Impôts (retenues à la source)");
   const totalDep = depenses.reduce((s, e) => s + toMonthly(e.amount, e.frequency), 0);
   const balance = totalRev - totalDep;
 
   const pieData = Object.entries(
     depenses.reduce((acc, e) => {
-      if (e.label === "Pension alimentaire") {
-        acc["obligations"] = (acc["obligations"] || 0) + toMonthly(e.amount, e.frequency);
+      if (e.label === "Impôts (retenues à la source)" || e.label === "Pension alimentaire") {
+        acc["impots_obligations"] = (acc["impots_obligations"] || 0) + toMonthly(e.amount, e.frequency);
       } else {
         acc[e.category] = (acc[e.category] || 0) + toMonthly(e.amount, e.frequency);
       }
       return acc;
     }, {})
   ).map(([name, value]) => ({
-    name: name === "obligations" ? "Obligations" : (CATEGORY_LABELS[name] || name),
+    name: name === "impots_obligations" ? "Impôts & Obligations" : (CATEGORY_LABELS[name] || name),
     value: Math.round(value)
   }));
 
@@ -113,11 +130,11 @@ export default function StepBudget() {
         <p className="text-[12px]" style={{ color: "#C9A063" }}>Complétez votre budget mensuel. Utilisez la grille budgétaire pour remplir rapidement tous les postes, ou ajoutez manuellement.</p>
       </div>
 
-      {/* Note info sur les impôts (s'il y en a un en BD) */}
+      {/* Note info sur la vue brute */}
       {impotInfo && (
         <div className="rounded-xl p-3" style={{ background: "rgba(107,140,214,0.06)", border: "1px solid rgba(107,140,214,0.18)" }}>
           <p className="text-[11.5px]" style={{ color: "#6B8ED6", lineHeight: 1.5 }}>
-            ℹ️ Vos <strong>impôts à la source</strong> ({fmt(toMonthly(impotInfo.amount, impotInfo.frequency))}/mois) sont <strong>déjà déduits</strong> du revenu net affiché — ils ne sont pas comptés dans les dépenses pour éviter le double comptage.
+            💼 <strong>Vue brute</strong> : votre revenu est affiché <strong>avant impôts</strong>. Les <strong>impôts à la source</strong> ({fmt(toMonthly(impotInfo.amount, impotInfo.frequency))}/mois) sont inclus dans les dépenses pour visualiser leur impact réel sur votre flux.
           </p>
         </div>
       )}
@@ -135,7 +152,7 @@ export default function StepBudget() {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[
-          { label: allocMensuel > 0 ? "Revenu net + allocations" : "Revenu net mensuel", value: fmt(totalRev), color: "#5BC4A0", icon: TrendingUp },
+          { label: allocMensuel > 0 ? "Revenu brut + allocations" : "Revenu brut mensuel", value: fmt(totalRev), color: "#5BC4A0", icon: TrendingUp },
           { label: "Dépenses mensuelles", value: fmt(totalDep), color: "#f87171", icon: TrendingDown },
           { label: "Solde mensuel", value: fmt(balance), color: balance >= 0 ? "#C9A063" : "#f87171", icon: DollarSign },
         ].map(k => (
