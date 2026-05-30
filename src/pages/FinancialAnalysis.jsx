@@ -1264,25 +1264,36 @@ export default function FinancialAnalysis() {
   const data = stepData[step.key] || {};
   const setData = (updater) => setStepData(prev => ({ ...prev, [step.key]: typeof updater === "function" ? updater(prev[step.key] || {}) : updater }));
 
+  // Sauvegarde immédiate d'une section donnée (utilisé avant navigation)
+  const flushSection = async (sectionKey) => {
+    const payload = stepData[sectionKey];
+    if (!payload || Object.keys(payload).length === 0) return;
+    try {
+      const existing = await base44.entities.FinancialProfile.filter({ section: sectionKey });
+      if (existing.length > 0) {
+        await base44.entities.FinancialProfile.update(existing[0].id, { data: payload, completed: completedSteps.has(sectionKey) });
+      } else {
+        await base44.entities.FinancialProfile.create({ section: sectionKey, data: payload, completed: false });
+      }
+    } catch(e) { /* silent */ }
+  };
+
   useEffect(() => {
     if (!stepData[step.key] || Object.keys(stepData[step.key]).length === 0) return;
     setAutoSaveStatus('saving');
     const timer = setTimeout(async () => {
-      try {
-        const existing = await base44.entities.FinancialProfile.filter({ section: step.key });
-        if (existing.length > 0) {
-          await base44.entities.FinancialProfile.update(existing[0].id, { data: stepData[step.key] || {}, completed: completedSteps.has(step.key) });
-        } else {
-          await base44.entities.FinancialProfile.create({ section: step.key, data: stepData[step.key] || {}, completed: false });
-        }
-        setAutoSaveStatus('saved');
-        setTimeout(() => setAutoSaveStatus('idle'), 2000);
-      } catch(e) {
-        setAutoSaveStatus('idle');
-      }
+      await flushSection(step.key);
+      setAutoSaveStatus('saved');
+      setTimeout(() => setAutoSaveStatus('idle'), 2000);
     }, 1500);
     return () => clearTimeout(timer);
   }, [stepData[step.key]]);
+
+  // Naviguer vers une étape en sauvegardant l'étape courante d'abord
+  const goToStep = async (newIndex) => {
+    await flushSection(step.key);
+    setCurrentStep(newIndex);
+  };
 
   const saveStep = async () => {
     setSaving(true);
@@ -1351,7 +1362,7 @@ export default function FinancialAnalysis() {
             const isDone = completedSteps.has(s.key);
             return (
               <React.Fragment key={s.key}>
-                <button onClick={() => setCurrentStep(i)} className="flex flex-col items-center gap-1.5 px-3 py-2 rounded-xl transition-all shrink-0"
+                <button onClick={() => goToStep(i)} className="flex flex-col items-center gap-1.5 px-3 py-2 rounded-xl transition-all shrink-0"
                   style={isActive ? { background: "rgba(201,160,99,0.12)", border: "1px solid rgba(201,160,99,0.3)" } : { background: "transparent" }}>
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center"
                     style={{ background: isDone ? "rgba(91,196,160,0.15)" : isActive ? "rgba(201,160,99,0.2)" : "rgba(255,255,255,0.05)" }}>
@@ -1388,7 +1399,7 @@ export default function FinancialAnalysis() {
                 <StepComponent data={data} setData={setData} stepData={stepData} />
               </div>
               <div className="px-8 py-5 flex justify-between" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                <button onClick={() => setCurrentStep(c => Math.max(0, c - 1))} disabled={currentStep === 0}
+                <button onClick={() => goToStep(Math.max(0, currentStep - 1))} disabled={currentStep === 0}
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-medium transition-all disabled:opacity-30"
                   style={{ border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.7)" }}>
                   <ChevronLeft className="w-4 h-4" /> Précédent
