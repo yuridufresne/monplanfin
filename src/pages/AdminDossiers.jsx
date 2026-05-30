@@ -339,22 +339,8 @@ function DossierCard({ d, expanded, onToggle, onChangerStatut, onSauverNote }) {
             </p>
           </div>
 
-          {/* Snapshot du profil financier */}
-          <div style={{ marginTop: 14 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: "#C9A063", marginBottom: 10 }}>
-              📋 Snapshot du dossier
-            </p>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 8 }}>
-              <Mini label="Situation" value={enCouple ? "En couple" : "Célibataire"} />
-              {profil.date_naissance && <Mini label="Âge" value={`${new Date().getFullYear() - new Date(profil.date_naissance).getFullYear()} ans`} />}
-              {profil.nb_enfants !== undefined && <Mini label="Enfants" value={profil.nb_enfants} />}
-              {revenu.salaire_brut_annuel && <Mini label="Revenu A" value={fmt$(revenu.salaire_brut_annuel)} color="#5BC4A0" />}
-              {revenu.conjoint?.salaire_brut_annuel && <Mini label="Revenu B" value={fmt$(revenu.conjoint.salaire_brut_annuel)} color="#5BC4A0" />}
-              {dettes.cote_credit && <Mini label="Cote crédit" value={dettes.cote_credit} color="#C9A063" />}
-              {valeurImmo > 0 && <Mini label="Valeur immo" value={fmt$(valeurImmo)} color="#C9A063" />}
-              {dettesImmo > 0 && <Mini label="Hypothèques" value={fmt$(dettesImmo)} color="#f87171" />}
-            </div>
-          </div>
+          {/* Snapshot du profil financier complet */}
+          <SnapshotComplet snapshot={snapshot} />
 
           {/* Notes internes (admin uniquement) */}
           <div style={{ marginTop: 16 }}>
