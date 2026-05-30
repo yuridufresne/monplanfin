@@ -58,8 +58,13 @@ export const defaultImmobilierPayload = {
   // ── Paramètres du marché (modifiables) ───────────────────────────────────
   taux_hypothecaire: 4.04,            // % — taux fixe 5 ans avril 2026 (nesto)
   amortissement: 25,                  // années — 25 défaut, 30 possible 1er acheteur neuf 2024+
-};
 
+  // ── Situation actuelle (premier achat OU vendre avant d'acheter) ─────────
+  statut_propriete: "premier",        // "premier" | "vendre"
+  valeur_marchande_actuelle: 0,       // valeur estimée de la maison actuelle
+  solde_hypotheque_actuelle: 0,       // solde restant sur l'hypothèque actuelle
+  frais_vente_pct: 6,                 // % du prix de vente (courtier 5% + notaire ~1%)
+};
 /**
  * Construit le payload depuis le profil ABF.
  * @param {object} bySection - les sections ABF unwrapped
