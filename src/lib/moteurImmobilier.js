@@ -174,7 +174,9 @@ export function calculerQualification(p) {
   else if (prixMax <= 1500000) miseMinRequise = 500000 * 0.05 + (prixMax - 500000) * 0.10;
   else miseMinRequise = prixMax * 0.20;
 
-  const miseEffective = Math.min(miseDeFondsBrute, prixMax);
+  const miseEffective = stratPct !== null
+                      ? Math.min(prixMax * stratPct, miseDeFondsBrute)
+                      : Math.min(miseDeFondsBrute, prixMax);
   const misePct = prixMax > 0 ? (miseEffective / prixMax) * 100 : 0;
   const assuree = misePct < 20 && prixMax > 0;
   const pretBase = Math.max(0, prixMax - miseEffective);
