@@ -174,9 +174,28 @@ export default function Immobilier() {
                 ⓘ Vous êtes déjà propriétaire — le <b>RAP</b> et le <b>CELIAPP</b> ne sont pas admissibles (règle ARC : aucune propriété dans les 4 années précédentes). Votre équité couvre généralement la mise.
               </div>
             )}
-            <div style={{ marginTop: 14, padding: "12px 14px", borderRadius: 10, background: "rgba(201,160,99,.05)", border: "1px solid rgba(201,160,99,.18)" }}>
-              <Champ label="Mise de fonds que vous voulez mettre ($)" hint={`Total disponible : ${fmt(reco.miseDeFondsDispo || 0)} · laissez 0 pour tout utiliser`}>
-                <input type="number" value={payload.mise_de_fonds_souhaitee} onChange={e => set("mise_de_fonds_souhaitee")(+e.target.value)} style={S.input} placeholder="0" />
+            <div style={{ marginTop: 14, padding: "14px 16px", borderRadius: 10, background: "rgba(201,160,99,.05)", border: "1px solid rgba(201,160,99,.18)" }}>
+              <Champ label="Stratégie de mise de fonds" hint={`Total disponible : ${fmt(reco.miseDeFondsDispo || 0)} · 'Auto' utilise tout pour maximiser le prix`}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 6 }}>
+                  {[
+                    { val: "auto", label: "Auto", sub: "max" },
+                    { val: "5",    label: "5%",  sub: "SCHL 4%" },
+                    { val: "10",   label: "10%", sub: "SCHL 3.1%" },
+                    { val: "15",   label: "15%", sub: "SCHL 2.8%" },
+                    { val: "20",   label: "20%", sub: "sans SCHL" },
+                  ].map(opt => (
+                    <button key={opt.val} onClick={() => set("mise_de_fonds_pct")(opt.val)}
+                      style={{
+                        padding: "10px 6px", borderRadius: 8, cursor: "pointer", textAlign: "center",
+                        background: payload.mise_de_fonds_pct === opt.val ? `linear-gradient(135deg, ${COL.gold}33, ${COL.gold}11)` : "rgba(255,255,255,.03)",
+                        border: `1px solid ${payload.mise_de_fonds_pct === opt.val ? COL.gold : "rgba(255,255,255,.08)"}`,
+                        color: payload.mise_de_fonds_pct === opt.val ? COL.gold : "rgba(255,255,255,.55)",
+                      }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1 }}>{opt.label}</div>
+                      <div style={{ fontSize: 9, color: "rgba(255,255,255,.4)", marginTop: 3 }}>{opt.sub}</div>
+                    </button>
+                  ))}
+                </div>
               </Champ>
             </div>
           </div>
