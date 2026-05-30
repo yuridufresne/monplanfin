@@ -75,7 +75,58 @@ export default function Immobilier() {
         <div style={{ ...S.card, padding: "20px 22px", marginBottom: 20 }}>
           <div style={S.sec}>Votre situation</div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14, marginTop: 14 }}>
+          {/* ─── Sélecteur premier achat OU vendre avant d'acheter ─── */}
+          <div style={{ marginTop: 14, marginBottom: 16 }}>
+            <Champ label="Vous achetez votre…">
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <button onClick={() => set("statut_propriete")("premier")}
+                  style={{ padding: "12px 14px", borderRadius: 10, cursor: "pointer", textAlign: "left",
+                    background: payload.statut_propriete === "premier" ? `linear-gradient(135deg, ${COL.gold}22, ${COL.gold}08)` : "rgba(255,255,255,.03)",
+                    border: `1px solid ${payload.statut_propriete === "premier" ? COL.gold + "55" : "rgba(255,255,255,.08)"}`,
+                    color: payload.statut_propriete === "premier" ? COL.gold : "rgba(255,255,255,.6)" }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>Première propriété</div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,.45)" }}>Je n'ai jamais été propriétaire</div>
+                </button>
+                <button onClick={() => set("statut_propriete")("vendre")}
+                  style={{ padding: "12px 14px", borderRadius: 10, cursor: "pointer", textAlign: "left",
+                    background: payload.statut_propriete === "vendre" ? `linear-gradient(135deg, ${COL.gold}22, ${COL.gold}08)` : "rgba(255,255,255,.03)",
+                    border: `1px solid ${payload.statut_propriete === "vendre" ? COL.gold + "55" : "rgba(255,255,255,.08)"}`,
+                    color: payload.statut_propriete === "vendre" ? COL.gold : "rgba(255,255,255,.6)" }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>Je vends avant d'acheter</div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,.45)" }}>L'équité s'ajoute à ma mise</div>
+                </button>
+              </div>
+            </Champ>
+          </div>
+
+          {/* ─── Champs maison actuelle (seulement si "vendre") ─── */}
+          {payload.statut_propriete === "vendre" && (
+            <div style={{ padding: "14px 16px", marginBottom: 16, borderRadius: 12, background: "rgba(91,196,160,.04)", border: "1px solid rgba(91,196,160,.18)" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: COL.celi, marginBottom: 10 }}>Votre maison actuelle</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
+                <Champ label="Valeur marchande ($)">
+                  <input type="number" value={payload.valeur_marchande_actuelle} onChange={e => set("valeur_marchande_actuelle")(+e.target.value)} style={S.input} />
+                </Champ>
+                <Champ label="Solde hypothèque ($)">
+                  <input type="number" value={payload.solde_hypotheque_actuelle} onChange={e => set("solde_hypotheque_actuelle")(+e.target.value)} style={S.input} />
+                </Champ>
+                <Champ label="Frais de vente (%)" hint="Courtier ~5% + notaire ~1%">
+                  <input type="number" step="0.5" value={payload.frais_vente_pct} onChange={e => set("frais_vente_pct")(+e.target.value)} style={S.input} />
+                </Champ>
+              </div>
+              {reco.equiteNette > 0 && (
+                <div style={{ marginTop: 12, padding: "10px 12px", borderRadius: 8, background: "rgba(91,196,160,.08)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+                  <div>
+                    <div style={{ fontSize: 10.5, color: COL.dim }}>Équité nette qui s'ajoute à votre mise de fonds</div>
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,.4)", marginTop: 2 }}>Valeur − Solde − Frais vente ({fmt(reco.fraisVente)})</div>
+                  </div>
+                  <div style={{ fontFamily: "ui-monospace,monospace", fontSize: 18, fontWeight: 800, color: COL.celi }}>+ {fmt(reco.equiteNette)}</div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14 }}>
             <Champ label="Salaire brut principal ($/an)">
               <input type="number" value={payload.salaire_brut_a} onChange={e => set("salaire_brut_a")(+e.target.value)} style={S.input} />
             </Champ>
