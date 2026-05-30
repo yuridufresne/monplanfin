@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { ArrowRight, ExternalLink, Settings, Home } from "lucide-react";
+import { ArrowRight, ExternalLink, Settings, Home, Send } from "lucide-react";
 import { calculerQualification } from "@/lib/moteurImmobilier";
 import { payloadDepuisABF } from "@/lib/immobilierPayload";
 import { syncABFToEntities } from "@/hooks/useABFSync";
@@ -13,6 +13,7 @@ import RetirementReport from "@/components/dashboard/RetirementReport";
 import DebtSimulator from "@/components/dashboard/DebtSimulator";
 import ReerLevierSimulator from "@/components/dashboard/ReerLevierSimulator";
 import NIFScore from "@/components/dashboard/NIFScore";
+import SoumettreDossierModal from "@/components/dashboard/SoumettreDossierModal";
 import NIFCalculator from "@/components/dashboard/NIFCalculator";
 import { calcNIFFromProfiles } from "@/lib/calcNIF";
 import InfoTooltip from "@/components/ui/InfoTooltip";
@@ -184,6 +185,7 @@ export default function Dashboard() {
   const [protectionFlipped, setProtectionFlipped] = useState(false);
   const [immoFlipped, setImmoFlipped] = useState(false);
   const [immoPctSelected, setImmoPctSelected] = useState("5");
+  const [showSoumettre, setShowSoumettre] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(setUser);
@@ -369,6 +371,7 @@ export default function Dashboard() {
       <div style={{ position: "absolute", bottom: "5%", left: "-12%", width: 600, height: 600, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(107,142,214,0.06) 0%, transparent 70%)", pointerEvents: "none" }} />
 
       {showReset && <ResetDataModal onClose={() => setShowReset(false)} />}
+      {showSoumettre && <SoumettreDossierModal profiles={profiles} user={user} onClose={() => setShowSoumettre(false)} />}
 
       <div className="relative max-w-7xl mx-auto px-5 lg:px-10 py-12 md:py-16">
 
@@ -392,6 +395,33 @@ export default function Dashboard() {
             </div>
           </div>
         </motion.div>
+
+        {/* ─── CTA Soumettre dossier ─── */}
+        {!isEmpty && (
+          <motion.div {...fadeUp(0.04)} className="mb-5">
+            <button onClick={() => setShowSoumettre(true)} style={{
+              width: "100%", padding: "18px 24px", borderRadius: 16, border: "none", cursor: "pointer",
+              background: "linear-gradient(135deg, rgba(201,160,99,0.15), rgba(201,160,99,0.04))",
+              borderColor: "rgba(201,160,99,0.3)", borderWidth: 1, borderStyle: "solid",
+              display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, flexWrap: "wrap",
+            }}>
+              <div style={{ textAlign: "left", flex: 1, minWidth: 240 }}>
+                <p style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase", color: "rgba(201,160,99,0.7)", marginBottom: 4 }}>
+                  Étape suivante
+                </p>
+                <p style={{ fontSize: 15.5, fontWeight: 700, color: "#fff", marginBottom: 2, letterSpacing: "-.01em" }}>
+                  Prêt à passer à l'action ?
+                </p>
+                <p style={{ fontSize: 12.5, color: "rgba(255,255,255,0.55)", lineHeight: 1.5 }}>
+                  Transmettez votre dossier à un conseiller du cabinet pour une analyse personnalisée et gratuite.
+                </p>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 18px", borderRadius: 10, background: "linear-gradient(135deg, #C9A063, #e6c07a)", color: "#050810", fontSize: 13, fontWeight: 700 }}>
+                <Send size={15} /> Soumettre mon dossier
+              </div>
+            </button>
+          </motion.div>
+        )}
 
         {isEmpty ? (
           <motion.div {...fadeUp(0.1)}>
