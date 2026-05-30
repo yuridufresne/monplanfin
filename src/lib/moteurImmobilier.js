@@ -129,7 +129,13 @@ export function calculerQualification(p) {
       else if (prix <= 1500000) miseMinRequise = 500000 * 0.05 + (prix - 500000) * 0.10;
       else miseMinRequise = prix * 0.20;
 
-      const miseEffective = Math.min(miseDeFondsBrute, prix);
+      let miseEffective;
+      if (stratPct !== null) {
+        miseEffective = prix * stratPct;
+        if (miseEffective > miseDeFondsBrute) { hi = prix; continue; }
+      } else {
+        miseEffective = Math.min(miseDeFondsBrute, prix);
+      }
       if (miseEffective < miseMinRequise) { hi = prix; continue; }
 
       const pretBase = prix - miseEffective;
