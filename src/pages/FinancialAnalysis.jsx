@@ -1303,9 +1303,11 @@ export default function FinancialAnalysis() {
   };
 
   const saveStep = async () => {
+    if (!currentUserEmail) { alert("Impossible de sauvegarder : utilisateur non identifié."); return; }
     setSaving(true);
     try {
       const payload = stepDataRef.current[step.key] || {};
+      // CRITIQUE : filtrer par created_by
       const existing = await base44.entities.FinancialProfile.filter({ section: step.key, created_by: currentUserEmail });
       if (existing.length > 0) {
         await base44.entities.FinancialProfile.update(existing[0].id, { data: payload, completed: true });
@@ -1315,6 +1317,9 @@ export default function FinancialAnalysis() {
       setCompletedSteps(prev => new Set([...prev, step.key]));
       if (currentStep < STEPS.length - 1) setCurrentStep(c => c + 1);
       else setSaved(true);
+    } catch (e) {
+      console.error("saveStep error:", e);
+      alert("Erreur lors de la sauvegarde — voir la console.");
     } finally {
       setSaving(false);
     }
