@@ -3,7 +3,7 @@ import InfoTooltip from "@/components/ui/InfoTooltip";
 import { buildPayload, IQPF } from "@/lib/clientPayload";
 
 const fmt = n => Math.round(n).toLocaleString("fr-CA") + " $";
-const FV  = (c, r, n) => { const rM=r/12; return rM>0?c*12*(Math.pow(1+rM,n)-1)/rM:c*12*n; };
+const FV  = (c, r, n) => { const rM=r/12; const months=n*12; return rM>0?c*(Math.pow(1+rM,months)-1)/rM:c*months; };
 const FVs = (s, r, n) => s * Math.pow(1+r, n);
 
 export default function PlacementStrategie({ profiles=[], retraiteABF={}, retraiteConj={}, revenuBrut=0, tauxMarginal=0.475, ageActuel=38, ageRetraite=65, prenomA="", prenomB="" }) {
@@ -178,7 +178,7 @@ export default function PlacementStrategie({ profiles=[], retraiteABF={}, retrai
             <span style={{ color:"#5BC4A0" }}>CELI {rendCeli}%</span>
           </div>
           <div style={{ fontSize:16, fontWeight:700, color:"#fff" }}>{fmt(projActuel)}</div>
-          <div style={{ fontSize:9, color:"rgba(255,255,255,0.25)", marginTop:2 }}>valeur nominale (dollars futurs)</div>
+          <div style={{ fontSize:9, color:"rgba(255,255,255,0.25)", marginTop:2 }}>valeur nette après impôts (dollars futurs)</div>
         </div>
 
         {/* DROITE — Simulation (read/write) */}
