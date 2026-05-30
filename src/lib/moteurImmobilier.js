@@ -1,18 +1,6 @@
 /**
  * src/lib/moteurImmobilier.js
  * Moteur de pré-qualification hypothécaire — Québec 2026.
- *
- * Conforme aux règles 2026 :
- *  - Stress test BSIF : taux qualificatif = max(taux contractuel + 2%, 5.25%)
- *  - ABD max 35% (non assurée) / 39% (assurée)
- *  - ATD max 42% (non assurée) / 44% (assurée)
- *  - Mise de fonds min : 5% (≤500k), 10% (500k-1.5M), 20% (>1.5M)
- *  - Prime SCHL : 4.0% / 3.1% / 2.8% selon mise, ajoutée au prêt + TVQ
- *  - Modulation taux selon cote Equifax (≥700 = modulation auto)
- *  - Droits de mutation QC + paliers Montréal 2026
- *  - Remboursement mutation 1er acheteur (jusqu'à 5 875$, prop. <1M$, avril 2026+)
- *  - Crédit fédéral 1er acheteur : 1 500$
- *  - Scénario "vendre avant d'acheter" : équité nette ajoutée à la mise
  */
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -73,10 +61,6 @@ function calculerPrimeSCHL(montantPret, prix) {
   return Math.round(montantPret * primePct / 100);
 }
 
-/**
- * Paiement hypothécaire mensuel — taux composé semi-annuellement
- * (norme canadienne), payé mensuellement.
- */
 function paiementMensuel(montant, tauxAnnuel, anneesAmortissement) {
   if (montant <= 0) return 0;
   const tauxSemestriel = tauxAnnuel / 100 / 2;
@@ -88,7 +72,7 @@ function paiementMensuel(montant, tauxAnnuel, anneesAmortissement) {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-//  FONCTION PRINCIPALE — TROUVE LE PRIX MAX QUALIFIABLE
+//  FONCTION PRINCIPALE
 // ────────────────────────────────────────────────────────────────────────────
 export function calculerQualification(p) {
   // 1. Revenu mensuel qualifiable
@@ -123,12 +107,16 @@ export function calculerQualification(p) {
     equiteNette = Math.max(0, (p.valeur_marchande_actuelle || 0) - (p.solde_hypotheque_actuelle || 0) - fraisVente);
   }
 
-  // 5. Mise de fonds totale (liquide + RAP + CELIAPP + don + équité)
-  const miseDeFondsBrute = (p.mise_de_fonds_liquide || 0)
+  // 5. Mise de fonds — total disponible vs souhaité par le client
+  const miseDeFondsDispo = (p.mise_de_fonds_liquide || 0)
                          + Math.min(p.reer_disponible_rap || 0, 120000)
                          + (p.celiapp_disponible || 0)
                          + (p.don_familial || 0)
                          + equiteNette;
+  // Le client peut choisir de mettre moins (garder une réserve)
+  const miseDeFondsBrute = (p.mise_de_fonds_souhaitee || 0) > 0
+                         ? Math.min(p.mise_de_fonds_souhaitee, miseDeFondsDispo)
+                         : miseDeFondsDispo;
 
   // 6. Recherche binaire du PRIX MAX qualifiable
   const trouverPrixMax = () => {
@@ -211,7 +199,7 @@ export function calculerQualification(p) {
   };
   const fraisTotal = Object.values(fraisAchat).reduce((s, v) => s + v, 0);
 
-  // 9. Optimisations CELIAPP/RAP non utilisées (opportunité de lead)
+  // 9. Optimisations CELIAPP/RAP non utilisées
   const celiappDispo = p.celiapp_disponible || 0;
   const celiappMaxTheorique = p.enCouple ? 80000 : 40000;
   const potentielSiCELIAPPMaxime = p.premier_acheteur ? (celiappMaxTheorique - celiappDispo) : 0;
@@ -228,6 +216,7 @@ export function calculerQualification(p) {
     revenuAnnuelBrut,
     dettesTotal,
     coefEmploi,
+    miseDeFondsDispo,
     miseDeFondsBrute,
     miseEffective,
     misePct,
