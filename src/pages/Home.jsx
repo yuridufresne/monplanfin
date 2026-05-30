@@ -201,8 +201,142 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── ÉTAPE 2 — VOTRE VRAI PLAN, EN UN COUP D'ŒIL ────── */}
+      <section id="demo" style={{ background: "linear-gradient(180deg, #050810 0%, #080d18 60%, #050810 100%)", paddingTop: 80, paddingBottom: 80 }}>
+        <div className="max-w-6xl mx-auto px-6 lg:px-10">
+
+          {/* Header */}
+          <motion.div {...fadeUp(0)} className="text-center" style={{ marginBottom: 56 }}>
+            <span style={{
+              display: "inline-block",
+              padding: "5px 14px",
+              borderRadius: 50,
+              background: "rgba(91,196,160,0.08)",
+              border: "1px solid rgba(91,196,160,0.25)",
+              fontSize: 11,
+              fontWeight: 700,
+              color: "#5BC4A0",
+              letterSpacing: ".1em",
+              textTransform: "uppercase",
+              marginBottom: 20,
+            }}>
+              ✓ Tableau de bord complet
+            </span>
+            <h2 className="font-urbanist font-black text-white" style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)", letterSpacing: "-0.04em", lineHeight: 1.1, marginBottom: 20 }}>
+              Votre vrai plan financier,<br />
+              en un <span style={{ background: "linear-gradient(135deg, #C9A063, #e6c07a)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>coup d'œil</span>.
+            </h2>
+            <p style={{ fontSize: 16, fontWeight: 300, color: "rgba(148,163,184,0.85)", maxWidth: 660, margin: "0 auto", lineHeight: 1.7 }}>
+              Calculez votre <strong style={{ color: "#fff", fontWeight: 500 }}>Numéro d'Indépendance Financière</strong>, vos revenus de retraite (RRQ, SV, PSV, Pension PD) et vos besoins en protection — selon les règles fiscales et bancaires du Québec 2026.
+            </p>
+          </motion.div>
+
+          {/* Split : capture + bullets */}
+          <div className="grid lg:grid-cols-2 gap-10 lg:gap-14 items-center">
+
+            {/* Capture d'écran */}
+            <motion.div {...fadeUp(0.1)} style={{ position: "relative" }}>
+              {/* Glow */}
+              <div style={{
+                position: "absolute",
+                inset: "-30px -10px 10px",
+                background: "radial-gradient(ellipse 60% 80% at 50% 50%, rgba(201,160,99,0.12) 0%, transparent 60%)",
+                pointerEvents: "none",
+                zIndex: 0,
+              }} />
+              <div style={{
+                position: "relative",
+                borderRadius: 16,
+                overflow: "hidden",
+                border: "1px solid rgba(255,255,255,0.1)",
+                boxShadow: "0 30px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(201,160,99,0.05)",
+                background: "#0B1428",
+                zIndex: 1,
+              }}>
+                {/* ⚠️ REMPLACER L'URL par ta capture NIF uploadée dans Base44 */}
+                <img
+                  src="https://media.base44.com/images/public/6a0796d6e5414141c147f69c/REMPLACE_AVEC_URL_CAPTURE_NIF.png"
+                  alt="Numéro d'Indépendance Financière sur MonPlanFin"
+                  style={{ width: "100%", height: "auto", display: "block" }}
+                  onError={(e) => { e.currentTarget.style.display = "none"; e.currentTarget.parentElement.innerHTML = '<div style="padding: 100px 40px; text-align: center; color: rgba(255,255,255,0.4);"><p style="font-size: 14px; margin-bottom: 8px;">📸 Capture du Numéro d\'Indépendance Financière</p><p style="font-size: 11px;">Upload ta capture dans Base44 et remplace l\'URL</p></div>'; }}
+                />
+              </div>
+            </motion.div>
+
+            {/* Bullets */}
+            <motion.div {...fadeUp(0.2)} style={{ display: "flex", flexDirection: "column", gap: 22 }}>
+              {[
+                {
+                  icon: "🎯",
+                  title: "Votre NIF personnalisé",
+                  desc: "La somme exacte à accumuler pour votre retraite, calculée selon votre âge, vos revenus et votre style de vie souhaité.",
+                  color: "#C9A063",
+                },
+                {
+                  icon: "📊",
+                  title: "Projections actuelles vs futures",
+                  desc: "Voyez où vous en êtes aujourd'hui et où vous serez à la retraite — en dollars d'aujourd'hui ET en dollars futurs (inflation incluse).",
+                  color: "#6B8ED6",
+                },
+                {
+                  icon: "🏛",
+                  title: "Revenus gouvernementaux inclus",
+                  desc: "RRQ, SV, SRG, Pension PD — tout est déjà calculé et indexé selon les règles 2026 du Québec et du Canada.",
+                  color: "#5BC4A0",
+                },
+                {
+                  icon: "🛡",
+                  title: "Diagnostic complet de protection",
+                  desc: "Assurance vie, testament, fonds d'urgence, besoin estimé en couverture — tout au même endroit, sans surprise.",
+                  color: "#A87DD3",
+                },
+              ].map((f, i) => (
+                <motion.div key={f.title} {...fadeUp(0.3 + i * 0.08)} style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
+                  <div style={{
+                    width: 44, height: 44, borderRadius: 12, flexShrink: 0,
+                    background: `${f.color}15`,
+                    border: `1px solid ${f.color}30`,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 20,
+                  }}>
+                    {f.icon}
+                  </div>
+                  <div>
+                    <h3 className="font-urbanist font-bold text-white" style={{ fontSize: 16.5, marginBottom: 6, letterSpacing: "-0.01em" }}>
+                      {f.title}
+                    </h3>
+                    <p style={{ fontSize: 13.5, fontWeight: 300, color: "rgba(148,163,184,0.75)", lineHeight: 1.7 }}>
+                      {f.desc}
+                    </p>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+
+          </div>
+
+          {/* Chiffre wow — Exemple concret */}
+          <motion.div {...fadeUp(0.6)} style={{
+            marginTop: 60,
+            padding: "26px 32px",
+            borderRadius: 20,
+            background: "linear-gradient(135deg, rgba(201,160,99,0.07), rgba(91,196,160,0.04))",
+            border: "1px solid rgba(201,160,99,0.2)",
+            textAlign: "center",
+          }}>
+            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".15em", textTransform: "uppercase", color: "rgba(201,160,99,0.65)", marginBottom: 12 }}>
+              ✦ Exemple concret
+            </p>
+            <p style={{ fontSize: 17, fontWeight: 400, color: "rgba(255,255,255,0.88)", lineHeight: 1.65, maxWidth: 760, margin: "0 auto" }}>
+              Pour <strong style={{ color: "#fff" }}>Pierre, 30 ans</strong> : son NIF est de <strong style={{ color: "#C9A063", fontWeight: 700, fontFamily: "var(--font-mono)" }}>1 424 032 $</strong> à atteindre d'ici 2061. Et seulement <strong style={{ color: "#5BC4A0", fontWeight: 700, fontFamily: "var(--font-mono)" }}>67 $/mois</strong> supplémentaires pour y arriver.
+            </p>
+          </motion.div>
+
+        </div>
+      </section>
+
       {/* ── PLAN POUR... ─────────────────────────────────────── */}
-      <section id="plan" className="pt-0 pb-12 md:pt-0 md:pb-16" style={{ background: "linear-gradient(180deg, #050810 0%, #080d18 100%)" }}>
+      <section id="plan" className="pt-0 pb-12 md:pt-0 md:pb-16" style={{ background: "linear-gradient(180deg, #080d18 0%, #050810 100%)" }}>
         <div className="max-w-6xl mx-auto px-6 lg:px-10">
 
           <motion.div {...fadeUp(0)} className="text-center mb-8">
