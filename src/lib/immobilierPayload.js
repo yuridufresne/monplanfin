@@ -95,9 +95,15 @@ export function payloadDepuisABF(bySection) {
   const celiappA = sommeComptes(retraite.comptes?.celiapp);
   const celiappB = enCouple ? sommeComptes(retraite.conjoint?.comptes?.celiapp) : 0;
 
-  // Détection d'une hypothèque principale dans l'ABF (résidence actuelle)
-  const hypoActuelle = (dettes.hypotheques || []).find(h => h.usage === "principale")
-                    || (enCouple ? (dettes.conjoint?.hypotheques || []).find(h => h.usage === "principale") : null);
+  // Hypothèques : priorité à la section "immobilier" (nouvelle), fallback "dettes" (ancienne saisie)
+  const hypothequesImmo = immobilier.hypotheques || [];
+  const hypothequesAll = hypothequesImmo.length > 0
+    ? hypothequesImmo
+    : [
+        ...(dettes.hypotheques || []),
+        ...(enCouple ? (dettes.conjoint?.hypotheques || []) : []),
+      ];
+  const hypoActuelle = hypothequesAll.find(h => h.usage === "principale") || null;
   const dejaProprio = !!hypoActuelle;
 
   return {
