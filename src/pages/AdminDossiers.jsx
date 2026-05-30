@@ -288,7 +288,12 @@ function DossierCard({ d, expanded, onToggle, onChangerStatut, onSauverNote }) {
             </span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", fontSize: 11.5, color: "rgba(255,255,255,0.5)" }}>
-            <span><Calendar size={11} style={{ display: "inline", marginRight: 4 }} />{fmtDate(d.created_date)}</span>
+            <span><Calendar size={11} style={{ display: "inline", marginRight: 4 }} />
+              {fmtDate(d.updated_date || d.created_date)}
+              {d.updated_date && d.created_date && new Date(d.updated_date) - new Date(d.created_date) > 60000 && (
+                <span style={{ marginLeft: 6, padding: "1px 6px", borderRadius: 4, background: "rgba(245,158,11,0.15)", color: "#f59e0b", fontSize: 9.5, fontWeight: 700 }}>↻ Resoumis</span>
+              )}
+            </span>
             <span>{d.client_courriel}</span>
             {d.client_telephone && <span><Phone size={11} style={{ display: "inline", marginRight: 4 }} />{d.client_telephone}</span>}
             <span><ModeIcon size={11} style={{ display: "inline", marginRight: 4 }} />Préfère {d.mode_contact_prefere}</span>
