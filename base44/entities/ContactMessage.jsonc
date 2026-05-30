@@ -1,0 +1,51 @@
+{
+  "name": "ContactMessage",
+  "type": "object",
+  "properties": {
+    "nom": {
+      "type": "string",
+      "description": "Nom de l'exp\u00e9diteur"
+    },
+    "courriel": {
+      "type": "string",
+      "format": "email",
+      "description": "Courriel de contact"
+    },
+    "telephone": {
+      "type": "string",
+      "description": "Num\u00e9ro de t\u00e9l\u00e9phone (optionnel)"
+    },
+    "sujet": {
+      "type": "string",
+      "enum": [
+        "general",
+        "loi25",
+        "partenariat",
+        "technique",
+        "autre"
+      ],
+      "default": "general",
+      "description": "Cat\u00e9gorie de la demande"
+    },
+    "message": {
+      "type": "string",
+      "description": "Contenu du message"
+    },
+    "statut": {
+      "type": "string",
+      "enum": [
+        "nouveau",
+        "en_cours",
+        "traite",
+        "ferme"
+      ],
+      "default": "nouveau",
+      "description": "Statut de traitement"
+    }
+  },
+  "required": [
+    "nom",
+    "courriel",
+    "message"
+  ]
+}
