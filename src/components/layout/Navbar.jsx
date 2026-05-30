@@ -60,6 +60,19 @@ export default function Navbar() {
               <span style={{ fontFamily: "var(--font-urbanist)", fontWeight: 800, fontSize: 12, color: "#C9A063", letterSpacing: "-0.02em" }}>MP</span>
             </div>
             <span style={{ fontFamily: "var(--font-urbanist)", fontSize: 15, fontWeight: 700, color: "#fff", letterSpacing: "-0.02em" }}>MonPlanFin</span>
+            <span style={{
+              padding: "2px 7px",
+              borderRadius: 5,
+              background: "rgba(245,158,11,0.15)",
+              border: "1px solid rgba(245,158,11,0.35)",
+              color: "#f59e0b",
+              fontSize: 9,
+              fontWeight: 800,
+              letterSpacing: ".15em",
+              textTransform: "uppercase",
+              lineHeight: 1.4,
+              marginLeft: 2,
+            }}>Beta</span>
           </Link>
 
           {/* Desktop Nav */}
