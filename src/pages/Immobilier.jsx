@@ -260,6 +260,9 @@ export default function Immobilier() {
             <Ligne k="Revenu mensuel qualifiable" v={fmt(reco.revenuMensuelQualifiable)} />
             <Ligne k="Dettes mensuelles totales" v={fmt(reco.dettesTotal)} color={COL.red} />
             <Ligne k="Mise de fonds totale" v={fmt(reco.miseDeFondsBrute)} color={COL.celi} />
+            {reco.equiteNette > 0 && (
+              <Ligne k="↳ dont équité de la vente" v={fmt(reco.equiteNette)} color={COL.celi} small />
+            )}
             <Ligne k="Prêt hypothécaire requis" v={fmt(reco.pretTotal)} />
             {reco.assuree && reco.primeSCHL > 0 && (
               <Ligne k="↳ Prime SCHL (ajoutée au prêt)" v={fmt(reco.primeSCHL)} color={COL.amber} small />
