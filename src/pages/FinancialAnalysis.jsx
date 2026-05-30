@@ -1258,6 +1258,7 @@ export default function FinancialAnalysis() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [autoSaveStatus, setAutoSaveStatus] = useState('idle');
+  const [currentUserEmail, setCurrentUserEmail] = useState(null);
 
   const step = STEPS[currentStep];
   const StepComponent = STEP_COMPONENTS[step.key];
@@ -1272,14 +1273,16 @@ export default function FinancialAnalysis() {
   const flushSection = async (sectionKey) => {
     const payload = stepDataRef.current[sectionKey];
     if (!payload || Object.keys(payload).length === 0) return;
+    if (!currentUserEmail) return; // attends qu'on connaisse le user
     try {
-      const existing = await base44.entities.FinancialProfile.filter({ section: sectionKey });
+      // CRITIQUE : filtrer par created_by — sinon admin écrase les records d'autres users
+      const existing = await base44.entities.FinancialProfile.filter({ section: sectionKey, created_by: currentUserEmail });
       if (existing.length > 0) {
         await base44.entities.FinancialProfile.update(existing[0].id, { data: payload, completed: completedSteps.has(sectionKey) });
       } else {
         await base44.entities.FinancialProfile.create({ section: sectionKey, data: payload, completed: false });
       }
-    } catch(e) { /* silent */ }
+    } catch(e) { console.error("flushSection error:", e); }
   };
 
   useEffect(() => {
@@ -1303,7 +1306,7 @@ export default function FinancialAnalysis() {
     setSaving(true);
     try {
       const payload = stepDataRef.current[step.key] || {};
-      const existing = await base44.entities.FinancialProfile.filter({ section: step.key });
+      const existing = await base44.entities.FinancialProfile.filter({ section: step.key, created_by: currentUserEmail });
       if (existing.length > 0) {
         await base44.entities.FinancialProfile.update(existing[0].id, { data: payload, completed: true });
       } else {
@@ -1326,6 +1329,7 @@ export default function FinancialAnalysis() {
   };
 
   useEffect(() => {
+    base44.auth.me().then(u => setCurrentUserEmail(u?.email || null)).catch(() => {});
     Promise.all([base44.entities.FinancialProfile.list(), base44.entities.BudgetEntry.list()]).then(([profiles, budgetEntries]) => {
       const map = {};
       const done = new Set();
