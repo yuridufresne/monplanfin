@@ -99,9 +99,6 @@ export default function StepBudget() {
         <button onClick={() => setShowGrid(true)} style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "9px 16px", borderRadius: 12, fontSize: 12, fontWeight: 600, cursor: "pointer", background: "rgba(201,160,99,0.1)", border: "1px solid rgba(201,160,99,0.25)", color: "#C9A063" }}>
           <LayoutGrid style={{ width: 14, height: 14 }} /> Grille budgétaire
         </button>
-        <button onClick={() => { setEditing(null); setShowForm(true); }} style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "9px 16px", borderRadius: 12, fontSize: 12, fontWeight: 700, cursor: "pointer", background: "linear-gradient(135deg, #C9A063, #e6c07a)", color: "#050810", border: "none" }}>
-          <Plus style={{ width: 14, height: 14 }} /> Ajouter
-        </button>
       </div>
 
       {/* KPI Cards */}
