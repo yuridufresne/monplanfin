@@ -112,7 +112,7 @@ export default function Home() {
               transition={{ duration: 0.7, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
               style={{ fontSize: 17.5, fontWeight: 300, color: "rgba(148,163,184,0.88)", maxWidth: 580, lineHeight: 1.65, marginBottom: 38 }}
             >
-              Calculez votre <strong style={{ color: "#fff", fontWeight: 500 }}>Numéro d'Indépendance Financière</strong>, votre prix max d'achat immobilier et votre besoin réel d'assurance — selon les règles fiscales et bancaires du Québec 2026.
+              Votre <strong style={{ color: "#fff", fontWeight: 500 }}>NIF</strong>, votre prix max immobilier, votre vrai besoin d'assurance, un plan de <strong style={{ color: "#fff", fontWeight: 500 }}>désendettement</strong>, de <strong style={{ color: "#fff", fontWeight: 500 }}>réduction d'impôt</strong> et de <strong style={{ color: "#fff", fontWeight: 500 }}>création de richesse</strong> — le tout analysé par des conseillers en sécurité financière, selon les règles du Québec 2026.
             </motion.p>
 
             {/* ─ CTAs ─ */}
