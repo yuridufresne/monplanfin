@@ -102,9 +102,10 @@ export function payloadDepuisABF(bySection) {
   const celiappA = sommeComptes(retraite.comptes?.celiapp);
   const celiappB = enCouple ? sommeComptes(retraite.conjoint?.comptes?.celiapp) : 0;
 
-  // Premier acheteur : déduit de l'absence d'hypothèque sur résidence principale
-  const hypoPrincipale = (dettes.hypotheques || []).some(h => h.usage === "principale")
-    || (enCouple && (dettes.conjoint?.hypotheques || []).some(h => h.usage === "principale"));
+  // Détection d'une hypothèque principale dans l'ABF (résidence actuelle)
+  const hypoActuelle = (dettes.hypotheques || []).find(h => h.usage === "principale")
+                    || (enCouple ? (dettes.conjoint?.hypotheques || []).find(h => h.usage === "principale") : null);
+  const dejaProprio = !!hypoActuelle;
 
   return {
     ...defaultImmobilierPayload,
@@ -126,6 +127,9 @@ export function payloadDepuisABF(bySection) {
     reer_disponible_rap: rapDispo,
     celiapp_disponible: celiappA + celiappB,
 
-    premier_acheteur: !hypoPrincipale,
+    premier_acheteur: !dejaProprio,
+    statut_propriete: dejaProprio ? "vendre" : "premier",
+    valeur_marchande_actuelle: dejaProprio ? (parseFloat(hypoActuelle?.valeur_marchande) || parseFloat(hypoActuelle?.prix_achat) || 0) : 0,
+    solde_hypotheque_actuelle: dejaProprio ? (parseFloat(hypoActuelle?.solde) || 0) : 0,
   };
 }
