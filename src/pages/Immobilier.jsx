@@ -2,15 +2,14 @@ import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Link } from "react-router-dom";
-import { calculerQualification, modulerTaux } from "@/lib/moteurImmobilier";
-import { defaultImmobilierPayload, payloadDepuisABF } from "@/lib/immobilierPayload";
-import { Home, TrendingUp, AlertTriangle, Sparkles, Phone, DollarSign, Calculator } from "lucide-react";
+import { calculerQualification } from "@/lib/moteurImmobilier";
+import { payloadDepuisABF } from "@/lib/immobilierPayload";
+import { Home, TrendingUp, AlertTriangle, Sparkles, Phone, Calculator } from "lucide-react";
 
 /**
  * src/pages/Immobilier.jsx
  * Outil de pré-qualification hypothécaire — lead magnet.
  * Pré-rempli depuis l'ABF. Résultat hero unique « Vous pouvez acheter jusqu'à X $ ».
- * CTA fort pour générer un lead vers le conseiller.
  */
 
 const COL = {
@@ -33,7 +32,6 @@ export default function Immobilier() {
     queryFn: () => base44.entities.FinancialProfile.list(),
   });
 
-  // ── Pré-remplissage depuis l'ABF ──
   const initialPayload = useMemo(() => {
     const unwrap = (raw) => raw?.data?.data || raw?.data || raw || {};
     const m = {};
@@ -71,11 +69,11 @@ export default function Immobilier() {
           <Link to="/dashboard" style={{ fontSize: 11, color: "rgba(255,255,255,.35)", textDecoration: "none", padding: "6px 12px", borderRadius: 8, border: "1px solid rgba(255,255,255,.08)", background: "rgba(255,255,255,.03)" }}>← Tableau de bord</Link>
         </div>
 
-        {/* ─── Questionnaire compact ─── */}
+        {/* ─── Questionnaire ─── */}
         <div style={{ ...S.card, padding: "20px 22px", marginBottom: 20 }}>
           <div style={S.sec}>Votre situation</div>
 
-          {/* ─── Sélecteur premier achat OU vendre avant d'acheter ─── */}
+          {/* Sélecteur premier achat OU vendre avant d'acheter */}
           <div style={{ marginTop: 14, marginBottom: 16 }}>
             <Champ label="Vous achetez votre…">
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
@@ -99,7 +97,7 @@ export default function Immobilier() {
             </Champ>
           </div>
 
-          {/* ─── Champs maison actuelle (seulement si "vendre") ─── */}
+          {/* Bloc maison actuelle (seulement si "vendre") */}
           {payload.statut_propriete === "vendre" && (
             <div style={{ padding: "14px 16px", marginBottom: 16, borderRadius: 12, background: "rgba(91,196,160,.04)", border: "1px solid rgba(91,196,160,.18)" }}>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: COL.celi, marginBottom: 10 }}>Votre maison actuelle</div>
@@ -126,6 +124,7 @@ export default function Immobilier() {
             </div>
           )}
 
+          {/* Revenus & dettes */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14 }}>
             <Champ label="Salaire brut principal ($/an)">
               <input type="number" value={payload.salaire_brut_a} onChange={e => set("salaire_brut_a")(+e.target.value)} style={S.input} />
@@ -149,33 +148,43 @@ export default function Immobilier() {
             </Champ>
           </div>
 
+          {/* Mise de fonds */}
           <div style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid rgba(255,255,255,.06)" }}>
             <div style={{ ...S.sec, marginBottom: 10 }}>Mise de fonds disponible</div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14 }}>
               <Champ label="Épargne liquide ($)">
                 <input type="number" value={payload.mise_de_fonds_liquide} onChange={e => set("mise_de_fonds_liquide")(+e.target.value)} style={S.input} />
               </Champ>
-              <Champ label="REER pour RAP ($)" hint={`Max ${payload.enCouple ? '120k' : '60k'}`}>
-                <input type="number" value={payload.reer_disponible_rap} onChange={e => set("reer_disponible_rap")(+e.target.value)} style={S.input} />
-              </Champ>
-              <Champ label="CELIAPP ($)" hint={`Max ${payload.enCouple ? '80k' : '40k'}`}>
-                <input type="number" value={payload.celiapp_disponible} onChange={e => set("celiapp_disponible")(+e.target.value)} style={S.input} />
-              </Champ>
+              {payload.statut_propriete === "premier" && (
+                <Champ label="REER pour RAP ($)" hint={`Max ${payload.enCouple ? '120k' : '60k'} · 1er acheteur`}>
+                  <input type="number" value={payload.reer_disponible_rap} onChange={e => set("reer_disponible_rap")(+e.target.value)} style={S.input} />
+                </Champ>
+              )}
+              {payload.statut_propriete === "premier" && (
+                <Champ label="CELIAPP ($)" hint={`Max ${payload.enCouple ? '80k' : '40k'} · 1er acheteur`}>
+                  <input type="number" value={payload.celiapp_disponible} onChange={e => set("celiapp_disponible")(+e.target.value)} style={S.input} />
+                </Champ>
+              )}
               <Champ label="Don familial ($)" hint="Avec lettre signée">
                 <input type="number" value={payload.don_familial} onChange={e => set("don_familial")(+e.target.value)} style={S.input} />
               </Champ>
             </div>
+            {payload.statut_propriete === "vendre" && (
+              <div style={{ marginTop: 10, padding: "8px 12px", borderRadius: 8, background: "rgba(245,158,11,.05)", border: "1px solid rgba(245,158,11,.18)", fontSize: 11, color: "rgba(255,255,255,.6)", lineHeight: 1.5 }}>
+                ⓘ Vous êtes déjà propriétaire — le <b>RAP</b> et le <b>CELIAPP</b> ne sont pas admissibles (règle ARC : aucune propriété dans les 4 années précédentes). Votre équité couvre généralement la mise.
+              </div>
+            )}
+            <div style={{ marginTop: 14, padding: "12px 14px", borderRadius: 10, background: "rgba(201,160,99,.05)", border: "1px solid rgba(201,160,99,.18)" }}>
+              <Champ label="Mise de fonds que vous voulez mettre ($)" hint={`Total disponible : ${fmt(reco.miseDeFondsDispo || 0)} · laissez 0 pour tout utiliser`}>
+                <input type="number" value={payload.mise_de_fonds_souhaitee} onChange={e => set("mise_de_fonds_souhaitee")(+e.target.value)} style={S.input} placeholder="0" />
+              </Champ>
+            </div>
           </div>
 
+          {/* Projet d'achat */}
           <div style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid rgba(255,255,255,.06)" }}>
             <div style={{ ...S.sec, marginBottom: 10 }}>Projet d'achat</div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14 }}>
-              <Champ label="Premier acheteur ?">
-                <select value={payload.premier_acheteur ? "oui" : "non"} onChange={e => set("premier_acheteur")(e.target.value === "oui")} style={S.input}>
-                  <option value="oui" style={{ background: "#0D1628" }}>Oui</option>
-                  <option value="non" style={{ background: "#0D1628" }}>Non</option>
-                </select>
-              </Champ>
               <Champ label="Région">
                 <select value={payload.region} onChange={e => set("region")(e.target.value)} style={S.input}>
                   <option value="quebec" style={{ background: "#0D1628" }}>Reste du Québec</option>
@@ -221,7 +230,6 @@ export default function Immobilier() {
             Avec vos revenus, dettes et mise de fonds actuels, vous êtes susceptible d'être approuvé pour une propriété jusqu'à ce montant.
           </div>
 
-          {/* Mini-KPIs */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 14, marginTop: 22, maxWidth: 800, margin: "22px auto 0" }}>
             <MiniKPI label="Paiement mensuel" value={`${fmt(reco.paiementHypoReel)}/m`} hint={`hypothèque seule, taux ${reco.tauxContractuel.toFixed(2)}%`} />
             <MiniKPI label="PITH total" value={`${fmt(reco.pithReel)}/m`} hint="hypothèque + taxes + chauffage" />
@@ -248,10 +256,8 @@ export default function Immobilier() {
           </div>
         </div>
 
-        {/* ─── 2 colonnes : Détail qualification + Frais cachés ─── */}
+        {/* ─── 2 colonnes : Détail + Frais cachés ─── */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))", gap: 14, marginBottom: 18 }}>
-
-          {/* Détail qualification */}
           <div style={{ ...S.card, padding: "18px 20px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
               <Calculator size={16} color={COL.celi} />
@@ -259,9 +265,12 @@ export default function Immobilier() {
             </div>
             <Ligne k="Revenu mensuel qualifiable" v={fmt(reco.revenuMensuelQualifiable)} />
             <Ligne k="Dettes mensuelles totales" v={fmt(reco.dettesTotal)} color={COL.red} />
-            <Ligne k="Mise de fonds totale" v={fmt(reco.miseDeFondsBrute)} color={COL.celi} />
+            <Ligne k="Mise de fonds totale utilisée" v={fmt(reco.miseDeFondsBrute)} color={COL.celi} />
             {reco.equiteNette > 0 && (
               <Ligne k="↳ dont équité de la vente" v={fmt(reco.equiteNette)} color={COL.celi} small />
+            )}
+            {reco.miseDeFondsDispo > reco.miseDeFondsBrute && (
+              <Ligne k="↳ réserve gardée de côté" v={fmt(reco.miseDeFondsDispo - reco.miseDeFondsBrute)} color={COL.dim} small />
             )}
             <Ligne k="Prêt hypothécaire requis" v={fmt(reco.pretTotal)} />
             {reco.assuree && reco.primeSCHL > 0 && (
@@ -274,7 +283,6 @@ export default function Immobilier() {
             </div>
           </div>
 
-          {/* Frais cachés — la révélation qui crée le besoin */}
           <div style={{ ...S.card, padding: "18px 20px", background: "linear-gradient(135deg, rgba(248,113,113,.04), rgba(255,255,255,.02))", border: "1px solid rgba(248,113,113,.18)" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
               <AlertTriangle size={16} color={COL.red} />
@@ -300,13 +308,13 @@ export default function Immobilier() {
             <div style={{ marginTop: 12, padding: "12px 14px", borderRadius: 10, background: "rgba(248,113,113,.08)", border: "1px solid rgba(248,113,113,.2)" }}>
               <div style={{ fontSize: 10.5, color: COL.dim, marginBottom: 3 }}>Cash total à prévoir au closing</div>
               <div style={{ fontFamily: "ui-monospace,monospace", fontSize: 20, fontWeight: 800, color: COL.red }}>{fmt(reco.cashTotalRequis)}</div>
-              <div style={{ fontSize: 10.5, color: "rgba(255,255,255,.4)", marginTop: 3 }}>mise de fonds ({fmt(reco.miseEffective)}) + frais ({fmt(reco.fraisTotal)})</div>
+              <div style={{ fontSize: 10.5, color: "rgba(255,255,255,.4)", marginTop: 3 }}>mise ({fmt(reco.miseEffective)}) + frais ({fmt(reco.fraisTotal)})</div>
             </div>
           </div>
         </div>
 
-        {/* ─── Opportunités d'optimisation ─── */}
-        {(reco.opportunites.celiappMaxRestant > 0 || reco.opportunites.conseilsDettes) && (
+        {/* ─── Opportunités ─── */}
+        {(reco.opportunites.celiappMaxRestant > 0 || reco.opportunites.conseilsDettes || reco.mod.statut === "moyen" || reco.mod.statut === "limite") && (
           <div style={{ ...S.card, padding: "18px 20px", marginBottom: 18, background: "linear-gradient(135deg, rgba(91,196,160,.05), rgba(7,14,28,.4))", border: "1px solid rgba(91,196,160,.22)" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
               <TrendingUp size={16} color={COL.celi} />
@@ -319,17 +327,17 @@ export default function Immobilier() {
               )}
               {reco.opportunites.conseilsDettes && (
                 <Opportunite icon="💳" titre={`Vos dettes mensuelles (${fmt(reco.dettesTotal)}) consomment votre capacité`}
-                  texte={`Chaque 100$/mois de paiement de dette en moins ≈ ~17 000$ de capacité d'achat supplémentaire. La consolidation peut débloquer beaucoup.`} />
+                  texte="Chaque 100$/mois de paiement de dette en moins ≈ ~17 000$ de capacité d'achat supplémentaire. La consolidation peut débloquer beaucoup." />
               )}
-              {reco.mod.statut === "moyen" || reco.mod.statut === "limite" ? (
+              {(reco.mod.statut === "moyen" || reco.mod.statut === "limite") && (
                 <Opportunite icon="📈" titre="Améliorer votre cote = meilleur taux = plus de capacité"
                   texte="Atteindre 720+ peut vous faire gagner 30-100k$ de capacité d'achat. Plan : rembourser cartes <30% de limite, ne pas faire de nouvelles enquêtes, rester 6 mois." />
-              ) : null}
+              )}
             </div>
           </div>
         )}
 
-        {/* ─── CTA LEAD MAGNET ─── */}
+        {/* ─── CTA ─── */}
         <div style={{ padding: "28px 24px", borderRadius: 18, background: `linear-gradient(135deg, ${COL.gold}, ${COL.gold2})`, textAlign: "center", marginBottom: 18 }}>
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase", color: "#1a1206", marginBottom: 6 }}>Prochaine étape</div>
           <div style={{ fontSize: 22, fontWeight: 800, color: "#1a1206", marginBottom: 8, letterSpacing: "-.02em" }}>
