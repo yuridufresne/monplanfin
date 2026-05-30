@@ -71,7 +71,7 @@ export default function AdminDossiers() {
   const refresh = async () => {
     try {
       setLoading(true);
-      const list = await base44.entities.LeadDossier.list("-created_date");
+      const list = await base44.entities.LeadDossier.list("-updated_date");
       setDossiers(Array.isArray(list) ? list : []);
     } catch (e) {
       console.error("Erreur chargement dossiers:", e);
