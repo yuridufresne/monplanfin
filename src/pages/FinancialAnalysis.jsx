@@ -208,11 +208,10 @@ function RevenuPanel({ data, setData }) {
   const sidehustles = data.sidehustles || [];
 
   const updateEmploi = (i, k, v) => {
-    const emploisActuels = data.emplois || [];
-    let updated = emploisActuels.map((e, idx) => idx === i ? { ...e, [k]: v } : e);
+    let updated = emplois.map((e, idx) => idx === i ? { ...e, [k]: v } : e);
     if (k === "revenu_brut") {
       const emploi = updated[i];
-      if (!emploi.impot_modifie) {
+      if (emploi && !emploi.impot_modifie) {
         const impotEstime = estimerImpotMensuel(v);
         updated = updated.map((e, idx) => idx === i ? { ...e, impot_saisi: impotEstime > 0 ? String(impotEstime) : "", impot_freq: "mensuel" } : e);
       }
