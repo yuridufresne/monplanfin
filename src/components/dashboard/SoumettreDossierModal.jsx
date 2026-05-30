@@ -88,7 +88,8 @@ export default function SoumettreDossierModal({ onClose, profiles, user }) {
     if (!canSubmit) { setError("Veuillez compléter tous les champs requis."); return; }
     setSending(true); setError("");
     try {
-      await base44.entities.LeadDossier.create({
+      // Données à envoyer
+      const data = {
         client_nom: clientNom,
         client_courriel: clientCourriel,
         client_telephone: clientTel,
@@ -101,8 +102,21 @@ export default function SoumettreDossierModal({ onClose, profiles, user }) {
         consentement_explicite: form.consentement,
         date_consentement: new Date().toISOString(),
         snapshot_profil: buildSnapshot(),
-        statut: "nouveau",
-      });
+        statut: "nouveau",  // Reset pour signaler une nouvelle action client au conseiller
+      };
+
+      // Upsert : chercher un dossier existant pour ce user
+      const userEmail = user?.email || clientCourriel;
+      const myDossiers = await base44.entities.LeadDossier.list();
+      const existing = (myDossiers || []).find(d => d.created_by === userEmail);
+
+      if (existing) {
+        // Le client resoumet → on met à jour l'existant (pas de doublon)
+        await base44.entities.LeadDossier.update(existing.id, data);
+      } else {
+        // Première soumission → on crée
+        await base44.entities.LeadDossier.create(data);
+      }
       setSent(true);
     } catch (e) {
       console.error(e);
