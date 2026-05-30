@@ -508,12 +508,25 @@ function PrestationsBlock({ data, setData, salaireActuelPanel }) {
             PSV — Sécurité de la vieillesse
             <InfoTooltip explanation="Pension fédérale versée à partir de 65 ans. Maximum 2026 : 740,09 $/mois (8 881 $/an) pour 40 ans de résidence au Canada après 18 ans. Bonus automatique de +10 % à 75 ans. Récupérée (clawback) au-delà de 93 454 $ de revenu net." position="right" />
           </p>
-          <p className="text-[11.5px] mt-0.5" style={{ color: "#94A3B8" }}>Calculée selon vos années de résidence au Canada.</p>
+          <p className="text-[11.5px] mt-0.5" style={{ color: "#94A3B8" }}>La PSV est calculée selon vos années TOTALES de résidence entre 18 ans et le début de votre PSV.</p>
         </div>
 
-        <Field label="Années de résidence au Canada après 18 ans" hint={`40 ans = pleine PSV. Minimum 10 ans pour le droit. Défaut : ${anneesResidenceDefaut} ans (résidence depuis 18 ans).`}>
-          <Input type="number" value={data.annees_residence_canada} onChange={f("annees_residence_canada")} placeholder={String(anneesResidenceDefaut)} />
+        <Field label={<span>Résidence au Canada de 18 ans jusqu'à votre PSV <InfoTooltip explanation="La PSV est calculée à l'âge où vous la commencez (65+), pas aujourd'hui. La question est donc prospective : compte tenu de votre passé et de vos plans futurs, combien d'années totales aurez-vous résidé au Canada entre vos 18 ans et le début de votre PSV ? 40 ans ou + = PSV pleine. Moins de 10 ans = aucune PSV." position="right" /></span>}>
+          <RadioGroup value={data.sv_residence_prevue || (data.sv_canada_continu === "oui" ? "pleine" : "")} onChange={f("sv_residence_prevue")} options={[
+            { value: "pleine", label: "Résidence continue prévue (PSV pleine)" },
+            { value: "partielle", label: "Résidence partielle (immigration / expatriation)" },
+            { value: "aucune", label: "Pas admissible" },
+          ]} />
         </Field>
+
+        {data.sv_residence_prevue === "partielle" && (
+          <Field
+            label="Années TOTALES prévues au Canada entre 18 ans et début PSV"
+            hint="Ex : arrivé(e) à 30 ans et resté(e) jusqu'à 65 ans = 35 ans. Minimum 10 ans pour avoir droit à la PSV."
+          >
+            <Input type="number" value={data.annees_residence_canada} onChange={f("annees_residence_canada")} placeholder="ex: 35" />
+          </Field>
+        )}
 
         <Field label={<span>Âge de début souhaité de la PSV <InfoTooltip explanation="65 à 70 ans. Report = +0,6 %/mois après 65 (max +36 % à 70). À 75 ans, bonus automatique de 10 % appliqué par Service Canada." position="right" /></span>}>
           <RadioGroup value={String(data.age_debut_psv || 65)} onChange={f("age_debut_psv")} options={[

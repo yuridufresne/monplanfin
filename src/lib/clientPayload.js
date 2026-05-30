@@ -147,10 +147,19 @@ function readPersonne(ret = {}, profil = {}, salaireAnnuel = 0) {
     rrqAnnuelAjuste = r.renteAjustee;
   }
 
-  const anneesResidenceDefaut = String(ret.sv_canada_continu || '').toLowerCase() === 'oui'
-    ? Math.max(0, Math.min(40, ageRetraite - 18))
-    : 0;
-  const anneesResidence = parseFloat(ret.annees_residence_canada) || anneesResidenceDefaut;
+  // PSV — calcul prospectif : la résidence est mesurée à l'âge de début PSV (65+), pas aujourd'hui
+  // Nouveau champ "sv_residence_prevue" : "pleine" | "partielle" | "aucune"
+  // Compatibilité ancien champ "sv_canada_continu" === "oui" → "pleine"
+  const residencePrevue = String(ret.sv_residence_prevue || (ret.sv_canada_continu === 'oui' ? 'pleine' : '')).toLowerCase();
+  let anneesResidence = 0;
+  if (residencePrevue === 'pleine') {
+    anneesResidence = 40; // PSV pleine
+  } else if (residencePrevue === 'partielle') {
+    anneesResidence = parseFloat(ret.annees_residence_canada) || 0;
+  } else if (parseFloat(ret.annees_residence_canada) > 0) {
+    // Fallback : si seulement l'ancien champ "annees_residence_canada" est rempli
+    anneesResidence = parseFloat(ret.annees_residence_canada);
+  }
   const psv = calculPSV({ anneesResidence, ageDebut: ageDebutPSV });
 
   return {
