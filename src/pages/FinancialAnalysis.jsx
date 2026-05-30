@@ -1264,9 +1264,13 @@ export default function FinancialAnalysis() {
   const data = stepData[step.key] || {};
   const setData = (updater) => setStepData(prev => ({ ...prev, [step.key]: typeof updater === "function" ? updater(prev[step.key] || {}) : updater }));
 
+  // Ref qui contient toujours le state le plus récent (évite les closures périmées après await)
+  const stepDataRef = React.useRef(stepData);
+  useEffect(() => { stepDataRef.current = stepData; }, [stepData]);
+
   // Sauvegarde immédiate d'une section donnée (utilisé avant navigation)
   const flushSection = async (sectionKey) => {
-    const payload = stepData[sectionKey];
+    const payload = stepDataRef.current[sectionKey];
     if (!payload || Object.keys(payload).length === 0) return;
     try {
       const existing = await base44.entities.FinancialProfile.filter({ section: sectionKey });
@@ -1298,11 +1302,12 @@ export default function FinancialAnalysis() {
   const saveStep = async () => {
     setSaving(true);
     try {
+      const payload = stepDataRef.current[step.key] || {};
       const existing = await base44.entities.FinancialProfile.filter({ section: step.key });
       if (existing.length > 0) {
-        await base44.entities.FinancialProfile.update(existing[0].id, { data: stepData[step.key] || {}, completed: true });
+        await base44.entities.FinancialProfile.update(existing[0].id, { data: payload, completed: true });
       } else {
-        await base44.entities.FinancialProfile.create({ section: step.key, data: stepData[step.key] || {}, completed: true });
+        await base44.entities.FinancialProfile.create({ section: step.key, data: payload, completed: true });
       }
       setCompletedSteps(prev => new Set([...prev, step.key]));
       if (currentStep < STEPS.length - 1) setCurrentStep(c => c + 1);
@@ -1361,7 +1366,7 @@ export default function FinancialAnalysis() {
             const isActive = i === currentStep;
             const isDone = completedSteps.has(s.key);
             return (
-              <React.Fragment key={s.key}>
+              <div key={s.key} className="flex items-center">
                 <button onClick={() => goToStep(i)} className="flex flex-col items-center gap-1.5 px-3 py-2 rounded-xl transition-all shrink-0"
                   style={isActive ? { background: "rgba(201,160,99,0.12)", border: "1px solid rgba(201,160,99,0.3)" } : { background: "transparent" }}>
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center"
@@ -1371,7 +1376,7 @@ export default function FinancialAnalysis() {
                   <span className="text-[10px] font-semibold" style={{ color: isActive ? "#C9A063" : isDone ? "#5BC4A0" : "#94A3B8" }}>{s.label}</span>
                 </button>
                 {i < STEPS.length - 1 && <div className="w-4 h-[1px] shrink-0" style={{ background: isDone ? "rgba(91,196,160,0.4)" : "rgba(255,255,255,0.1)" }} />}
-              </React.Fragment>
+              </div>
             );
           })}
         </div>
