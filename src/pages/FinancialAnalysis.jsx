@@ -6,7 +6,6 @@ import InfoTooltip from "@/components/ui/InfoTooltip";
 import StepBudget from "@/components/abf/StepBudget";
 import StepAllocations from "@/components/abf/StepAllocations";
 import AddressAutocomplete from "@/components/ui/AddressAutocomplete";
-import StepImmobilier from "@/components/abf/StepImmobilier";
 
 const STEPS = [
   { key: "profil_personnel", label: "Profil", icon: User, title: "Renseignements personnels" },
@@ -1113,6 +1112,110 @@ function StepEtudes({ data, setData, stepData }) {
               {new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(totalCotisations)}/mois
             </p>
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StepImmobilier({ data, setData }) {
+  const f = (k) => (v) => setData(p => ({ ...p, [k]: v }));
+  const hypotheques = data.hypotheques || [];
+  const updateHypo = (i, k, v) => setData(p => ({ ...p, hypotheques: hypotheques.map((h, idx) => idx === i ? { ...h, [k]: v } : h) }));
+  const addHypo = () => setData(p => ({ ...p, hypotheques: [...hypotheques, { adresse: "", prix_achat: "", annee_achat: "", solde: "", taux: "", type_taux: "fixe", terme_restant: "", amortissement_initial: "", amortissement_restant: "", paiement_mensuel: "", mise_de_fonds_pct: "", usage: "principale", valeur_marchande: "", date_renouvellement: "" }] }));
+  const removeHypo = (i) => setData(p => ({ ...p, hypotheques: hypotheques.filter((_, idx) => idx !== i) }));
+  const totalValeur = hypotheques.reduce((s, h) => s + (parseFloat(h.valeur_marchande || h.prix_achat) || 0), 0);
+  const totalSolde = hypotheques.reduce((s, h) => s + (parseFloat(h.solde) || 0), 0);
+  const totalEquite = totalValeur - totalSolde;
+  const fmt = (v) => new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v || 0);
+
+  return (
+    <div className="space-y-7">
+      <div className="rounded-xl p-4" style={{ background: "rgba(201,160,99,0.06)", border: "1px solid rgba(201,160,99,0.15)" }}>
+        <p className="text-[12px]" style={{ color: "#C9A063" }}>
+          Vos propriétés actuelles (résidence principale, chalet, immeubles locatifs). Les hypothèques sont prises en compte dans votre ATD pour toute future qualification. Pour estimer combien vous pouvez acheter, utilisez l'outil <strong style={{ color: "#fff" }}>Immobilier</strong> dans le menu.
+        </p>
+      </div>
+
+      <Field label="Êtes-vous (ou votre conjoint) propriétaire d'au moins une propriété ?">
+        <RadioGroup value={data.a_proprietes} onChange={f("a_proprietes")} options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]} />
+      </Field>
+
+      {data.a_proprietes === "oui" && (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <p className="text-[14px] font-semibold text-white">Propriétés détenues</p>
+              <p className="text-[12px] mt-0.5" style={{ color: "#94A3B8" }}>Résidence principale, chalet, immeuble locatif…</p>
+            </div>
+            <button onClick={addHypo} className="text-[12px] font-semibold px-3 py-1.5 rounded-lg"
+              style={{ background: "rgba(201,160,99,0.1)", color: "#C9A063", border: "1px solid rgba(201,160,99,0.2)" }}>+ Ajouter une propriété</button>
+          </div>
+
+          {hypotheques.length === 0 && (
+            <button onClick={addHypo} className="w-full py-3 rounded-xl text-[13px] font-medium transition-all"
+              style={{ border: "1px dashed rgba(201,160,99,0.3)", color: "#C9A063" }}>+ Ajouter ma première propriété</button>
+          )}
+
+          <div className="space-y-4 mt-4">
+            {hypotheques.map((h, i) => (
+              <div key={i} className="rounded-xl p-5 relative" style={{ background: "rgba(201,160,99,0.04)", border: "1px solid rgba(201,160,99,0.15)" }}>
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-[12px] font-bold tracking-wider uppercase" style={{ color: "rgba(201,160,99,0.6)" }}>Propriété {i + 1}</p>
+                  <button onClick={() => removeHypo(i)} className="text-[11px] px-2 py-1 rounded" style={{ color: "rgba(248,113,113,0.7)" }}>✕ Retirer</button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Field label="Usage de la propriété">
+                    <RadioGroup value={h.usage} onChange={v => updateHypo(i, "usage", v)} options={[
+                      { value: "principale", label: "Résidence principale" },
+                      { value: "locatif", label: "Locatif" },
+                      { value: "secondaire", label: "Résidence secondaire" },
+                    ]} />
+                  </Field>
+                  <Field label="Adresse / Description"><Input value={h.adresse} onChange={v => updateHypo(i, "adresse", v)} placeholder="ex: 123 rue des Érables, Montréal" /></Field>
+                  <Field label="Prix d'achat ($)"><Input type="number" value={h.prix_achat} onChange={v => updateHypo(i, "prix_achat", v)} placeholder="350 000" /></Field>
+                  <Field label="Année d'achat"><Input type="number" value={h.annee_achat} onChange={v => updateHypo(i, "annee_achat", v)} placeholder="2019" /></Field>
+                  <Field label="Valeur marchande estimée ($)" hint="Estimation actuelle"><Input type="number" value={h.valeur_marchande} onChange={v => updateHypo(i, "valeur_marchande", v)} placeholder="550 000" /></Field>
+                  <Field label="Date de prochain renouvellement"><Input type="date" value={h.date_renouvellement} onChange={v => updateHypo(i, "date_renouvellement", v)} /></Field>
+                  <Field label="Mise de fonds initiale (%)"><Input type="number" value={h.mise_de_fonds_pct} onChange={v => updateHypo(i, "mise_de_fonds_pct", v)} placeholder="20" /></Field>
+                  <Field label="Solde hypothécaire actuel ($)"><Input type="number" value={h.solde} onChange={v => updateHypo(i, "solde", v)} placeholder="280 000" /></Field>
+                  <Field label="Taux d'intérêt actuel (%)"><Input type="number" value={h.taux} onChange={v => updateHypo(i, "taux", v)} placeholder="5.25" /></Field>
+                  <Field label="Type de taux">
+                    <RadioGroup value={h.type_taux} onChange={v => updateHypo(i, "type_taux", v)} options={[{ value: "fixe", label: "Fixe" }, { value: "variable", label: "Variable" }]} />
+                  </Field>
+                  <Field label="Terme restant (mois)" hint="Avant renouvellement"><Input type="number" value={h.terme_restant} onChange={v => updateHypo(i, "terme_restant", v)} placeholder="36" /></Field>
+                  <Field label="Amortissement initial (ans)"><Input type="number" value={h.amortissement_initial} onChange={v => updateHypo(i, "amortissement_initial", v)} placeholder="25" /></Field>
+                  <Field label="Amortissement restant (ans)"><Input type="number" value={h.amortissement_restant} onChange={v => updateHypo(i, "amortissement_restant", v)} placeholder="21" /></Field>
+                  <Field label="Paiement mensuel ($)"><Input type="number" value={h.paiement_mensuel} onChange={v => updateHypo(i, "paiement_mensuel", v)} placeholder="1 850" /></Field>
+                </div>
+                {h.solde && (h.valeur_marchande || h.prix_achat) && (
+                  <div className="mt-4 rounded-lg px-4 py-2.5 flex items-center justify-between" style={{ background: "rgba(201,160,99,0.06)", border: "1px solid rgba(201,160,99,0.12)" }}>
+                    <span className="text-[12px]" style={{ color: "#94A3B8" }}>Équité estimée {h.valeur_marchande ? "(valeur marchande)" : "(prix d'achat)"}</span>
+                    <span className="font-financial text-[14px] font-bold" style={{ color: "#C9A063" }}>
+                      {fmt((parseFloat(h.valeur_marchande) || parseFloat(h.prix_achat) || 0) - (parseFloat(h.solde) || 0))}
+                    </span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {hypotheques.length > 0 && (
+            <div className="rounded-xl px-5 py-4 grid grid-cols-3 gap-4 mt-4" style={{ background: "rgba(91,196,160,0.06)", border: "1px solid rgba(91,196,160,0.2)" }}>
+              <div>
+                <p className="text-[11px] mb-1" style={{ color: "#94A3B8" }}>Valeur totale</p>
+                <p className="font-financial text-[1.2rem] font-bold" style={{ color: "#5BC4A0" }}>{fmt(totalValeur)}</p>
+              </div>
+              <div>
+                <p className="text-[11px] mb-1" style={{ color: "#94A3B8" }}>Total hypothèques</p>
+                <p className="font-financial text-[1.2rem] font-bold" style={{ color: "#f87171" }}>{fmt(totalSolde)}</p>
+              </div>
+              <div>
+                <p className="text-[11px] mb-1" style={{ color: "#94A3B8" }}>Équité totale</p>
+                <p className="font-financial text-[1.2rem] font-bold" style={{ color: "#C9A063" }}>{fmt(totalEquite)}</p>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
