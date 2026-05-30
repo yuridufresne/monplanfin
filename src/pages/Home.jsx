@@ -62,61 +62,142 @@ export default function Home() {
           <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse 40% 30% at 20% 70%, rgba(91,196,160,0.06) 0%, transparent 60%)" }} />
         </div>
 
+        {/* Hero — centered with screenshot below */}
+        <div className="relative" style={{ paddingTop: 90, paddingBottom: 60, paddingLeft: 24, paddingRight: 24 }}>
+          <div className="max-w-6xl mx-auto flex flex-col items-center text-center">
 
-
-        {/* Hero text — centered like Wealthsimple */}
-        <div className="relative flex flex-col items-center justify-center text-center" style={{ minHeight: "auto", paddingTop: 120, paddingBottom: 32, paddingLeft: 24, paddingRight: 24 }}>
-          <motion.h1
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="font-urbanist font-black text-white"
-            style={{ fontSize: "clamp(2.5rem, 6vw, 5rem)", lineHeight: 1.05, letterSpacing: "-0.04em", maxWidth: 680, marginBottom: 24 }}
-          >
-            Créer ton plan financier,{" "}
-            <span style={{ color: "#C9A063" }}>propulsé par IA.</span>
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
-            style={{ fontSize: 17, fontWeight: 300, color: "rgba(148,163,184,0.85)", maxWidth: 480, lineHeight: 1.75, marginBottom: 44 }}
-          >
-            Assisté par des conseillers en sécurité financière — tous les outils pour maîtriser votre patrimoine.
-          </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.48, ease: [0.22, 1, 0.36, 1] }}
-            style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}
-          >
-            <button
-              onClick={() => setSoftWallOpen(true)}
-              style={{
-                padding: "14px 32px", borderRadius: 50, fontSize: 14.5, fontWeight: 600, cursor: "pointer",
-                background: "linear-gradient(135deg, #C9A063, #e6c07a)",
-                color: "#050810", border: "none",
-                boxShadow: "0 4px 20px rgba(201,160,99,0.35)",
-                transition: "transform 0.2s, box-shadow 0.2s",
-              }}
-              onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.03)"; e.currentTarget.style.boxShadow = "0 8px 28px rgba(201,160,99,0.45)"; }}
-              onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(201,160,99,0.35)"; }}
+            {/* ─ Badge différenciateur ─ */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+              style={{ marginBottom: 24 }}
             >
-              Commencer gratuitement
-            </button>
+              <span style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "7px 16px",
+                borderRadius: 50,
+                background: "rgba(201,160,99,0.08)",
+                border: "1px solid rgba(201,160,99,0.25)",
+                fontSize: 11.5,
+                fontWeight: 700,
+                color: "#C9A063",
+                letterSpacing: ".06em",
+                textTransform: "uppercase",
+                backdropFilter: "blur(8px)",
+              }}>
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#5BC4A0", boxShadow: "0 0 8px #5BC4A0" }} />
+                Made-in-Québec · Conforme AMF · Règles 2026
+              </span>
+            </motion.div>
 
-          </motion.div>
+            {/* ─ Titre principal ─ */}
+            <motion.h1
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+              className="font-urbanist font-black text-white"
+              style={{ fontSize: "clamp(2.5rem, 6.5vw, 5rem)", lineHeight: 1.04, letterSpacing: "-0.045em", maxWidth: 820, marginBottom: 26 }}
+            >
+              Votre plan financier complet, <br />
+              en <span style={{ background: "linear-gradient(135deg, #C9A063, #e6c07a)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>10 minutes</span>.
+            </motion.h1>
 
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.7 }}
-            style={{ marginTop: 24, fontSize: 12, color: "rgba(148,163,184,0.4)", fontWeight: 300 }}
-          >
-            Gratuit · Aucune carte requise · Données privées
-          </motion.p>
+            {/* ─ Sous-titre ─ */}
+            <motion.p
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
+              style={{ fontSize: 17.5, fontWeight: 300, color: "rgba(148,163,184,0.88)", maxWidth: 580, lineHeight: 1.65, marginBottom: 38 }}
+            >
+              Calculez votre <strong style={{ color: "#fff", fontWeight: 500 }}>Numéro d'Indépendance Financière</strong>, votre prix max d'achat immobilier et votre besoin réel d'assurance — selon les règles fiscales et bancaires du Québec 2026.
+            </motion.p>
+
+            {/* ─ CTAs ─ */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.48, ease: [0.22, 1, 0.36, 1] }}
+              style={{ display: "flex", gap: 14, flexWrap: "wrap", justifyContent: "center", alignItems: "center" }}
+            >
+              <button
+                onClick={() => setSoftWallOpen(true)}
+                style={{
+                  padding: "15px 34px", borderRadius: 50, fontSize: 14.5, fontWeight: 700, cursor: "pointer",
+                  background: "linear-gradient(135deg, #C9A063, #e6c07a)",
+                  color: "#050810", border: "none",
+                  boxShadow: "0 4px 24px rgba(201,160,99,0.4)",
+                  transition: "transform 0.2s, box-shadow 0.2s",
+                }}
+                onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.03)"; e.currentTarget.style.boxShadow = "0 8px 32px rgba(201,160,99,0.5)"; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 4px 24px rgba(201,160,99,0.4)"; }}
+              >
+                Commencer gratuitement →
+              </button>
+
+              <a href="#demo" style={{
+                padding: "15px 22px", borderRadius: 50, fontSize: 14, fontWeight: 600, cursor: "pointer",
+                color: "rgba(255,255,255,0.7)", textDecoration: "none",
+                border: "1px solid rgba(255,255,255,0.15)",
+                background: "rgba(255,255,255,0.03)",
+                transition: "all 0.2s",
+                display: "inline-flex", alignItems: "center", gap: 6,
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "#fff"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.03)"; e.currentTarget.style.color = "rgba(255,255,255,0.7)"; }}
+              >
+                Voir comment ça marche ↓
+              </a>
+            </motion.div>
+
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.65 }}
+              style={{ marginTop: 20, fontSize: 12, color: "rgba(148,163,184,0.45)", fontWeight: 300 }}
+            >
+              ✓ 100% gratuit · ✓ Aucune carte requise · ✓ Conforme Loi 25
+            </motion.p>
+
+            {/* ─ Capture d'écran du dashboard ─ */}
+            <motion.div
+              initial={{ opacity: 0, y: 40, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.9, delay: 0.7, ease: [0.22, 1, 0.36, 1] }}
+              style={{ marginTop: 60, width: "100%", maxWidth: 1100, position: "relative" }}
+            >
+              {/* Glow behind screenshot */}
+              <div style={{
+                position: "absolute",
+                inset: "-40px -20px 20px",
+                background: "radial-gradient(ellipse 60% 80% at 50% 30%, rgba(201,160,99,0.15) 0%, transparent 60%)",
+                pointerEvents: "none",
+                zIndex: 0,
+              }} />
+
+              {/* Screenshot container */}
+              <div style={{
+                position: "relative",
+                borderRadius: 16,
+                overflow: "hidden",
+                border: "1px solid rgba(255,255,255,0.1)",
+                boxShadow: "0 30px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(201,160,99,0.05)",
+                background: "#0B1428",
+                zIndex: 1,
+              }}>
+                {/* ⚠️ REMPLACER L'URL CI-DESSOUS par ta capture d'écran uploadée dans Base44 */}
+                <img
+                  src="https://media.base44.com/images/public/6a0796d6e5414141c147f69c/REMPLACE_AVEC_URL_CAPTURE.png"
+                  alt="Tableau de bord MonPlanFin"
+                  style={{ width: "100%", height: "auto", display: "block" }}
+                  onError={(e) => { e.currentTarget.style.display = "none"; e.currentTarget.parentElement.innerHTML = '<div style="padding: 80px 40px; text-align: center; color: rgba(255,255,255,0.4);"><p style="font-size: 14px; margin-bottom: 8px;">📸 Emplacement pour la capture d\'écran du dashboard</p><p style="font-size: 11px;">Remplace l\'URL dans le code par celle de ton image uploadée dans Base44</p></div>'; }}
+                />
+              </div>
+            </motion.div>
+
+          </div>
         </div>
       </section>
 
