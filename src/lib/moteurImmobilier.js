@@ -12,7 +12,7 @@
  *  - Droits de mutation QC + paliers Montréal 2026
  *  - Remboursement mutation 1er acheteur (jusqu'à 5 875$, prop. <1M$, avril 2026+)
  *  - Crédit fédéral 1er acheteur : 1 500$
- *  - Vendre avant d'acheter : équité nette ajoutée à la mise de fonds
+ *  - Scénario "vendre avant d'acheter" : équité nette ajoutée à la mise
  */
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -115,18 +115,22 @@ export function calculerQualification(p) {
   const tauxContractuel = mod.taux;
   const tauxQualificatif = Math.max(tauxContractuel + 2, TAUX_PLANCHER_QUALIFICATIF);
 
-  // 4. Mise de fonds totale (liquide + RAP + CELIAPP + don + équité nette si vente)
-  const equiteNette = p.statut_propriete === "vendre"
-    ? Math.max(0, (p.valeur_marchande_actuelle || 0) * (1 - (p.frais_vente_pct || 6) / 100) - (p.solde_hypotheque_actuelle || 0))
-    : 0;
+  // 4. Équité nette de la vente (si "vendre avant d'acheter")
+  let equiteNette = 0;
+  let fraisVente = 0;
+  if (p.statut_propriete === "vendre" && (p.valeur_marchande_actuelle || 0) > 0) {
+    fraisVente = (p.valeur_marchande_actuelle || 0) * (p.frais_vente_pct || 6) / 100;
+    equiteNette = Math.max(0, (p.valeur_marchande_actuelle || 0) - (p.solde_hypotheque_actuelle || 0) - fraisVente);
+  }
 
+  // 5. Mise de fonds totale (liquide + RAP + CELIAPP + don + équité)
   const miseDeFondsBrute = (p.mise_de_fonds_liquide || 0)
                          + Math.min(p.reer_disponible_rap || 0, 120000)
                          + (p.celiapp_disponible || 0)
                          + (p.don_familial || 0)
                          + equiteNette;
 
-  // 5. Recherche binaire du PRIX MAX qualifiable
+  // 6. Recherche binaire du PRIX MAX qualifiable
   const trouverPrixMax = () => {
     let lo = 50000, hi = 5000000, best = 0;
     while (hi - lo > 100) {
@@ -169,7 +173,7 @@ export function calculerQualification(p) {
 
   const prixMax = trouverPrixMax();
 
-  // 6. Détails du scénario à prix max
+  // 7. Détails du scénario à prix max
   let miseMinRequise;
   if (prixMax <= 500000) miseMinRequise = prixMax * 0.05;
   else if (prixMax <= 1500000) miseMinRequise = 500000 * 0.05 + (prixMax - 500000) * 0.10;
@@ -188,7 +192,7 @@ export function calculerQualification(p) {
   const chauffage = p.chauffage_mensuel || 150;
   const pithReel = paiementHypoReel + taxesFonc + chauffage + condo50;
 
-  // 7. Frais d'achat estimés
+  // 8. Frais d'achat estimés
   const mutation = calculerMutation(prixMax, p.region || "quebec");
   const tvqSurSCHL = primeSCHL * TVQ;
   const remboursementMutation = p.premier_acheteur && prixMax > 0 && prixMax < 1000000
@@ -207,12 +211,9 @@ export function calculerQualification(p) {
   };
   const fraisTotal = Object.values(fraisAchat).reduce((s, v) => s + v, 0);
 
-  // 8. Optimisations CELIAPP/RAP non utilisées (opportunité de lead)
-  const reerDispo = p.reer_disponible_rap || 0;
+  // 9. Optimisations CELIAPP/RAP non utilisées (opportunité de lead)
   const celiappDispo = p.celiapp_disponible || 0;
-  const rapMaxTheorique = p.enCouple ? 120000 : 60000;
   const celiappMaxTheorique = p.enCouple ? 80000 : 40000;
-  const opportuniteRAP = Math.max(0, Math.min(rapMaxTheorique, reerDispo) - reerDispo);
   const potentielSiCELIAPPMaxime = p.premier_acheteur ? (celiappMaxTheorique - celiappDispo) : 0;
 
   return {
@@ -220,6 +221,8 @@ export function calculerQualification(p) {
     mod,
     tauxContractuel,
     tauxQualificatif,
+    equiteNette,
+    fraisVente,
     revenuMensuelBrut,
     revenuMensuelQualifiable,
     revenuAnnuelBrut,
@@ -229,7 +232,6 @@ export function calculerQualification(p) {
     miseEffective,
     misePct,
     miseMinRequise,
-    equiteNette,
     assuree,
     pretBase,
     primeSCHL,
