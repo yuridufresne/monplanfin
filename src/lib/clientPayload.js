@@ -147,9 +147,25 @@ function readPersonne(ret = {}, profil = {}, salaireAnnuel = 0) {
     rrqAnnuelAjuste = r.renteAjustee;
   }
 
-  const anneesResidenceDefaut = String(ret.sv_canada_continu || '').toLowerCase() === 'oui'
-    ? Math.max(0, Math.min(40, ageRetraite - 18))
-    : 0;
+  // Compatibilité ancien champ (sv_canada_continu) et nouveau (sv_residence_prevue)
+  // sv_residence_prevue : "pleine" | "partielle" | "aucune"
+  // sv_canada_continu (legacy) : "oui" | "non"
+  const svRes = String(ret.sv_residence_prevue
+    || (String(ret.sv_canada_continu).toLowerCase() === 'oui' ? 'pleine' : '')
+    || '').toLowerCase();
+
+  let anneesResidenceDefaut;
+  if (svRes === 'pleine') {
+    anneesResidenceDefaut = Math.max(0, Math.min(40, ageRetraite - 18)); // PSV pleine
+  } else if (svRes === 'partielle') {
+    anneesResidenceDefaut = 0; // utilisateur doit saisir annees_residence_canada
+  } else if (svRes === 'aucune') {
+    anneesResidenceDefaut = 0; // pas admissible
+  } else {
+    // Non répondu : assumer résidence continue (cas par défaut au Québec)
+    anneesResidenceDefaut = Math.max(0, Math.min(40, ageRetraite - 18));
+  }
+
   const anneesResidence = parseFloat(ret.annees_residence_canada) || anneesResidenceDefaut;
   const psv = calculPSV({ anneesResidence, ageDebut: ageDebutPSV });
 
