@@ -175,7 +175,11 @@ function readPersonne(ret = {}, profil = {}, salaireAnnuel = 0) {
 
 export function buildPayload(profiles = []) {
   const dict = {};
-  (profiles || []).forEach(p => { if (p?.section) dict[p.section] = unwrap(p.data || p); });
+  (profiles || []).forEach(p => {
+    // Section peut être à la racine (p.section) OU imbriquée dans data (p.data.section)
+    const section = p?.section || p?.data?.section;
+    if (section) dict[section] = unwrap(p.data || p);
+  });
 
   const profil = dict.profil_personnel || {};
   const rev = dict.revenu || {};
@@ -380,7 +384,11 @@ export function buildPayload(profiles = []) {
 
 export function debugPayload(profiles = []) {
   const dict = {};
-  (profiles || []).forEach(p => { if (p?.section) dict[p.section] = unwrap(p.data || p); });
+  (profiles || []).forEach(p => {
+    // Section peut être à la racine (p.section) OU imbriquée dans data (p.data.section)
+    const section = p?.section || p?.data?.section;
+    if (section) dict[section] = unwrap(p.data || p);
+  });
   const profil = dict.profil_personnel || {};
   const rev    = dict.revenu           || {};
   const ret    = dict.retraite         || {};

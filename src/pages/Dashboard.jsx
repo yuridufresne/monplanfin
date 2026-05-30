@@ -211,7 +211,11 @@ export default function Dashboard() {
 
   const bySection = useMemo(() => {
     const m = {};
-    profiles.forEach(p => { m[p.section] = unwrap(p.data); });
+    profiles.forEach(p => {
+      // Section peut être à la racine (p.section) OU imbriquée (p.data.section)
+      const section = p?.section || p?.data?.section;
+      if (section) m[section] = unwrap(p.data);
+    });
     return m;
   }, [profiles]);
 

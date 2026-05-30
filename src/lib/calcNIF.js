@@ -170,7 +170,11 @@ function unwrapSection(raw) {
 
 export function calcNIFFromProfiles(profiles) {
   const m = {};
-  (profiles || []).forEach(p => { m[p.section] = unwrapSection(p.data); });
+  (profiles || []).forEach(p => {
+    // Section peut être à la racine (p.section) OU imbriquée (p.data.section)
+    const section = p?.section || p?.data?.section;
+    if (section) m[section] = unwrapSection(p.data);
+  });
 
   const profil   = m.profil_personnel || {};
   const retraite = m.retraite         || {};
