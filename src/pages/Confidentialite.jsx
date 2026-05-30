@@ -153,7 +153,10 @@ export default function Confidentialite() {
             </p>
           </div>
           <p style={paragraph}>
-            Nos partenaires sont des professionnels du domaine financier détenant les permis applicables (AMF, IQPF, courtiers hypothécaires accrédités). Ils sont liés par contrat à respecter les standards de confidentialité équivalents à ceux de la présente Politique.
+            Nos partenaires sont des professionnels du domaine financier détenant les permis applicables : <strong style={strong}>conseillers en sécurité financière de l'Autorité des marchés financiers (AMF)</strong>, planificateurs financiers (Pl. Fin., IQPF), courtiers hypothécaires accrédités. Ils sont liés par contrat à respecter les standards de confidentialité équivalents à ceux de la présente Politique.
+          </p>
+          <p style={paragraph}>
+            Vous pouvez vérifier le permis de toute personne ou entreprise qui vous représente sur le registre officiel de l'AMF : <a href="https://lautorite.qc.ca/grand-public/registres/registre-des-entreprises-et-des-individus-autorises-a-exercer" target="_blank" rel="noopener noreferrer" style={lien}>lautorite.qc.ca — Registre des entreprises et des individus autorisés à exercer</a>.
           </p>
           <p style={paragraph}>
             Les renseignements transmis à un partenaire comprennent uniquement ce qui est nécessaire pour la consultation demandée. Le partenaire devient à ce moment co-responsable de la protection de vos renseignements.
