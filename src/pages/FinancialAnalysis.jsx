@@ -761,9 +761,44 @@ function DettesPanel({ data, setData }) {
 
   return (
     <div className="space-y-7">
-      <Field label="Connaissez-vous votre cote de crédit ?">
-        <RadioGroup value={data.connait_cote} onChange={f("connait_cote")} options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]} />
-      </Field>
+      <div className="rounded-xl p-4 space-y-4" style={{ background: "rgba(91,196,160,0.04)", border: "1px solid rgba(91,196,160,0.18)" }}>
+        <div>
+          <p className="text-[13px] font-semibold text-white">
+            Cote de crédit Equifax
+            <InfoTooltip explanation="Score entre 300 et 900. Sert à la qualification hypothécaire, l'obtention de marges de crédit, et influence directement vos taux d'intérêt. Consultez votre cote gratuitement via Borrowell, Credit Karma ou consumer.equifax.ca — sans impact sur votre score." position="right" />
+          </p>
+          <p className="text-[11.5px] mt-0.5" style={{ color: "#94A3B8" }}>Essentielle pour la pré-qualification hypothécaire et l'analyse de votre dossier de crédit.</p>
+        </div>
+
+        <Field label="Connaissez-vous votre cote de crédit ?">
+          <RadioGroup value={data.connait_cote} onChange={f("connait_cote")} options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]} />
+        </Field>
+
+        {data.connait_cote === "oui" && (
+          <Field label="Votre cote Equifax (300-900)" hint="Disponible gratuitement via Borrowell.com ou CreditKarma.ca">
+            <Input value={data.cote_credit} onChange={f("cote_credit")} type="number" placeholder="ex: 720" />
+            {data.cote_credit && (() => {
+              const c = parseInt(data.cote_credit) || 0;
+              if (c < 300 || c > 900) return <p className="text-[11.5px] mt-2 font-semibold" style={{ color: "#f87171" }}>⚠ Cote invalide (doit être entre 300 et 900)</p>;
+              if (c >= 760) return <p className="text-[11.5px] mt-2 font-semibold" style={{ color: "#5BC4A0" }}>✓ Excellent — meilleurs taux du marché disponibles</p>;
+              if (c >= 720) return <p className="text-[11.5px] mt-2 font-semibold" style={{ color: "#5BC4A0" }}>✓ Très bon — accès facile au crédit, taux compétitifs</p>;
+              if (c >= 700) return <p className="text-[11.5px] mt-2 font-semibold" style={{ color: "#C9A063" }}>✓ Bon — qualification standard, taux normaux</p>;
+              if (c >= 680) return <p className="text-[11.5px] mt-2 font-semibold" style={{ color: "#f59e0b" }}>⚠ Moyen — taux légèrement supérieur, dossier à surveiller</p>;
+              if (c >= 640) return <p className="text-[11.5px] mt-2 font-semibold" style={{ color: "#f59e0b" }}>⚠ Limite — prêteurs traditionnels difficiles, alternatifs possibles</p>;
+              return <p className="text-[11.5px] mt-2 font-semibold" style={{ color: "#f87171" }}>⚠ À améliorer avant un achat immobilier — consultez un expert pour un plan de redressement</p>;
+            })()}
+          </Field>
+        )}
+
+        {data.connait_cote === "non" && (
+          <div className="rounded-lg px-4 py-3" style={{ background: "rgba(91,196,160,0.06)", border: "1px solid rgba(91,196,160,0.2)" }}>
+            <p className="text-[12px] font-semibold mb-1" style={{ color: "#5BC4A0" }}>💡 Consultez votre cote gratuitement</p>
+            <p className="text-[11.5px]" style={{ color: "rgba(255,255,255,0.7)", lineHeight: 1.5 }}>
+              <strong style={{ color: "#fff" }}>Borrowell.com</strong> ou <strong style={{ color: "#fff" }}>CreditKarma.ca</strong> — résultat instantané, aucun impact sur votre cote (enquête « soft »).
+            </p>
+          </div>
+        )}
+      </div>
       <div>
         <div className="flex items-center justify-between mb-3">
           <div>
