@@ -29,7 +29,7 @@ const getIndexationLabel = (fp) => {
   return null;
 };
 
-// Construit le label de pension à afficher dans la colonne "à la retraite"
+// Label dynamique pour la colonne "à la retraite"
 const getPensionFuturLabel = (fp) => {
   const indexLabel = getIndexationLabel(fp);
   if (indexLabel) return `Pension (PD — ${indexLabel})`;
@@ -150,7 +150,6 @@ export default function NIFCalculator({ profiles }) {
         <Lbl indent>SV indexée</Lbl><Num color={C.vert}>{fmt(gar?.sv_a_idx)}</Num>
         {gar?.clawback_a_idx > 0 && <>
           <Lbl indent>Récupération PSV (clawback)</Lbl><Num color={C.rouge}>−{fmt(gar?.clawback_a_idx)}</Num>
-          <Lbl indent>Récupération PSV (à la retraite)</Lbl><Num color={C.rouge}>−{fmt(gar?.clawback_a_idx)}</Num>
         </>}
         {gar?.pension_a > 0 && <>
           <Lbl indent>Pension (PD)</Lbl><Num>{fmt(gar?.pension_a)}</Num>
@@ -175,7 +174,6 @@ export default function NIFCalculator({ profiles }) {
           <Lbl indent>SV indexée</Lbl><Num color={C.vert}>{fmt(gar?.sv_b_idx)}</Num>
           {gar?.clawback_b_idx > 0 && <>
             <Lbl indent>Récupération PSV (clawback)</Lbl><Num color={C.rouge}>−{fmt(gar?.clawback_b_idx)}</Num>
-            <Lbl indent>Récupération PSV (à la retraite)</Lbl><Num color={C.rouge}>−{fmt(gar?.clawback_b_idx)}</Num>
           </>}
           {gar?.pension_b > 0 && <>
             <Lbl indent>Pension (PD)</Lbl><Num>{fmt(gar?.pension_b)}</Num>
