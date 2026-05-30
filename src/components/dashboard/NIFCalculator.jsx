@@ -3,6 +3,39 @@ import { buildPayload, IQPF } from "@/lib/clientPayload";
 
 const fmt = (v) => new Intl.NumberFormat("fr-CA",{maximumFractionDigits:0}).format(Math.round(v||0)) + " $";
 
+// ─── Helper : trouve les infos de pension PD dans les profiles ───
+const unwrapDeep = (raw) => {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return raw || {};
+  const hasBusinessFields = raw.fond_pension || raw.comptes || raw.age_retraite || raw.nom || raw.emplois || raw.conjoint;
+  if (hasBusinessFields) return raw;
+  if (raw.data && typeof raw.data === "object" && !Array.isArray(raw.data)) return unwrapDeep(raw.data);
+  return raw;
+};
+
+const getFondPension = (profiles, isB = false) => {
+  const retraite = profiles.find(p => (p?.section || p?.data?.section) === "retraite");
+  if (!retraite) return null;
+  const data = unwrapDeep(retraite.data);
+  return isB ? (data.conjoint?.fond_pension || null) : (data.fond_pension || null);
+};
+
+const getIndexationLabel = (fp) => {
+  if (!fp || fp.indexee !== "oui") return null;
+  const t = fp.indexation_taux;
+  if (t === "plein")  return "Plein IPC";
+  if (t === "75")     return "75 % IPC";
+  if (t === "50")     return "50 % IPC";
+  if (t === "rregop") return "IPC −3 %";
+  return null;
+};
+
+// Label dynamique pour la colonne "à la retraite"
+const getPensionFuturLabel = (fp) => {
+  const indexLabel = getIndexationLabel(fp);
+  if (indexLabel) return `Pension (PD — ${indexLabel})`;
+  return "Pension (PD)"; // non indexée → pas de mention "indexée"
+};
+
 export default function NIFCalculator({ profiles }) {
   const payload = useMemo(() => buildPayload(profiles), [profiles]);
   const pA  = payload.conjoint_a;
@@ -12,6 +45,12 @@ export default function NIFCalculator({ profiles }) {
   const ep  = payload.epargne;
   const kpis = payload.kpis;
   const enCouple = payload.enCouple;
+
+  // ─── Labels dynamiques pour la pension PD ───
+  const fpA = useMemo(() => getFondPension(profiles, false), [profiles]);
+  const fpB = useMemo(() => enCouple ? getFondPension(profiles, true) : null, [profiles, enCouple]);
+  const pensionFuturLabelA = getPensionFuturLabel(fpA);
+  const pensionFuturLabelB = getPensionFuturLabel(fpB);
 
   const anneeAuj = 2026;
   const nAnnees = Math.max(0, (pA?.ageRetraite || 65) - (pA?.age || 38));
@@ -112,15 +151,10 @@ export default function NIFCalculator({ profiles }) {
         {gar?.clawback_a_idx > 0 && <>
           <Lbl indent>Récupération PSV (clawback)</Lbl><Num color={C.rouge}>−{fmt(gar?.clawback_a_idx)}</Num>
         </>}
-        {gar?.clawback_a_idx > 0 && <>
-          <Lbl indent>Récupération PSV (clawback)</Lbl><Num color={C.rouge}>−{fmt(gar?.clawback_a_idx)}</Num>
-        </>}
-        {gar?.clawback_a_idx > 0 && <>
-          <Lbl indent>Récupération PSV (clawback)</Lbl><Num color={C.rouge}>−{fmt(gar?.clawback_a_idx)}</Num>
-        </>}
         {gar?.pension_a > 0 && <>
           <Lbl indent>Pension (PD)</Lbl><Num>{fmt(gar?.pension_a)}</Num>
-<Lbl indent>Pension (PD) indexée</Lbl><Num color={C.vert}>{fmt(gar?.pension_a_idx)}</Num>        </>}
+          <Lbl indent>{pensionFuturLabelA}</Lbl><Num color={C.vert}>{fmt(gar?.pension_a_idx)}</Num>
+        </>}
         <Lbl indent>SRG</Lbl><Num color={gar?.srg_a>0?C.txt45:C.txt25}>{fmt(gar?.srg_a)}</Num>
         <Lbl indent>SRG indexé</Lbl><Num color={gar?.srg_a>0?C.vert:C.txt25}>{fmt(gar?.srg_a_idx)}</Num>
         <div style={{...cell,background:C.orBg2,paddingLeft:24,color:C.or,fontSize:12,fontWeight:500}}>Sous-total {pA?.prenom}</div>
@@ -141,15 +175,9 @@ export default function NIFCalculator({ profiles }) {
           {gar?.clawback_b_idx > 0 && <>
             <Lbl indent>Récupération PSV (clawback)</Lbl><Num color={C.rouge}>−{fmt(gar?.clawback_b_idx)}</Num>
           </>}
-          {gar?.clawback_b_idx > 0 && <>
-            <Lbl indent>Récupération PSV (clawback)</Lbl><Num color={C.rouge}>−{fmt(gar?.clawback_b_idx)}</Num>
-          </>}
-          {gar?.clawback_b_idx > 0 && <>
-            <Lbl indent>Récupération PSV (clawback)</Lbl><Num color={C.rouge}>−{fmt(gar?.clawback_b_idx)}</Num>
-          </>}
           {gar?.pension_b > 0 && <>
             <Lbl indent>Pension (PD)</Lbl><Num>{fmt(gar?.pension_b)}</Num>
-            <Lbl indent>Pension (PD) indexée</Lbl><Num color={C.vert}>{fmt(gar?.pension_b_idx)}</Num>
+            <Lbl indent>{pensionFuturLabelB}</Lbl><Num color={C.vert}>{fmt(gar?.pension_b_idx)}</Num>
           </>}
           <Lbl indent>SRG</Lbl><Num color={gar?.srg_b>0?C.txt45:C.txt25}>{fmt(gar?.srg_b)}</Num>
           <Lbl indent>SRG indexé</Lbl><Num color={gar?.srg_b>0?C.vert:C.txt25}>{fmt(gar?.srg_b_idx)}</Num>
