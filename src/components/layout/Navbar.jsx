@@ -82,6 +82,19 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-3">
             {isAuthenticated ? (
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                {user?.role === "admin" && (
+                  <>
+                    <div style={{ width: 1, height: 28, background: "rgba(255,255,255,0.1)" }} />
+                    <Link to="/admin/dossiers" style={{
+                      display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "rgba(148,163,184,0.65)",
+                      textDecoration: "none", padding: "6px 10px", borderRadius: 8, transition: "all 0.15s",
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.color = "#C9A063"; e.currentTarget.style.background = "rgba(201,160,99,0.08)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.color = "rgba(148,163,184,0.65)"; e.currentTarget.style.background = "transparent"; }}>
+                      🔒 Dossiers
+                    </Link>
+                  </>
+                )}
                 <div style={{ width: 1, height: 28, background: "rgba(255,255,255,0.1)" }} />
                 <span style={{ fontSize: 13, fontWeight: 500, color: "rgba(148,163,184,0.7)" }}>{user?.full_name?.split(" ")[0] || "Mon compte"}</span>
                 <button onClick={() => base44.auth.logout()} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "rgba(148,163,184,0.55)", background: "none", border: "none", cursor: "pointer", padding: "6px 10px", borderRadius: 8, transition: "color 0.15s, background 0.15s" }}
@@ -121,20 +134,36 @@ export default function Navbar() {
                   </div>
                 </div>
                 <div style={{ flex: 1, padding: "0 12px", display: "flex", flexDirection: "column", gap: 4 }}>
-                  {links.map(link => (
-                    <Link key={link.path} to={link.path} onClick={() => setOpen(false)} style={{
-                      display: "flex", alignItems: "center", justifyContent: "space-between",
-                      padding: "12px 16px", borderRadius: 12, fontSize: 13.5, fontWeight: 500,
-                      textDecoration: "none", transition: "all 0.15s",
-                      ...(isActive(link.path)
-                        ? { background: "linear-gradient(135deg, #C9A063, #e6c07a)", color: "#050810", fontWeight: 700, boxShadow: "0 4px 12px rgba(201,160,99,0.25)" }
-                        : { color: "rgba(148,163,184,0.8)" })
-                    }}>
-                      {link.label}
-                      <ChevronRight style={{ width: 13, height: 13, opacity: 0.4 }} />
-                    </Link>
-                  ))}
-                </div>
+                   {links.map(link => (
+                     <Link key={link.path} to={link.path} onClick={() => setOpen(false)} style={{
+                       display: "flex", alignItems: "center", justifyContent: "space-between",
+                       padding: "12px 16px", borderRadius: 12, fontSize: 13.5, fontWeight: 500,
+                       textDecoration: "none", transition: "all 0.15s",
+                       ...(isActive(link.path)
+                         ? { background: "linear-gradient(135deg, #C9A063, #e6c07a)", color: "#050810", fontWeight: 700, boxShadow: "0 4px 12px rgba(201,160,99,0.25)" }
+                         : { color: "rgba(148,163,184,0.8)" })
+                     }}>
+                       {link.label}
+                       <ChevronRight style={{ width: 13, height: 13, opacity: 0.4 }} />
+                     </Link>
+                   ))}
+                   {user?.role === "admin" && (
+                     <>
+                       <div style={{ height: 1, background: "rgba(255,255,255,0.08)", margin: "4px 0" }} />
+                       <Link to="/admin/dossiers" onClick={() => setOpen(false)} style={{
+                         display: "flex", alignItems: "center", justifyContent: "space-between",
+                         padding: "12px 16px", borderRadius: 12, fontSize: 13.5, fontWeight: 500,
+                         textDecoration: "none", transition: "all 0.15s",
+                         ...(isActive("/admin/dossiers")
+                           ? { background: "linear-gradient(135deg, #C9A063, #e6c07a)", color: "#050810", fontWeight: 700, boxShadow: "0 4px 12px rgba(201,160,99,0.25)" }
+                           : { color: "rgba(148,163,184,0.8)" })
+                       }}>
+                         🔒 Dossiers reçus
+                         <ChevronRight style={{ width: 13, height: 13, opacity: 0.4 }} />
+                       </Link>
+                     </>
+                   )}
+                 </div>
                 <div style={{ padding: "24px 20px 0", borderTop: "1px solid rgba(255,255,255,0.07)" }}>
                   {isAuthenticated ? (
                     <button onClick={() => { base44.auth.logout(); setOpen(false); }} style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", fontSize: 14, borderRadius: 12, color: "rgba(148,163,184,0.7)", background: "none", border: "none", cursor: "pointer" }}>
