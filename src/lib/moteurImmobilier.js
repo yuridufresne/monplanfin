@@ -107,16 +107,17 @@ export function calculerQualification(p) {
     equiteNette = Math.max(0, (p.valeur_marchande_actuelle || 0) - (p.solde_hypotheque_actuelle || 0) - fraisVente);
   }
 
-  // 5. Mise de fonds — total disponible vs souhaité par le client
+  // 5. Mise de fonds totale disponible
   const miseDeFondsDispo = (p.mise_de_fonds_liquide || 0)
                          + Math.min(p.reer_disponible_rap || 0, 120000)
                          + (p.celiapp_disponible || 0)
                          + (p.don_familial || 0)
                          + equiteNette;
-  // Le client peut choisir de mettre moins (garder une réserve)
-  const miseDeFondsBrute = (p.mise_de_fonds_souhaitee || 0) > 0
-                         ? Math.min(p.mise_de_fonds_souhaitee, miseDeFondsDispo)
-                         : miseDeFondsDispo;
+  // Stratégie : "auto" = max possible, sinon force un % du prix (5/10/15/20)
+  const stratPct = p.mise_de_fonds_pct && p.mise_de_fonds_pct !== "auto"
+                 ? parseFloat(p.mise_de_fonds_pct) / 100
+                 : null;
+  const miseDeFondsBrute = miseDeFondsDispo;
 
   // 6. Recherche binaire du PRIX MAX qualifiable
   const trouverPrixMax = () => {
