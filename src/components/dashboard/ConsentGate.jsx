@@ -33,7 +33,7 @@ A) MonPlanFin N'EST PAS, et n'agit en aucun cas comme :
 
    • Une compagnie d'assurance vie ou d'assurance de personnes ;
    • Un cabinet, une firme ou un représentant inscrit en assurance de personnes ;
-   • Un courtier hypothécaire ou un cabinet en courtage hypothécaire au sens de la Loi sur le courtage immobilier ou de la Loi sur la distribution de produits et services financiers ;
+   • Un courtier en hypothèques au sens du Règlement sur les courtiers en hypothèques (AMF) ou de la Loi sur la distribution de produits et services financiers ;
    • Un courtier immobilier ou une agence immobilière ;
    • Un cabinet ou un représentant en épargne collective (fonds communs de placement) ;
    • Un cabinet de services financiers, de planification financière, de gestion de portefeuille ou de gestion privée ;
@@ -47,7 +47,7 @@ B) MonPlanFin EST UNIQUEMENT :
    • Un SERVICE DE MISE EN RELATION : à votre demande explicite (par exemple en soumettant votre dossier), MonPlanFin vous propose de vous mettre en contact avec des PROFESSIONNELS INDÉPENDANTS ET ACCRÉDITÉS du secteur financier, immobilier et hypothécaire, notamment :
        — Des conseillers en sécurité financière accrédités par l'AMF
        — Des représentants en épargne collective inscrits à l'AMF
-       — Des courtiers hypothécaires titulaires d'un permis valide
+       — Des courtiers en hypothèques accrédités par l'AMF (inscription valide au Règlement sur les courtiers en hypothèques)
        — Des courtiers immobiliers titulaires d'un permis OACIQ
        — Tout autre professionnel financier, fiscal ou juridique pertinent
 
@@ -55,10 +55,10 @@ C) PROFESSIONNELS PARTENAIRES — ENTITÉS DISTINCTES
 
 Les professionnels partenaires sont des entités juridiques entièrement DISTINCTES de MonPlanFin. Ils possèdent leurs propres certifications, permis et accréditations, délivrés notamment par :
 
-   • L'Autorité des marchés financiers (AMF)
-   • L'Organisme canadien de réglementation des investissements (OCRI)
-   • L'Organisme d'autoréglementation du courtage immobilier du Québec (OACIQ)
-   • La Chambre de la sécurité financière (CSF)
+   • L'Autorité des marchés financiers (AMF) — pour l'assurance de personnes, l'épargne collective, les valeurs mobilières et le courtage en hypothèques
+   • L'Organisme canadien de réglementation des investissements (OCRI) — pour les valeurs mobilières
+   • L'Organisme d'autoréglementation du courtage immobilier du Québec (OACIQ) — pour le courtage immobilier
+   • La Chambre de la sécurité financière (CSF) — pour la déontologie en sécurité financière et épargne collective
    • Toute autre autorité compétente
 
 Ces professionnels partenaires sont SEULS RESPONSABLES des conseils, analyses, recommandations, services et produits qu'ils vous offrent. Toute relation contractuelle résultant de la mise en relation s'établit directement entre vous et le professionnel concerné, sans intervention juridique de MonPlanFin dans cette relation.
@@ -108,7 +108,7 @@ g) DONNÉES TECHNIQUES : adresse IP, navigateur, dimensions d'écran, dates/heur
 
 Vos renseignements personnels sont utilisés exclusivement aux fins suivantes :
 
-a) Calculer votre Numéro d'Indépendance Financière (NIF), vos projections de retraite, votre qualification hypothécaire estimée, vos besoins en protection (assurance) et autres analyses financières personnalisées.
+a) Calculer votre Numéro d'Indépendance Financière (NIF), vos projections de retraite, une ESTIMATION INDICATIVE de votre capacité d'emprunt hypothécaire selon les ratios financiers standards (ABD/ATD), vos besoins en protection (assurance) et autres analyses financières personnalisées.
 
 b) Vous offrir des outils, simulateurs et analyses adaptés à votre situation personnelle.
 
@@ -192,6 +192,14 @@ Délai de réponse : 30 jours conformément à la Loi 25.
 VOUS RECONNAISSEZ ET ACCEPTEZ EXPRESSÉMENT QUE :
 
 a) Conformément à la section 2, MonPlanFin est un OUTIL D'ÉDUCATION, D'INFORMATION ET D'ANALYSE FINANCIÈRE qui NE CONSTITUE PAS un service de conseil financier, fiscal, hypothécaire, immobilier, juridique ou de placement personnalisé.
+
+a.1) SPÉCIFIQUEMENT EN MATIÈRE HYPOTHÉCAIRE ET IMMOBILIÈRE :
+   • Les calculs de capacité d'emprunt fournis par MonPlanFin sont des ESTIMATIONS INDICATIVES basées sur des ratios financiers généraux (ABD/ATD) et sur les renseignements que vous fournissez ;
+   • Ces estimations NE CONSTITUENT PAS une pré-qualification ni une qualification hypothécaire au sens règlementaire du Règlement sur les courtiers en hypothèques (AMF) ;
+   • Ces estimations N'ENGAGENT AUCUN PRÊTEUR ni aucune institution financière ;
+   • Seul un courtier en hypothèques accrédité par l'AMF ou un prêteur agréé peut procéder à une qualification réelle qui pourrait aboutir à l'octroi d'un prêt ;
+   • Seul un courtier immobilier accrédité par l'OACIQ peut vous accompagner dans une transaction immobilière réelle ;
+   • Le montant que vous pourrez réellement emprunter peut être significativement différent de l'estimation présentée.
 
 b) Les calculs, projections, recommandations et autres résultats produits par la plateforme sont fournis À TITRE INFORMATIF ET INDICATIF SEULEMENT ;
 
