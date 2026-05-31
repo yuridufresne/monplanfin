@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { ArrowRight } from "lucide-react";
@@ -47,6 +48,14 @@ const fadeUp = (delay = 0) => ({
 
 export default function Home() {
   const [softWallOpen, setSoftWallOpen] = useState(false);
+  const navigate = useNavigate();
+
+  // Si déjà connecté → rediriger automatiquement vers le dashboard
+  useEffect(() => {
+    base44.auth.isAuthenticated().then(authed => {
+      if (authed) navigate("/dashboard", { replace: true });
+    }).catch(() => {});
+  }, [navigate]);
 
   return (
     <div style={{ background: "#050810" }}>
