@@ -14,6 +14,7 @@ import DebtSimulator from "@/components/dashboard/DebtSimulator";
 import ReerLevierSimulator from "@/components/dashboard/ReerLevierSimulator";
 import NIFScore from "@/components/dashboard/NIFScore";
 import SoumettreDossierModal from "@/components/dashboard/SoumettreDossierModal";
+import ConsentGate from "@/components/dashboard/ConsentGate";
 import NIFCalculator from "@/components/dashboard/NIFCalculator";
 import { calcNIFFromProfiles } from "@/lib/calcNIF";
 import InfoTooltip from "@/components/ui/InfoTooltip";
@@ -372,6 +373,7 @@ export default function Dashboard() {
   const isEmpty = profiles.length === 0 && budgetEntries.length === 0;
 
   return (
+    <ConsentGate userEmail={user?.email} userName={user?.full_name}>
     <div style={{ background: "linear-gradient(135deg, #050810 0%, #080d1a 60%, #050810 100%)", minHeight: "100vh", position: "relative", overflow: "hidden" }}>
       {/* Ambient orbs */}
       <div style={{ position: "absolute", top: "-15%", right: "-8%", width: 700, height: 700, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(201,160,99,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
@@ -860,5 +862,6 @@ export default function Dashboard() {
         )}
       </div>
     </div>
+    </ConsentGate>
   );
 }
