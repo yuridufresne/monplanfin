@@ -252,8 +252,8 @@ export default function Home() {
                 zIndex: 1,
               }}>
                 <img
-                  src="https://media.base44.com/images/public/6a0796d6e5414141c147f69c/bf03b5a35_Capturedecranle2026-05-30a224907.png"
-                  alt="Numéro d'Indépendance Financière sur MonPlanFin"
+                  src="https://media.base44.com/images/public/6a0796d6e5414141c147f69c/518d05dcb_Capturedecranle2026-05-30a230644.png"
+                  alt="Revenus garantis à la retraite sur MonPlanFin"
                   style={{ width: "100%", height: "auto", display: "block" }}
                 />
               </div>
