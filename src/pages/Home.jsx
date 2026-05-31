@@ -243,6 +243,23 @@ export default function Home() {
 
            {/* Capture d'écran — revenus garantis en haut */}
            <motion.div {...fadeUp(0.1)} style={{ position: "relative", display: "flex", flexDirection: "column", gap: 16 }}>
+             {/* Revenus garantis Dashboard */}
+             <div style={{
+               position: "relative",
+               borderRadius: 16,
+               overflow: "hidden",
+               border: "1px solid rgba(255,255,255,0.1)",
+               boxShadow: "0 30px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(201,160,99,0.05)",
+               background: "#0B1428",
+               zIndex: 1,
+             }}>
+               <img
+                src="https://media.base44.com/images/public/6a0796d6e5414141c147f69c/372cdf98e_Capturedecranle2026-05-30a234313.png"
+                alt="Revenus garantis retraite"
+                style={{ width: "100%", height: "auto", display: "block" }}
+              />
+             </div>
+
              {/* Revenus garantis */}
              <div style={{
                position: "relative",
