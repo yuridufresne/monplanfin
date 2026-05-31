@@ -239,34 +239,53 @@ export default function Home() {
           </motion.div>
 
           {/* Split : capture + bullets */}
-          <div className="grid lg:grid-cols-2 gap-10 lg:gap-14 items-center">
+          <div className="grid lg:grid-cols-2 gap-10 lg:gap-14 items-start">
 
-            {/* Capture d'écran */}
-            <motion.div {...fadeUp(0.1)} style={{ position: "relative" }}>
-              {/* Glow */}
-              <div style={{
-                position: "absolute",
-                inset: "-30px -10px 10px",
-                background: "radial-gradient(ellipse 60% 80% at 50% 50%, rgba(201,160,99,0.12) 0%, transparent 60%)",
-                pointerEvents: "none",
-                zIndex: 0,
-              }} />
-              <div style={{
-                position: "relative",
-                borderRadius: 16,
-                overflow: "hidden",
-                border: "1px solid rgba(255,255,255,0.1)",
-                boxShadow: "0 30px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(201,160,99,0.05)",
-                background: "#0B1428",
-                zIndex: 1,
-              }}>
-                <img
-                  src="https://media.base44.com/images/public/6a0796d6e5414141c147f69c/518d05dcb_Capturedecranle2026-05-30a230644.png"
-                  alt="Revenus garantis à la retraite sur MonPlanFin"
-                  style={{ width: "100%", height: "auto", display: "block" }}
-                />
-              </div>
-            </motion.div>
+           {/* Capture d'écran — revenus garantis en haut */}
+           <motion.div {...fadeUp(0.1)} style={{ position: "relative", display: "flex", flexDirection: "column", gap: 16 }}>
+             {/* Revenus garantis */}
+             <div style={{
+               position: "relative",
+               borderRadius: 16,
+               overflow: "hidden",
+               border: "1px solid rgba(255,255,255,0.1)",
+               boxShadow: "0 30px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(201,160,99,0.05)",
+               background: "#0B1428",
+               zIndex: 1,
+             }}>
+               <img
+                src="https://media.base44.com/images/public/6a0796d6e5414141c147f69c/518d05dcb_Capturedecranle2026-05-30a230644.png"
+                alt="Revenus garantis à la retraite sur MonPlanFin"
+                style={{ width: "100%", height: "auto", display: "block" }}
+              />
+             </div>
+
+             {/* Glow */}
+             <div style={{
+               position: "absolute",
+               inset: "-30px -10px 10px",
+               background: "radial-gradient(ellipse 60% 80% at 50% 50%, rgba(201,160,99,0.12) 0%, transparent 60%)",
+               pointerEvents: "none",
+               zIndex: 0,
+             }} />
+
+             {/* NIF */}
+             <div style={{
+               position: "relative",
+               borderRadius: 16,
+               overflow: "hidden",
+               border: "1px solid rgba(255,255,255,0.1)",
+               boxShadow: "0 30px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(201,160,99,0.05)",
+               background: "#0B1428",
+               zIndex: 1,
+             }}>
+               <img
+                src="https://media.base44.com/images/public/6a0796d6e5414141c147f69c/3b3c2a3a0_Capturedecranle2026-05-30a224907.png"
+                alt="Numéro d'Indépendance Financière sur MonPlanFin"
+                style={{ width: "100%", height: "auto", display: "block" }}
+              />
+             </div>
+           </motion.div>
 
             {/* Bullets */}
             <motion.div {...fadeUp(0.2)} style={{ display: "flex", flexDirection: "column", gap: 22 }}>
