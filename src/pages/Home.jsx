@@ -187,12 +187,10 @@ export default function Home() {
                 background: "#0B1428",
                 zIndex: 1,
               }}>
-                {/* ⚠️ REMPLACER L'URL CI-DESSOUS par ta capture d'écran uploadée dans Base44 */}
                 <img
-                  src="https://media.base44.com/images/public/6a0796d6e5414141c147f69c/REMPLACE_AVEC_URL_CAPTURE.png"
+                  src="https://media.base44.com/images/public/6a0796d6e5414141c147f69c/9764affa8_Capturedecranle2026-05-30a224955.png"
                   alt="Tableau de bord MonPlanFin"
                   style={{ width: "100%", height: "auto", display: "block" }}
-                  onError={(e) => { e.currentTarget.style.display = "none"; e.currentTarget.parentElement.innerHTML = '<div style="padding: 80px 40px; text-align: center; color: rgba(255,255,255,0.4);"><p style="font-size: 14px; margin-bottom: 8px;">📸 Emplacement pour la capture d\'écran du dashboard</p><p style="font-size: 11px;">Remplace l\'URL dans le code par celle de ton image uploadée dans Base44</p></div>'; }}
                 />
               </div>
             </motion.div>
@@ -253,12 +251,10 @@ export default function Home() {
                 background: "#0B1428",
                 zIndex: 1,
               }}>
-                {/* ⚠️ REMPLACER L'URL par ta capture NIF uploadée dans Base44 */}
                 <img
-                  src="https://media.base44.com/images/public/6a0796d6e5414141c147f69c/REMPLACE_AVEC_URL_CAPTURE_NIF.png"
+                  src="https://media.base44.com/images/public/6a0796d6e5414141c147f69c/bf03b5a35_Capturedecranle2026-05-30a224907.png"
                   alt="Numéro d'Indépendance Financière sur MonPlanFin"
                   style={{ width: "100%", height: "auto", display: "block" }}
-                  onError={(e) => { e.currentTarget.style.display = "none"; e.currentTarget.parentElement.innerHTML = '<div style="padding: 100px 40px; text-align: center; color: rgba(255,255,255,0.4);"><p style="font-size: 14px; margin-bottom: 8px;">📸 Capture du Numéro d\'Indépendance Financière</p><p style="font-size: 11px;">Upload ta capture dans Base44 et remplace l\'URL</p></div>'; }}
                 />
               </div>
             </motion.div>
