@@ -1,0 +1,156 @@
+{
+  "name": "LeadDossier",
+  "type": "object",
+  "properties": {
+    "besoins_principaux": {
+      "description": "Les besoins principaux du client (multi-s\u00e9lection)",
+      "items": {
+        "enum": [
+          "achat_immobilier",
+          "refinancement_hypotheque",
+          "protection_famille",
+          "retraite_planification",
+          "decaissement_retraite",
+          "optimisation_fiscale",
+          "placements_celi_reer_celiapp",
+          "epargne_etudes_reee",
+          "succession_testament",
+          "consolidation_dettes",
+          "autre"
+        ],
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "client_courriel": {
+      "description": "Courriel du client (snapshot)",
+      "format": "email",
+      "type": "string"
+    },
+    "client_nom": {
+      "description": "Nom du client (snapshot)",
+      "type": "string"
+    },
+    "client_telephone": {
+      "description": "T\u00e9l\u00e9phone du client (snapshot)",
+      "type": "string"
+    },
+    "consentement_explicite": {
+      "default": true,
+      "description": "Le client a coch\u00e9 la case de consentement explicite au moment de la soumission",
+      "type": "boolean"
+    },
+    "date_consentement": {
+      "description": "Horodatage du consentement (Loi 25)",
+      "format": "date-time",
+      "type": "string"
+    },
+    "delai_action_libre": {
+      "description": "Pr\u00e9cision libre sur le d\u00e9lai",
+      "type": "string"
+    },
+    "meilleur_moment_contact": {
+      "description": "Quand le client pr\u00e9f\u00e8re \u00eatre contact\u00e9",
+      "enum": [
+        "matin_semaine",
+        "midi_semaine",
+        "soir_semaine",
+        "fin_de_semaine",
+        "nimporte_quand"
+      ],
+      "type": "string"
+    },
+    "mode_contact_prefere": {
+      "description": "Comment le client pr\u00e9f\u00e8re \u00eatre contact\u00e9",
+      "enum": [
+        "telephone",
+        "courriel",
+        "texto",
+        "videoconference"
+      ],
+      "type": "string"
+    },
+    "notes_client": {
+      "description": "Message libre du client lors de la soumission",
+      "type": "string"
+    },
+    "notes_internes": {
+      "description": "Notes du cabinet (jamais visibles au client)",
+      "type": "string",
+      "rls": {
+        "read": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
+    },
+    "priorite_urgence": {
+      "description": "\u00c0 quelle vitesse le client veut agir",
+      "enum": [
+        "tres_urgent",
+        "urgent",
+        "moyen",
+        "exploration"
+      ],
+      "type": "string"
+    },
+    "snapshot_profil": {
+      "description": "Copie fig\u00e9e de tout l'ABF du client au moment de la soumission",
+      "type": "object"
+    },
+    "statut": {
+      "default": "nouveau",
+      "description": "Statut de traitement du dossier",
+      "enum": [
+        "nouveau",
+        "vu",
+        "contacte",
+        "en_cours",
+        "ferme_converti",
+        "ferme_perdu"
+      ],
+      "type": "string"
+    }
+  },
+  "required": [
+    "client_nom",
+    "client_courriel",
+    "priorite_urgence",
+    "besoins_principaux",
+    "consentement_explicite",
+    "snapshot_profil"
+  ],
+  "rls": {
+    "create": {},
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

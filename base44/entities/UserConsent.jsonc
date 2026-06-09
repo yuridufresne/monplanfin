@@ -1,0 +1,89 @@
+{
+  "properties": {
+    "user_email": {
+      "description": "Courriel du user qui consent",
+      "type": "string"
+    },
+    "user_nom": {
+      "description": "Nom du user (snapshot)",
+      "type": "string"
+    },
+    "consent_version": {
+      "default": "1.0",
+      "description": "Version du texte de consentement",
+      "type": "string"
+    },
+    "consent_text": {
+      "description": "Texte complet du consentement accept\u00e9 (audit trail)",
+      "type": "string"
+    },
+    "accepted": {
+      "default": false,
+      "description": "Consentement accept\u00e9",
+      "type": "boolean"
+    },
+    "consent_uses": {
+      "description": "Types d'usages accept\u00e9s",
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "date_consentement": {
+      "description": "Date/heure du consentement",
+      "format": "date-time",
+      "type": "string"
+    },
+    "revoque": {
+      "default": false,
+      "description": "Consentement r\u00e9voqu\u00e9",
+      "type": "boolean"
+    },
+    "date_revocation": {
+      "description": "Date/heure de la r\u00e9vocation",
+      "format": "date-time",
+      "type": "string"
+    },
+    "navigateur_info": {
+      "description": "User agent (audit trail)",
+      "type": "string"
+    }
+  },
+  "required": [
+    "accepted"
+  ],
+  "rls": {
+    "create": {},
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  },
+  "type": "object",
+  "name": "UserConsent"
+}

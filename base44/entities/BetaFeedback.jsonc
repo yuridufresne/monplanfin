@@ -1,0 +1,121 @@
+{
+  "name": "BetaFeedback",
+  "properties": {
+    "page_url": {
+      "description": "URL et chemin de la page d'o\u00f9 le feedback a \u00e9t\u00e9 envoy\u00e9",
+      "type": "string"
+    },
+    "type_feedback": {
+      "description": "Type de feedback",
+      "enum": [
+        "bug",
+        "suggestion",
+        "question",
+        "compliment",
+        "autre"
+      ],
+      "type": "string"
+    },
+    "severite": {
+      "default": "na",
+      "description": "S\u00e9v\u00e9rit\u00e9 (pour les bugs)",
+      "enum": [
+        "bloquant",
+        "important",
+        "mineur",
+        "na"
+      ],
+      "type": "string"
+    },
+    "type_utilisateur": {
+      "description": "Qui rapporte (conseiller test, client test, admin, autre)",
+      "enum": [
+        "conseiller_test",
+        "client_test",
+        "admin",
+        "autre"
+      ],
+      "type": "string"
+    },
+    "message": {
+      "description": "Description du feedback (message libre)",
+      "type": "string"
+    },
+    "user_email": {
+      "description": "Courriel du testeur (snapshot)",
+      "type": "string"
+    },
+    "user_nom": {
+      "description": "Nom du testeur (snapshot)",
+      "type": "string"
+    },
+    "navigateur_info": {
+      "description": "User agent / dimensions \u00e9cran (pour debug)",
+      "type": "string"
+    },
+    "statut": {
+      "default": "nouveau",
+      "description": "Statut de traitement",
+      "enum": [
+        "nouveau",
+        "en_analyse",
+        "en_correction",
+        "corrige",
+        "ignore"
+      ],
+      "type": "string"
+    },
+    "priorite_admin": {
+      "default": "moyenne",
+      "description": "Priorit\u00e9 d\u00e9finie par l'admin",
+      "enum": [
+        "urgente",
+        "haute",
+        "moyenne",
+        "basse"
+      ],
+      "type": "string"
+    },
+    "notes_admin": {
+      "description": "Notes internes pour l'\u00e9quipe (jamais visibles au testeur)",
+      "rls": {
+        "read": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      },
+      "type": "string"
+    }
+  },
+  "required": [
+    "type_feedback",
+    "message"
+  ],
+  "type": "object",
+  "rls": {
+    "create": {},
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

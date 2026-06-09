@@ -1,6 +1,11 @@
 /**
  * src/lib/moteurImmobilier.js
  * Moteur de pré-qualification hypothécaire — Québec 2026.
+ *
+ * CORRECTIF (v2) : le sélecteur de mise de fonds (5/10/15/20 %) représente
+ * désormais une mise de fonds CIBLE plafonnée par l'épargne réellement disponible,
+ * et non plus une mise imposée qui faisait CHUTER le prix max quand le % montait.
+ * Conséquence : augmenter le % de mise n'abaisse plus jamais la capacité d'achat.
  */
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -71,6 +76,13 @@ function paiementMensuel(montant, tauxAnnuel, anneesAmortissement) {
                  / (Math.pow(1 + tauxMensuelEff, n) - 1);
 }
 
+// Mise de fonds minimale légale (règle canadienne 5/10/20)
+function miseLegaleMin(prix) {
+  if (prix <= 500000) return prix * 0.05;
+  if (prix <= 1500000) return 500000 * 0.05 + (prix - 500000) * 0.10;
+  return prix * 0.20;
+}
+
 // ────────────────────────────────────────────────────────────────────────────
 //  FONCTION PRINCIPALE
 // ────────────────────────────────────────────────────────────────────────────
@@ -114,29 +126,34 @@ export function calculerQualification(p) {
                          + (p.celi_disponible || 0)
                          + (p.don_familial || 0)
                          + equiteNette;
-  // Stratégie : "auto" = max possible, sinon force un % du prix (5/10/15/20)
+  const miseDeFondsBrute = miseDeFondsDispo;
+
+  // Stratégie : "auto" = utilise toute l'épargne (mise maximale, prix maximal).
+  // Sinon (5/10/15/20) = mise de fonds CIBLE, mais PLAFONNÉE par l'épargne réelle.
   const stratPct = p.mise_de_fonds_pct && p.mise_de_fonds_pct !== "auto"
                  ? parseFloat(p.mise_de_fonds_pct) / 100
                  : null;
-  const miseDeFondsBrute = miseDeFondsDispo;
+
+  // Mise effective appliquée à un prix donné (commune à la recherche et au détail)
+  const miseEffectivePour = (prix) => {
+    if (stratPct !== null) {
+      // cible = % du prix, mais on ne peut pas mettre plus que ce qu'on possède
+      return Math.min(prix * stratPct, miseDeFondsBrute);
+    }
+    // auto : tout le cash disponible (borné par le prix)
+    return Math.min(miseDeFondsBrute, prix);
+  };
 
   // 6. Recherche binaire du PRIX MAX qualifiable
   const trouverPrixMax = () => {
     let lo = 50000, hi = 5000000, best = 0;
     while (hi - lo > 100) {
       const prix = (lo + hi) / 2;
-      let miseMinRequise;
-      if (prix <= 500000) miseMinRequise = prix * 0.05;
-      else if (prix <= 1500000) miseMinRequise = 500000 * 0.05 + (prix - 500000) * 0.10;
-      else miseMinRequise = prix * 0.20;
+      const miseMinRequise = miseLegaleMin(prix);
+      const miseEffective = miseEffectivePour(prix);
 
-      let miseEffective;
-      if (stratPct !== null) {
-        miseEffective = prix * stratPct;
-        if (miseEffective > miseDeFondsBrute) { hi = prix; continue; }
-      } else {
-        miseEffective = Math.min(miseDeFondsBrute, prix);
-      }
+      // Contrainte CASH : l'épargne doit couvrir au moins la mise légale minimale.
+      // (C'est le seul vrai plafond lié au cash — plus de plafond artificiel prix = cash/%.)
       if (miseEffective < miseMinRequise) { hi = prix; continue; }
 
       const pretBase = prix - miseEffective;
@@ -170,14 +187,8 @@ export function calculerQualification(p) {
   const prixMax = trouverPrixMax();
 
   // 7. Détails du scénario à prix max
-  let miseMinRequise;
-  if (prixMax <= 500000) miseMinRequise = prixMax * 0.05;
-  else if (prixMax <= 1500000) miseMinRequise = 500000 * 0.05 + (prixMax - 500000) * 0.10;
-  else miseMinRequise = prixMax * 0.20;
-
-  const miseEffective = stratPct !== null
-                      ? Math.min(prixMax * stratPct, miseDeFondsBrute)
-                      : Math.min(miseDeFondsBrute, prixMax);
+  const miseMinRequise = miseLegaleMin(prixMax);
+  const miseEffective = miseEffectivePour(prixMax);
   const misePct = prixMax > 0 ? (miseEffective / prixMax) * 100 : 0;
   const assuree = misePct < 20 && prixMax > 0;
   const pretBase = Math.max(0, prixMax - miseEffective);
@@ -189,6 +200,10 @@ export function calculerQualification(p) {
   const condo50 = (p.frais_condo_mensuel || 0) * 0.5;
   const chauffage = p.chauffage_mensuel || 150;
   const pithReel = paiementHypoReel + taxesFonc + chauffage + condo50;
+
+  // Indique si l'épargne ne suffit pas pour atteindre le % cible choisi
+  const misePctCible = stratPct !== null ? stratPct * 100 : misePct;
+  const cashInsuffisantPourCible = stratPct !== null && (prixMax * stratPct) > miseDeFondsBrute + 1;
 
   // 8. Frais d'achat estimés
   const mutation = calculerMutation(prixMax, p.region || "quebec");
@@ -214,8 +229,15 @@ export function calculerQualification(p) {
   const celiappMaxTheorique = p.enCouple ? 80000 : 40000;
   const potentielSiCELIAPPMaxime = p.premier_acheteur ? (celiappMaxTheorique - celiappDispo) : 0;
 
+  // 10. Zone d'achat recommandée (prudence) : 70–80 % du maximum approuvé
+  const prixMaxArrondi = Math.round(prixMax / 1000) * 1000;
+  const prixRecommandeMin = Math.round(prixMaxArrondi * 0.70 / 1000) * 1000;
+  const prixRecommandeMax = Math.round(prixMaxArrondi * 0.80 / 1000) * 1000;
+
   return {
-    prixMax: Math.round(prixMax / 1000) * 1000,
+    prixMax: prixMaxArrondi,
+    prixRecommandeMin,
+    prixRecommandeMax,
     mod,
     tauxContractuel,
     tauxQualificatif,
@@ -230,6 +252,8 @@ export function calculerQualification(p) {
     miseDeFondsBrute,
     miseEffective,
     misePct,
+    misePctCible,
+    cashInsuffisantPourCible,
     miseMinRequise,
     assuree,
     pretBase,
