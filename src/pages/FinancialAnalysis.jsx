@@ -1402,6 +1402,11 @@ export default function FinancialAnalysis() {
             </div>
           </motion.div>
         </AnimatePresence>
+        </div>
+        <div className="hidden lg:block">
+          <PortraitLive sections={stepData} sectionsCompletees={completedSteps.size} totalSections={STEPS.length} />
+        </div>
+        </div>
       </div>
     </div>
   );
