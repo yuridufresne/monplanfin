@@ -752,7 +752,7 @@ export default function Dashboard() {
                       <Link to="/immobilier" onClick={e => e.stopPropagation()} style={{ fontSize: 11, color: "#C9A063", textDecoration: "none" }}>Outil complet →</Link>
                     </div>
                     <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.4)", marginBottom: 14, lineHeight: 1.5 }}>
-                      Plus de mise = moins de maison à mise égale (votre épargne fixe le plafond)
+                      Capacité basée sur votre revenu (ratios ABD/ATD) — plus de mise comptant = plus de capacité
                     </p>
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 14 }}>
                       {["5", "10", "15", "20"].map(p => (
