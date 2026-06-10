@@ -208,16 +208,24 @@ const estimerImpotMensuel = estimerRetenueMensuelle;
 // ── Refonte visuelle « Centre de commande » du module Revenus ───────────────
 const fmtCAD = (v) => new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v || 0);
 
+const SITUATIONS = [
+  { value: "travail", label: "Au travail", icon: Briefcase, desc: "Salarié, contrat ou autonome" },
+  { value: "chomage", label: "Sans emploi", icon: LifeBuoy, desc: "Assurance-emploi ou recherche" },
+  { value: "etudes", label: "Aux études", icon: GraduationCap, desc: "Temps plein ou partiel" },
+  { value: "foyer", label: "Au foyer", icon: Home, desc: "Parent ou proche aidant" },
+  { value: "retraite", label: "À la retraite", icon: Armchair, desc: "RRQ, PSV, pensions" },
+];
+
 const TYPES_EMPLOI = [
   { value: "salarie", label: "Salarié", icon: Briefcase, desc: "Paie régulière d'un employeur" },
   { value: "contrat", label: "Contrat", icon: FileSignature, desc: "Mandats à durée déterminée" },
   { value: "autonome", label: "Autonome", icon: Rocket, desc: "À votre compte" },
 ];
 
-function TypeEmploiSelector({ value, onChange }) {
+function CarteSelecteur({ options, value, onChange, ariaLabel, cols = "grid-cols-3" }) {
   return (
-    <div role="radiogroup" aria-label="Type d'emploi" className="grid grid-cols-3 gap-2">
-      {TYPES_EMPLOI.map(t => {
+    <div role="radiogroup" aria-label={ariaLabel} className={`grid ${cols} gap-2`}>
+      {options.map(t => {
         const Icon = t.icon;
         const actif = value === t.value;
         return (
@@ -331,6 +339,8 @@ function CarteAjout({ label, onClick, color = "#C9A063" }) {
 function RevenuPanel({ data, setData }) {
   const emplois = data.emplois || [{ employeur: "", poste: "", revenu_brut: "", impot_mensuel: "", type: "salarie" }];
   const sidehustles = data.sidehustles || [];
+  const situation = data.statut_principal || "travail";
+  const montreEmplois = situation === "travail" || situation === "etudes";
 
   const updateEmploi = (i, k, v) => {
     let updated = emplois.map((e, idx) => idx === i ? { ...e, [k]: v } : e);
@@ -356,75 +366,163 @@ function RevenuPanel({ data, setData }) {
   const addSide = () => setData(p => ({ ...p, sidehustles: [...sidehustles, { nom: "", revenu_mensuel_moyen: "", type: "uber", declaration: "oui" }] }));
   const removeSide = (i) => setData(p => ({ ...p, sidehustles: sidehustles.filter((_, idx) => idx !== i) }));
 
-  const totalBrut = emplois.reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0), 0)
-    + sidehustles.reduce((s, e) => s + (parseFloat(e.revenu_mensuel_moyen) || 0) * 12, 0);
   const f = (k) => (v) => setData(p => ({ ...p, [k]: v }));
+
+  const retraiteMensuel = (parseFloat(data.rrq_actuel_mensuel) || 0) + (parseFloat(data.psv_actuel_mensuel) || 0) + (parseFloat(data.pensions_actuel_mensuel) || 0);
+
+  const totalBrut =
+    (montreEmplois ? emplois.reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0), 0) : 0)
+    + sidehustles.reduce((s, e) => s + (parseFloat(e.revenu_mensuel_moyen) || 0) * 12, 0)
+    + (situation === "chomage" ? (parseFloat(data.prestations_ae_mensuel) || 0) * 12 : 0)
+    + (situation === "etudes" ? (parseFloat(data.bourses_annuel) || 0) : 0)
+    + (situation === "retraite" ? retraiteMensuel * 12 : 0);
 
   return (
     <div className="space-y-7">
-      {/* ── Emplois ── */}
+      {/* ── Situation actuelle ── */}
       <div>
         <div className="mb-3">
-          <p className="text-[14px] font-semibold text-white">Emplois & contrats</p>
-          <p className="text-[11.5px] mt-0.5" style={{ color: "#94A3B8" }}>La base de votre capacité d'épargne et d'emprunt.</p>
+          <p className="text-[14px] font-semibold text-white">Votre situation actuelle</p>
+          <p className="text-[11.5px] mt-0.5" style={{ color: "#94A3B8" }}>Le module s'adapte à votre réalité — chaque situation a son plan.</p>
         </div>
-        <div className="space-y-4">
-          {emplois.map((e, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              className="rounded-2xl p-5 relative"
-              style={{ background: "rgba(255,255,255,0.035)", border: "1px solid rgba(201,160,99,0.16)", backdropFilter: "blur(6px)" }}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-[11px] font-bold tracking-wider uppercase" style={{ color: "rgba(201,160,99,0.55)" }}>Emploi {i + 1}</p>
-                {emplois.length > 1 && (
-                  <button onClick={() => removeEmploi(i)} className="text-[11px]" style={{ color: "rgba(248,113,113,0.7)" }}>✕ Retirer</button>
-                )}
-              </div>
-
-              <div className="space-y-4">
-                <TypeEmploiSelector value={e.type} onChange={v => updateEmploi(i, "type", v)} />
-                <ChampRevenuHero value={e.revenu_brut} onChange={v => updateEmploi(i, "revenu_brut", v)} />
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <Field label="Employeur / Client"><Input value={e.employeur} onChange={v => updateEmploi(i, "employeur", v)} /></Field>
-                  <Field label="Poste occupé"><Input value={e.poste} onChange={v => updateEmploi(i, "poste", v)} /></Field>
-                  <Field
-                    label={<span>Impôt retenu ($) {!e.impot_modifie && e.impot_saisi && <span style={{ fontSize: 10, color: "#5BC4A0", fontWeight: 600, marginLeft: 4 }}>✦ Estimé auto</span>}</span>}
-                    hint={e.impot_modifie ? "Montant personnalisé" : "Estimation calculée — modifiez si différent"}
-                  >
-                    <div className="flex gap-2">
-                      <input type="number" value={e.impot_saisi || ""} onChange={ev => updateEmploi(i, "impot_saisi", ev.target.value)} placeholder="0"
-                        className="w-full px-4 py-2.5 rounded-xl text-[13px] outline-none transition-all"
-                        style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${!e.impot_modifie && e.impot_saisi ? "rgba(91,196,160,0.3)" : "rgba(255,255,255,0.1)"}`, color: "#fff" }} />
-                      <button type="button" onClick={() => updateEmploi(i, "impot_freq", (e.impot_freq || "mensuel") === "mensuel" ? "annuel" : "mensuel")}
-                        className="shrink-0 rounded-xl text-[11px] font-bold transition-all"
-                        style={{ width: "70px", padding: "10px 12px", textAlign: "center",
-                          ...(e.impot_freq || "mensuel") === "annuel"
-                            ? { background: "rgba(201,160,99,0.2)", color: "#C9A063", border: "1px solid rgba(201,160,99,0.35)" }
-                            : { background: "rgba(255,255,255,0.05)", color: "#94A3B8", border: "1px solid rgba(255,255,255,0.1)" }
-                        }}>
-                        {(e.impot_freq || "mensuel") === "annuel" ? "annuel" : "mensuel"}
-                      </button>
-                    </div>
-                  </Field>
-                  {e.type === "autonome" && (
-                    <Field label="TPS/TVQ inscrit ?" hint="Obligatoire si revenus > 30 000$/an">
-                      <RadioGroup value={e.tps_tvq} onChange={v => updateEmploi(i, "tps_tvq", v)} options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]} />
-                    </Field>
-                  )}
-                </div>
-              </div>
-            </motion.div>
-          ))}
-          <CarteAjout label="Ajouter un emploi" onClick={addEmploi} />
-        </div>
+        <CarteSelecteur options={SITUATIONS} value={situation} onChange={f("statut_principal")} ariaLabel="Situation actuelle" cols="grid-cols-2 md:grid-cols-5" />
       </div>
 
-      {/* ── Revenus supplémentaires ── */}
+      {/* ── Bloc Sans emploi ── */}
+      {situation === "chomage" && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl p-5 space-y-4"
+          style={{ background: "rgba(255,255,255,0.035)", border: "1px solid rgba(201,160,99,0.16)", backdropFilter: "blur(6px)" }}>
+          <p className="text-[13px] font-semibold text-white">Prestations & revenus de transition</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <Field label="Prestations d'assurance-emploi ($/mois)" hint="Max 2026 : ~2 778 $/mois (55 % du salaire assurable)">
+              <Input type="number" value={data.prestations_ae_mensuel} onChange={f("prestations_ae_mensuel")} placeholder="0" />
+            </Field>
+            <Field label="Date de fin prévue des prestations" hint="Facultatif — aide à planifier la transition">
+              <Input type="date" value={data.fin_prestations_ae} onChange={f("fin_prestations_ae")} />
+            </Field>
+          </div>
+          <div className="rounded-lg px-3 py-2 text-[12px]" style={{ background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.2)", color: "rgba(255,255,255,0.7)" }}>
+            ⚠️ Les prestations d'AE sont <b style={{ color: "#f59e0b" }}>imposables</b> et peu d'impôt est retenu à la source — prévoyez un montant à payer au printemps.
+          </div>
+        </motion.div>
+      )}
+
+      {/* ── Bloc Études ── */}
+      {situation === "etudes" && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl p-5 space-y-4"
+          style={{ background: "rgba(255,255,255,0.035)", border: "1px solid rgba(201,160,99,0.16)", backdropFilter: "blur(6px)" }}>
+          <p className="text-[13px] font-semibold text-white">Aide financière aux études</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <Field label="Bourses et subventions ($/an)" hint="Généralement non imposables au Québec (études postsecondaires)">
+              <Input type="number" value={data.bourses_annuel} onChange={f("bourses_annuel")} placeholder="0" />
+            </Field>
+            <Field label="Prêts étudiants reçus ($/an)" hint="Non imposable — à rembourser après les études">
+              <Input type="number" value={data.prets_etudiants_annuel} onChange={f("prets_etudiants_annuel")} placeholder="0" />
+            </Field>
+          </div>
+        </motion.div>
+      )}
+
+      {/* ── Bloc Retraite ── */}
+      {situation === "retraite" && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl p-5 space-y-4"
+          style={{ background: "rgba(255,255,255,0.035)", border: "1px solid rgba(201,160,99,0.16)", backdropFilter: "blur(6px)" }}>
+          <p className="text-[13px] font-semibold text-white">Vos revenus de retraite actuels</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <Field label="RRQ ($/mois)" hint="Max 2026 : ~1 508 $/mois à 65 ans">
+              <Input type="number" value={data.rrq_actuel_mensuel} onChange={f("rrq_actuel_mensuel")} placeholder="0" />
+            </Field>
+            <Field label="PSV ($/mois)" hint="Max 2026 : ~740 $/mois">
+              <Input type="number" value={data.psv_actuel_mensuel} onChange={f("psv_actuel_mensuel")} placeholder="0" />
+            </Field>
+            <Field label="Pensions & FERR ($/mois)" hint="Pension d'employeur, FERR, rentes">
+              <Input type="number" value={data.pensions_actuel_mensuel} onChange={f("pensions_actuel_mensuel")} placeholder="0" />
+            </Field>
+          </div>
+          {retraiteMensuel > 0 && (
+            <div className="rounded-lg px-4 py-2.5 flex items-center justify-between" style={{ background: "rgba(91,196,160,0.06)", border: "1px solid rgba(91,196,160,0.2)" }}>
+              <span className="text-[12px]" style={{ color: "#94A3B8" }}>Total mensuel</span>
+              <span className="font-financial text-[15px] font-bold" style={{ color: "#5BC4A0" }}>{fmtCAD(retraiteMensuel)}/mois</span>
+            </div>
+          )}
+        </motion.div>
+      )}
+
+      {/* ── Bloc Au foyer ── */}
+      {situation === "foyer" && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="rounded-xl px-4 py-3 text-[12px]"
+          style={{ background: "rgba(201,160,99,0.06)", border: "1px solid rgba(201,160,99,0.15)", color: "rgba(255,255,255,0.7)", lineHeight: 1.6 }}>
+          💛 Aucun revenu d'emploi à saisir — votre contribution au foyer compte autrement. Vos <b style={{ color: "#C9A063" }}>allocations familiales</b> seront captées à la section Allocations, et tout revenu d'appoint peut s'ajouter ci-dessous.
+        </motion.div>
+      )}
+
+      {/* ── Emplois (travail & études seulement) ── */}
+      {montreEmplois && (
+        <div>
+          <div className="mb-3">
+            <p className="text-[14px] font-semibold text-white">{situation === "etudes" ? "Emploi à temps partiel (optionnel)" : "Emplois & contrats"}</p>
+            <p className="text-[11.5px] mt-0.5" style={{ color: "#94A3B8" }}>
+              {situation === "etudes" ? "Travail pendant les études — chaque dollar compte dans votre plan." : "La base de votre capacité d'épargne et d'emprunt."}
+            </p>
+          </div>
+          <div className="space-y-4">
+            {emplois.map((e, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                className="rounded-2xl p-5 relative"
+                style={{ background: "rgba(255,255,255,0.035)", border: "1px solid rgba(201,160,99,0.16)", backdropFilter: "blur(6px)" }}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-[11px] font-bold tracking-wider uppercase" style={{ color: "rgba(201,160,99,0.55)" }}>Emploi {i + 1}</p>
+                  {emplois.length > 1 && (
+                    <button onClick={() => removeEmploi(i)} className="text-[11px]" style={{ color: "rgba(248,113,113,0.7)" }}>✕ Retirer</button>
+                  )}
+                </div>
+
+                <div className="space-y-4">
+                  <CarteSelecteur options={TYPES_EMPLOI} value={e.type} onChange={v => updateEmploi(i, "type", v)} ariaLabel="Type d'emploi" />
+                  <ChampRevenuHero value={e.revenu_brut} onChange={v => updateEmploi(i, "revenu_brut", v)} />
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <Field label="Employeur / Client"><Input value={e.employeur} onChange={v => updateEmploi(i, "employeur", v)} /></Field>
+                    <Field label="Poste occupé"><Input value={e.poste} onChange={v => updateEmploi(i, "poste", v)} /></Field>
+                    <Field
+                      label={<span>Impôt retenu ($) {!e.impot_modifie && e.impot_saisi && <span style={{ fontSize: 10, color: "#5BC4A0", fontWeight: 600, marginLeft: 4 }}>✦ Estimé auto</span>}</span>}
+                      hint={e.impot_modifie ? "Montant personnalisé" : "Estimation calculée — modifiez si différent"}
+                    >
+                      <div className="flex gap-2">
+                        <input type="number" value={e.impot_saisi || ""} onChange={ev => updateEmploi(i, "impot_saisi", ev.target.value)} placeholder="0"
+                          className="w-full px-4 py-2.5 rounded-xl text-[13px] outline-none transition-all"
+                          style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${!e.impot_modifie && e.impot_saisi ? "rgba(91,196,160,0.3)" : "rgba(255,255,255,0.1)"}`, color: "#fff" }} />
+                        <button type="button" onClick={() => updateEmploi(i, "impot_freq", (e.impot_freq || "mensuel") === "mensuel" ? "annuel" : "mensuel")}
+                          className="shrink-0 rounded-xl text-[11px] font-bold transition-all"
+                          style={{ width: "70px", padding: "10px 12px", textAlign: "center",
+                            ...(e.impot_freq || "mensuel") === "annuel"
+                              ? { background: "rgba(201,160,99,0.2)", color: "#C9A063", border: "1px solid rgba(201,160,99,0.35)" }
+                              : { background: "rgba(255,255,255,0.05)", color: "#94A3B8", border: "1px solid rgba(255,255,255,0.1)" }
+                          }}>
+                          {(e.impot_freq || "mensuel") === "annuel" ? "annuel" : "mensuel"}
+                        </button>
+                      </div>
+                    </Field>
+                    {e.type === "autonome" && (
+                      <Field label="TPS/TVQ inscrit ?" hint="Obligatoire si revenus > 30 000$/an">
+                        <RadioGroup value={e.tps_tvq} onChange={v => updateEmploi(i, "tps_tvq", v)} options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]} />
+                      </Field>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+            <CarteAjout label="Ajouter un emploi" onClick={addEmploi} />
+          </div>
+        </div>
+      )}
+
+      {/* ── Revenus supplémentaires (toutes situations) ── */}
       <div>
         <div className="mb-3">
           <p className="text-[14px] font-semibold text-white">Revenus supplémentaires <span className="ml-1 text-[11px] px-2 py-0.5 rounded-full" style={{ background: "rgba(201,160,99,0.12)", color: "#C9A063" }}>Impact fiscal important</span></p>
