@@ -1,11 +1,12 @@
 /**
- * src/lib/moteurImmobilier.js — VERSION 3 (finale)
+ * src/lib/moteurImmobilier.js — VERSION 4
  * Moteur de pré-qualification hypothécaire — Québec 2026.
  *
- * v3 : le % de mise choisi (5/10/15/20) est appliqué EXACTEMENT (mise = % du prix).
- * Le prix max est donc borné soit par le revenu (ratios ABD/ATD), soit par
- * l'épargne (cash ÷ %). Le champ `limitePar` indique lequel des deux limite.
- * VÉRIFICATION : avec 22 000 $ d'épargne, 20 % doit donner ~110 000 $ SANS SCHL.
+ * v4 : la capacité d'emprunt est basée UNIQUEMENT sur le revenu (ratios ABD/ATD
+ * + stress test). L'épargne disponible ne réduit JAMAIS le prix max — si elle
+ * ne couvre pas la mise requise, le moteur retourne `miseManquante` > 0 et
+ * l'interface affiche un avertissement (« il manque X $ pour ce scénario »).
+ * Plus de mise % = plus de capacité (prêt réduit + SCHL réduite/éliminée).
  */
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -119,7 +120,8 @@ export function calculerQualification(p) {
     equiteNette = Math.max(0, (p.valeur_marchande_actuelle || 0) - (p.solde_hypotheque_actuelle || 0) - fraisVente);
   }
 
-  // 5. Mise de fonds totale disponible
+  // 5. Mise de fonds disponible selon l'ABF (n'affecte PAS la capacité — sert
+  // uniquement à vérifier si le client possède déjà la mise requise)
   const miseDeFondsDispo = (p.mise_de_fonds_liquide || 0)
                          + Math.min(p.reer_disponible_rap || 0, 120000)
                          + (p.celiapp_disponible || 0)
@@ -128,18 +130,15 @@ export function calculerQualification(p) {
                          + equiteNette;
   const miseDeFondsBrute = miseDeFondsDispo;
 
-  // Stratégie : "auto" = utilise toute l'épargne. Sinon = % EXACT du prix.
+  // Stratégie : "auto" = mise légale minimale (capacité max). Sinon = % EXACT du prix.
   const stratPct = p.mise_de_fonds_pct && p.mise_de_fonds_pct !== "auto"
                  ? parseFloat(p.mise_de_fonds_pct) / 100
                  : null;
 
-  // Mise effective pour un prix donné :
-  // - "auto"        → toute l'épargne (bornée par le prix)
-  // - "5/10/15/20"  → % EXACT du prix (le prix max sera borné par l'épargne :
-  //                   ex. 22 000 $ @ 20 % → prix max = 110 000 $). VRAI arbitrage.
-  const miseEffectivePour = (prix) => {
+  // Mise REQUISE pour un prix donné (jamais bornée par l'épargne du client)
+  const miseRequisePour = (prix) => {
     if (stratPct !== null) return prix * stratPct;
-    return Math.min(miseDeFondsBrute, prix);
+    return miseLegaleMin(prix);                // auto = minimum légal → capacité maximale
   };
 
   // Amortissement : 30 ans permis seulement si non-assuré (≥20 %) OU
@@ -147,73 +146,77 @@ export function calculerQualification(p) {
   const amortDemande = p.amortissement || 25;
   const amortPermis30Assure = !!p.premier_acheteur && !!p.construction_neuve;
 
-  // 6. Recherche binaire du PRIX MAX qualifiable
-  const trouverPrixMax = () => {
-    let lo = 50000, hi = 5000000, best = 0;
-    while (hi - lo > 100) {
-      const prix = (lo + hi) / 2;
-      const miseMinRequise = miseLegaleMin(prix);
-      const miseEffective = miseEffectivePour(prix);
+  // ── Évaluateur central : valide un prix selon le REVENU uniquement ────────
+  const evaluerPrix = (prix) => {
+    if (!prix || prix <= 0) return { valide: false };
+    const miseMinRequise = miseLegaleMin(prix);
+    const miseEffective = miseRequisePour(prix);
+    // Seule contrainte de mise : respecter le minimum LÉGAL (ex. 5 % choisi
+    // n'est plus permis au-delà de 500 000 $). L'épargne du client ne borne rien.
+    if (miseEffective < miseMinRequise - 0.01) return { valide: false };
 
-      // Contrainte CASH 1 : l'épargne doit couvrir la mise effective
-      if (miseEffective > miseDeFondsBrute) { hi = prix; continue; }
-      // Contrainte CASH 2 : la mise effective doit couvrir le minimum légal
-      if (miseEffective < miseMinRequise) { hi = prix; continue; }
+    const pretBase = prix - miseEffective;
+    const misePct = (miseEffective / prix) * 100;
+    const assuree = misePct < 20;
 
-      const pretBase = prix - miseEffective;
-      const misePct = (miseEffective / prix) * 100;
-      const assuree = misePct < 20;
-
-      let primeSCHL = 0;
-      if (assuree) {
-        primeSCHL = calculerPrimeSCHL(pretBase, prix);
-        if (primeSCHL === -1) { hi = prix; continue; }
-        if (amortDemande > 25 && !amortPermis30Assure) { hi = prix; continue; }
-      }
-      const pretTotal = pretBase + primeSCHL;
-
-      const taxesFonc = prix * (p.taxes_fonc_pct || 1.0) / 100 / 12;
-      const chauffage = p.chauffage_mensuel || 150;
-      const condo50 = (p.frais_condo_mensuel || 0) * 0.5;
-      const paiementHypoStress = paiementMensuel(pretTotal, tauxQualificatif, amortDemande);
-      const pith = paiementHypoStress + taxesFonc + chauffage + condo50;
-
-      // Ratios uniformisés 39/44 (pratique standard des prêteurs canadiens)
-      const abdMax = 0.39;
-      const atdMax = 0.44;
-      const abd = pith / revenuMensuelQualifiable;
-      const atd = (pith + dettesTotal) / revenuMensuelQualifiable;
-
-      if (abd <= abdMax && atd <= atdMax) { best = prix; lo = prix; }
-      else { hi = prix; }
+    let primeSCHL = 0;
+    if (assuree) {
+      primeSCHL = calculerPrimeSCHL(pretBase, prix);
+      if (primeSCHL === -1) return { valide: false };
+      if (amortDemande > 25 && !amortPermis30Assure) return { valide: false };
     }
-    return best;
+    const pretTotal = pretBase + primeSCHL;
+
+    const taxesFonc = prix * (p.taxes_fonc_pct || 1.0) / 100 / 12;
+    const chauffage = p.chauffage_mensuel || 150;
+    const condo50 = (p.frais_condo_mensuel || 0) * 0.5;
+    const paiementHypoStress = paiementMensuel(pretTotal, tauxQualificatif, amortDemande);
+    const pith = paiementHypoStress + taxesFonc + chauffage + condo50;
+
+    // Ratios uniformisés 39/44 (pratique standard des prêteurs canadiens)
+    const abd = pith / revenuMensuelQualifiable;
+    const atd = (pith + dettesTotal) / revenuMensuelQualifiable;
+    const valide = abd <= 0.39 && atd <= 0.44;
+
+    return { valide, miseMinRequise, miseEffective, misePct, assuree, primeSCHL, pretBase, pretTotal, paiementHypoStress, taxesFonc, chauffage, condo50 };
   };
 
-  const prixMax = trouverPrixMax();
+  // 6. Recherche binaire du prix brut, puis arrondi VALIDÉ au 1 000 $
+  let lo = 50000, hi = 5000000, brut = 0;
+  while (hi - lo > 100) {
+    const prix = (lo + hi) / 2;
+    if (evaluerPrix(prix).valide) { brut = prix; lo = prix; }
+    else { hi = prix; }
+  }
+  let prixMax = 0;
+  if (brut > 0) {
+    const ceil1k = Math.ceil(brut / 1000) * 1000;
+    const floor1k = Math.floor(brut / 1000) * 1000;
+    if (evaluerPrix(ceil1k).valide) prixMax = ceil1k;
+    else if (evaluerPrix(floor1k).valide) prixMax = floor1k;
+  }
 
-  // 7. Détails du scénario à prix max
-  const miseMinRequise = miseLegaleMin(prixMax);
-  const miseEffective = miseEffectivePour(prixMax);
-  const misePct = prixMax > 0 ? (miseEffective / prixMax) * 100 : 0;
-  const assuree = misePct < 20 && prixMax > 0;
-  const pretBase = Math.max(0, prixMax - miseEffective);
-  const primeSCHL = assuree ? Math.max(0, calculerPrimeSCHL(pretBase, prixMax)) : 0;
-  const pretTotal = pretBase + primeSCHL;
+  // 7. Détails du scénario — calculés sur le PRIX ARRONDI (cohérence affichage)
+  const d = prixMax > 0 ? evaluerPrix(prixMax) : null;
+  const miseMinRequise = d ? d.miseMinRequise : 0;
+  const miseEffective = d ? d.miseEffective : 0;          // = mise REQUISE pour ce prix
+  const misePct = d ? d.misePct : 0;
+  const assuree = d ? d.assuree : false;
+  const pretBase = d ? d.pretBase : 0;
+  const primeSCHL = d ? Math.max(0, d.primeSCHL) : 0;
+  const pretTotal = d ? d.pretTotal : 0;
   const paiementHypoReel = paiementMensuel(pretTotal, tauxContractuel, amortDemande);
-  const paiementHypoStress = paiementMensuel(pretTotal, tauxQualificatif, amortDemande);
-  const taxesFonc = prixMax * (p.taxes_fonc_pct || 1.0) / 100 / 12;
-  const condo50 = (p.frais_condo_mensuel || 0) * 0.5;
-  const chauffage = p.chauffage_mensuel || 150;
+  const paiementHypoStress = d ? d.paiementHypoStress : 0;
+  const taxesFonc = d ? d.taxesFonc : 0;
+  const chauffage = d ? d.chauffage : (p.chauffage_mensuel || 150);
+  const condo50 = d ? d.condo50 : 0;
   const pithReel = paiementHypoReel + taxesFonc + chauffage + condo50;
 
-  // Ce qui borne le prix max : "cash" (épargne ÷ %) ou "revenu" (ratios)
-  let limitePar = "revenu";
-  if (stratPct !== null && prixMax > 0 && miseDeFondsBrute > 0) {
-    const plafondCash = miseDeFondsBrute / stratPct;
-    if (prixMax >= plafondCash - 500) limitePar = "cash";
-  }
-  const cashInsuffisantPourCible = false; // conservé pour rétrocompatibilité
+  // Épargne ABF vs mise requise : la capacité ne baisse JAMAIS — on signale l'écart.
+  const miseManquante = Math.max(0, Math.round(miseEffective - miseDeFondsDispo));
+  const miseSuffisante = miseManquante <= 0;
+  const cashInsuffisantPourCible = miseManquante > 0;     // compat page Immobilier
+  const limitePar = "revenu";                              // compat — toujours le revenu en v4
 
   // 8. Frais d'achat estimés
   const mutation = calculerMutation(prixMax, p.region || "quebec");
@@ -221,7 +224,6 @@ export function calculerQualification(p) {
 
   // Crédit mutation QC 1er acheteur (rétroactif 1er janv. 2026) :
   // 100 % des premiers 5 000 $ + 25 % de l'excédent, max 5 875 $, prop. < 1 M$.
-  // NOTE : crédit reçu PLUS TARD (dès oct. 2026), pas une réduction au closing.
   let remboursementMutation = 0;
   if (p.premier_acheteur && prixMax > 0 && prixMax < 1000000) {
     const pleinement = Math.min(mutation, 5000);
@@ -231,7 +233,6 @@ export function calculerQualification(p) {
   const creditFederalPremier = p.premier_acheteur ? 1500 : 0;
   const creditQCPremier = p.premier_acheteur ? 1400 : 0;
 
-  // Frais à PAYER au closing (aucun crédit déduit)
   const fraisAchatBrut = {
     "Droits de mutation": mutation,
     "Frais de notaire": 1500,
@@ -243,7 +244,6 @@ export function calculerQualification(p) {
   };
   const fraisBrutTotal = Object.values(fraisAchatBrut).reduce((s, v) => s + v, 0);
 
-  // Crédits d'impôt reçus APRÈS l'achat
   const creditsDifferes = {
     "Remboursement mutation 1er acheteur (QC)": remboursementMutation,
     "Crédit fédéral premier acheteur (HBTC)": creditFederalPremier,
@@ -251,7 +251,6 @@ export function calculerQualification(p) {
   };
   const creditsDifferesTotal = Object.values(creditsDifferes).reduce((s, v) => s + v, 0);
 
-  // Rétrocompatibilité UI existante
   const fraisAchat = {
     ...fraisAchatBrut,
     "Remboursement mutation 1er acheteur": -remboursementMutation,
@@ -259,7 +258,6 @@ export function calculerQualification(p) {
   };
   const fraisTotal = Object.values(fraisAchat).reduce((s, v) => s + v, 0);
 
-  // Cash RÉEL au closing = mise + frais bruts (avant crédits)
   const cashClosingReel = miseEffective + fraisBrutTotal;
 
   // 9. Optimisations CELIAPP/RAP non utilisées
@@ -268,13 +266,12 @@ export function calculerQualification(p) {
   const potentielSiCELIAPPMaxime = p.premier_acheteur ? (celiappMaxTheorique - celiappDispo) : 0;
 
   // 10. Zone d'achat recommandée (prudence) : 70–80 % du maximum
-  const prixMaxArrondi = Math.round(prixMax / 1000) * 1000;
-  const prixRecommandeMin = Math.round(prixMaxArrondi * 0.70 / 1000) * 1000;
-  const prixRecommandeMax = Math.round(prixMaxArrondi * 0.80 / 1000) * 1000;
+  const prixRecommandeMin = Math.round(prixMax * 0.70 / 1000) * 1000;
+  const prixRecommandeMax = Math.round(prixMax * 0.80 / 1000) * 1000;
 
   return {
-    version: "v3",
-    prixMax: prixMaxArrondi,
+    version: "v4",
+    prixMax,
     prixRecommandeMin,
     prixRecommandeMax,
     mod,
@@ -292,6 +289,8 @@ export function calculerQualification(p) {
     miseEffective,
     misePct,
     misePctCible: stratPct !== null ? stratPct * 100 : misePct,
+    miseManquante,
+    miseSuffisante,
     cashInsuffisantPourCible,
     limitePar,
     miseMinRequise,
@@ -305,8 +304,8 @@ export function calculerQualification(p) {
     chauffage,
     condo50,
     pithReel,
-    abd: pithReel > 0 ? pithReel / revenuMensuelQualifiable : 0,
-    atd: pithReel > 0 ? (pithReel + dettesTotal) / revenuMensuelQualifiable : 0,
+    abd: pithReel > 0 && revenuMensuelQualifiable > 0 ? pithReel / revenuMensuelQualifiable : 0,
+    atd: pithReel > 0 && revenuMensuelQualifiable > 0 ? (pithReel + dettesTotal) / revenuMensuelQualifiable : 0,
     fraisAchat,
     fraisTotal,
     fraisAchatBrut,
