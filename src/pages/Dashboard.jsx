@@ -784,13 +784,21 @@ export default function Dashboard() {
                         </div>
                       </div>
                       {recoImmoSel.miseManquante > 0 ? (
-                        <p style={{ fontSize: 10.5, color: "rgba(245,158,11,0.75)", textAlign: "center", marginBottom: 6, lineHeight: 1.5 }}>
-                          ⚠ Mise requise : {fmt(recoImmoSel.miseEffective)} — votre ABF montre {fmt(recoImmoSel.miseDeFondsDispo)} disponibles. Il manque {fmt(recoImmoSel.miseManquante)} pour ce scénario.
-                        </p>
+                        <div style={{ marginBottom: 8, padding: "12px 16px", borderRadius: 10, background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.35)", textAlign: "center" }}>
+                          <p style={{ fontSize: 13, fontWeight: 700, color: "#f59e0b", lineHeight: 1.5 }}>
+                            ⚠ Mise de fonds requise : {fmt(recoImmoSel.miseEffective)}
+                          </p>
+                          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", lineHeight: 1.6, marginTop: 4 }}>
+                            Votre ABF montre {fmt(recoImmoSel.miseDeFondsDispo)} disponibles — il vous manque{" "}
+                            <b style={{ color: "#f59e0b", fontSize: 13 }}>{fmt(recoImmoSel.miseManquante)}</b> pour réaliser ce scénario.
+                          </p>
+                        </div>
                       ) : (
-                        <p style={{ fontSize: 10.5, color: "rgba(91,196,160,0.7)", textAlign: "center", marginBottom: 6, lineHeight: 1.5 }}>
-                          ✓ Votre épargne ({fmt(recoImmoSel.miseDeFondsDispo)}) couvre la mise requise.
-                        </p>
+                        <div style={{ marginBottom: 8, padding: "12px 16px", borderRadius: 10, background: "rgba(91,196,160,0.08)", border: "1px solid rgba(91,196,160,0.35)", textAlign: "center" }}>
+                          <p style={{ fontSize: 13, fontWeight: 700, color: "#5BC4A0", lineHeight: 1.5 }}>
+                            ✓ Votre épargne ({fmt(recoImmoSel.miseDeFondsDispo)}) couvre la mise requise
+                          </p>
+                        </div>
                       )}
                       {recoImmoSel.primeSCHL > 0 ? (
                         <p style={{ fontSize: 10.5, color: "rgba(245,158,11,0.7)", textAlign: "center" }}>
