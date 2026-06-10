@@ -37,10 +37,17 @@ export function getInsightForSection(sectionId, S = {}) {
   const revenu = S.revenu || {};
   const enCouple = ["marie", "conjoint", "union_civile"].includes(profil.situation || "");
 
-  const brutFoyer = sum(revenu.emplois, e => e.revenu_brut)
-    + (enCouple ? sum(revenu.conjoint?.emplois, e => e.revenu_brut) : 0)
-    + sum(revenu.sidehustles, sh => sh.revenu_mensuel_moyen) * 12
-    + (enCouple ? sum(revenu.conjoint?.sidehustles, sh => sh.revenu_mensuel_moyen) * 12 : 0);
+  const brutPersonne = (r) => {
+    if (!r) return 0;
+    const st = r.statut_principal || "travail";
+    let t = sum(r.sidehustles, sh => sh.revenu_mensuel_moyen) * 12;
+    if (st === "travail" || st === "etudes") t += sum(r.emplois, e => e.revenu_brut);
+    if (st === "chomage") t += (parseFloat(r.prestations_ae_mensuel) || 0) * 12;
+    if (st === "etudes") t += (parseFloat(r.bourses_annuel) || 0);
+    if (st === "retraite") t += ((parseFloat(r.rrq_actuel_mensuel) || 0) + (parseFloat(r.psv_actuel_mensuel) || 0) + (parseFloat(r.pensions_actuel_mensuel) || 0)) * 12;
+    return t;
+  };
+  const brutFoyer = brutPersonne(revenu) + (enCouple ? brutPersonne(revenu.conjoint) : 0);
 
   switch (sectionId) {
     case "profil_personnel": {
@@ -55,8 +62,24 @@ export function getInsightForSection(sectionId, S = {}) {
     }
 
     case "revenu": {
-      const brutA = sum(revenu.emplois, e => e.revenu_brut) + sum(revenu.sidehustles, sh => sh.revenu_mensuel_moyen) * 12;
-      const brutB = enCouple ? sum(revenu.conjoint?.emplois, e => e.revenu_brut) : 0;
+      const st = revenu.statut_principal || "travail";
+      if (st === "chomage") return {
+        icon: "🧭", color: "#f59e0b",
+        titre: "Période de transition — protégez vos acquis",
+        texte: "Les prestations d'AE sont imposables avec peu de retenues à la source. Priorité : préserver le fonds d'urgence et éviter les retraits REER (imposables et droits perdus à vie).",
+      };
+      if (st === "retraite") return {
+        icon: "🌅", color: "#C9A063",
+        titre: "Optimisations possibles à la retraite",
+        texte: "Fractionnement de revenu de pension avec le conjoint, ordre de décaissement optimal et gestion du seuil de récupération de la PSV : votre Studio de décaissement vous attend sur le tableau de bord.",
+      };
+      if (st === "foyer") return {
+        icon: "💛", color: "#5BC4A0",
+        titre: "Le REER de conjoint travaille pour vous",
+        texte: "Quand un conjoint a peu de revenus, le REER de conjoint permet de fractionner l'impôt familial à la retraite — un levier puissant pour les foyers à revenu unique.",
+      };
+      const brutA = brutPersonne(revenu);
+      const brutB = enCouple ? brutPersonne(revenu.conjoint) : 0;
       const brutMax = Math.max(brutA, brutB);
       if (brutMax <= 0) return null;
       const marginal = tauxMarginalApprox(brutMax);
