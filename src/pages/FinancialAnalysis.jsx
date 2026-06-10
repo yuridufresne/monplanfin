@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight, ChevronLeft, Check, User, TrendingDown, Shield, GraduationCap, Target, AlertTriangle, DollarSign, BarChart3, Wallet, Baby, Home, Briefcase, FileSignature, Rocket, Sparkles, Plus } from "lucide-react";import InfoTooltip from "@/components/ui/InfoTooltip";
+import { ChevronRight, ChevronLeft, Check, User, TrendingDown, Shield, GraduationCap, Target, AlertTriangle, DollarSign, BarChart3, Wallet, Baby, Home } from "lucide-react";
+import InfoTooltip from "@/components/ui/InfoTooltip";
 import StepBudget from "@/components/abf/StepBudget";
 import StepAllocations from "@/components/abf/StepAllocations";
 import AddressAutocomplete from "@/components/ui/AddressAutocomplete";
@@ -204,7 +205,7 @@ function estimerRetenueMensuelle(revenuBrut) {
 
 const estimerImpotMensuel = estimerRetenueMensuelle;
 
-function StepRevenu({ data, setData, stepData }) {
+function RevenuPanel({ data, setData }) {
   const emplois = data.emplois || [{ employeur: "", poste: "", revenu_brut: "", impot_mensuel: "", type: "salarie" }];
   const sidehustles = data.sidehustles || [];
 
