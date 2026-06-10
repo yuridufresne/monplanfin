@@ -6,6 +6,8 @@ import InfoTooltip from "@/components/ui/InfoTooltip";
 import StepBudget from "@/components/abf/StepBudget";
 import StepAllocations from "@/components/abf/StepAllocations";
 import AddressAutocomplete from "@/components/ui/AddressAutocomplete";
+import PortraitLive from "@/components/abf/PortraitLive";
+import { getInsightForSection, InsightCard } from "@/components/abf/InsightsABF";
 
 const STEPS = [
   { key: "profil_personnel", label: "Profil", icon: User, title: "Renseignements personnels" },
@@ -1244,6 +1246,14 @@ export default function FinancialAnalysis() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [autoSaveStatus, setAutoSaveStatus] = useState('idle');
+  const [insight, setInsight] = useState(null);
+
+  // L'insight disparaît de lui-même après 12 secondes
+  useEffect(() => {
+    if (!insight) return;
+    const t = setTimeout(() => setInsight(null), 12000);
+    return () => clearTimeout(t);
+  }, [insight]);
 
   const step = STEPS[currentStep];
   const StepComponent = STEP_COMPONENTS[step.key];
@@ -1280,6 +1290,7 @@ export default function FinancialAnalysis() {
         await base44.entities.FinancialProfile.create({ section: step.key, data: stepData[step.key] || {}, completed: true });
       }
       setCompletedSteps(prev => new Set([...prev, step.key]));
+      setInsight(getInsightForSection(step.key, stepData));
       if (currentStep < STEPS.length - 1) setCurrentStep(c => c + 1);
       else setSaved(true);
     } finally {
