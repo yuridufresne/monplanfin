@@ -205,6 +205,129 @@ function estimerRetenueMensuelle(revenuBrut) {
 
 const estimerImpotMensuel = estimerRetenueMensuelle;
 
+// ── Refonte visuelle « Centre de commande » du module Revenus ───────────────
+const fmtCAD = (v) => new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v || 0);
+
+const TYPES_EMPLOI = [
+  { value: "salarie", label: "Salarié", icon: Briefcase, desc: "Paie régulière d'un employeur" },
+  { value: "contrat", label: "Contrat", icon: FileSignature, desc: "Mandats à durée déterminée" },
+  { value: "autonome", label: "Autonome", icon: Rocket, desc: "À votre compte" },
+];
+
+function TypeEmploiSelector({ value, onChange }) {
+  return (
+    <div role="radiogroup" aria-label="Type d'emploi" className="grid grid-cols-3 gap-2">
+      {TYPES_EMPLOI.map(t => {
+        const Icon = t.icon;
+        const actif = value === t.value;
+        return (
+          <motion.button
+            key={t.value}
+            type="button"
+            role="radio"
+            aria-checked={actif}
+            onClick={() => onChange(t.value)}
+            whileTap={{ scale: 0.96 }}
+            animate={{ scale: actif ? 1.03 : 1 }}
+            transition={{ type: "spring", stiffness: 320, damping: 22 }}
+            className="rounded-xl px-2 py-3 flex flex-col items-center gap-1.5 text-center outline-none"
+            style={actif ? {
+              background: "linear-gradient(160deg, rgba(201,160,99,0.16), rgba(201,160,99,0.04))",
+              border: "1px solid rgba(201,160,99,0.55)",
+              boxShadow: "0 0 24px -6px rgba(201,160,99,0.5)",
+            } : {
+              background: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(255,255,255,0.08)",
+            }}
+          >
+            <Icon className="w-5 h-5" style={{ color: actif ? "#C9A063" : "#94A3B8" }} />
+            <span className="text-[12px] font-semibold" style={{ color: actif ? "#C9A063" : "rgba(255,255,255,0.7)" }}>{t.label}</span>
+            <span className="text-[9.5px] leading-tight hidden md:block" style={{ color: "rgba(148,163,184,0.55)" }}>{t.desc}</span>
+          </motion.button>
+        );
+      })}
+    </div>
+  );
+}
+
+function ChampRevenuHero({ value, onChange }) {
+  const [showTip, setShowTip] = useState(false);
+  const v = parseFloat(value) || 0;
+  const capacite = v > 0 ? Math.round(v * 4.5 / 1000) * 1000 : 0;
+  return (
+    <div className="relative rounded-2xl p-4" style={{ background: "rgba(201,160,99,0.05)", border: "1px solid rgba(201,160,99,0.22)", backdropFilter: "blur(4px)" }}>
+      <div className="flex items-center justify-between mb-1">
+        <label className="text-[11px] font-bold tracking-wider uppercase" style={{ color: "rgba(201,160,99,0.65)" }}>Revenu brut annuel</label>
+        <button
+          type="button"
+          aria-label="Voir l'impact de ce revenu"
+          onMouseEnter={() => setShowTip(true)}
+          onMouseLeave={() => setShowTip(false)}
+          onFocus={() => setShowTip(true)}
+          onBlur={() => setShowTip(false)}
+          onClick={() => setShowTip(s => !s)}
+          className="rounded-full p-1 outline-none"
+          style={{ color: "#C9A063" }}
+        >
+          <Sparkles className="w-4 h-4" />
+        </button>
+      </div>
+      <div className="flex items-baseline gap-2">
+        <span className="text-[20px] font-bold" style={{ color: "rgba(201,160,99,0.5)" }}>$</span>
+        <input
+          type="number"
+          inputMode="numeric"
+          value={value || ""}
+          onChange={e => onChange(e.target.value)}
+          placeholder="85 000"
+          aria-label="Revenu brut annuel en dollars"
+          className="w-full bg-transparent outline-none font-financial"
+          style={{ fontSize: "clamp(1.6rem, 4vw, 2.1rem)", fontWeight: 800, color: "#fff", letterSpacing: "-0.02em" }}
+        />
+      </div>
+      <AnimatePresence>
+        {showTip && (
+          <motion.div
+            initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }} transition={{ duration: 0.2 }}
+            className="absolute right-3 top-10 z-20 w-64 rounded-xl p-3"
+            style={{ background: "rgba(8,13,26,0.96)", border: "1px solid rgba(201,160,99,0.35)", backdropFilter: "blur(8px)", boxShadow: "0 12px 40px -12px rgba(0,0,0,0.85)" }}
+          >
+            <p className="text-[11px] font-bold mb-1" style={{ color: "#C9A063" }}>✦ Impact de ce revenu</p>
+            <p className="text-[11px] leading-relaxed" style={{ color: "rgba(255,255,255,0.7)" }}>
+              {v > 0
+                ? <>Ce revenu soutient une capacité d'emprunt d'environ <b style={{ color: "#5BC4A0" }}>{fmtCAD(capacite)}</b> (ratios bancaires ABD/ATD) et détermine votre taux marginal d'imposition.</>
+                : "Votre revenu détermine votre capacité d'emprunt hypothécaire (ratios ABD/ATD) et votre taux marginal d'imposition — la base de tout votre plan."}
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function CarteAjout({ label, onClick, color = "#C9A063" }) {
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      whileHover={{ scale: 1.01 }}
+      whileTap={{ scale: 0.98 }}
+      className="w-full rounded-2xl py-5 flex flex-col items-center gap-2 outline-none"
+      style={{ border: `1.5px dashed ${color}40`, background: `${color}06` }}
+    >
+      <motion.div
+        animate={{ scale: [1, 1.12, 1], opacity: [0.7, 1, 0.7] }}
+        transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+        className="w-10 h-10 rounded-full flex items-center justify-center"
+        style={{ background: `${color}18`, border: `1px solid ${color}45`, boxShadow: `0 0 18px -4px ${color}60` }}
+      >
+        <Plus className="w-5 h-5" style={{ color }} />
+      </motion.div>
+      <span className="text-[12.5px] font-semibold" style={{ color }}>{label}</span>
+    </motion.button>
+  );
+}
+
 function RevenuPanel({ data, setData }) {
   const emplois = data.emplois || [{ employeur: "", poste: "", revenu_brut: "", impot_mensuel: "", type: "salarie" }];
   const sidehustles = data.sidehustles || [];
@@ -239,79 +362,84 @@ function RevenuPanel({ data, setData }) {
 
   return (
     <div className="space-y-7">
+      {/* ── Emplois ── */}
       <div>
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-[14px] font-semibold text-white">Emplois salariés / contrats</p>
-          <button onClick={addEmploi} className="text-[12px] font-semibold px-3 py-1.5 rounded-lg transition-all"
-            style={{ background: "rgba(201,160,99,0.1)", color: "#C9A063", border: "1px solid rgba(201,160,99,0.2)" }}>
-            + Ajouter un emploi
-          </button>
+        <div className="mb-3">
+          <p className="text-[14px] font-semibold text-white">Emplois & contrats</p>
+          <p className="text-[11.5px] mt-0.5" style={{ color: "#94A3B8" }}>La base de votre capacité d'épargne et d'emprunt.</p>
         </div>
-        <div className="space-y-3">
+        <div className="space-y-4">
           {emplois.map((e, i) => (
-            <div key={i} className="rounded-xl p-4 relative" style={{ background: "rgba(201,160,99,0.05)", border: "1px solid rgba(201,160,99,0.12)" }}>
-              {emplois.length > 1 && (
-                <button onClick={() => removeEmploi(i)} className="absolute top-3 right-3 text-[11px]" style={{ color: "rgba(248,113,113,0.7)" }}>✕ Retirer</button>
-              )}
-              <p className="text-[11px] font-bold tracking-wider uppercase mb-3" style={{ color: "rgba(201,160,99,0.5)" }}>Emploi {i + 1}</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <Field label="Type d'emploi">
-                  <RadioGroup value={e.type} onChange={v => updateEmploi(i, "type", v)} options={[
-                    { value: "salarie", label: "Salarié" },
-                    { value: "contrat", label: "Contrat" },
-                    { value: "autonome", label: "Travailleur autonome" },
-                  ]} />
-                </Field>
-                <Field label="Employeur / Client"><Input value={e.employeur} onChange={v => updateEmploi(i, "employeur", v)} /></Field>
-                <Field label="Poste occupé"><Input value={e.poste} onChange={v => updateEmploi(i, "poste", v)} /></Field>
-                <Field label="Revenu brut annuel ($)"><Input value={e.revenu_brut} onChange={v => updateEmploi(i, "revenu_brut", v)} type="number" /></Field>
-                <Field
-                  label={<span>Impôt retenu ($) {!e.impot_modifie && e.impot_saisi && <span style={{ fontSize: 10, color: "#5BC4A0", fontWeight: 600, marginLeft: 4 }}>✦ Estimé auto</span>}</span>}
-                  hint={e.impot_modifie ? "Montant personnalisé" : "Estimation calculée — modifiez si différent"}
-                >
-                  <div className="flex gap-2">
-                    <input type="number" value={e.impot_saisi || ""} onChange={ev => updateEmploi(i, "impot_saisi", ev.target.value)} placeholder="0"
-                      className="w-full px-4 py-2.5 rounded-xl text-[13px] outline-none transition-all"
-                      style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${!e.impot_modifie && e.impot_saisi ? "rgba(91,196,160,0.3)" : "rgba(255,255,255,0.1)"}`, color: "#fff" }} />
-                    <button type="button" onClick={() => updateEmploi(i, "impot_freq", (e.impot_freq || "mensuel") === "mensuel" ? "annuel" : "mensuel")}
-                      className="shrink-0 rounded-xl text-[11px] font-bold transition-all"
-                      style={{ width: "70px", padding: "10px 12px", textAlign: "center",
-                        ...(e.impot_freq || "mensuel") === "annuel"
-                          ? { background: "rgba(201,160,99,0.2)", color: "#C9A063", border: "1px solid rgba(201,160,99,0.35)" }
-                          : { background: "rgba(255,255,255,0.05)", color: "#94A3B8", border: "1px solid rgba(255,255,255,0.1)" }
-                      }}>
-                      {(e.impot_freq || "mensuel") === "annuel" ? "annuel" : "mensuel"}
-                    </button>
-                  </div>
-                </Field>
-                {e.type === "autonome" && (
-                  <Field label="TPS/TVQ inscrit ?" hint="Obligatoire si revenus > 30 000$/an">
-                    <RadioGroup value={e.tps_tvq} onChange={v => updateEmploi(i, "tps_tvq", v)} options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]} />
-                  </Field>
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              className="rounded-2xl p-5 relative"
+              style={{ background: "rgba(255,255,255,0.035)", border: "1px solid rgba(201,160,99,0.16)", backdropFilter: "blur(6px)" }}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-[11px] font-bold tracking-wider uppercase" style={{ color: "rgba(201,160,99,0.55)" }}>Emploi {i + 1}</p>
+                {emplois.length > 1 && (
+                  <button onClick={() => removeEmploi(i)} className="text-[11px]" style={{ color: "rgba(248,113,113,0.7)" }}>✕ Retirer</button>
                 )}
               </div>
-            </div>
+
+              <div className="space-y-4">
+                <TypeEmploiSelector value={e.type} onChange={v => updateEmploi(i, "type", v)} />
+                <ChampRevenuHero value={e.revenu_brut} onChange={v => updateEmploi(i, "revenu_brut", v)} />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <Field label="Employeur / Client"><Input value={e.employeur} onChange={v => updateEmploi(i, "employeur", v)} /></Field>
+                  <Field label="Poste occupé"><Input value={e.poste} onChange={v => updateEmploi(i, "poste", v)} /></Field>
+                  <Field
+                    label={<span>Impôt retenu ($) {!e.impot_modifie && e.impot_saisi && <span style={{ fontSize: 10, color: "#5BC4A0", fontWeight: 600, marginLeft: 4 }}>✦ Estimé auto</span>}</span>}
+                    hint={e.impot_modifie ? "Montant personnalisé" : "Estimation calculée — modifiez si différent"}
+                  >
+                    <div className="flex gap-2">
+                      <input type="number" value={e.impot_saisi || ""} onChange={ev => updateEmploi(i, "impot_saisi", ev.target.value)} placeholder="0"
+                        className="w-full px-4 py-2.5 rounded-xl text-[13px] outline-none transition-all"
+                        style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${!e.impot_modifie && e.impot_saisi ? "rgba(91,196,160,0.3)" : "rgba(255,255,255,0.1)"}`, color: "#fff" }} />
+                      <button type="button" onClick={() => updateEmploi(i, "impot_freq", (e.impot_freq || "mensuel") === "mensuel" ? "annuel" : "mensuel")}
+                        className="shrink-0 rounded-xl text-[11px] font-bold transition-all"
+                        style={{ width: "70px", padding: "10px 12px", textAlign: "center",
+                          ...(e.impot_freq || "mensuel") === "annuel"
+                            ? { background: "rgba(201,160,99,0.2)", color: "#C9A063", border: "1px solid rgba(201,160,99,0.35)" }
+                            : { background: "rgba(255,255,255,0.05)", color: "#94A3B8", border: "1px solid rgba(255,255,255,0.1)" }
+                        }}>
+                        {(e.impot_freq || "mensuel") === "annuel" ? "annuel" : "mensuel"}
+                      </button>
+                    </div>
+                  </Field>
+                  {e.type === "autonome" && (
+                    <Field label="TPS/TVQ inscrit ?" hint="Obligatoire si revenus > 30 000$/an">
+                      <RadioGroup value={e.tps_tvq} onChange={v => updateEmploi(i, "tps_tvq", v)} options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]} />
+                    </Field>
+                  )}
+                </div>
+              </div>
+            </motion.div>
           ))}
+          <CarteAjout label="Ajouter un emploi" onClick={addEmploi} />
         </div>
       </div>
 
+      {/* ── Revenus supplémentaires ── */}
       <div>
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <p className="text-[14px] font-semibold text-white">Revenus supplémentaires <span className="ml-1 text-[11px] px-2 py-0.5 rounded-full" style={{ background: "rgba(201,160,99,0.12)", color: "#C9A063" }}>Impact fiscal important</span></p>
-            <p className="text-[12px] mt-0.5" style={{ color: "#94A3B8" }}>Uber, Airbnb, freelance, vente en ligne…</p>
-          </div>
-          <button onClick={addSide} className="text-[12px] font-semibold px-3 py-1.5 rounded-lg transition-all"
-            style={{ background: "rgba(201,160,99,0.1)", color: "#C9A063", border: "1px solid rgba(201,160,99,0.2)" }}>+ Ajouter</button>
+        <div className="mb-3">
+          <p className="text-[14px] font-semibold text-white">Revenus supplémentaires <span className="ml-1 text-[11px] px-2 py-0.5 rounded-full" style={{ background: "rgba(201,160,99,0.12)", color: "#C9A063" }}>Impact fiscal important</span></p>
+          <p className="text-[12px] mt-0.5" style={{ color: "#94A3B8" }}>Uber, Airbnb, freelance, vente en ligne…</p>
         </div>
-        {sidehustles.length === 0 && (
-          <div className="rounded-xl px-4 py-3 text-[12px]" style={{ background: "rgba(255,255,255,0.02)", border: "1px dashed rgba(255,255,255,0.08)", color: "#94A3B8" }}>
-            Aucun revenu supplémentaire. Cliquez sur "+ Ajouter" si applicable.
-          </div>
-        )}
         <div className="space-y-3">
           {sidehustles.map((s, i) => (
-            <div key={i} className="rounded-xl p-4 relative" style={{ background: "rgba(245,158,11,0.04)", border: "1px solid rgba(245,158,11,0.15)" }}>
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              className="rounded-xl p-4 relative"
+              style={{ background: "rgba(245,158,11,0.04)", border: "1px solid rgba(245,158,11,0.15)", backdropFilter: "blur(6px)" }}
+            >
               <button onClick={() => removeSide(i)} className="absolute top-3 right-3 text-[11px]" style={{ color: "rgba(248,113,113,0.7)" }}>✕ Retirer</button>
               <p className="text-[11px] font-bold tracking-wider uppercase mb-3" style={{ color: "rgba(245,158,11,0.6)" }}>Side hustle {i + 1}</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -337,18 +465,25 @@ function RevenuPanel({ data, setData }) {
                   ⚠️ Tous les revenus de plateformes (Uber, Airbnb...) doivent être déclarés au Canada. L'ARC reçoit des données directement des plateformes.
                 </div>
               )}
-            </div>
+            </motion.div>
           ))}
+          <CarteAjout label="Ajouter un revenu supplémentaire" onClick={addSide} color="#f59e0b" />
         </div>
       </div>
 
       {totalBrut > 0 && (
-        <div className="rounded-xl px-5 py-4 flex items-center justify-between" style={{ background: "rgba(201,160,99,0.07)", border: "1px solid rgba(201,160,99,0.2)" }}>
-          <p className="text-[13px] font-semibold" style={{ color: "#C9A063" }}>Revenu brut annuel total estimé</p>
-          <p className="font-financial text-[1.4rem] font-bold" style={{ color: "#C9A063" }}>
-            {new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(totalBrut)}
-          </p>
-        </div>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="rounded-2xl px-5 py-4 flex items-center justify-between"
+          style={{ background: "linear-gradient(135deg, rgba(201,160,99,0.10), rgba(201,160,99,0.03))", border: "1px solid rgba(201,160,99,0.25)", backdropFilter: "blur(4px)" }}
+        >
+          <div>
+            <p className="text-[13px] font-semibold" style={{ color: "#C9A063" }}>Revenu brut annuel total</p>
+            <p className="text-[10.5px] mt-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>Suivez votre portrait en direct à droite →</p>
+          </div>
+          <p className="font-financial text-[1.4rem] font-bold" style={{ color: "#C9A063" }}>{fmtCAD(totalBrut)}</p>
+        </motion.div>
       )}
 
       <Field label="Recevez-vous habituellement un retour d'impôt ?">
