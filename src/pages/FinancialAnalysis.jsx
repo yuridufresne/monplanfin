@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight, ChevronLeft, Check, User, TrendingDown, Shield, GraduationCap, Target, AlertTriangle, DollarSign, BarChart3, Wallet, Baby, Home } from "lucide-react";
+import { ChevronRight, ChevronLeft, Check, User, TrendingDown, Shield, GraduationCap, Target, AlertTriangle, DollarSign, BarChart3, Wallet, Baby, Home, Briefcase, FileSignature, Rocket, Sparkles, Plus } from "lucide-react";
 import InfoTooltip from "@/components/ui/InfoTooltip";
 import StepBudget from "@/components/abf/StepBudget";
 import StepAllocations from "@/components/abf/StepAllocations";
