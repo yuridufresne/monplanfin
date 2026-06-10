@@ -783,14 +783,13 @@ export default function Dashboard() {
                           </p>
                         </div>
                       </div>
-                      {recoImmoSel.limitePar === "cash" && (
-                        <p style={{ fontSize: 10.5, color: "rgba(245,158,11,0.7)", textAlign: "center", marginBottom: 6, lineHeight: 1.5 }}>
-                          ⓘ Limité par votre épargne ({fmt(recoImmoSel.miseDeFondsDispo)}) — pour mettre {immoPctSelected} % comptant sur un prix plus élevé, il faut épargner davantage.
+                      {recoImmoSel.miseManquante > 0 ? (
+                        <p style={{ fontSize: 10.5, color: "rgba(245,158,11,0.75)", textAlign: "center", marginBottom: 6, lineHeight: 1.5 }}>
+                          ⚠ Mise requise : {fmt(recoImmoSel.miseEffective)} — votre ABF montre {fmt(recoImmoSel.miseDeFondsDispo)} disponibles. Il manque {fmt(recoImmoSel.miseManquante)} pour ce scénario.
                         </p>
-                      )}
-                      {recoImmoSel.limitePar === "revenu" && (
+                      ) : (
                         <p style={{ fontSize: 10.5, color: "rgba(91,196,160,0.7)", textAlign: "center", marginBottom: 6, lineHeight: 1.5 }}>
-                          ✓ Limité par votre revenu (ratios ABD/ATD) — pas par l'épargne.
+                          ✓ Votre épargne ({fmt(recoImmoSel.miseDeFondsDispo)}) couvre la mise requise.
                         </p>
                       )}
                       {recoImmoSel.primeSCHL > 0 ? (
