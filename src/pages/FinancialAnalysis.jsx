@@ -1334,7 +1334,7 @@ export default function FinancialAnalysis() {
 
   return (
     <div style={{ background: "#050810", minHeight: "100vh" }}>
-      <div className="max-w-4xl mx-auto px-6 lg:px-10 py-14 md:py-20">
+      <div className="max-w-7xl mx-auto px-6 lg:px-10 py-14 md:py-20">
         <div className="mb-10">
           <p className="text-[11px] font-semibold tracking-[0.14em] uppercase mb-2" style={{ color: "rgba(201,160,99,0.6)" }}>Confidentiel · Personnalisé · Gratuit</p>
           <h1 className="font-urbanist text-[2.25rem] font-bold text-white tracking-tight">Analyse de besoins financiers</h1>
