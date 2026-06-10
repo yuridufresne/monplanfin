@@ -1362,6 +1362,9 @@ export default function FinancialAnalysis() {
           })}
         </div>
 
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 items-start">
+        <div className="min-w-0">
+        <InsightCard insight={insight} />
         <AnimatePresence mode="wait">
           <motion.div key={step.key} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }}>
             <div className="rounded-2xl overflow-hidden" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)" }}>
