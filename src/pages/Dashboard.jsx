@@ -446,9 +446,9 @@ export default function Dashboard() {
         {/* ——— Cap NIF (hero) ——— */}
         {!isEmpty && (
           <motion.div {...fadeUp(0.02)} style={{ marginBottom: 20, padding: "22px 24px", borderRadius: 16, background: "linear-gradient(135deg, rgba(201,160,99,0.10), rgba(201,160,99,0.03))", border: "1px solid rgba(201,160,99,0.25)" }}>
-            <p style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: ".14em", textTransform: "uppercase", color: "rgba(201,160,99,0.85)", marginBottom: 6 }}>Votre cap — indépendance financière</p>
+            <p style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: ".14em", textTransform: "uppercase", color: "rgba(201,160,99,0.85)", marginBottom: 6 }}>Votre effort mensuel — indépendance financière</p>
             <div style={{ display: "flex", alignItems: "baseline", gap: 14, flexWrap: "wrap" }}>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: "clamp(2rem,4vw,2.6rem)", fontWeight: 800, color: "#fff", lineHeight: 1.1 }}>{fmt(capitalNIF)}</span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: "clamp(2rem,4vw,2.6rem)", fontWeight: 800, color: "#fff", lineHeight: 1.1 }}>{fmt(Math.max(cotSupp, 0))}<span style={{ fontSize: "1.1rem", fontWeight: 600, color: "rgba(255,255,255,0.55)" }}>/mois</span></span>
               <span style={{ padding: "3px 10px", borderRadius: 8, fontSize: 11, fontWeight: 700, background: `${nifColor}20`, color: nifColor, border: `1px solid ${nifColor}40` }}>{statutLabels[statut] || statut}</span>
             </div>
             <p style={{ fontSize: 13.5, color: "rgba(255,255,255,0.65)", marginTop: 8, lineHeight: 1.5 }}>
