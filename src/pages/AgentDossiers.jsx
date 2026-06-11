@@ -6,7 +6,7 @@
 import { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { estAgent } from "@/lib/roles";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function AgentDossiers() {
   const { user } = useAuth();
