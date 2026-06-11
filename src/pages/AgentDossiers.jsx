@@ -228,7 +228,7 @@ function DossierCard({ d, expanded, onToggle, onChangerStatut }) {
             <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>Ouvrir le dossier client</p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
               {[["ABF", "/analyse"], ["Feuille Résumé", "/resume"], ["Tableau de bord", "/dashboard"]].map(([lbl, path]) => (
-                <button key={path} onClick={(e) => { e.stopPropagation(); navigate(`${path}?client=${encodeURIComponent(d.client_courriel)}`); }} style={{ padding: "6px 12px", borderRadius: 8, cursor: "pointer", background: "rgba(201,160,99,0.12)", border: "1px solid rgba(201,160,99,0.4)", color: "#C9A063", fontSize: 11.5, fontWeight: 600 }}>{lbl}</button>
+                <button key={path} onClick={(e) => { e.stopPropagation(); navigate(`${path}?client=${encodeURIComponent(d.client_courriel)}&nom=${encodeURIComponent(d.client_nom || "")}`); }} style={{ padding: "6px 12px", borderRadius: 8, cursor: "pointer", background: "rgba(201,160,99,0.12)", border: "1px solid rgba(201,160,99,0.4)", color: "#C9A063", fontSize: 11.5, fontWeight: 600 }}>{lbl}</button>
               ))}
             </div>
           </div>
