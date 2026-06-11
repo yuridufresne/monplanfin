@@ -1534,7 +1534,7 @@ export default function FinancialAnalysis() {
     return () => clearTimeout(t);
   }, [insight]);
 
-  const step = STEPS[currentStep];
+  const step = STEPS[Math.max(0, Math.min(currentStep, STEPS.length - 1))] || STEPS[0];
   const StepComponent = STEP_COMPONENTS[step.key];
   const data = stepData[step.key] || {};
   const setData = (updater) => setStepData(prev => ({ ...prev, [step.key]: typeof updater === "function" ? updater(prev[step.key] || {}) : updater }));
