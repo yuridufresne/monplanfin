@@ -190,14 +190,26 @@ export default function Dashboard() {
 
   useEffect(() => {
     base44.auth.me().then(setUser);
-    syncABFToEntities().then(() => setSynced(true));
+    if (new URLSearchParams(window.location.search).get("client")) { setSynced(true); } else { syncABFToEntities().then(() => setSynced(true)); }
   }, []);
 
-  const { data: budgetEntries = [] } = useQuery({ queryKey: ["budgetEntries"], queryFn: () => base44.entities.BudgetEntry.list(), enabled: synced });
-  const { data: investments = [] }   = useQuery({ queryKey: ["investments"], queryFn: () => base44.entities.Investment.list(), enabled: synced });
-  const { data: debts = [] }          = useQuery({ queryKey: ["debts"], queryFn: () => base44.entities.Debt.list(), enabled: synced });
-  const { data: goals = [] }          = useQuery({ queryKey: ["goals"], queryFn: () => base44.entities.FinancialGoal.list(), enabled: synced });
-  const { data: profiles = [] }       = useQuery({ queryKey: ["financialProfiles"], queryFn: () => base44.entities.FinancialProfile.list(), enabled: synced });
+  // — Contexte client (mode conseiller) —
+  const clientCible = new URLSearchParams(window.location.search).get("client");
+  const modeConseiller = !!clientCible && !!user && (user.type_compte === "agent" || user.role === "admin" || user.type_compte === "directeur");
+  const cible = modeConseiller ? clientCible : user?.email;
+  const filtreCible = (rows) => (rows || []).filter(r => r.created_by === cible || r.client_courriel === cible);
+
+  const { data: budgetEntriesBruts = [] } = useQuery({ queryKey: ["budgetEntries"], queryFn: () => base44.entities.BudgetEntry.list(), enabled: synced });
+  const { data: investmentsBruts = [] } = useQuery({ queryKey: ["investments"], queryFn: () => base44.entities.Investment.list(), enabled: synced });
+  const { data: debtsBruts = [] } = useQuery({ queryKey: ["debts"], queryFn: () => base44.entities.Debt.list(), enabled: synced });
+  const { data: goalsBruts = [] } = useQuery({ queryKey: ["goals"], queryFn: () => base44.entities.FinancialGoal.list(), enabled: synced });
+  const { data: profilesBruts = [] } = useQuery({ queryKey: ["financialProfiles"], queryFn: () => base44.entities.FinancialProfile.list(), enabled: synced });
+
+  const budgetEntries = useMemo(() => filtreCible(budgetEntriesBruts), [budgetEntriesBruts, cible]);
+  const investments = useMemo(() => filtreCible(investmentsBruts), [investmentsBruts, cible]);
+  const debts = useMemo(() => filtreCible(debtsBruts), [debtsBruts, cible]);
+  const goals = useMemo(() => filtreCible(goalsBruts), [goalsBruts, cible]);
+  const profiles = useMemo(() => filtreCible(profilesBruts), [profilesBruts, cible]);
 
   // ── Source de données ──────────────────────────────────────────────────────
   const { totalMensuel: totalRevenue, allocMensuel } = useMemo(() => calcRevenuDisponible(profiles), [profiles]);
