@@ -82,7 +82,6 @@ const AuthenticatedApp = () => {
         <Route path="/admin/dossiers" element={<AdminDossiers />} />
         <Route path="/admin/feedback" element={<AdminFeedback />} />
         <Route path="/agent" element={<AgentDossiers />} />
-        
         <Route path="*" element={<PageNotFound />} />
       </Route>
     </Routes>
