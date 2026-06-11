@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import {
   TrendingUp, TrendingDown, DollarSign, Shield, Target, AlertTriangle,
@@ -162,6 +163,28 @@ function PalierBar({ revenuImposable, paliers, label, mpb, color }) {
           <div key={i} title={`${s.label} — ${fmt(s.amount)}`} style={{ width: `${s.width}%`, background: color, opacity: 0.35 + i * 0.15, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: "#fff", fontWeight: 700, transition: "width 0.5s" }}>
             {s.width > 5 ? s.label : ""}
           </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function BarreDossierClient() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const qs = new URLSearchParams(window.location.search);
+  const client = qs.get("client");
+  const nom = qs.get("nom");
+  if (!client) return null;
+  const suffixe = "?client=" + encodeURIComponent(client) + (nom ? "&nom=" + encodeURIComponent(nom) : "");
+  const vues = [["/analyse", "ABF"], ["/resume", "Feuille Résumé"], ["/dashboard", "Tableau de bord"]];
+  return (
+    <div style={{ position: "sticky", top: 0, zIndex: 50, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", background: "#0a0f1e", borderBottom: "1px solid rgba(201,160,99,0.4)", padding: "8px 16px" }}>
+      <button onClick={() => navigate("/agent")} style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.2)", color: "rgba(255,255,255,0.7)", borderRadius: 8, padding: "5px 10px", fontSize: 12, cursor: "pointer" }}>← Mes dossiers</button>
+      <span style={{ color: "#C9A063", fontWeight: 700, fontSize: 13 }}>{nom || client}</span>
+      <div style={{ display: "flex", gap: 6, marginLeft: "auto", flexWrap: "wrap" }}>
+        {vues.map(([path, lbl]) => (
+          <button key={path} onClick={() => navigate(path + suffixe)} disabled={location.pathname === path} style={{ background: location.pathname === path ? "#C9A063" : "rgba(201,160,99,0.12)", border: "1px solid rgba(201,160,99,0.4)", color: location.pathname === path ? "#050810" : "#C9A063", borderRadius: 8, padding: "5px 12px", fontSize: 12, fontWeight: 600, cursor: location.pathname === path ? "default" : "pointer" }}>{lbl}</button>
         ))}
       </div>
     </div>
@@ -743,11 +766,7 @@ export default function FeuilleResume() {
 
   return (
     <div style={{ background: "linear-gradient(135deg, #050810 0%, #080d1a 60%, #050810 100%)", minHeight: "100vh", position: "relative" }}>
-      {modeConseiller && (
-        <div style={{ background: "rgba(201,160,99,0.15)", borderBottom: "1px solid rgba(201,160,99,0.4)", color: "#C9A063", padding: "8px 16px", fontSize: 13, fontWeight: 600, textAlign: "center", position: "relative", zIndex: 5 }}>
-          Dossier client : {clientCible}
-        </div>
-      )}
+      {modeConseiller && <BarreDossierClient />}
       {/* Ambient */}
       <div style={{ position: "absolute", top: "-10%", right: "-5%", width: 700, height: 700, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(201,160,99,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
 
