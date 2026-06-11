@@ -112,7 +112,7 @@ function KpiCard({ label, value, sub, color = "#C9A063", icon: Icon, trend }) {
         </div>}
         <p style={{ fontSize: 11.5, color: "rgba(255,255,255,0.5)", fontWeight: 500 }}>{label}</p>
         {trend !== undefined && (
-          <span style={{ marginLeft: "auto", fontSize: 11, color: trend >= 0 ? "#5BC4A0" : "#f87171" }}>
+      <div style={{ display: "flex", gap: 6, position: "absolute", left: "50%", transform: "translateX(-50%)" }}>
             {trend >= 0 ? "▲" : "▼"} {Math.abs(trend).toFixed(1)}%
           </span>
         )}
