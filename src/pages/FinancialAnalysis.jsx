@@ -1497,6 +1497,21 @@ function BarreDossierClient() {
   );
 }
 
+// Accroches conversationnelles par section
+const INTROS = {
+  profil_personnel: { titre: "Faisons connaissance.", sous: "Quelques infos de base pour personnaliser tous vos calculs — rien ne quitte votre dossier." },
+  revenu: { titre: "Parlons de vos revenus.", sous: "Ce que vous gagnez aujourd’hui, c’est la fondation de tout votre plan." },
+  allocations: { titre: "Les allocations familiales.", sous: "Chaque dollar qui entre compte — celles-ci sont souvent oubliées." },
+  retraite: { titre: "Votre épargne, aujourd’hui.", sous: "REER, CELI, fonds de pension : on fait l’inventaire, sans jugement." },
+  dettes: { titre: "Parlons de ce que vous devez.", sous: "Sans gêne et sans jugement — c’est le point de départ de votre plan de liberté." },
+  immobilier: { titre: "Votre toit, votre patrimoine.", sous: "Résidence, hypothèque, projets : voyons ce que la brique vaut pour vous." },
+  assurance: { titre: "Protéger ceux que vous aimez.", sous: "On vérifie qu’en cas de coup dur, personne ne serait laissé dans le besoin." },
+  etudes: { titre: "Les études des enfants.", sous: "Le REEE donne droit à des subventions — de l’argent qui dort si on ne le réclame pas." },
+  budget: { titre: "Où va votre argent ?", sous: "Un portrait honnête de vos dépenses — c’est ici que tout se joue." },
+  objectifs: { titre: "Vos rêves, vos projets.", sous: "Maison, voyage, liberté : donnons un chiffre et une date à chacun." },
+  fonds_urgence: { titre: "Votre coussin de sécurité.", sous: "L’imprévu finit toujours par arriver — assurons-nous qu’il ne fasse pas dérailler le plan." },
+};
+
 export default function FinancialAnalysis() {
   const [currentStep, setCurrentStep] = useState(0);
   const [stepData, setStepData] = useState({});
@@ -1658,6 +1673,12 @@ export default function FinancialAnalysis() {
                 <div style={{ height: 3, width: `${Math.round(((currentStep + 1) / STEPS.length) * 100)}%`, background: "linear-gradient(90deg, #C9A063, #5BC4A0)", transition: "width .4s ease" }} />
               </div>
               <div className="p-8">
+              {INTROS[step.key] && (
+                <div style={{ marginBottom: 22 }}>
+                  <p style={{ fontSize: 17.5, fontWeight: 700, color: "#fff", marginBottom: 4 }}>{INTROS[step.key].titre}</p>
+                  <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", lineHeight: 1.55 }}>{INTROS[step.key].sous}</p>
+                </div>
+              )}
                 <StepComponent data={data} setData={setData} stepData={stepData} />
               </div>
               <div className="px-8 py-5 flex justify-between" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
