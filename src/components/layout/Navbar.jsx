@@ -25,6 +25,7 @@ export default function Navbar() {
   const [user, setUser] = useState(null);
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const deconnexion = async () => { try { await base44.auth.logout(); } catch (e) {} window.location.href = "/"; };
 
   useEffect(() => {
     base44.auth.isAuthenticated().then(async (authed) => {
@@ -123,7 +124,7 @@ export default function Navbar() {
                 )}
                 <div style={{ width: 1, height: 28, background: "rgba(255,255,255,0.1)" }} />
                 <span style={{ fontSize: 13, fontWeight: 500, color: "rgba(148,163,184,0.7)" }}>{user?.full_name?.split(" ")[0] || "Mon compte"}</span>
-                <button onClick={() => base44.auth.logout()} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "rgba(148,163,184,0.55)", background: "none", border: "none", cursor: "pointer", padding: "6px 10px", borderRadius: 8, transition: "color 0.15s, background 0.15s" }}
+                <button onClick={deconnexion} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "rgba(148,163,184,0.55)", background: "none", border: "none", cursor: "pointer", padding: "6px 10px", borderRadius: 8, transition: "color 0.15s, background 0.15s" }}
                   onMouseEnter={e => { e.currentTarget.style.color = "#fff"; e.currentTarget.style.background = "rgba(255,255,255,0.06)"; }}
                   onMouseLeave={e => { e.currentTarget.style.color = "rgba(148,163,184,0.55)"; e.currentTarget.style.background = "transparent"; }}>
                   <LogOut style={{ width: 13, height: 13 }} /> Déconnexion
@@ -215,7 +216,7 @@ export default function Navbar() {
                  </div>
                 <div style={{ padding: "24px 20px 0", borderTop: "1px solid rgba(255,255,255,0.07)" }}>
                   {isAuthenticated ? (
-                    <button onClick={() => { base44.auth.logout(); setOpen(false); }} style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", fontSize: 14, borderRadius: 12, color: "rgba(148,163,184,0.7)", background: "none", border: "none", cursor: "pointer" }}>
+                    <button onClick={() => { setOpen(false); deconnexion(); }} style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", fontSize: 14, borderRadius: 12, color: "rgba(148,163,184,0.7)", background: "none", border: "none", cursor: "pointer" }}>
                       <LogOut style={{ width: 15, height: 15 }} /> Déconnexion
                     </button>
                   ) : (
