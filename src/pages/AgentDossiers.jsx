@@ -45,12 +45,7 @@ export default function AgentDossiers() {
   const [search, setSearch] = useState("");
   const [expandedId, setExpandedId] = useState(null);
 
-  // Garde : agent OU admin/directeur. Un client est redirigé.
-  useEffect(() => {
-    if (!isLoadingAuth && user && !estAgent(user) && !estAdmin(user)) {
-      navigate("/dashboard");
-    }
-  }, [user, isLoadingAuth, navigate]);
+  
 
   const refresh = async () => {
     try {
