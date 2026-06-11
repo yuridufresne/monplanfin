@@ -218,6 +218,7 @@ export default function Dashboard() {
 
   // — Contexte client (mode conseiller) —
   const clientCible = new URLSearchParams(window.location.search).get("client");
+  const nomCible = new URLSearchParams(window.location.search).get("nom");
   const modeConseiller = !!clientCible && !!user && (user.type_compte === "agent" || user.role === "admin" || user.type_compte === "directeur");
   const cible = modeConseiller ? clientCible : user?.email;
   const filtreCible = (rows) => (rows || []).filter(r => r.created_by === cible || r.client_courriel === cible);
@@ -281,6 +282,7 @@ export default function Dashboard() {
     .reduce((s, e) => s + toMonthly(parseFloat(e.amount) || 0, e.frequency), 0);
   const flux = totalRevenue - totalExpenses;
   const savingsRate = totalRevenue > 0 ? (flux / totalRevenue) * 100 : 0;
+  const budgetIncomplet = totalExpenses <= 0;
 
   // ── Actifs / Passifs ───────────────────────────────────────────────────────
   const investmentAssets = investments.reduce((s, i) => s + (i.current_value || 0), 0);
@@ -425,7 +427,7 @@ export default function Dashboard() {
           <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(201,160,99,0.55)", marginBottom: 6 }}>Tableau de bord</p>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
             <h1 style={{ fontFamily: "var(--font-urbanist)", fontSize: "clamp(1.6rem,3.5vw,2.25rem)", fontWeight: 800, color: "#fff", letterSpacing: "-0.03em", lineHeight: 1.1 }}>
-              {profil.nom ? `Bonjour, ${profil.nom.split(" ")[0]}.` : user?.full_name ? `Bonjour, ${user.full_name.split(" ")[0]}.` : "Bonjour."}
+              {modeConseiller ? `Dossier de ${(nomCible || "client").split(" ")[0]}` : profil.nom ? `Bonjour, ${profil.nom.split(" ")[0]}.` : user?.full_name ? `Bonjour, ${user.full_name.split(" ")[0]}.` : "Bonjour."}
             </h1>
             <div style={{ display: "flex", gap: 8 }}>
               <Link to="/analyse" style={{ fontSize: 11.5, fontWeight: 600, color: "#C9A063", background: "rgba(201,160,99,0.08)", border: "1px solid rgba(201,160,99,0.2)", padding: "6px 14px", borderRadius: 10, textDecoration: "none", display: "flex", alignItems: "center", gap: 6 }}>
@@ -442,7 +444,7 @@ export default function Dashboard() {
         </motion.div>
 
         {/* ─── CTA Soumettre dossier ─── */}
-        {!isEmpty && (
+        {!isEmpty && !modeConseiller && (
           <motion.div {...fadeUp(0.04)} className="mb-5">
             <button onClick={() => setShowSoumettre(true)} style={{
               width: "100%", padding: "18px 24px", borderRadius: 16, border: "none", cursor: "pointer",
@@ -503,15 +505,15 @@ export default function Dashboard() {
                 {
                   label: "Flux mensuel",
                   value: fmt(flux),
-                  sub: flux < 0 ? "⚠ Revoir le budget" : `${savingsRate.toFixed(1)}% du revenu net`,
+                  sub: budgetIncomplet ? "Complétez votre budget" : flux < 0 ? "⚠ Revoir le budget" : `${savingsRate.toFixed(1)}% du revenu net`,
                   color: flux >= 0 ? "#5BC4A0" : "#f87171",
                   info: "Revenu net − dépenses mensuelles. Un flux positif indique une capacité d'épargne. Cible recommandée : 15–20 % du revenu net.",
                 },
                 {
                   label: "Taux d'épargne",
-                  value: `${savingsRate.toFixed(1)} %`,
-                  sub: savingsRate < 10 ? "⚠ Cible : 15–20 %" : "✓ Bonne trajectoire",
-                  color: savingsRate >= 15 ? "#5BC4A0" : savingsRate >= 10 ? "#C9A063" : "#f87171",
+                  value: budgetIncomplet ? "—" : `${savingsRate.toFixed(1)} %`,
+                  sub: budgetIncomplet ? "Complétez votre budget" : savingsRate < 10 ? "⚠ Cible : 15–20 %" : "✓ Bonne trajectoire",
+                  color: budgetIncomplet ? "rgba(255,255,255,0.5)" : savingsRate >= 15 ? "#5BC4A0" : savingsRate >= 10 ? "#C9A063" : "#f87171",
                   info: "Flux mensuel ÷ Revenu net. La règle d'or recommande 15–20 % pour atteindre l'indépendance financière à 65 ans.",
                 },
               ].map((k, i) => (
