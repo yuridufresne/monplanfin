@@ -109,7 +109,6 @@ function StepProfilPersonnel({ data, setData }) {
 
           <div className="space-y-2">
             <p className="text-[12.5px] font-semibold" style={{ color: "#94A3B8" }}>Mode de calcul NIF</p>
-            <p style={{ fontSize: 11.5, color: "rgba(148,163,184,0.75)", lineHeight: 1.5, marginTop: 2 }}>Le NIF, c’est le montant total à accumuler pour être libre financièrement. Choisissez « Foyer complet » si vous planifiez à deux.</p>
             <div className="flex flex-col gap-2">
               {[
                 { value: "foyer", label: "Foyer complet (recommandé)", desc: "Combine les données des deux conjoints" },
@@ -1440,46 +1439,22 @@ function StepObjectifs({ data, setData }) {
 
 function StepFondsUrgence({ data, setData }) {
   const f = (k) => (v) => setData(p => ({ ...p, [k]: v }));
-  const [ecran, setEcran] = useState(0);
-  const ecrans = data.a_fonds === "oui" ? [0, 1, 2] : [0, 2];
-  const pos = Math.max(ecrans.indexOf(ecran), 0);
-  const allerSuivant = () => { const i = ecrans.indexOf(ecran); if (i < ecrans.length - 1) setEcran(ecrans[i + 1]); };
-  const allerRetour = () => { const i = ecrans.indexOf(ecran); if (i > 0) setEcran(ecrans[i - 1]); };
-  const styleQ = { fontSize: 19, fontWeight: 700, color: "#fff", lineHeight: 1.35, marginBottom: 18 };
   return (
-    <div>
-      <div style={{ display: "flex", gap: 6, marginBottom: 18 }}>
-        {ecrans.map((e2, i) => <span key={e2} style={{ width: i === pos ? 22 : 8, height: 8, borderRadius: 99, background: i <= pos ? "#C9A063" : "rgba(255,255,255,0.12)", transition: "all .3s" }} />)}
+    <div className="space-y-5">
+      <div className="rounded-xl p-4" style={{ background: "rgba(201,160,99,0.06)", border: "1px solid rgba(201,160,99,0.15)" }}>
+        <p className="text-[12px]" style={{ color: "#C9A063" }}>Objectif recommandé : 3 mois de frais de subsistance. Commencez avec 1 000$ si nécessaire.</p>
       </div>
-      {ecran === 0 && (
-        <div>
-          <p style={styleQ}>Avez-vous un fonds d’urgence aujourd’hui ?</p>
-          <RadioGroup value={data.a_fonds} onChange={(v) => { f("a_fonds")(v); setTimeout(() => setEcran(v === "oui" ? 1 : 2), 250); }} options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Pas encore" }]} />
-          <p style={{ fontSize: 12, color: "#C9A063", marginTop: 16 }}>Objectif recommandé : 3 mois de dépenses. Commencer avec 1 000 $ est déjà un excellent départ.</p>
+      <Field label="Avez-vous actuellement un fonds d’urgence ?">
+        <RadioGroup value={data.a_fonds} onChange={f("a_fonds")} options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]} />
+      </Field>
+      {data.a_fonds === "oui" && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Field label="Montant épargné ($)"><Input value={data.montant_fonds} onChange={f("montant_fonds")} type="number" /></Field>
+          <Field label="Cotisation mensuelle ($)"><Input value={data.cotisation_fonds} onChange={f("cotisation_fonds")} type="number" /></Field>
         </div>
       )}
-      {ecran === 1 && (
-        <div>
-          <p style={styleQ}>Combien avez-vous déjà mis de côté ?</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Field label="Montant épargné ($)"><Input value={data.montant_fonds} onChange={f("montant_fonds")} type="number" /></Field>
-            <Field label="Cotisation mensuelle ($)"><Input value={data.cotisation_fonds} onChange={f("cotisation_fonds")} type="number" /></Field>
-          </div>
-        </div>
-      )}
-      {ecran === 2 && (
-        <div>
-          <p style={styleQ}>Quel coussin visez-vous, et pour quand ?</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Field label="Montant objectif ($)"><Input value={data.objectif_fonds} onChange={f("objectif_fonds")} type="number" /></Field>
-            <Field label="Délai visé (mois)"><Input value={data.delai_fonds} onChange={f("delai_fonds")} type="number" /></Field>
-          </div>
-        </div>
-      )}
-      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 22 }}>
-        <button onClick={allerRetour} disabled={pos === 0} style={{ background: "none", border: "none", color: pos === 0 ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.6)", fontSize: 12.5, cursor: pos === 0 ? "default" : "pointer", padding: "6px 0" }}>← Question précédente</button>
-        {pos < ecrans.length - 1 && <button onClick={allerSuivant} style={{ background: "rgba(201,160,99,0.15)", border: "1px solid rgba(201,160,99,0.4)", color: "#C9A063", fontSize: 12.5, fontWeight: 600, borderRadius: 8, padding: "8px 16px", cursor: "pointer" }}>Continuer →</button>}
-      </div>
+      <Field label="Montant objectif du fonds ($)"><Input value={data.objectif_fonds} onChange={f("objectif_fonds")} type="number" /></Field>
+      <Field label="Délai pour atteindre l’objectif (mois)"><Input value={data.delai_fonds} onChange={f("delai_fonds")} type="number" /></Field>
     </div>
   );
 }
@@ -1690,19 +1665,10 @@ export default function FinancialAnalysis() {
                   {autoSaveStatus === 'saved' && (
                     <span style={{ fontSize:11, color:"rgba(91,196,160,0.7)", display:"flex", alignItems:"center", gap:4 }}>✓ Sauvegardé</span>
                   )}
-                  <span className="text-[12px]" style={{ color: "#94A3B8" }}>{currentStep + 1} / {STEPS.length}{currentStep < STEPS.length - 1 ? ` · ≈ ${STEPS.length - 1 - currentStep} min restantes` : " · dernière étape"}</span>
+                  <span className="text-[12px]" style={{ color: "#94A3B8" }}>{currentStep + 1} / {STEPS.length}</span>
                 </span>
               </div>
-              <div style={{ height: 3, background: "rgba(255,255,255,0.06)" }}>
-                <div style={{ height: 3, width: `${Math.round(((currentStep + 1) / STEPS.length) * 100)}%`, background: "linear-gradient(90deg, #C9A063, #5BC4A0)", transition: "width .4s ease" }} />
-              </div>
               <div className="p-8">
-              {INTROS[step.key] && (
-                <div style={{ marginBottom: 22 }}>
-                  <p style={{ fontSize: 17.5, fontWeight: 700, color: "#fff", marginBottom: 4 }}>{INTROS[step.key].titre}</p>
-                  <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", lineHeight: 1.55 }}>{INTROS[step.key].sous}</p>
-                </div>
-              )}
                 <StepComponent data={data} setData={setData} stepData={stepData} />
               </div>
               <div className="px-8 py-5 flex justify-between" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
