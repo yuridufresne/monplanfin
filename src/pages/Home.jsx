@@ -5,6 +5,7 @@ import { base44 } from "@/api/base44Client";
 import { ArrowRight } from "lucide-react";
 import SoftWall from "@/components/SoftWall";
 import FeatureScroll from "@/components/home/FeatureScroll";
+import { routeAccueil } from "@/lib/roles";
 
 const pillars = [
   {
@@ -52,8 +53,8 @@ export default function Home() {
 
   // Si déjà connecté → rediriger automatiquement vers le dashboard
   useEffect(() => {
-    base44.auth.isAuthenticated().then(authed => {
-      if (authed) navigate("/dashboard", { replace: true });
+    base44.auth.me().then((user) => {
+      if (user) navigate(routeAccueil(user), { replace: true });
     }).catch(() => {});
   }, [navigate]);
 
