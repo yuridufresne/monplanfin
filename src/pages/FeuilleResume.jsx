@@ -182,17 +182,24 @@ export default function FeuilleResume() {
   // Onglet fiscal actif : "foyer" | "p1" | "p2"
   const [ongletFiscal, setOngletFiscal] = useState("foyer");
 
+  const clientCible = new URLSearchParams(window.location.search).get("client");
+  const [modeConseiller, setModeConseiller] = useState(false);
   useEffect(() => {
     Promise.all([
       base44.entities.FinancialProfile.list(),
       base44.entities.BudgetEntry.list(),
       base44.entities.Debt.list(),
       base44.entities.Investment.list(),
-    ]).then(([p, b, d, i]) => {
-      setProfiles(p);
-      setBudgetEntries(b);
-      setDebts(d);
-      setInvestments(i);
+      base44.auth.me().catch(() => null),
+    ]).then(([p, b, d, i, u]) => {
+      const estConseiller = !!clientCible && !!u && (u.type_compte === "agent" || u.role === "admin" || u.type_compte === "directeur");
+      const cible = estConseiller ? clientCible : (u ? u.email : null);
+      const filtre = (rows) => (rows || []).filter(r => r.created_by === cible || r.client_courriel === cible);
+      setModeConseiller(estConseiller);
+      setProfiles(filtre(p));
+      setBudgetEntries(filtre(b));
+      setDebts(filtre(d));
+      setInvestments(filtre(i));
       setLoading(false);
     });
   }, []);
@@ -736,6 +743,11 @@ export default function FeuilleResume() {
 
   return (
     <div style={{ background: "linear-gradient(135deg, #050810 0%, #080d1a 60%, #050810 100%)", minHeight: "100vh", position: "relative" }}>
+      {modeConseiller && (
+        <div style={{ background: "rgba(201,160,99,0.15)", borderBottom: "1px solid rgba(201,160,99,0.4)", color: "#C9A063", padding: "8px 16px", fontSize: 13, fontWeight: 600, textAlign: "center", position: "relative", zIndex: 5 }}>
+          Dossier client : {clientCible}
+        </div>
+      )}
       {/* Ambient */}
       <div style={{ position: "absolute", top: "-10%", right: "-5%", width: 700, height: 700, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(201,160,99,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
 
