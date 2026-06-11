@@ -25,6 +25,7 @@ import Confidentialite from '@/pages/Confidentialite';
 import Contact from '@/pages/Contact';
 import AdminDossiers from '@/pages/AdminDossiers';
 import AdminFeedback from '@/pages/AdminFeedback';
+import AgentDossiers from '@/pages/AgentDossiers';
 
 const PUBLIC_PATHS = ['/', '/calculatrices'];
 
@@ -80,6 +81,7 @@ const AuthenticatedApp = () => {
         <Route path="/contact" element={<Contact />} />
         <Route path="/admin/dossiers" element={<AdminDossiers />} />
         <Route path="/admin/feedback" element={<AdminFeedback />} />
+        <Route path="/agent" element={<AgentDossiers />} />
         <Route path="*" element={<PageNotFound />} />
       </Route>
     </Routes>
