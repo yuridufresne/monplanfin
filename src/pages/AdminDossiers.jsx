@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
-import { ArrowLeft, Users, Clock, CheckCircle2, XCircle, Mail, Phone, MessageSquare, Video, Search, ChevronDown, ChevronUp, Lock, FileText, Calendar } from "lucide-react";
+import { ArrowLeft, Users, Clock, CheckCircle2, XCircle, Mail, Phone, MessageSquare, Video, Search, ChevronDown, ChevronUp, Lock, FileText, Calendar, UserCheck } from "lucide-react";
+import { chargerAgents, assignerDossier, desassignerDossier } from "@/lib/assignation";
 
 /**
  * src/pages/AdminDossiers.jsx
@@ -224,9 +225,11 @@ export default function AdminDossiers() {
             {filtered.map(d => (
               <DossierCard key={d.id} d={d}
                 expanded={expandedId === d.id}
+                agents={agents}
                 onToggle={() => setExpandedId(expandedId === d.id ? null : d.id)}
                 onChangerStatut={(s) => changerStatut(d.id, s)}
                 onSauverNote={(n) => sauverNote(d.id, n)}
+                onAssigner={(agent) => assigner(d.id, agent)}
               />
             ))}
           </div>
@@ -256,7 +259,7 @@ function Stat({ label, value, color, icon, pulse }) {
   );
 }
 
-function DossierCard({ d, expanded, onToggle, onChangerStatut, onSauverNote }) {
+function DossierCard({ d, expanded, agents = [], onToggle, onChangerStatut, onSauverNote, onAssigner }) {
   const [notes, setNotes] = useState(d.notes_internes || "");
   const [savedNote, setSavedNote] = useState(false);
   const statut = STATUTS[d.statut] || STATUTS.nouveau;
@@ -304,6 +307,11 @@ function DossierCard({ d, expanded, onToggle, onChangerStatut, onSauverNote }) {
             <span style={{ padding: "2px 7px", borderRadius: 6, fontSize: 10, fontWeight: 700, background: `${urgence.color}20`, color: urgence.color, border: `1px solid ${urgence.color}40` }}>
               {urgence.label}
             </span>
+            {d.agent_assigne_nom && (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 7px", borderRadius: 6, fontSize: 10, fontWeight: 700, background: "rgba(91,196,160,0.15)", color: "#5BC4A0", border: "1px solid rgba(91,196,160,0.4)" }}>
+                <UserCheck size={10} /> {d.agent_assigne_nom}
+              </span>
+            )}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", fontSize: 11.5, color: "rgba(255,255,255,0.5)" }}>
             <span><Calendar size={11} style={{ display: "inline", marginRight: 4 }} />
@@ -381,6 +389,47 @@ function DossierCard({ d, expanded, onToggle, onChangerStatut, onSauverNote }) {
             }}>
               {savedNote ? "✓ Sauvegardé" : "Sauvegarder la note"}
             </button>
+          </div>
+
+          {/* Assignation à un agent */}
+          <div style={{ marginTop: 18 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>
+              👤 Assignation
+            </p>
+            {d.agent_assigne_courriel ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "10px 14px", borderRadius: 10, background: "rgba(91,196,160,0.06)", border: "1px solid rgba(91,196,160,0.2)" }}>
+                <UserCheck size={15} color="#5BC4A0" />
+                <span style={{ fontSize: 12.5, color: "rgba(255,255,255,0.8)" }}>
+                  Assigné à <strong style={{ color: "#5BC4A0" }}>{d.agent_assigne_nom || d.agent_assigne_courriel}</strong>
+                  {d.date_assignation && <span style={{ color: "rgba(255,255,255,0.4)" }}> · {fmtDate(d.date_assignation)}</span>}
+                </span>
+                <button onClick={() => onAssigner(null)} style={{ marginLeft: "auto", padding: "4px 10px", borderRadius: 7, border: "1px solid rgba(248,113,113,0.3)", background: "transparent", color: "rgba(248,113,113,0.8)", fontSize: 11, cursor: "pointer" }}>
+                  Retirer
+                </button>
+              </div>
+            ) : agents.length === 0 ? (
+              <p style={{ fontSize: 11.5, color: "rgba(255,255,255,0.4)", fontStyle: "italic" }}>
+                Aucun agent disponible. Marquez un utilisateur comme « agent » dans la gestion des comptes.
+              </p>
+            ) : (
+              <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                <select
+                  defaultValue=""
+                  onChange={(e) => {
+                    const agent = agents.find(a => a.courriel === e.target.value);
+                    if (agent) onAssigner(agent);
+                  }}
+                  style={{ ...selectStyle, minWidth: 220 }}
+                >
+                  <option value="" disabled>Transférer à un agent…</option>
+                  {agents.map(a => (
+                    <option key={a.courriel} value={a.courriel}>
+                      {a.nom}{a.type === "directeur" ? " (directeur)" : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           {/* Boutons changement de statut */}
