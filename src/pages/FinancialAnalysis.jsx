@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronRight, ChevronLeft, Check, User, TrendingDown, Shield, GraduationCap, Target, AlertTriangle, DollarSign, BarChart3, Wallet, Baby, Home, Briefcase, FileSignature, Rocket, Sparkles, Plus, LifeBuoy, Armchair } from "lucide-react";
@@ -1472,6 +1473,28 @@ const STEP_COMPONENTS = {
   fonds_urgence: StepFondsUrgence,
 };
 
+function BarreDossierClient() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const qs = new URLSearchParams(window.location.search);
+  const client = qs.get("client");
+  const nom = qs.get("nom");
+  if (!client) return null;
+  const suffixe = "?client=" + encodeURIComponent(client) + (nom ? "&nom=" + encodeURIComponent(nom) : "");
+  const vues = [["/analyse", "ABF"], ["/resume", "Feuille Résumé"], ["/dashboard", "Tableau de bord"]];
+  return (
+    <div style={{ position: "sticky", top: 0, zIndex: 50, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", background: "#0a0f1e", borderBottom: "1px solid rgba(201,160,99,0.4)", padding: "8px 16px" }}>
+      <button onClick={() => navigate("/agent")} style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.2)", color: "rgba(255,255,255,0.7)", borderRadius: 8, padding: "5px 10px", fontSize: 12, cursor: "pointer" }}>← Mes dossiers</button>
+      <span style={{ color: "#C9A063", fontWeight: 700, fontSize: 13 }}>{nom || client}</span>
+      <div style={{ display: "flex", gap: 6, marginLeft: "auto", flexWrap: "wrap" }}>
+        {vues.map(([path, lbl]) => (
+          <button key={path} onClick={() => navigate(path + suffixe)} disabled={location.pathname === path} style={{ background: location.pathname === path ? "#C9A063" : "rgba(201,160,99,0.12)", border: "1px solid rgba(201,160,99,0.4)", color: location.pathname === path ? "#050810" : "#C9A063", borderRadius: 8, padding: "5px 12px", fontSize: 12, fontWeight: 600, cursor: location.pathname === path ? "default" : "pointer" }}>{lbl}</button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function FinancialAnalysis() {
   const [currentStep, setCurrentStep] = useState(0);
   const [stepData, setStepData] = useState({});
@@ -1578,11 +1601,7 @@ export default function FinancialAnalysis() {
 
   return (
     <div style={{ background: "#050810", minHeight: "100vh" }}>
-      {modeConseiller && (
-        <div style={{ background: "rgba(201,160,99,0.15)", border: "1px solid rgba(201,160,99,0.4)", borderRadius: 8, color: "#C9A063", padding: "8px 16px", fontSize: 13, fontWeight: 600, textAlign: "center", margin: "0 24px" }}>
-          Dossier client : {clientCible}
-        </div>
-      )}
+      {modeConseiller && <BarreDossierClient />}
       <div className="max-w-7xl mx-auto px-6 lg:px-10 py-14 md:py-20">
         <div className="mb-10">
           <p className="text-[11px] font-semibold tracking-[0.14em] uppercase mb-2" style={{ color: "rgba(201,160,99,0.6)" }}>Confidentiel · Personnalisé · Gratuit</p>
