@@ -109,6 +109,7 @@ function StepProfilPersonnel({ data, setData }) {
 
           <div className="space-y-2">
             <p className="text-[12.5px] font-semibold" style={{ color: "#94A3B8" }}>Mode de calcul NIF</p>
+            <p style={{ fontSize: 11.5, color: "rgba(148,163,184,0.75)", lineHeight: 1.5, marginTop: 2 }}>Le NIF, c’est le montant total à accumuler pour être libre financièrement. Choisissez « Foyer complet » si vous planifiez à deux.</p>
             <div className="flex flex-col gap-2">
               {[
                 { value: "foyer", label: "Foyer complet (recommandé)", desc: "Combine les données des deux conjoints" },
@@ -1650,8 +1651,11 @@ export default function FinancialAnalysis() {
                   {autoSaveStatus === 'saved' && (
                     <span style={{ fontSize:11, color:"rgba(91,196,160,0.7)", display:"flex", alignItems:"center", gap:4 }}>✓ Sauvegardé</span>
                   )}
-                  <span className="text-[12px]" style={{ color: "#94A3B8" }}>{currentStep + 1} / {STEPS.length}</span>
+                  <span className="text-[12px]" style={{ color: "#94A3B8" }}>{currentStep + 1} / {STEPS.length}{currentStep < STEPS.length - 1 ? ` · ≈ ${STEPS.length - 1 - currentStep} min restantes` : " · dernière étape"}</span>
                 </span>
+              </div>
+              <div style={{ height: 3, background: "rgba(255,255,255,0.06)" }}>
+                <div style={{ height: 3, width: `${Math.round(((currentStep + 1) / STEPS.length) * 100)}%`, background: "linear-gradient(90deg, #C9A063, #5BC4A0)", transition: "width .4s ease" }} />
               </div>
               <div className="p-8">
                 <StepComponent data={data} setData={setData} stepData={stepData} />
