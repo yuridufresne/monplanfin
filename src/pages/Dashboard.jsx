@@ -182,12 +182,13 @@ function BarreDossierClient() {
   const qs = new URLSearchParams(window.location.search);
   const client = qs.get("client");
   const nom = qs.get("nom");
+  const retour = qs.get("retour") || "/agent";
   if (!client) return null;
-  const suffixe = "?client=" + encodeURIComponent(client) + (nom ? "&nom=" + encodeURIComponent(nom) : "");
+  const suffixe = "?client=" + encodeURIComponent(client) + (nom ? "&nom=" + encodeURIComponent(nom) : "") + (retour !== "/agent" ? "&retour=" + encodeURIComponent(retour) : "");
   const vues = [["/analyse", "ABF"], ["/resume", "Feuille Résumé"], ["/dashboard", "Tableau de bord"]];
   return (
     <div style={{ position: "sticky", top: 0, zIndex: 50, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", background: "#0a0f1e", borderBottom: "1px solid rgba(201,160,99,0.4)", padding: "8px 16px" }}>
-      <button onClick={() => navigate("/agent")} style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.2)", color: "rgba(255,255,255,0.7)", borderRadius: 8, padding: "5px 10px", fontSize: 12, cursor: "pointer" }}>← Mes dossiers</button>
+      <button onClick={() => navigate(retour)} style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.2)", color: "rgba(255,255,255,0.7)", borderRadius: 8, padding: "5px 10px", fontSize: 12, cursor: "pointer" }}>← Mes dossiers</button>
       <span style={{ color: "#C9A063", fontWeight: 700, fontSize: 13 }}>{nom || client}</span>
       <div style={{ display: "flex", gap: 6, position: "absolute", left: "50%", transform: "translateX(-50%)" }}>
         {vues.map(([path, lbl]) => (
