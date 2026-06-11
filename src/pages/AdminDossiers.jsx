@@ -59,6 +59,24 @@ export default function AdminDossiers() {
   const [filtreUrgence, setFiltreUrgence] = useState("tous");
   const [search, setSearch] = useState("");
   const [expandedId, setExpandedId] = useState(null);
+  const [agents, setAgents] = useState([]);
+
+  // Charger la liste des agents disponibles
+  useEffect(() => {
+    if (user && user.role === "admin") {
+      chargerAgents().then(setAgents).catch(e => console.error("Erreur chargement agents:", e));
+    }
+  }, [user]);
+
+  const assigner = async (id, agent) => {
+    try {
+      if (agent) await assignerDossier(id, agent, user.email);
+      else await desassignerDossier(id);
+      await refresh();
+    } catch (e) {
+      console.error("Erreur assignation:", e);
+    }
+  };
 
   // Protection admin
   useEffect(() => {
