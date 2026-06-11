@@ -37,7 +37,12 @@ export default function Navbar() {
   }, []);
 
   const isActive = (path) => location.pathname === path;
-  const links = isAuthenticated ? [...publicLinks, ...privateLinks] : publicLinks;
+  const isAgent = user?.type_compte === "agent";
+  const links = !isAuthenticated
+    ? publicLinks
+    : isAgent
+      ? [...publicLinks, { label: "Mes dossiers", path: "/agent" }]
+      : [...publicLinks, ...privateLinks];
 
   return (
     <nav className="sticky top-0 z-50 transition-all duration-300" style={{
