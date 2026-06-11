@@ -443,6 +443,20 @@ export default function Dashboard() {
           </div>
         </motion.div>
 
+        {/* ——— Cap NIF (hero) ——— */}
+        {!isEmpty && (
+          <motion.div {...fadeUp(0.02)} style={{ marginBottom: 20, padding: "22px 24px", borderRadius: 16, background: "linear-gradient(135deg, rgba(201,160,99,0.10), rgba(201,160,99,0.03))", border: "1px solid rgba(201,160,99,0.25)" }}>
+            <p style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: ".14em", textTransform: "uppercase", color: "rgba(201,160,99,0.85)", marginBottom: 6 }}>Votre cap — indépendance financière</p>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 14, flexWrap: "wrap" }}>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: "clamp(2rem,4vw,2.6rem)", fontWeight: 800, color: "#fff", lineHeight: 1.1 }}>{fmt(capitalNIF)}</span>
+              <span style={{ padding: "3px 10px", borderRadius: 8, fontSize: 11, fontWeight: 700, background: `${nifColor}20`, color: nifColor, border: `1px solid ${nifColor}40` }}>{statutLabels[statut] || statut}</span>
+            </div>
+            <p style={{ fontSize: 13.5, color: "rgba(255,255,255,0.65)", marginTop: 8, lineHeight: 1.5 }}>
+              {cotSupp <= 0 ? "Vous êtes en avance sur votre objectif — continuez ainsi." : `Il vous manque environ ${fmt(cotSupp)}/mois d’épargne pour atteindre votre indépendance à ${ageRetraite} ans.`}
+            </p>
+          </motion.div>
+        )}
+
         {/* ─── CTA Soumettre dossier ─── */}
         {!isEmpty && !modeConseiller && (
           <motion.div {...fadeUp(0.04)} className="mb-5">
@@ -552,10 +566,10 @@ export default function Dashboard() {
                     onFlip={setProtectionFlipped}
                     front={
                       <>
-                        <SectionHeader title="Protection" badge={<Badge color="red">À compléter</Badge>} link />
-                        <Row left="Assurance vie" right={hasAssurance ? "✓ Active" : "Aucune ❌"} dot={hasAssurance ? "#5BC4A0" : "#f87171"} />
-                        <Row left="Testament" right={hasTestament ? "✓ Rédigé" : "Aucun ❌"} dot={hasTestament ? "#5BC4A0" : "#f87171"} />
-                        <Row left="Fonds urgence" right={moisFonds >= 3 ? `${moisFonds.toFixed(1)} mois ✓` : `${moisFonds.toFixed(1)} mois ❌`} dot={moisFonds >= 3 ? "#5BC4A0" : "#f87171"} />
+                        <SectionHeader title="Protection" badge={<Badge color={[hasAssurance, hasTestament, moisFonds >= 3].filter(Boolean).length === 3 ? "green" : "gold"}>{[hasAssurance, hasTestament, moisFonds >= 3].filter(Boolean).length} / 3 en place</Badge>} link />
+                        <Row left="Assurance vie" right={hasAssurance ? "✓ Active" : "À prévoir"} dot={hasAssurance ? "#5BC4A0" : "#f59e0b"} />
+                        <Row left="Testament" right={hasTestament ? "✓ Rédigé" : "À prévoir"} dot={hasTestament ? "#5BC4A0" : "#f59e0b"} />
+                        <Row left="Fonds urgence" right={moisFonds >= 3 ? `${moisFonds.toFixed(1)} mois ✓` : `${moisFonds.toFixed(1)} mois — viser 3`} dot={moisFonds >= 3 ? "#5BC4A0" : "#f59e0b"} />
                         {besoinAssurance > 0 && (
                           <div style={{ marginTop: 10, padding: "8px 10px", borderRadius: 10, background: "rgba(201,160,99,0.07)", border: "1px solid rgba(201,160,99,0.15)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                             <p style={{ ...MUTED }}>Besoin estimé</p>
