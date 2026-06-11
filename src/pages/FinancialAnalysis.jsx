@@ -1480,6 +1480,13 @@ export default function FinancialAnalysis() {
   const [saved, setSaved] = useState(false);
   const [autoSaveStatus, setAutoSaveStatus] = useState('idle');
   const [insight, setInsight] = useState(null);
+  const clientCible = new URLSearchParams(window.location.search).get("client");
+  const [moi, setMoi] = useState(null);
+  const modeConseiller = !!clientCible && !!moi && (moi.type_compte === "agent" || moi.role === "admin" || moi.type_compte === "directeur");
+  const cible = modeConseiller ? clientCible : moi?.email;
+  const pourCible = (rows) => (rows || []).filter(r => r.created_by === cible || r.client_courriel === cible);
+  const champsConseiller = modeConseiller ? { client_courriel: clientCible, agent_courriel: moi.email } : {};
+  useEffect(() => { base44.auth.me().then(setMoi).catch(() => {}); }, []);
 
   // L'insight disparaît de lui-même après 12 secondes
   useEffect(() => {
@@ -1494,15 +1501,15 @@ export default function FinancialAnalysis() {
   const setData = (updater) => setStepData(prev => ({ ...prev, [step.key]: typeof updater === "function" ? updater(prev[step.key] || {}) : updater }));
 
   useEffect(() => {
-    if (!stepData[step.key] || Object.keys(stepData[step.key]).length === 0) return;
+    if (!moi || !stepData[step.key] || Object.keys(stepData[step.key]).length === 0) return;
     setAutoSaveStatus('saving');
     const timer = setTimeout(async () => {
       try {
-        const existing = await base44.entities.FinancialProfile.filter({ section: step.key });
+        const existing = pourCible(await base44.entities.FinancialProfile.filter({ section: step.key }));
         if (existing.length > 0) {
           await base44.entities.FinancialProfile.update(existing[0].id, { data: stepData[step.key] || {}, completed: completedSteps.has(step.key) });
         } else {
-          await base44.entities.FinancialProfile.create({ section: step.key, data: stepData[step.key] || {}, completed: false });
+          await base44.entities.FinancialProfile.create({ section: step.key, data: stepData[step.key] || {}, completed: false, ...champsConseiller });
         }
         setAutoSaveStatus('saved');
         setTimeout(() => setAutoSaveStatus('idle'), 2000);
@@ -1514,13 +1521,14 @@ export default function FinancialAnalysis() {
   }, [stepData[step.key]]);
 
   const saveStep = async () => {
+    if (!moi) return;
     setSaving(true);
     try {
-      const existing = await base44.entities.FinancialProfile.filter({ section: step.key });
+      const existing = pourCible(await base44.entities.FinancialProfile.filter({ section: step.key }));
       if (existing.length > 0) {
         await base44.entities.FinancialProfile.update(existing[0].id, { data: stepData[step.key] || {}, completed: true });
       } else {
-        await base44.entities.FinancialProfile.create({ section: step.key, data: stepData[step.key] || {}, completed: true });
+        await base44.entities.FinancialProfile.create({ section: step.key, data: stepData[step.key] || {}, completed: true, ...champsConseiller });
       }
       setCompletedSteps(prev => new Set([...prev, step.key]));
       setInsight(getInsightForSection(step.key, stepData));
@@ -1540,7 +1548,10 @@ export default function FinancialAnalysis() {
   };
 
   useEffect(() => {
-    Promise.all([base44.entities.FinancialProfile.list(), base44.entities.BudgetEntry.list()]).then(([profiles, budgetEntries]) => {
+    if (!moi) return;
+    Promise.all([base44.entities.FinancialProfile.list(), base44.entities.BudgetEntry.list()]).then(([profilsBruts, budgetBruts]) => {
+      const profiles = pourCible(profilsBruts);
+      const budgetEntries = pourCible(budgetBruts);
       const map = {};
       const done = new Set();
       profiles.forEach(p => { map[p.section] = unwrapData(p.data); if (p.completed) done.add(p.section); });
@@ -1548,7 +1559,7 @@ export default function FinancialAnalysis() {
       setStepData(map);
       setCompletedSteps(done);
     });
-  }, []);
+  }, [moi]);
 
   if (saved) {
     return (
@@ -1567,6 +1578,11 @@ export default function FinancialAnalysis() {
 
   return (
     <div style={{ background: "#050810", minHeight: "100vh" }}>
+      {modeConseiller && (
+        <div style={{ background: "rgba(201,160,99,0.15)", border: "1px solid rgba(201,160,99,0.4)", borderRadius: 8, color: "#C9A063", padding: "8px 16px", fontSize: 13, fontWeight: 600, textAlign: "center", margin: "0 24px" }}>
+          Dossier client : {clientCible}
+        </div>
+      )}
       <div className="max-w-7xl mx-auto px-6 lg:px-10 py-14 md:py-20">
         <div className="mb-10">
           <p className="text-[11px] font-semibold tracking-[0.14em] uppercase mb-2" style={{ color: "rgba(201,160,99,0.6)" }}>Confidentiel · Personnalisé · Gratuit</p>
