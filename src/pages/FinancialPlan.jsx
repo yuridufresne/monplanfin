@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -73,10 +73,10 @@ export default function FinancialPlan() {
   const { data: investmentsBruts = [] } = useQuery({ queryKey: ["investments"], queryFn: () => base44.entities.Investment.list() });
   const { data: debtsBruts = [] } = useQuery({ queryKey: ["debts"], queryFn: () => base44.entities.Debt.list() });
   const { data: goalsBruts = [] } = useQuery({ queryKey: ["goals"], queryFn: () => base44.entities.FinancialGoal.list() });
-  const budgetEntries = filtreCible(budgetEntriesBruts);
-  const investments = filtreCible(investmentsBruts);
-  const debts = filtreCible(debtsBruts);
-  const goals = filtreCible(goalsBruts);
+  const budgetEntries = useMemo(() => filtreCible(budgetEntriesBruts), [budgetEntriesBruts, cible]);
+  const investments = useMemo(() => filtreCible(investmentsBruts), [investmentsBruts, cible]);
+  const debts = useMemo(() => filtreCible(debtsBruts), [debtsBruts, cible]);
+  const goals = useMemo(() => filtreCible(goalsBruts), [goalsBruts, cible]);
 
   const goalCreate = useMutation({ mutationFn: (d) => base44.entities.FinancialGoal.create(d), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["goals"] }); setShowGoalForm(false); } });
   const goalUpdate = useMutation({ mutationFn: ({ id, data }) => base44.entities.FinancialGoal.update(id, data), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["goals"] }); setEditGoal(null); } });
