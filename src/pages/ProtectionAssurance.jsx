@@ -36,7 +36,7 @@ export default function ProtectionAssurance() {
     queryKey: ["financialProfiles"],
     queryFn: () => base44.entities.FinancialProfile.list(),
   });
-  const profiles = filtreCible(profilsBruts);
+  const profiles = useMemo(() => filtreCible(profilsBruts), [profilsBruts, cible]);
 
   // ── Extraction des 2 conjoints depuis l'ABF ──
   const { initA, initB, nomA, nomB, enCouple } = useMemo(() => {
