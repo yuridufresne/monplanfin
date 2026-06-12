@@ -1758,7 +1758,7 @@ export default function FinancialAnalysis() {
       <div style={{ position: "absolute", top: "-15%", right: "-10%", width: 600, height: 600, borderRadius: "50%", background: "radial-gradient(circle, rgba(201,160,99,0.13), transparent 65%)", pointerEvents: "none" }} />
       <div style={{ position: "absolute", bottom: "-20%", left: "-10%", width: 700, height: 700, borderRadius: "50%", background: "radial-gradient(circle, rgba(91,196,160,0.07), transparent 65%)", pointerEvents: "none" }} />
       {modeConseiller && <BarreDossierClient />}
-      <div className="max-w-7xl mx-auto px-6 lg:px-10 py-14 md:py-20">
+      <div className="max-w-7xl mx-auto px-6 lg:px-10 pt-2 pb-14 md:pt-3 md:pb-20">
         <div className="mb-10">
           <p className="text-[11px] font-semibold tracking-[0.14em] uppercase mb-2" style={{ color: "rgba(201,160,99,0.6)" }}>Confidentiel · Personnalisé · Gratuit</p>
           <h1 className="font-urbanist text-[2.25rem] font-bold text-white tracking-tight">Analyse de besoins financiers</h1>
