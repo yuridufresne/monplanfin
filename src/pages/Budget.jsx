@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
@@ -39,9 +39,18 @@ export default function Budget() {
   const [editing, setEditing] = useState(null);
   const [activeTab, setActiveTab] = useState("revenus");
   const qc = useQueryClient();
+  const clientCible = new URLSearchParams(window.location.search).get("client");
+  const [moi, setMoi] = useState(null);
+  useEffect(() => { base44.auth.me().then(setMoi).catch(() => {}); }, []);
+  const modeConseiller = !!clientCible && !!moi && (moi.type_compte === "agent" || moi.role === "admin" || moi.type_compte === "directeur");
+  const cible = modeConseiller ? clientCible : moi?.email;
+  const filtreCible = (rows) => (rows || []).filter(r => r.created_by === cible || r.client_courriel === cible);
+  const champsConseiller = modeConseiller ? { client_courriel: clientCible, agent_courriel: moi?.email } : {};
 
-  const { data: entries = [] } = useQuery({ queryKey: ["budgetEntries"], queryFn: () => base44.entities.BudgetEntry.list() });
-  const { data: profiles = [] } = useQuery({ queryKey: ["financialProfiles"], queryFn: () => base44.entities.FinancialProfile.list() });
+  const { data: entriesBrutes = [] } = useQuery({ queryKey: ["budgetEntries"], queryFn: () => base44.entities.BudgetEntry.list() });
+  const { data: profilesBruts = [] } = useQuery({ queryKey: ["financialProfiles"], queryFn: () => base44.entities.FinancialProfile.list() });
+  const entries = filtreCible(entriesBrutes);
+  const profiles = filtreCible(profilesBruts);
   const deleteMutation = useMutation({ mutationFn: (id) => base44.entities.BudgetEntry.delete(id), onSuccess: () => qc.invalidateQueries({ queryKey: ["budgetEntries"] }) });
 
   const handleSaveEntry = async (form) => {
@@ -53,7 +62,7 @@ export default function Budget() {
       if (existing) {
         await base44.entities.BudgetEntry.update(existing.id, form);
       } else {
-        await base44.entities.BudgetEntry.create(form);
+        await base44.entities.BudgetEntry.create({ ...form, ...champsConseiller });
       }
     }
     qc.invalidateQueries({ queryKey: ["budgetEntries"] });
@@ -61,7 +70,7 @@ export default function Budget() {
     setEditing(null);
     // Sync si c'est un revenu
     if (form.type === "revenu") {
-      const allEntries = await base44.entities.BudgetEntry.filter({ type: "revenu" });
+      const allEntries = filtreCible(await base44.entities.BudgetEntry.filter({ type: "revenu" }));
       await syncBudgetRevenuToABF(allEntries);
     }
   };
