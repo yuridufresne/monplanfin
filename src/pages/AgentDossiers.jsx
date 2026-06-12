@@ -85,8 +85,37 @@ export default function AgentDossiers() {
   }), [dossiers, filtreStatut, search]);
 
   const changerStatut = async (id, statut) => {
-    try { await base44.entities.LeadDossier.update(id, { statut }); await refresh(); }
-    catch (e) { console.error("Erreur statut:", e); }
+    try {
+      const d = dossiers.find(x => x.id === id) || {};
+      const maintenant = new Date().toISOString();
+      const patch = {
+        statut,
+        derniere_activite_agent: maintenant,
+        transfert_en_attente: false,
+        historique: [...(d.historique || []), { type: "statut", de: d.statut || "", a: statut, date: maintenant, par: (user && user.email) || "" }],
+      };
+      if (statut === "contacte" && !d.date_premier_contact) patch.date_premier_contact = maintenant;
+      await base44.entities.LeadDossier.update(id, patch);
+      await refresh();
+    } catch (e) { console.error("Erreur statut:", e); }
+  };
+  const ajouterNote = async (id, texte) => {
+    if (!texte || !texte.trim()) return;
+    try {
+      const d = dossiers.find(x => x.id === id) || {};
+      const maintenant = new Date().toISOString();
+      await base44.entities.LeadDossier.update(id, {
+        derniere_activite_agent: maintenant,
+        transfert_en_attente: false,
+        historique: [...(d.historique || []), { type: "note", note: texte.trim(), date: maintenant, par: (user && user.email) || "" }],
+      });
+      await refresh();
+    } catch (e) { console.error("Erreur note:", e); }
+  };
+  const estUrgent = (d) => {
+    if (!d.date_assignation || d.statut === "ferme_converti" || d.statut === "ferme_perdu") return false;
+    const ref = d.derniere_activite_agent && d.derniere_activite_agent > d.date_assignation ? d.derniere_activite_agent : d.date_assignation;
+    return (Date.now() - new Date(ref).getTime()) > 24 * 3600 * 1000;
   };
 
   if (isLoadingAuth) {
@@ -127,6 +156,20 @@ export default function AgentDossiers() {
           </select>
         </div>
 
+        {(() => { const urgents = filtered.filter(estUrgent); return urgents.length > 0 ? (
+          <div style={{ marginBottom: 18, padding: "14px 16px", borderRadius: 14, background: "rgba(220,80,80,0.08)", border: "1px solid rgba(220,80,80,0.35)" }}>
+            <p style={{ fontSize: 13, fontWeight: 700, color: "#f87171", marginBottom: 8 }}>⚠ Urgence — sans action depuis plus de 24 h ({urgents.length})</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {urgents.map(u => (
+                <div key={u.id} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "rgba(255,255,255,0.85)" }}>
+                  <span>{u.client_nom} · {(STATUTS[u.statut] || {}).label || u.statut}</span>
+                  <span style={{ color: "#f87171", fontWeight: 700 }}>{Math.floor((Date.now() - new Date(u.derniere_activite_agent && u.derniere_activite_agent > u.date_assignation ? u.derniere_activite_agent : u.date_assignation).getTime()) / 3600000)} h</span>
+                </div>
+              ))}
+            </div>
+            <p style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 8 }}>Un dossier sort de cette zone uniquement lorsqu’il est mis à jour (statut ou note).</p>
+          </div>
+        ) : null; })()}
         {loading ? (
           <div style={{ textAlign: "center", padding: 40 }}>
             <div className="w-6 h-6 border-2 border-white/10 border-t-[#C9A063] rounded-full animate-spin mx-auto"></div>
@@ -143,6 +186,7 @@ export default function AgentDossiers() {
                 expanded={expandedId === d.id}
                 onToggle={() => setExpandedId(expandedId === d.id ? null : d.id)}
                 onChangerStatut={(s) => changerStatut(d.id, s)}
+              onAjouterNote={(txt) => ajouterNote(d.id, txt)}
               />
             ))}
           </div>
@@ -164,8 +208,9 @@ function Stat({ label, value, color, icon }) {
   );
 }
 
-function DossierCard({ d, expanded, onToggle, onChangerStatut }) {
+function DossierCard({ d, expanded, onToggle, onChangerStatut, onAjouterNote }) {
   const navigate = useNavigate();
+  const [noteTexte, setNoteTexte] = useState("");
   const statut = STATUTS[d.statut] || STATUTS.nouveau;
   const urgence = URGENCES[d.priorite_urgence] || URGENCES.moyen;
   const snap = d.snapshot_profil || {};
@@ -230,6 +275,18 @@ function DossierCard({ d, expanded, onToggle, onChangerStatut }) {
               {[["ABF", "/analyse"], ["Feuille Résumé", "/resume"], ["Tableau de bord", "/dashboard"]].map(([lbl, path]) => (
                 <button key={path} onClick={(e) => { e.stopPropagation(); navigate(`${path}?client=${encodeURIComponent(d.client_courriel)}&nom=${encodeURIComponent(d.client_nom || "")}`); }} style={{ padding: "6px 12px", borderRadius: 8, cursor: "pointer", background: "rgba(201,160,99,0.12)", border: "1px solid rgba(201,160,99,0.4)", color: "#C9A063", fontSize: 11.5, fontWeight: 600 }}>{lbl}</button>
               ))}
+            </div>
+          </div>
+          <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+            <p style={{ fontSize: 12, fontWeight: 700, color: "#C9A063", marginBottom: 8 }}>Journal de suivi</p>
+            {(d.historique || []).filter(h => h.type === "note").slice().reverse().map((h, i) => (
+              <div key={i} style={{ fontSize: 12.5, color: "rgba(255,255,255,0.8)", marginBottom: 6, padding: "8px 10px", background: "rgba(255,255,255,0.04)", borderRadius: 8 }}>
+                <span style={{ color: "rgba(255,255,255,0.45)", fontSize: 11 }}>{new Date(h.date).toLocaleString("fr-CA")} — </span>{h.note}
+              </div>
+            ))}
+            <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+              <input value={noteTexte} onChange={e => setNoteTexte(e.target.value)} placeholder="Ajouter une note de suivi…" style={{ flex: 1, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "8px 10px", fontSize: 13, color: "#fff" }} />
+              <button onClick={() => { if (onAjouterNote && noteTexte.trim()) { onAjouterNote(noteTexte); setNoteTexte(""); } }} style={{ background: "rgba(201,160,99,0.15)", border: "1px solid rgba(201,160,99,0.4)", color: "#C9A063", padding: "8px 14px", borderRadius: 8, fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}>Ajouter</button>
             </div>
           </div>
         </div>
