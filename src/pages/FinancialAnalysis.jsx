@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight, ChevronLeft, Check, User, TrendingDown, Shield, GraduationCap, Target, AlertTriangle, DollarSign, BarChart3, Wallet, Baby, Home, Briefcase, FileSignature, Rocket, Sparkles, Plus, LifeBuoy, Armchair } from "lucide-react";
+import { ChevronRight, ChevronLeft, Check, User, TrendingDown, Shield, GraduationCap, Target, AlertTriangle, DollarSign, BarChart3, Wallet, Baby, Home, Briefcase, FileSignature, Rocket, Sparkles, Plus, LifeBuoy, Armchair, Heart, HeartHandshake, Handshake, UserMinus, Scale, Flower2 } from "lucide-react";
 import InfoTooltip from "@/components/ui/InfoTooltip";
 import StepBudget from "@/components/abf/StepBudget";
 import StepAllocations from "@/components/abf/StepAllocations";
@@ -59,6 +59,16 @@ function RadioGroup({ options, value, onChange }) {
   );
 }
 
+const STATUTS_MATRIMONIAUX = [
+  { value: "celibataire", label: "Célibataire", icon: User, desc: "Vous planifiez en solo" },
+  { value: "marie", label: "Marié(e)", icon: Heart, desc: "Couple marié légalement" },
+  { value: "conjoint", label: "Conjoint(e) de fait", icon: HeartHandshake, desc: "Vie commune sans mariage" },
+  { value: "union_civile", label: "Union civile", icon: Handshake, desc: "Union reconnue au Québec" },
+  { value: "separe", label: "Séparé(e)", icon: UserMinus, desc: "Séparation en cours ou récente" },
+  { value: "divorce", label: "Divorcé(e)", icon: Scale, desc: "Mariage dissous" },
+  { value: "veuf", label: "Veuf / Veuve", icon: Flower2, desc: "Conjoint(e) décédé(e)" },
+];
+
 function StepProfilPersonnel({ data, setData }) {
   const f = (k) => (v) => setData(p => ({ ...p, [k]: v }));
   const fc = (k) => (v) => setData(p => ({ ...p, conjoint: { ...(p.conjoint || {}), [k]: v } }));
@@ -75,15 +85,7 @@ function StepProfilPersonnel({ data, setData }) {
         <Field label="Téléphone cellulaire"><Input value={data.cell} onChange={f("cell")} placeholder="514-555-0000" /></Field>
         <div className="md:col-span-2">
           <Field label="Statut matrimonial">
-            <RadioGroup value={data.situation} onChange={f("situation")} options={[
-              { value: "celibataire", label: "Célibataire" },
-              { value: "marie", label: "Marié(e)" },
-              { value: "conjoint", label: "Conjoint(e) de fait" },
-              { value: "union_civile", label: "Union civile" },
-              { value: "separe", label: "Séparé(e)" },
-              { value: "divorce", label: "Divorcé(e)" },
-              { value: "veuf", label: "Veuf / Veuve" },
-            ]} />
+            <CarteSelecteur options={STATUTS_MATRIMONIAUX} value={data.situation} onChange={f("situation")} ariaLabel="Statut matrimonial" cols="grid-cols-2 md:grid-cols-4" />
           </Field>
         </div>
         <div className="md:col-span-2">
