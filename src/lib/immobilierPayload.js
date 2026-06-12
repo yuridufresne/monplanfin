@@ -70,7 +70,7 @@ export function payloadDepuisABF(bySection) {
   const retraite = bySection.retraite || {};
   const allocations = bySection.allocations || {};
   const immobilier = bySection.immobilier || {};
-  const enCouple = ["marie", "conjoint", "union_civile"].includes(profil.situation || "");
+  const enCouple = ["marie", "conjoint", "union_civile", "conjoint_de_fait"].includes(profil.situation || "");
 
   const ageDe = (dob) => dob ? Math.floor((Date.now() - new Date(dob)) / (365.25 * 24 * 3600 * 1000)) : 35;
   const sommeEmplois = (emplois) => (emplois || []).reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0), 0);
@@ -132,7 +132,7 @@ export function payloadDepuisABF(bySection) {
     // RAP/CELIAPP NON admissibles si déjà propriétaire dans les 4 dernières années
     reer_disponible_rap: dejaProprio ? 0 : rapDispo,
     celiapp_disponible: dejaProprio ? 0 : (celiappA + celiappB),
-    celi_disponible: dejaProprio ? 0 : celiTotal,
+    celi_disponible: celiTotal, // CELI ordinaire : retirable même si déjà propriétaire
 
     premier_acheteur: !dejaProprio,
     statut_propriete: dejaProprio ? "vendre" : "premier",
