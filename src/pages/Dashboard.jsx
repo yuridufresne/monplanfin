@@ -261,6 +261,7 @@ export default function Dashboard() {
   const dettesABF   = bySection.dettes || {};
   const allocABF    = bySection.allocations || {};
   const fondsABF    = bySection.fonds_urgence || {};
+  const immoABF    = bySection.immobilier || {};
 
   const enCouple = ["marie", "conjoint", "union_civile"].includes(profil.situation || "");
   const retraiteConj = enCouple ? (retraiteABF.conjoint || {}) : {};
@@ -287,9 +288,9 @@ export default function Dashboard() {
   // ── Actifs / Passifs ───────────────────────────────────────────────────────
   const investmentAssets = investments.reduce((s, i) => s + (i.current_value || 0), 0);
   const realEstateAssets = useMemo(() => {
-    const h = [...(dettesABF.hypotheques || []), ...(enCouple ? (dettesABF.conjoint?.hypotheques || []) : [])];
+    const h = [...(immoABF.hypotheques || []), ...(dettesABF.hypotheques || []), ...(enCouple ? [...(immoABF.conjoint?.hypotheques || []), ...(dettesABF.conjoint?.hypotheques || [])] : [])];
     return h.reduce((s, x) => s + (parseFloat(x.valeur_marchande || x.prix_achat) || 0), 0);
-  }, [dettesABF, enCouple]);
+  }, [immoABF, dettesABF, enCouple]);
   const comptes = retraiteABF.comptes || {};
   const comptesConj = retraiteConj.comptes || {};
   const reerSolde    = [...(comptes.reer    || []), ...(comptesConj.reer    || [])].reduce((s, c) => s + (parseFloat(c.solde) || 0), 0);
@@ -303,7 +304,7 @@ export default function Dashboard() {
   // Dettes depuis ABF (source principale) — fallback vers entité Debt
   const dettesABFConjoint = enCouple ? (dettesABF.conjoint || {}) : {};
   const autresDettes = [...(dettesABF.dettes || []), ...(dettesABFConjoint.dettes || [])];
-  const hypotheques  = [...(dettesABF.hypotheques || []), ...(dettesABFConjoint.hypotheques || [])];
+  const hypotheques  = [...(immoABF.hypotheques || []), ...(dettesABF.hypotheques || []), ...(immoABF.conjoint?.hypotheques || []), ...(dettesABFConjoint.hypotheques || [])];
   const abfHasDettes = autresDettes.length > 0 || hypotheques.length > 0;
 
   const toutesLesDettes = abfHasDettes ? [
