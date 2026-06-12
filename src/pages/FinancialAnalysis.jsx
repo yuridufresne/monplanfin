@@ -107,13 +107,27 @@ function StepProfilPersonnel({ data, setData }) {
   const f = (k) => (v) => setData(p => ({ ...p, [k]: v }));
   const fc = (k) => (v) => setData(p => ({ ...p, conjoint: { ...(p.conjoint || {}), [k]: v } }));
   const conjoint = data.conjoint || {};
+  const morceauxNom = (data.nom || "").trim().split(/\s+/).filter(Boolean);
+  const prenomAff = data.prenom !== undefined ? data.prenom : (morceauxNom[0] || "");
+  const secondAff = data.second_prenom !== undefined ? data.second_prenom : (morceauxNom.length > 2 ? morceauxNom.slice(1, -1).join(" ") : "");
+  const nomFamAff = data.nom_famille !== undefined ? data.nom_famille : (morceauxNom.length > 1 ? morceauxNom[morceauxNom.length - 1] : "");
+  const majNom = (k) => (v) => setData(p => { const np = { ...p, prenom: prenomAff, second_prenom: secondAff, nom_famille: nomFamAff, [k]: v }; np.nom = [np.prenom, np.second_prenom, np.nom_famille].filter(Boolean).join(" ").trim(); return np; });
+  const morceauxNomC = (conjoint.nom || "").trim().split(/\s+/).filter(Boolean);
+  const prenomAffC = conjoint.prenom !== undefined ? conjoint.prenom : (morceauxNomC[0] || "");
+  const secondAffC = conjoint.second_prenom !== undefined ? conjoint.second_prenom : (morceauxNomC.length > 2 ? morceauxNomC.slice(1, -1).join(" ") : "");
+  const nomFamAffC = conjoint.nom_famille !== undefined ? conjoint.nom_famille : (morceauxNomC.length > 1 ? morceauxNomC[morceauxNomC.length - 1] : "");
+  const majNomC = (k) => (v) => setData(p => { const pc = p.conjoint || {}; const nc = { ...pc, prenom: prenomAffC, second_prenom: secondAffC, nom_famille: nomFamAffC, [k]: v }; nc.nom = [nc.prenom, nc.second_prenom, nc.nom_famille].filter(Boolean).join(" ").trim(); return { ...p, conjoint: nc }; });
   const enCouple = ["marie", "conjoint", "union_civile"].includes(data.situation);
   const memeAdresse = conjoint.meme_adresse === true;
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <Field label="Prénom et nom"><Input value={data.nom} onChange={f("nom")} placeholder="Jean Tremblay" /></Field>
+        <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Field label="Prénom"><Input value={prenomAff} onChange={majNom("prenom")} placeholder="Jean" /></Field>
+          <Field label="Deuxième prénom (optionnel)"><Input value={secondAff} onChange={majNom("second_prenom")} placeholder="—" /></Field>
+          <Field label="Nom de famille"><Input value={nomFamAff} onChange={majNom("nom_famille")} placeholder="Tremblay" /></Field>
+        </div>
         <Field label="Date de naissance"><ChampDateNaissance value={data.dob} onChange={f("dob")} /></Field>
         <Field label="Courriel"><Input value={data.email} onChange={f("email")} placeholder="jean@exemple.com" /></Field>
         <Field label="Téléphone cellulaire"><Input value={data.cell} onChange={f("cell")} placeholder="514-555-0000" /></Field>
@@ -137,7 +151,11 @@ function StepProfilPersonnel({ data, setData }) {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Field label="Prénom et nom"><Input value={conjoint.nom} onChange={fc("nom")} placeholder="Marie Tremblay" /></Field>
+            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Field label="Prénom"><Input value={prenomAffC} onChange={majNomC("prenom")} placeholder="Marie" /></Field>
+              <Field label="Deuxième prénom (optionnel)"><Input value={secondAffC} onChange={majNomC("second_prenom")} placeholder="—" /></Field>
+              <Field label="Nom de famille"><Input value={nomFamAffC} onChange={majNomC("nom_famille")} placeholder="Tremblay" /></Field>
+            </div>
             <Field label="Date de naissance"><ChampDateNaissance value={conjoint.dob} onChange={fc("dob")} /></Field>
             <Field label="Courriel"><Input value={conjoint.email} onChange={fc("email")} placeholder="marie@exemple.com" /></Field>
             <Field label="Téléphone"><Input value={conjoint.cell} onChange={fc("cell")} placeholder="514-555-0001" /></Field>
