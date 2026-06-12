@@ -109,7 +109,7 @@ export function payloadDepuisABF(bySection) {
         ...(dettes.hypotheques || []),
         ...(enCouple ? (dettes.conjoint?.hypotheques || []) : []),
       ];
-  const hypoActuelle = hypothequesAll.find(h => h.usage === "principale") || null;
+  const hypoActuelle = hypothequesAll.find(h => (h.usage || "").includes("principale")) || hypothequesAll.find(h => !h.usage) || null;
   const dejaProprio = !!hypoActuelle;
 
   return {
