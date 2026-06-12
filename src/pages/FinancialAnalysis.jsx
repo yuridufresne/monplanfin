@@ -1765,7 +1765,7 @@ export default function FinancialAnalysis() {
           <p className="text-[14px] font-light mt-2" style={{ color: "#94A3B8" }}>Protection adéquate, libération des dettes, indépendance financière.</p>
         </div>
 
-        <div className="flex items-center gap-1 mb-10 overflow-x-auto pb-2">
+        <div className="flex items-center gap-1 mb-10 overflow-x-auto pb-2" style={{ position: "sticky", top: modeConseiller ? 46 : 0, zIndex: 40, background: "rgba(8,9,12,0.92)", backdropFilter: "blur(8px)", paddingTop: 10 }}>
           {STEPS.map((s, i) => {
             const Icon = s.icon;
             const isActive = i === currentStep;
@@ -1791,7 +1791,7 @@ export default function FinancialAnalysis() {
         <InsightCard insight={insight} />
         <AnimatePresence mode="wait">
           <motion.div key={step.key} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }}>
-            <div id="abf-carte" className="rounded-2xl overflow-hidden" style={{ scrollMarginTop: 90, background: "linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012))", border: "1px solid rgba(201,160,99,0.18)", boxShadow: "0 24px 60px rgba(0,0,0,0.45)" }}>
+            <div id="abf-carte" className="rounded-2xl overflow-hidden" style={{ scrollMarginTop: 140, background: "linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012))", border: "1px solid rgba(201,160,99,0.18)", boxShadow: "0 24px 60px rgba(0,0,0,0.45)" }}>
               <div className="px-8 py-5 flex items-center gap-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)", background: "rgba(201,160,99,0.04)" }}>
                 <step.icon className="w-5 h-5 text-[#C9A063]" />
                 <h2 className="font-urbanist text-[18px] font-semibold text-white">{step.title}</h2>
