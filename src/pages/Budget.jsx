@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
@@ -49,8 +49,8 @@ export default function Budget() {
 
   const { data: entriesBrutes = [] } = useQuery({ queryKey: ["budgetEntries"], queryFn: () => base44.entities.BudgetEntry.list() });
   const { data: profilesBruts = [] } = useQuery({ queryKey: ["financialProfiles"], queryFn: () => base44.entities.FinancialProfile.list() });
-  const entries = filtreCible(entriesBrutes);
-  const profiles = filtreCible(profilesBruts);
+  const entries = useMemo(() => filtreCible(entriesBrutes), [entriesBrutes, cible]);
+  const profiles = useMemo(() => filtreCible(profilesBruts), [profilesBruts, cible]);
   const deleteMutation = useMutation({ mutationFn: (id) => base44.entities.BudgetEntry.delete(id), onSuccess: () => qc.invalidateQueries({ queryKey: ["budgetEntries"] }) });
 
   const handleSaveEntry = async (form) => {
