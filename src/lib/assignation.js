@@ -33,16 +33,31 @@ export async function stamperAccesAgent(clientCourriel, agentCourriel) {
 
 // Assigne un dossier à un agent (et ouvre l’accès RLS aux données du client)
 export async function assignerDossier(dossierId, agent, assigneParCourriel) {
+  let existant = null;
+  try {
+    const lus = await base44.entities.LeadDossier.filter({ id: dossierId });
+    existant = lus && lus[0] ? lus[0] : null;
+  } catch (e) { console.error("assignerDossier/lecture", e); }
+  const ancienAgent = (existant && existant.agent_assigne_courriel) || "";
+  const estTransfert = !!ancienAgent && ancienAgent !== agent.courriel;
+  const evenement = {
+    type: estTransfert ? "transfert" : "assignation",
+    de: ancienAgent,
+    a: agent.courriel,
+    date: new Date().toISOString(),
+    par: assigneParCourriel,
+  };
   const res = await base44.entities.LeadDossier.update(dossierId, {
     agent_assigne_courriel: agent.courriel,
     agent_assigne_nom: agent.nom,
     assigne_par_courriel: assigneParCourriel,
     date_assignation: new Date().toISOString(),
-    statut: "vu", // un dossier assigné passe au moins à "vu"
+    statut: estTransfert ? ((existant && existant.statut) || "vu") : "vu",
+    transfert_en_attente: estTransfert,
+    historique: [...((existant && existant.historique) || []), evenement],
   });
   try {
-    const dossiers = await base44.entities.LeadDossier.filter({ id: dossierId });
-    const client = dossiers && dossiers[0] && dossiers[0].client_courriel;
+    const client = existant && existant.client_courriel;
     if (client) await stamperAccesAgent(client, agent.courriel);
   } catch (e) {
     console.error("assignerDossier/stamping", e);
