@@ -132,7 +132,7 @@ export function calcSRG({ revenuAnnuelHorsPSV = 0, revenuSansPSV = 0, enCouple =
  * et PSV (−0,6%/mois avant 65, +0,6%/mois après 65, max 70 ans)
  * selon les âges de début saisis dans l'ABF.
  */
-export function getRevenusGarantisABF(retraite = {}, retraiteConj = {}, inclureConj = true) {
+export function getRevenusGarantisABF(retraite = {}, retraiteConj = {}, inclureConj = true, ageActuel1 = null, ageActuel2 = null) {
   const PSV_STD = PRESTATIONS_2026.psv.mensuel65;
   const R = PRESTATIONS_2026.rrq;
   const P = PRESTATIONS_2026.psv;
@@ -146,12 +146,12 @@ export function getRevenusGarantisABF(retraite = {}, retraiteConj = {}, inclureC
     return Math.round(baseMensuel * f);
   }
 
-  function adjPSV(baseMensuel, ageDebut) {
+function adjPSV(baseMensuel, ageDebut, ageActuel) {
     const age = ageDebut || 65;
     let f = 1;
     if (age < 65) f = Math.max(1 - P.bonifMax, 1 - Math.min((65 - age) * 12, 60) * P.bonifParMois);
     else if (age > 65) f = 1 + Math.min((age - 65) * 12, 60) * P.bonifParMois;
-    return Math.round(baseMensuel * f);
+  return Math.round(baseMensuel * f * (ageActuel != null && ageActuel >= 75 ? 1.10 : 1)); // +10 % federal a 75 ans
   }
 
   // Personne 1 — base brute
@@ -164,7 +164,7 @@ export function getRevenusGarantisABF(retraite = {}, retraiteConj = {}, inclureC
 
   // Personne 1 — ajustés
   const rrq1 = adjRRQ(rrq1Base, ageRRQ1);
-  const sv1  = adjPSV(sv1Base,  agePSV1);
+  const sv1  = adjPSV(sv1Base,  agePSV1, (parseFloat(retraite.sv) || 0) > 0 ? null : ageActuel1);
 
   // Conjoint — base brute
   const rrq2Base = inclureConj ? (parseFloat(retraiteConj.rrq) || 0) : 0;
@@ -178,7 +178,7 @@ export function getRevenusGarantisABF(retraite = {}, retraiteConj = {}, inclureC
 
   // Conjoint — ajustés
   const rrq2 = inclureConj ? adjRRQ(rrq2Base, ageRRQ2) : 0;
-  const sv2  = inclureConj ? adjPSV(sv2Base,  agePSV2) : 0;
+  const sv2  = inclureConj ? adjPSV(sv2Base,  agePSV2, (parseFloat(retraiteConj.sv) || 0) > 0 ? null : ageActuel2) : 0;
 
   const totalMensuel = rrq1 + sv1 + fp1 + rrq2 + sv2 + fp2;
 
