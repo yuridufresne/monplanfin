@@ -130,7 +130,7 @@ export function calculerQualification(p) {
                          + equiteNette;
   const miseDeFondsBrute = miseDeFondsDispo;
 
-  // Stratégie : "auto" = mise légale minimale (capacité max). Sinon = % EXACT du prix.
+  // Stratégie : "auto" = toute la mise disponible (jamais sous le minimum légal). Sinon = % EXACT demandé.
   const stratPct = p.mise_de_fonds_pct && p.mise_de_fonds_pct !== "auto"
                  ? parseFloat(p.mise_de_fonds_pct) / 100
                  : null;
