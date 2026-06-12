@@ -257,8 +257,8 @@ export default function StepBudget() {
         </div>
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
-        <button onClick={() => setActiveTab("revenus")} disabled={activeTab === "revenus"} style={{ background: "none", border: "none", color: activeTab === "revenus" ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.6)", fontSize: 13, cursor: activeTab === "revenus" ? "default" : "pointer" }}>← Question précédente</button>
-        {activeTab === "revenus" && <button onClick={() => setActiveTab("depenses")} style={{ background: "rgba(201,160,99,0.15)", border: "1px solid rgba(201,160,99,0.4)", color: "#C9A063", padding: "8px 18px", borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Continuer →</button>}
+        <button onClick={() => { setActiveTab("revenus"); try { document.getElementById("abf-carte")?.scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) {} }} disabled={activeTab === "revenus"} style={{ background: "none", border: "none", color: activeTab === "revenus" ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.6)", fontSize: 13, cursor: activeTab === "revenus" ? "default" : "pointer" }}>← Question précédente</button>
+        {activeTab === "revenus" && <button onClick={() => { setActiveTab("depenses"); try { document.getElementById("abf-carte")?.scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) {} }} style={{ background: "rgba(201,160,99,0.15)", border: "1px solid rgba(201,160,99,0.4)", color: "#C9A063", padding: "8px 18px", borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Continuer →</button>}
       </div>
 
       <AnimatePresence>
