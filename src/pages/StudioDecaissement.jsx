@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import InfoTooltip from "@/components/ui/InfoTooltip";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -32,7 +32,13 @@ export default function StudioDecaissement({ embedded = false, profiles: profile
     queryFn: () => base44.entities.FinancialProfile.list(),
     enabled: !embedded,
   });
-  const profiles = embedded ? (profilesProp || []) : profilesQuery;
+  const clientCible = new URLSearchParams(window.location.search).get("client");
+  const [moi, setMoi] = useState(null);
+  useEffect(() => { base44.auth.me().then(setMoi).catch(() => {}); }, []);
+  const modeConseiller = !!clientCible && !!moi && (moi.type_compte === "agent" || moi.role === "admin" || moi.type_compte === "directeur");
+  const cible = modeConseiller ? clientCible : moi?.email;
+  const filtreCible = (rows) => (rows || []).filter(r => r.created_by === cible || r.client_courriel === cible);
+  const profiles = embedded ? (profilesProp || []) : filtreCible(profilesQuery);
 
   // ── Source unique : buildPayload (même que Dashboard / ModelisationRetraite) ──
   const payload  = useMemo(() => buildPayload(profiles), [profiles]);
