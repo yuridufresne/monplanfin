@@ -37,13 +37,13 @@ export const PRESTATIONS_2026 = {
 // ─────────────────────────────────────────────────────────────────────────────
 // PSV — Sécurité de la vieillesse
 // ─────────────────────────────────────────────────────────────────────────────
-export function calcPSV({ ageDebutPSV = 65, anneesResidence = 40, revenuNetAnnuel = 0 }) {
+export function calcPSV({ ageDebutPSV = 65, anneesResidence = 40, revenuNetAnnuel = 0, ageActuel = null }) {
   const P = PRESTATIONS_2026.psv;
   const tauxRes = Math.min(anneesResidence, 40) / 40;
   const base = P.mensuel65 * tauxRes;
   const moisReport = Math.max(0, Math.min(ageDebutPSV - 65, 5) * 12);
   const facteur = 1 + moisReport * P.bonifParMois;
-  const mensuelBrut = base * facteur;
+  const mensuelBrut = base * facteur * (ageActuel != null && ageActuel >= 75 ? 1.10 : 1); // +10 % federal a 75 ans
   const annuelBrut = mensuelBrut * 12;
   const clawback = revenuNetAnnuel > P.clawbackSeuil
     ? Math.min((revenuNetAnnuel - P.clawbackSeuil) * P.clawbackTaux, annuelBrut)
