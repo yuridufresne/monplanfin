@@ -281,8 +281,9 @@ export default function Dashboard() {
   const totalExpenses = budgetEntries
     .filter(e => e.type === "depense" && e.label !== "Impôts (retenues à la source)")
     .reduce((s, e) => s + toMonthly(parseFloat(e.amount) || 0, e.frequency), 0);
-  const aucunRevenu = totalRevenue <= 0 && (revGarantiAnnuel || 0) <= 0;
-  const revenuMensuelAffiche = totalRevenue > 0 ? totalRevenue : (revGarantiAnnuel || 0) / 12;
+  const dejaRetraite = (ageActuel || 0) >= (ageRetraite || 65);
+  const aucunRevenu = totalRevenue <= 0 && !dejaRetraite;
+  const revenuMensuelAffiche = totalRevenue > 0 ? totalRevenue : dejaRetraite ? (revGarantiAnnuel || 0) / 12 : 0;
   const flux = revenuMensuelAffiche - totalExpenses;
   const savingsRate = revenuMensuelAffiche > 0 ? (flux / revenuMensuelAffiche) * 100 : 0;
   const budgetIncomplet = totalExpenses <= 0;
@@ -515,7 +516,7 @@ export default function Dashboard() {
                 {
                   label: "Revenu net mensuel",
                   value: aucunRevenu ? "—" : fmt(revenuMensuelAffiche),
-                  sub: totalRevenue <= 0 && (revGarantiAnnuel || 0) > 0 ? "Revenus garantis (retraite)" : allocMensuel > 0 ? `dont ${fmt(allocMensuel)} alloc.` : "Après impôts & cotisations",
+                  sub: totalRevenue <= 0 && dejaRetraite && (revGarantiAnnuel || 0) > 0 ? "Revenus garantis (retraite)" : allocMensuel > 0 ? `dont ${fmt(allocMensuel)} alloc.` : "Après impôts & cotisations",
                   color: "#C9A063",
                   info: "Revenu net calculé après impôts fédéral+provincial et cotisations sociales (RRQ, RQAP, AE). Inclut les allocations familiales non-imposables.",
                 },
