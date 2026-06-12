@@ -455,21 +455,6 @@ export default function Dashboard() {
           </div>
         </motion.div>
 
-        {/* ——— Cap NIF (hero) ——— */}
-        {!isEmpty && (
-          <motion.div {...fadeUp(0.02)} style={{ marginBottom: 20, padding: "22px 24px", borderRadius: 16, background: "linear-gradient(135deg, rgba(201,160,99,0.10), rgba(201,160,99,0.03))", border: "1px solid rgba(201,160,99,0.25)" }}>
-            <p style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: ".14em", textTransform: "uppercase", color: "rgba(201,160,99,0.85)", marginBottom: 6 }}>Votre effort mensuel — indépendance financière</p>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 14, flexWrap: "wrap" }}>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: "clamp(2rem,4vw,2.6rem)", fontWeight: 800, color: "#fff", lineHeight: 1.1 }}>{aucunRevenu ? "—" : fmt(Math.max(cotSuppHero, 0))}<span style={{ fontSize: "1.1rem", fontWeight: 600, color: "rgba(255,255,255,0.55)" }}>/mois</span></span>
-              {!aucunRevenu && (
-              <span style={{ padding: "3px 10px", borderRadius: 8, fontSize: 11, fontWeight: 700, background: `${nifColorHero}20`, color: nifColorHero, border: `1px solid ${nifColorHero}40` }}>{statutLabels[statutHero] || statut}</span>
-              )}
-            </div>
-            <p style={{ fontSize: 13.5, color: "rgba(255,255,255,0.65)", marginTop: 8, lineHeight: 1.5 }}>
-              {aucunRevenu ? "Complétez la section Revenu de votre ABF pour voir votre effort." : dejaRetraite ? (cotSuppHero <= 0 ? "Vous êtes à la retraite et votre plan tient la route." : `Vous êtes à la retraite — un effort de ${fmt(cotSuppHero)}/mois aiderait à préserver votre niveau de vie.`) : cotSuppHero <= 0 ? "Vous êtes en avance sur votre objectif — continuez ainsi." : `Il vous manque environ ${fmt(cotSuppHero)}/mois d’épargne pour atteindre votre indépendance à ${ageRetraite} ans.`}
-            </p>
-          </motion.div>
-        )}
 
         {/* ─── CTA Soumettre dossier ─── */}
         {!isEmpty && !modeConseiller && (
