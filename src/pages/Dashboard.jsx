@@ -458,7 +458,7 @@ export default function Dashboard() {
               )}
             </div>
             <p style={{ fontSize: 13.5, color: "rgba(255,255,255,0.65)", marginTop: 8, lineHeight: 1.5 }}>
-              {aucunRevenu ? "Complétez la section Revenu de votre ABF pour voir votre effort." : cotSupp <= 0 ? "Vous êtes en avance sur votre objectif — continuez ainsi." : `Il vous manque environ ${fmt(cotSupp)}/mois d’épargne pour atteindre votre indépendance à ${ageRetraite} ans.`}
+              {aucunRevenu ? "Complétez la section Revenu de votre ABF pour voir votre effort." : dejaRetraite ? (cotSupp <= 0 ? "Vous êtes à la retraite et votre plan tient la route." : `Vous êtes à la retraite — un effort de ${fmt(cotSupp)}/mois aiderait à préserver votre niveau de vie.`) : cotSupp <= 0 ? "Vous êtes en avance sur votre objectif — continuez ainsi." : `Il vous manque environ ${fmt(cotSupp)}/mois d’épargne pour atteindre votre indépendance à ${ageRetraite} ans.`}
             </p>
           </motion.div>
         )}
