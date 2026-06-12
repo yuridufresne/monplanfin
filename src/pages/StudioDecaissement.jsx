@@ -38,7 +38,7 @@ export default function StudioDecaissement({ embedded = false, profiles: profile
   const modeConseiller = !!clientCible && !!moi && (moi.type_compte === "agent" || moi.role === "admin" || moi.type_compte === "directeur");
   const courrielCible = modeConseiller ? clientCible : moi?.email;
   const filtreCible = (rows) => (rows || []).filter(r => r.created_by === courrielCible || r.client_courriel === courrielCible);
-  const profiles = embedded ? (profilesProp || []) : filtreCible(profilesQuery);
+  const profiles = useMemo(() => (embedded ? (profilesProp || []) : filtreCible(profilesQuery)), [embedded, profilesProp, profilesQuery, courrielCible]);
 
   // ── Source unique : buildPayload (même que Dashboard / ModelisationRetraite) ──
   const payload  = useMemo(() => buildPayload(profiles), [profiles]);
