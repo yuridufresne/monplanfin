@@ -26,10 +26,17 @@ const fmtk = n => {
 };
 
 export default function ProtectionAssurance() {
-  const { data: profiles = [] } = useQuery({
+  const clientCible = new URLSearchParams(window.location.search).get("client");
+  const [moi, setMoi] = useState(null);
+  useEffect(() => { base44.auth.me().then(setMoi).catch(() => {}); }, []);
+  const modeConseiller = !!clientCible && !!moi && (moi.type_compte === "agent" || moi.role === "admin" || moi.type_compte === "directeur");
+  const cible = modeConseiller ? clientCible : moi?.email;
+  const filtreCible = (rows) => (rows || []).filter(r => r.created_by === cible || r.client_courriel === cible);
+  const { data: profilsBruts = [] } = useQuery({
     queryKey: ["financialProfiles"],
     queryFn: () => base44.entities.FinancialProfile.list(),
   });
+  const profiles = filtreCible(profilsBruts);
 
   // ── Extraction des 2 conjoints depuis l'ABF ──
   const { initA, initB, nomA, nomB, enCouple } = useMemo(() => {
