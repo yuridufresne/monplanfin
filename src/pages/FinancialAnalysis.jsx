@@ -103,7 +103,7 @@ function ChampDateNaissance({ value, onChange }) {
   );
 }
 
-const defilerVersCarte = () => { try { const el = document.getElementById("abf-stepper") || document.getElementById("abf-carte"); if (!el) return; const y = el.getBoundingClientRect().top + window.scrollY - 120; window.scrollTo({ top: Math.max(0, y), behavior: "smooth" }); } catch (e) {} };
+const defilerVersCarte = () => { try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch (e) {} };
 
 function StepProfilPersonnel({ data, setData }) {
   const f = (k) => (v) => setData(p => ({ ...p, [k]: v }));
