@@ -69,6 +69,40 @@ const STATUTS_MATRIMONIAUX = [
   { value: "veuf", label: "Veuf / Veuve", icon: Flower2, desc: "Conjoint(e) décédé(e)" },
 ];
 
+const MOIS_FR = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
+function ChampDateNaissance({ value, onChange }) {
+  const [an, setAn] = useState("");
+  const [mois, setMois] = useState("");
+  const [jour, setJour] = useState("");
+  useEffect(() => { const p = (value || "").split("-"); setAn(p[0] || ""); setMois(p[1] ? String(Number(p[1])) : ""); setJour(p[2] ? String(Number(p[2])) : ""); }, [value]);
+  const pousser = (a, mo2, j) => {
+    if (a && mo2 && j) {
+      const max = new Date(Number(a), Number(mo2), 0).getDate();
+      const jj = Math.min(Number(j), max);
+      onChange(`${a}-${String(mo2).padStart(2, "0")}-${String(jj).padStart(2, "0")}`);
+    }
+  };
+  const styleSel = { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff", borderRadius: 12, padding: "10px 12px", fontSize: 13, outline: "none", cursor: "pointer", transition: "all .2s ease" };
+  const anneeMax = new Date().getFullYear();
+  const annees = []; for (let a2 = anneeMax; a2 >= anneeMax - 100; a2--) annees.push(a2);
+  return (
+    <div style={{ display: "flex", gap: 8 }}>
+      <select value={mois} onChange={(e) => { setMois(e.target.value); pousser(an, e.target.value, jour); }} style={{ ...styleSel, flex: 1.4 }}>
+        <option value="" disabled style={{ background: "#0a0f1e" }}>Mois</option>
+        {MOIS_FR.map((n, i) => <option key={n} value={String(i + 1)} style={{ background: "#0a0f1e" }}>{n}</option>)}
+      </select>
+      <select value={jour} onChange={(e) => { setJour(e.target.value); pousser(an, mois, e.target.value); }} style={{ ...styleSel, flex: 1 }}>
+        <option value="" disabled style={{ background: "#0a0f1e" }}>Jour</option>
+        {Array.from({ length: 31 }, (_, i2) => i2 + 1).map(j2 => <option key={j2} value={String(j2)} style={{ background: "#0a0f1e" }}>{j2}</option>)}
+      </select>
+      <select value={an} onChange={(e) => { setAn(e.target.value); pousser(e.target.value, mois, jour); }} style={{ ...styleSel, flex: 1.1 }}>
+        <option value="" disabled style={{ background: "#0a0f1e" }}>Année</option>
+        {annees.map(a3 => <option key={a3} value={String(a3)} style={{ background: "#0a0f1e" }}>{a3}</option>)}
+      </select>
+    </div>
+  );
+}
+
 function StepProfilPersonnel({ data, setData }) {
   const f = (k) => (v) => setData(p => ({ ...p, [k]: v }));
   const fc = (k) => (v) => setData(p => ({ ...p, conjoint: { ...(p.conjoint || {}), [k]: v } }));
@@ -80,7 +114,7 @@ function StepProfilPersonnel({ data, setData }) {
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <Field label="Prénom et nom"><Input value={data.nom} onChange={f("nom")} placeholder="Jean Tremblay" /></Field>
-        <Field label="Date de naissance"><Input value={data.dob} onChange={f("dob")} type="date" /></Field>
+        <Field label="Date de naissance"><ChampDateNaissance value={data.dob} onChange={f("dob")} /></Field>
         <Field label="Courriel"><Input value={data.email} onChange={f("email")} placeholder="jean@exemple.com" /></Field>
         <Field label="Téléphone cellulaire"><Input value={data.cell} onChange={f("cell")} placeholder="514-555-0000" /></Field>
         <div className="md:col-span-2">
@@ -104,7 +138,7 @@ function StepProfilPersonnel({ data, setData }) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Field label="Prénom et nom"><Input value={conjoint.nom} onChange={fc("nom")} placeholder="Marie Tremblay" /></Field>
-            <Field label="Date de naissance"><Input value={conjoint.dob} onChange={fc("dob")} type="date" /></Field>
+            <Field label="Date de naissance"><ChampDateNaissance value={conjoint.dob} onChange={fc("dob")} /></Field>
             <Field label="Courriel"><Input value={conjoint.email} onChange={fc("email")} placeholder="marie@exemple.com" /></Field>
             <Field label="Téléphone"><Input value={conjoint.cell} onChange={fc("cell")} placeholder="514-555-0001" /></Field>
           </div>
