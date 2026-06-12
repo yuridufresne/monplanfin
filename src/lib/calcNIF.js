@@ -228,7 +228,7 @@ export function calcNIFFromProfiles(profiles) {
   const rrqB  = inclureConj ? (parseFloat(retCj.rrq) || 0)           * 12 : 0;
 
   // ── Revenus garantis — source unique : getRevenusGarantisABF ─────────────────
-  const revenusGarantis = getRevenusGarantisABF(retraite, retraiteC, inclureConj);
+  const revenusGarantis = getRevenusGarantisABF(retraite, retraiteC, inclureConj, ageActuel, ageConjoint);
 
   const rrqMensuelTotal  = revenusGarantis.p1.rrq + revenusGarantis.p2.rrq;
   const psvMensuelTotal  = revenusGarantis.p1.psv + revenusGarantis.p2.psv;
