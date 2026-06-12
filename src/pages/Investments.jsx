@@ -31,7 +31,7 @@ export default function Investments() {
   const filtreCible = (rows) => (rows || []).filter(r => r.created_by === cible || r.client_courriel === cible);
 
   const { data: investmentsBruts = [] } = useQuery({ queryKey: ["investments"], queryFn: () => base44.entities.Investment.list() });
-  const investments = filtreCible(investmentsBruts);
+  const investments = useMemo(() => filtreCible(investmentsBruts), [investmentsBruts, cible]);
   const deleteMutation = useMutation({ mutationFn: (id) => base44.entities.Investment.delete(id), onSuccess: () => qc.invalidateQueries({ queryKey: ["investments"] }) });
 
   const handleRefresh = async () => {
