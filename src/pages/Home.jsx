@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Sparkles, Shield, Lock, Clock3, CheckCircle2 } from "lucide-react";
 import SoftWall from "@/components/SoftWall";
 import FeatureScroll from "@/components/home/FeatureScroll";
 import { routeAccueil } from "@/lib/roles";
@@ -59,418 +59,106 @@ export default function Home() {
   }, [navigate]);
 
   return (
-    <div style={{ background: "#050810" }}>
-      <SoftWall isOpen={softWallOpen} onClose={() => setSoftWallOpen(false)} />
+    <div style={{ background: "#050810", minHeight: "100vh", position: "relative", overflow: "hidden" }}>
+      <div style={{ position: "absolute", inset: 0, backgroundImage: "linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px)", backgroundSize: "56px 56px", maskImage: "radial-gradient(ellipse 90% 55% at 50% 0%, black 25%, transparent 75%)", WebkitMaskImage: "radial-gradient(ellipse 90% 55% at 50% 0%, black 25%, transparent 75%)", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", top: "-18%", right: "-8%", width: 720, height: 720, borderRadius: "50%", background: "radial-gradient(circle, rgba(201,160,99,0.16), transparent 62%)", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", top: "30%", left: "-12%", width: 640, height: 640, borderRadius: "50%", background: "radial-gradient(circle, rgba(91,196,160,0.08), transparent 62%)", pointerEvents: "none" }} />
 
-      {/* ── HERO ──────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden" style={{ minHeight: "auto", background: "linear-gradient(160deg, #0c1220 0%, #080d18 40%, #050810 100%)" }}>
-
-        {/* Atmospheric background */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse 80% 60% at 50% 20%, rgba(107,142,214,0.12) 0%, transparent 60%)" }} />
-          <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse 50% 40% at 75% 60%, rgba(201,160,99,0.08) 0%, transparent 60%)" }} />
-          <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse 40% 30% at 20% 70%, rgba(91,196,160,0.06) 0%, transparent 60%)" }} />
-        </div>
-
-        {/* Hero — centered with screenshot below */}
-        <div className="relative" style={{ paddingTop: 90, paddingBottom: 60, paddingLeft: 24, paddingRight: 24 }}>
-          <div className="max-w-6xl mx-auto flex flex-col items-center text-center">
-
-            {/* ─ Badge différenciateur ─ */}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-              style={{ marginBottom: 24 }}
-            >
-              <span style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 8,
-                padding: "7px 16px",
-                borderRadius: 50,
-                background: "rgba(201,160,99,0.08)",
-                border: "1px solid rgba(201,160,99,0.25)",
-                fontSize: 11.5,
-                fontWeight: 700,
-                color: "#C9A063",
-                letterSpacing: ".06em",
-                textTransform: "uppercase",
-                backdropFilter: "blur(8px)",
-              }}>
-                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#5BC4A0", boxShadow: "0 0 8px #5BC4A0" }} />
-                Made-in-Québec · Conforme AMF · Règles 2026
-              </span>
-            </motion.div>
-
-            {/* ─ Titre principal ─ */}
-            <motion.h1
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-              className="font-urbanist font-black text-white"
-              style={{ fontSize: "clamp(2.5rem, 6.5vw, 5rem)", lineHeight: 1.04, letterSpacing: "-0.045em", maxWidth: 820, marginBottom: 26 }}
-            >
-              Votre plan financier complet, <br />
-              en <span style={{ background: "linear-gradient(135deg, #C9A063, #e6c07a)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>10 minutes</span>.
-            </motion.h1>
-
-            {/* ─ Sous-titre ─ */}
-            <motion.p
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
-              style={{ fontSize: 17.5, fontWeight: 300, color: "rgba(148,163,184,0.88)", maxWidth: 580, lineHeight: 1.65, marginBottom: 38 }}
-            >
-              Votre <strong style={{ color: "#fff", fontWeight: 500 }}>NIF</strong>, votre prix max immobilier, votre vrai besoin d'assurance, un plan de <strong style={{ color: "#fff", fontWeight: 500 }}>désendettement</strong>, de <strong style={{ color: "#fff", fontWeight: 500 }}>réduction d'impôt</strong> et de <strong style={{ color: "#fff", fontWeight: 500 }}>création de richesse</strong> — le tout analysé par des conseillers en sécurité financière, selon les règles du Québec 2026.
-            </motion.p>
-
-            {/* ─ CTAs ─ */}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.48, ease: [0.22, 1, 0.36, 1] }}
-              style={{ display: "flex", gap: 14, flexWrap: "wrap", justifyContent: "center", alignItems: "center" }}
-            >
-              <button
-                onClick={() => setSoftWallOpen(true)}
-                style={{
-                  padding: "15px 34px", borderRadius: 50, fontSize: 14.5, fontWeight: 700, cursor: "pointer",
-                  background: "linear-gradient(135deg, #C9A063, #e6c07a)",
-                  color: "#050810", border: "none",
-                  boxShadow: "0 4px 24px rgba(201,160,99,0.4)",
-                  transition: "transform 0.2s, box-shadow 0.2s",
-                }}
-                onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.03)"; e.currentTarget.style.boxShadow = "0 8px 32px rgba(201,160,99,0.5)"; }}
-                onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 4px 24px rgba(201,160,99,0.4)"; }}
-              >
-                Commencer gratuitement →
-              </button>
-
-              <a href="#demo" style={{
-                padding: "15px 22px", borderRadius: 50, fontSize: 14, fontWeight: 600, cursor: "pointer",
-                color: "rgba(255,255,255,0.7)", textDecoration: "none",
-                border: "1px solid rgba(255,255,255,0.15)",
-                background: "rgba(255,255,255,0.03)",
-                transition: "all 0.2s",
-                display: "inline-flex", alignItems: "center", gap: 6,
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "#fff"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.03)"; e.currentTarget.style.color = "rgba(255,255,255,0.7)"; }}
-              >
-                Voir comment ça marche ↓
-              </a>
-            </motion.div>
-
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.65 }}
-              style={{ marginTop: 20, fontSize: 12, color: "rgba(148,163,184,0.45)", fontWeight: 300 }}
-            >
-              ✓ 100% gratuit · ✓ Aucune carte requise · ✓ Conforme Loi 25
-            </motion.p>
-
-            {/* ─ Capture d'écran du dashboard ─ */}
-            <motion.div
-              initial={{ opacity: 0, y: 40, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.9, delay: 0.7, ease: [0.22, 1, 0.36, 1] }}
-              style={{ marginTop: 60, width: "100%", maxWidth: 1100, position: "relative" }}
-            >
-              {/* Glow behind screenshot */}
-              <div style={{
-                position: "absolute",
-                inset: "-40px -20px 20px",
-                background: "radial-gradient(ellipse 60% 80% at 50% 30%, rgba(201,160,99,0.15) 0%, transparent 60%)",
-                pointerEvents: "none",
-                zIndex: 0,
-              }} />
-
-              {/* Screenshot container */}
-              <div style={{
-                position: "relative",
-                borderRadius: 16,
-                overflow: "hidden",
-                border: "1px solid rgba(255,255,255,0.1)",
-                boxShadow: "0 30px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(201,160,99,0.05)",
-                background: "#0B1428",
-                zIndex: 1,
-              }}>
-                <img
-                  src="https://media.base44.com/images/public/6a0796d6e5414141c147f69c/9764affa8_Capturedecranle2026-05-30a224955.png"
-                  alt="Tableau de bord MonPlanFin"
-                  style={{ width: "100%", height: "auto", display: "block" }}
-                />
-              </div>
-            </motion.div>
-
+      {/* ——— HERO ——— */}
+      <section style={{ position: "relative", maxWidth: 1180, margin: "0 auto", padding: "84px 24px 80px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(330px, 1fr))", gap: 56, alignItems: "center" }}>
+        <motion.div initial={{ opacity: 0, y: 26 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 14px", borderRadius: 99, background: "rgba(201,160,99,0.1)", border: "1px solid rgba(201,160,99,0.3)", marginBottom: 26 }}>
+            <Sparkles size={13} color="#C9A063" />
+            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".14em", textTransform: "uppercase", color: "#C9A063" }}>Planification financière · Québec</span>
           </div>
-        </div>
-      </section>
-
-      {/* ── ÉTAPE 2 — VOTRE VRAI PLAN, EN UN COUP D'ŒIL ────── */}
-      <section id="demo" style={{ background: "linear-gradient(180deg, #050810 0%, #080d18 60%, #050810 100%)", paddingTop: 80, paddingBottom: 80 }}>
-        <div className="max-w-6xl mx-auto px-6 lg:px-10">
-
-          {/* Header */}
-          <motion.div {...fadeUp(0)} className="text-center" style={{ marginBottom: 56 }}>
-            <span style={{
-              display: "inline-block",
-              padding: "5px 14px",
-              borderRadius: 50,
-              background: "rgba(91,196,160,0.08)",
-              border: "1px solid rgba(91,196,160,0.25)",
-              fontSize: 11,
-              fontWeight: 700,
-              color: "#5BC4A0",
-              letterSpacing: ".1em",
-              textTransform: "uppercase",
-              marginBottom: 20,
-            }}>
-              ✓ Tableau de bord complet
-            </span>
-            <h2 className="font-urbanist font-black text-white" style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)", letterSpacing: "-0.04em", lineHeight: 1.1, marginBottom: 20 }}>
-              Votre vrai plan financier,<br />
-              en un <span style={{ background: "linear-gradient(135deg, #C9A063, #e6c07a)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>coup d'œil</span>.
-            </h2>
-            <p style={{ fontSize: 16, fontWeight: 300, color: "rgba(148,163,184,0.85)", maxWidth: 660, margin: "0 auto", lineHeight: 1.7 }}>
-              Calculez votre <strong style={{ color: "#fff", fontWeight: 500 }}>Numéro d'Indépendance Financière</strong>, vos revenus de retraite (RRQ, SV, PSV, Pension PD) et vos besoins en protection — selon les règles fiscales et bancaires du Québec 2026.
-            </p>
-          </motion.div>
-
-          {/* Split : capture + bullets */}
-          <div className="grid lg:grid-cols-2 gap-10 lg:gap-14 items-start">
-
-           {/* Capture d'écran — revenus garantis en haut */}
-           <motion.div {...fadeUp(0.1)} style={{ position: "relative", display: "flex", flexDirection: "column", gap: 16 }}>
-             {/* Revenus garantis Dashboard */}
-             <div style={{
-               position: "relative",
-               borderRadius: 16,
-               overflow: "hidden",
-               border: "1px solid rgba(255,255,255,0.1)",
-               boxShadow: "0 30px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(201,160,99,0.05)",
-               background: "#0B1428",
-               zIndex: 1,
-             }}>
-               <img
-                src="https://media.base44.com/images/public/6a0796d6e5414141c147f69c/372cdf98e_Capturedecranle2026-05-30a234313.png"
-                alt="Revenus garantis retraite"
-                style={{ width: "100%", height: "auto", display: "block" }}
-              />
-             </div>
-
-             {/* Revenus garantis */}
-             <div style={{
-               position: "relative",
-               borderRadius: 16,
-               overflow: "hidden",
-               border: "1px solid rgba(255,255,255,0.1)",
-               boxShadow: "0 30px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(201,160,99,0.05)",
-               background: "#0B1428",
-               zIndex: 1,
-             }}>
-               <img
-                src="https://media.base44.com/images/public/6a0796d6e5414141c147f69c/518d05dcb_Capturedecranle2026-05-30a230644.png"
-                alt="Revenus garantis à la retraite sur MonPlanFin"
-                style={{ width: "100%", height: "auto", display: "block" }}
-              />
-             </div>
-
-             {/* Glow */}
-             <div style={{
-               position: "absolute",
-               inset: "-30px -10px 10px",
-               background: "radial-gradient(ellipse 60% 80% at 50% 50%, rgba(201,160,99,0.12) 0%, transparent 60%)",
-               pointerEvents: "none",
-               zIndex: 0,
-             }} />
-
-             {/* NIF */}
-             <div style={{
-               position: "relative",
-               borderRadius: 16,
-               overflow: "hidden",
-               border: "1px solid rgba(255,255,255,0.1)",
-               boxShadow: "0 30px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(201,160,99,0.05)",
-               background: "#0B1428",
-               zIndex: 1,
-             }}>
-               <img
-                src="https://media.base44.com/images/public/6a0796d6e5414141c147f69c/3b3c2a3a0_Capturedecranle2026-05-30a224907.png"
-                alt="Numéro d'Indépendance Financière sur MonPlanFin"
-                style={{ width: "100%", height: "auto", display: "block" }}
-              />
-             </div>
-           </motion.div>
-
-            {/* Bullets */}
-            <motion.div {...fadeUp(0.2)} style={{ display: "flex", flexDirection: "column", gap: 22 }}>
-              {[
-                {
-                  icon: "🎯",
-                  title: "Votre NIF personnalisé",
-                  desc: "La somme exacte à accumuler pour votre retraite, calculée selon votre âge, vos revenus et votre style de vie souhaité.",
-                  color: "#C9A063",
-                },
-                {
-                  icon: "📊",
-                  title: "Projections actuelles vs futures",
-                  desc: "Voyez où vous en êtes aujourd'hui et où vous serez à la retraite — en dollars d'aujourd'hui ET en dollars futurs (inflation incluse).",
-                  color: "#6B8ED6",
-                },
-                {
-                  icon: "🏛",
-                  title: "Revenus gouvernementaux inclus",
-                  desc: "RRQ, SV, SRG, Pension PD — tout est déjà calculé et indexé selon les règles 2026 du Québec et du Canada.",
-                  color: "#5BC4A0",
-                },
-                {
-                  icon: "🛡",
-                  title: "Diagnostic complet de protection",
-                  desc: "Assurance vie, testament, fonds d'urgence, besoin estimé en couverture — tout au même endroit, sans surprise.",
-                  color: "#A87DD3",
-                },
-              ].map((f, i) => (
-                <motion.div key={f.title} {...fadeUp(0.3 + i * 0.08)} style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
-                  <div style={{
-                    width: 44, height: 44, borderRadius: 12, flexShrink: 0,
-                    background: `${f.color}15`,
-                    border: `1px solid ${f.color}30`,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 20,
-                  }}>
-                    {f.icon}
-                  </div>
-                  <div>
-                    <h3 className="font-urbanist font-bold text-white" style={{ fontSize: 16.5, marginBottom: 6, letterSpacing: "-0.01em" }}>
-                      {f.title}
-                    </h3>
-                    <p style={{ fontSize: 13.5, fontWeight: 300, color: "rgba(148,163,184,0.75)", lineHeight: 1.7 }}>
-                      {f.desc}
-                    </p>
-                  </div>
-                </motion.div>
-              ))}
-            </motion.div>
-
-          </div>
-
-          {/* Chiffre wow — Exemple concret */}
-          <motion.div {...fadeUp(0.6)} style={{
-            marginTop: 60,
-            padding: "26px 32px",
-            borderRadius: 20,
-            background: "linear-gradient(135deg, rgba(201,160,99,0.07), rgba(91,196,160,0.04))",
-            border: "1px solid rgba(201,160,99,0.2)",
-            textAlign: "center",
-          }}>
-            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".15em", textTransform: "uppercase", color: "rgba(201,160,99,0.65)", marginBottom: 12 }}>
-              ✦ Exemple concret
-            </p>
-            <p style={{ fontSize: 17, fontWeight: 400, color: "rgba(255,255,255,0.88)", lineHeight: 1.65, maxWidth: 760, margin: "0 auto" }}>
-              Pour <strong style={{ color: "#fff" }}>Pierre, 30 ans</strong> : son NIF est de <strong style={{ color: "#C9A063", fontWeight: 700, fontFamily: "var(--font-mono)" }}>1 424 032 $</strong> à atteindre d'ici 2061. Et seulement <strong style={{ color: "#5BC4A0", fontWeight: 700, fontFamily: "var(--font-mono)" }}>67 $/mois</strong> supplémentaires pour y arriver.
-            </p>
-          </motion.div>
-
-        </div>
-      </section>
-
-      {/* ── PLAN POUR... ─────────────────────────────────────── */}
-      <section id="plan" className="pt-0 pb-12 md:pt-0 md:pb-16" style={{ background: "linear-gradient(180deg, #080d18 0%, #050810 100%)" }}>
-        <div className="max-w-6xl mx-auto px-6 lg:px-10">
-
-          <motion.div {...fadeUp(0)} className="text-center mb-8">
-            <h2
-              className="font-urbanist font-black text-white"
-              style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)", letterSpacing: "-0.04em", lineHeight: 1.1, marginBottom: 8 }}
-            >
-              MonPlanFin
-            </h2>
-            <h3
-              className="font-urbanist font-black"
-              style={{ fontSize: "clamp(1.2rem, 3vw, 2rem)", letterSpacing: "-0.03em", lineHeight: 1.2, color: "#C9A063", marginBottom: 16 }}
-            >
-              Pour ...
-            </h3>
-            <p style={{ fontSize: 16, fontWeight: 300, color: "rgba(148,163,184,0.75)", maxWidth: 440, margin: "0 auto", lineHeight: 1.7 }}>
-              Six domaines d'intervention pour bâtir votre liberté financière.
-            </p>
-          </motion.div>
-
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            borderRadius: 24,
-            overflow: "hidden",
-          }}>
-            {pillars.map((p, i) => {
-              const col = i % 3;
-              const row = Math.floor(i / 3);
-              return (
-                <motion.div key={p.label} {...fadeUp(i * 0.07)}
-                  onClick={() => setSoftWallOpen(true)}
-                  className="cursor-pointer group"
-                  style={{
-                    padding: "2rem 1.75rem",
-                    borderRight: col < 2 ? "1px solid rgba(255,255,255,0.1)" : "none",
-                    borderBottom: row < 1 ? "1px solid rgba(255,255,255,0.1)" : "none",
-                    background: "transparent",
-                    transition: "background 0.2s",
-                  }}
-                  whileHover={{ background: "rgba(255,255,255,0.04)" }}
-                >
-                  <div style={{ width: 52, height: 52, borderRadius: 14, overflow: "hidden", marginBottom: 18, flexShrink: 0, background: "#0D1628" }}>
-                    <img src={p.img} alt={p.label} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  </div>
-                  <h3 className="font-urbanist font-bold text-white tracking-tight" style={{ fontSize: 17, marginBottom: 10 }}>
-                    {p.label}
-                  </h3>
-                  <p style={{ fontSize: 13, fontWeight: 300, color: "rgba(148,163,184,0.65)", lineHeight: 1.7 }}>
-                    {p.desc}
-                  </p>
-                </motion.div>
-              );
-            })}
-          </div>
-
-          <motion.div {...fadeUp(0.42)} className="text-center mt-16">
-            <button
-              onClick={() => setSoftWallOpen(true)}
-              className="inline-flex items-center gap-3 font-semibold text-[14px] transition-all duration-200 hover:scale-105"
-              style={{ padding: "14px 36px", borderRadius: 50, background: "linear-gradient(135deg, #C9A063, #e6c07a)", color: "#050810", border: "none", boxShadow: "0 4px 20px rgba(201,160,99,0.35)" }}
-            >
-              Créer mon plan gratuitement
-              <ArrowRight className="w-4 h-4" />
+          <h1 className="font-urbanist" style={{ fontSize: "clamp(2.5rem, 5.6vw, 4.1rem)", fontWeight: 900, lineHeight: 1.06, color: "#fff", letterSpacing: "-0.03em", marginBottom: 22 }}>
+            Vos finances,<br />enfin <span style={{ backgroundImage: "linear-gradient(95deg, #C9A063, #e8c896)", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent" }}>claires.</span>
+          </h1>
+          <p style={{ fontSize: 17, color: "rgba(255,255,255,0.65)", lineHeight: 1.65, maxWidth: 480, marginBottom: 34 }}>
+            Répondez à quelques questions simples. Obtenez votre portrait financier complet, votre chiffre d’indépendance, et un plan concret — sans jargon, sans pression.
+          </p>
+          <div style={{ display: "flex", gap: 14, flexWrap: "wrap", alignItems: "center", marginBottom: 34 }}>
+            <button onClick={() => setSoftWallOpen(true)} style={{ display: "inline-flex", alignItems: "center", gap: 10, padding: "16px 30px", borderRadius: 14, border: "none", cursor: "pointer", background: "linear-gradient(135deg, #C9A063, #b88a4a)", color: "#050810", fontSize: 15.5, fontWeight: 800, boxShadow: "0 12px 36px rgba(201,160,99,0.35)", transition: "transform .15s ease" }} onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; }} onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; }}>
+              Commencer mon analyse gratuite <ArrowRight size={18} />
             </button>
-            <p style={{ marginTop: 16, fontSize: 12, fontWeight: 300, color: "rgba(148,163,184,0.4)" }}>
-              Gratuit · Aucune carte requise · Données privées
-            </p>
+            <button onClick={() => navigate("/calculatrices")} style={{ padding: "15px 24px", borderRadius: 14, cursor: "pointer", background: "transparent", border: "1px solid rgba(255,255,255,0.18)", color: "rgba(255,255,255,0.8)", fontSize: 14.5, fontWeight: 600 }}>
+              Essayer les calculatrices
+            </button>
+          </div>
+          <div style={{ display: "flex", gap: 18, flexWrap: "wrap" }}>
+            {[["10 minutes", Clock3], ["100 % gratuit", CheckCircle2], ["Conforme Loi 25", Lock], ["Conseillers accrédités AMF", Shield]].map(([txt, Ic]) => (
+              <span key={txt} style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 12.5, color: "rgba(255,255,255,0.55)" }}><Ic size={14} color="#5BC4A0" /> {txt}</span>
+            ))}
+          </div>
+        </motion.div>
+
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8, delay: 0.15 }} style={{ position: "relative", minHeight: 420 }}>
+          <motion.div animate={{ y: [0, -12, 0] }} transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut" }} style={{ position: "relative", zIndex: 2, borderRadius: 20, padding: "26px 26px 22px", background: "linear-gradient(170deg, rgba(20,27,45,0.92), rgba(10,15,30,0.96))", border: "1px solid rgba(201,160,99,0.3)", boxShadow: "0 30px 80px rgba(0,0,0,0.55), 0 0 60px rgba(201,160,99,0.08)", transform: "rotate(-1.2deg)", maxWidth: 430, margin: "0 auto" }}>
+            <p style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: ".16em", textTransform: "uppercase", color: "rgba(201,160,99,0.85)", marginBottom: 16 }}>✨ Votre portrait financier</p>
+            <p style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginBottom: 4 }}>Valeur nette estimée</p>
+            <p style={{ fontFamily: "var(--font-mono)", fontSize: 38, fontWeight: 800, color: "#5BC4A0", marginBottom: 18, lineHeight: 1 }}>184 230 $</p>
+            <div style={{ height: 6, borderRadius: 99, background: "rgba(255,255,255,0.08)", marginBottom: 8 }}>
+              <motion.div initial={{ width: 0 }} animate={{ width: "64%" }} transition={{ duration: 1.4, delay: 0.7, ease: "easeOut" }} style={{ height: 6, borderRadius: 99, background: "linear-gradient(90deg, #C9A063, #5BC4A0)" }} />
+            </div>
+            <p style={{ fontSize: 11.5, color: "rgba(255,255,255,0.5)", marginBottom: 20 }}>Objectif d’indépendance : <span style={{ color: "#C9A063", fontWeight: 700 }}>64 %</span></p>
+            {[["Revenu net mensuel", "5 240 $"], ["Taux d’épargne", "12,5 %"], ["Protection famille", "✓ En place"]].map(([k2, v2]) => (
+              <div key={k2} style={{ display: "flex", justifyContent: "space-between", padding: "9px 0", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                <span style={{ fontSize: 12.5, color: "rgba(255,255,255,0.55)" }}>{k2}</span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: 12.5, fontWeight: 700, color: "#fff" }}>{v2}</span>
+              </div>
+            ))}
           </motion.div>
+          <motion.div animate={{ y: [0, 10, 0] }} transition={{ duration: 6.5, repeat: Infinity, ease: "easeInOut", delay: 0.8 }} style={{ position: "absolute", right: 0, bottom: -18, zIndex: 3, borderRadius: 16, padding: "16px 20px", background: "rgba(10,15,30,0.95)", border: "1px solid rgba(91,196,160,0.4)", boxShadow: "0 18px 50px rgba(0,0,0,0.5)", transform: "rotate(1.6deg)" }}>
+            <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".14em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 6 }}>Effort mensuel requis</p>
+            <p style={{ fontFamily: "var(--font-mono)", fontSize: 24, fontWeight: 800, color: "#5BC4A0", lineHeight: 1 }}>0 $<span style={{ fontSize: 13, color: "rgba(255,255,255,0.45)" }}>/mois</span></p>
+            <p style={{ fontSize: 11, color: "#5BC4A0", marginTop: 6 }}>Vous êtes en avance ✓</p>
+          </motion.div>
+        </motion.div>
+      </section>
+
+      {/* ——— 3 ÉTAPES ——— */}
+      <section style={{ position: "relative", maxWidth: 1180, margin: "0 auto", padding: "30px 24px 80px" }}>
+        <p style={{ textAlign: "center", fontSize: 11, fontWeight: 700, letterSpacing: ".16em", textTransform: "uppercase", color: "rgba(201,160,99,0.85)", marginBottom: 10 }}>Comment ça marche</p>
+        <h2 className="font-urbanist" style={{ textAlign: "center", fontSize: "clamp(1.7rem, 3.4vw, 2.4rem)", fontWeight: 800, color: "#fff", marginBottom: 46, letterSpacing: "-0.02em" }}>Trois étapes vers la clarté</h2>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(270px, 1fr))", gap: 22 }}>
+          {[["01", "Répondez simplement", "Une conversation guidée de 10 minutes — vos revenus, vos rêves, vos inquiétudes. Sauvegarde automatique, reprenez quand vous voulez."], ["02", "Voyez votre portrait", "Valeur nette, indépendance financière, protections : tout se calcule en direct, en langage humain. Aucun jargon."], ["03", "Passez à l’action", "Recevez un plan concret. Et si vous le souhaitez, un conseiller accrédité AMF prend le relais — gratuitement."]].map(([n2, titre, texte]) => (
+            <motion.div key={n2} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.55 }} style={{ position: "relative", borderRadius: 18, padding: "30px 26px", background: "linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012))", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 700, color: "#C9A063", letterSpacing: ".1em" }}>{n2}</span>
+              <h3 className="font-urbanist" style={{ fontSize: 19.5, fontWeight: 800, color: "#fff", margin: "10px 0 10px" }}>{titre}</h3>
+              <p style={{ fontSize: 13.5, color: "rgba(255,255,255,0.55)", lineHeight: 1.65 }}>{texte}</p>
+            </motion.div>
+          ))}
         </div>
       </section>
 
-      {/* ── FEATURE SCROLL ───────────────────────────────────── */}
+      {/* ——— FONCTIONNALITÉS (scroll existant) ——— */}
       <FeatureScroll onCTA={() => setSoftWallOpen(true)} />
 
-      {/* ── CTA after feature scroll ─────────────────────────── */}
-      <section style={{ background: "#050810", paddingBottom: 80 }}>
-        <div className="text-center">
-          <button
-            onClick={() => setSoftWallOpen(true)}
-            className="inline-flex items-center gap-3 font-semibold text-[14px] transition-all duration-200 hover:scale-105"
-            style={{ padding: "14px 36px", borderRadius: 50, background: "linear-gradient(135deg, #C9A063, #e6c07a)", color: "#050810", border: "none", boxShadow: "0 4px 20px rgba(201,160,99,0.35)" }}
-          >
-            Créer mon plan gratuitement
-            <ArrowRight className="w-4 h-4" />
-          </button>
-          <p style={{ marginTop: 16, fontSize: 12, fontWeight: 300, color: "rgba(148,163,184,0.4)" }}>
-            Gratuit · Aucune carte requise · Données privées
-          </p>
+      {/* ——— BANDE NIF ——— */}
+      <section style={{ position: "relative", maxWidth: 1180, margin: "0 auto", padding: "70px 24px" }}>
+        <div style={{ borderRadius: 24, padding: "clamp(36px, 6vw, 64px)", background: "linear-gradient(135deg, rgba(201,160,99,0.13), rgba(201,160,99,0.04) 55%, rgba(91,196,160,0.06))", border: "1px solid rgba(201,160,99,0.3)", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 36, alignItems: "center", overflow: "hidden", position: "relative" }}>
+          <div>
+            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".16em", textTransform: "uppercase", color: "#C9A063", marginBottom: 12 }}>Le NIF — Numéro d’indépendance financière</p>
+            <h2 className="font-urbanist" style={{ fontSize: "clamp(1.6rem, 3.2vw, 2.3rem)", fontWeight: 800, color: "#fff", lineHeight: 1.2, marginBottom: 14, letterSpacing: "-0.02em" }}>Un seul chiffre qui change tout.</h2>
+            <p style={{ fontSize: 14.5, color: "rgba(255,255,255,0.6)", lineHeight: 1.7, maxWidth: 460 }}>C’est le montant exact à accumuler pour que votre argent travaille à votre place. MonPlanFin le calcule pour vous — et vous montre, mois après mois, comment vous en rapprocher.</p>
+          </div>
+          <div style={{ textAlign: "center" }}>
+            <motion.p initial={{ opacity: 0, scale: 0.9 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 0.7 }} style={{ fontFamily: "var(--font-mono)", fontSize: "clamp(2.6rem, 6vw, 4rem)", fontWeight: 800, backgroundImage: "linear-gradient(95deg, #C9A063, #5BC4A0)", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", lineHeight: 1 }}>872 400 $</motion.p>
+            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", marginTop: 10 }}>Exemple : couple de 35 ans, retraite visée à 60 ans</p>
+          </div>
         </div>
       </section>
+
+      {/* ——— CTA FINAL ——— */}
+      <section style={{ position: "relative", maxWidth: 760, margin: "0 auto", padding: "40px 24px 110px", textAlign: "center" }}>
+        <h2 className="font-urbanist" style={{ fontSize: "clamp(1.9rem, 4vw, 2.8rem)", fontWeight: 900, color: "#fff", letterSpacing: "-0.02em", marginBottom: 16 }}>Et si vous saviez, <span style={{ backgroundImage: "linear-gradient(95deg, #C9A063, #e8c896)", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent" }}>une fois pour toutes ?</span></h2>
+        <p style={{ fontSize: 15.5, color: "rgba(255,255,255,0.6)", lineHeight: 1.65, marginBottom: 30 }}>10 minutes. Aucune carte de crédit. Vos données restent les vôtres.</p>
+        <button onClick={() => setSoftWallOpen(true)} style={{ display: "inline-flex", alignItems: "center", gap: 10, padding: "18px 38px", borderRadius: 16, border: "none", cursor: "pointer", background: "linear-gradient(135deg, #C9A063, #b88a4a)", color: "#050810", fontSize: 16.5, fontWeight: 800, boxShadow: "0 16px 48px rgba(201,160,99,0.4)" }}>
+          Je commence mon analyse <ArrowRight size={19} />
+        </button>
+      </section>
+
+      <SoftWall isOpen={softWallOpen} onClose={() => setSoftWallOpen(false)} />
     </div>
   );
 }
