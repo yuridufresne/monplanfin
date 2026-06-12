@@ -38,7 +38,7 @@ function Input({ value, onChange, type = "text", placeholder }) {
   return (
     <input type={type} value={value || ""} onChange={e => onChange(e.target.value)} placeholder={placeholder}
       className="w-full px-4 py-2.5 rounded-xl text-[13px] outline-none transition-all"
-      style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff" }} />
+      style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff", transition: "all .2s ease" }} onFocus={(e) => { e.target.style.border = "1px solid rgba(201,160,99,0.7)"; e.target.style.boxShadow = "0 0 0 3px rgba(201,160,99,0.15)"; e.target.style.background = "rgba(201,160,99,0.05)"; }} onBlur={(e) => { e.target.style.border = "1px solid rgba(255,255,255,0.1)"; e.target.style.boxShadow = "none"; e.target.style.background = "rgba(255,255,255,0.05)"; }} />
   );
 }
 
@@ -1641,7 +1641,9 @@ export default function FinancialAnalysis() {
   }
 
   return (
-    <div style={{ background: "#050810", minHeight: "100vh" }}>
+    <div style={{ background: "#050810", minHeight: "100vh", position: "relative", overflow: "hidden" }}>
+      <div style={{ position: "absolute", top: "-15%", right: "-10%", width: 600, height: 600, borderRadius: "50%", background: "radial-gradient(circle, rgba(201,160,99,0.13), transparent 65%)", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", bottom: "-20%", left: "-10%", width: 700, height: 700, borderRadius: "50%", background: "radial-gradient(circle, rgba(91,196,160,0.07), transparent 65%)", pointerEvents: "none" }} />
       {modeConseiller && <BarreDossierClient />}
       <div className="max-w-7xl mx-auto px-6 lg:px-10 py-14 md:py-20">
         <div className="mb-10">
@@ -1658,14 +1660,14 @@ export default function FinancialAnalysis() {
             return (
               <React.Fragment key={s.key}>
                 <button onClick={() => setCurrentStep(i)} className="flex flex-col items-center gap-1.5 px-3 py-2 rounded-xl transition-all shrink-0"
-                  style={isActive ? { background: "rgba(201,160,99,0.12)", border: "1px solid rgba(201,160,99,0.3)" } : { background: "transparent" }}>
+                  style={isActive ? { background: "rgba(201,160,99,0.14)", border: "1px solid rgba(201,160,99,0.45)", boxShadow: "0 0 20px rgba(201,160,99,0.28)" } : { background: "transparent" }}>
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center"
                     style={{ background: isDone ? "rgba(91,196,160,0.15)" : isActive ? "rgba(201,160,99,0.2)" : "rgba(255,255,255,0.05)" }}>
                     {isDone ? <Check className="w-4 h-4" style={{ color: "#5BC4A0" }} /> : <Icon className="w-4 h-4" style={{ color: isActive ? "#C9A063" : "#94A3B8" }} />}
                   </div>
                   <span className="text-[10px] font-semibold" style={{ color: isActive ? "#C9A063" : isDone ? "#5BC4A0" : "#94A3B8" }}>{s.label}</span>
                 </button>
-                {i < STEPS.length - 1 && <div className="w-4 h-[1px] shrink-0" style={{ background: isDone ? "rgba(91,196,160,0.4)" : "rgba(255,255,255,0.1)" }} />}
+                {i < STEPS.length - 1 && <div className="w-4 h-[1px] shrink-0" style={{ background: isDone ? "linear-gradient(90deg, #C9A063, #5BC4A0)" : "rgba(255,255,255,0.1)" }} />}
               </React.Fragment>
             );
           })}
@@ -1676,7 +1678,7 @@ export default function FinancialAnalysis() {
         <InsightCard insight={insight} />
         <AnimatePresence mode="wait">
           <motion.div key={step.key} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }}>
-            <div className="rounded-2xl overflow-hidden" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)" }}>
+            <div className="rounded-2xl overflow-hidden" style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012))", border: "1px solid rgba(201,160,99,0.18)", boxShadow: "0 24px 60px rgba(0,0,0,0.45)" }}>
               <div className="px-8 py-5 flex items-center gap-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)", background: "rgba(201,160,99,0.04)" }}>
                 <step.icon className="w-5 h-5 text-[#C9A063]" />
                 <h2 className="font-urbanist text-[18px] font-semibold text-white">{step.title}</h2>
@@ -1699,7 +1701,7 @@ export default function FinancialAnalysis() {
               <div className="p-8">
               {INTROS[step.key] && (
                 <div style={{ marginBottom: 22 }}>
-                  <p style={{ fontSize: 17.5, fontWeight: 700, color: "#fff", marginBottom: 4 }}>{INTROS[step.key].titre}</p>
+                  <p style={{ fontSize: 23, fontWeight: 800, marginBottom: 5, lineHeight: 1.25, backgroundImage: "linear-gradient(95deg, #ffffff 30%, #C9A063)", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent" }}>{INTROS[step.key].titre}</p>
                   <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", lineHeight: 1.55 }}>{INTROS[step.key].sous}</p>
                 </div>
               )}
