@@ -17,6 +17,7 @@
  */
 
 import { getRevenusGarantisABF, indexerRevenusGarantis, PRESTATIONS_2026 } from '@/lib/prestationsGouvernementales';
+import { buildPayload } from '@/lib/clientPayload';
 
 const RENDEMENT_ACCUM   = 0.07;
 const RENDEMENT_DECAISS = 0.05;
@@ -304,7 +305,7 @@ export function calcNIFFromProfiles(profiles) {
   const revGarantiC = revenusGarantis.p2.totalMensuel * 12;
   const ratioConjGaranti = revGarantiAnnuelAuj > 0 ? revGarantiC / revGarantiAnnuelAuj : 0;
 
-  return {
+  const resultatNIF = {
     // ── NIF (fixe) — en dollars futurs nominaux ──
     capitalNIF:        nifResult.nif,          // dollars futurs nominaux
     capitalNIFNominal: nifResult.nif,           // alias identique (même valeur désormais)
@@ -347,4 +348,17 @@ export function calcNIFFromProfiles(profiles) {
     soldeTotal:    Math.round(soldeTotal),
     cotMensuelle:  Math.round(cotMensuelle),
   };
+  // ── SOURCE UNIQUE DE VÉRITÉ : les chiffres NIF proviennent du moteur IQPF (clientPayload) ──
+  try {
+    const pIQPF = buildPayload(profiles);
+    const k = pIQPF && pIQPF.kpis;
+    if (k) {
+      if (typeof k.score_nif === "number") resultatNIF.scoreNIF = k.score_nif;
+      if (typeof k.cot_supp_mens === "number") resultatNIF.cotSupp = k.cot_supp_mens;
+      if (typeof k.nif === "number") { resultatNIF.capitalNIF = k.nif; resultatNIF.capitalNIFNominal = k.nif_nominal != null ? k.nif_nominal : k.nif; }
+      if (typeof k.capital_projete === "number") { resultatNIF.capitalProjete = k.capital_projete; resultatNIF.capitalProjeteNominal = k.capital_projete; }
+      resultatNIF.statut = resultatNIF.scoreNIF >= 110 ? "depasse" : resultatNIF.scoreNIF >= 100 ? "atteint" : resultatNIF.scoreNIF >= 75 ? "en_voie" : resultatNIF.scoreNIF >= 50 ? "insuffisant" : "critique";
+    }
+  } catch (e) { console.error("calcNIF/delegation IQPF", e); }
+  return resultatNIF;
 }
