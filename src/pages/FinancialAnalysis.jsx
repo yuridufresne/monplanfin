@@ -117,12 +117,22 @@ function StepProfilPersonnel({ data, setData }) {
   const secondAffC = conjoint.second_prenom !== undefined ? conjoint.second_prenom : (morceauxNomC.length > 2 ? morceauxNomC.slice(1, -1).join(" ") : "");
   const nomFamAffC = conjoint.nom_famille !== undefined ? conjoint.nom_famille : (morceauxNomC.length > 1 ? morceauxNomC[morceauxNomC.length - 1] : "");
   const majNomC = (k) => (v) => setData(p => { const pc = p.conjoint || {}; const nc = { ...pc, prenom: prenomAffC, second_prenom: secondAffC, nom_famille: nomFamAffC, [k]: v }; nc.nom = [nc.prenom, nc.second_prenom, nc.nom_famille].filter(Boolean).join(" ").trim(); return { ...p, conjoint: nc }; });
-  const enCouple = ["marie", "conjoint", "union_civile"].includes(data.situation);
+  const enCouple = ["marie", "conjoint", "union_civile", "conjoint_de_fait"].includes(data.situation);
+  const [ecranP, setEcranP] = useState(0);
+  const ecransP = [0, 1, ...(enCouple ? [2] : [])];
+  const posP = Math.max(ecransP.indexOf(ecranP), 0);
+  const visP = (n) => ecranP === n;
+  const suivP = () => { const i = ecransP.indexOf(ecranP); if (i < ecransP.length - 1) setEcranP(ecransP[i + 1]); };
+  const retP = () => { const i = ecransP.indexOf(ecranP); if (i > 0) setEcranP(ecransP[i - 1]); };
   const memeAdresse = conjoint.meme_adresse === true;
 
   return (
     <div className="space-y-6">
+      <div style={{ display: "flex", gap: 6 }}>
+        {ecransP.map((e2, i) => <span key={e2} style={{ width: i === posP ? 22 : 8, height: 8, borderRadius: 99, background: i <= posP ? "#C9A063" : "rgba(255,255,255,0.12)", transition: "all .25s" }} />)}
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        {visP(0) && (<>
         <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
           <Field label="Prénom"><Input value={prenomAff} onChange={majNom("prenom")} placeholder="Jean" /></Field>
           <Field label="Deuxième prénom (optionnel)"><Input value={secondAff} onChange={majNom("second_prenom")} placeholder="—" /></Field>
@@ -131,6 +141,8 @@ function StepProfilPersonnel({ data, setData }) {
         <Field label="Date de naissance"><ChampDateNaissance value={data.dob} onChange={f("dob")} /></Field>
         <Field label="Courriel"><Input value={data.email} onChange={f("email")} placeholder="jean@exemple.com" /></Field>
         <Field label="Téléphone cellulaire"><Input value={data.cell} onChange={f("cell")} placeholder="514-555-0000" /></Field>
+        </>)}
+        {visP(1) && (<>
         <div className="md:col-span-2">
           <Field label="Statut matrimonial">
             <CarteSelecteur options={STATUTS_MATRIMONIAUX} value={data.situation} onChange={f("situation")} ariaLabel="Statut matrimonial" cols="grid-cols-2 md:grid-cols-4" />
@@ -141,9 +153,10 @@ function StepProfilPersonnel({ data, setData }) {
             <AddressAutocomplete value={data.adresse} onChange={f("adresse")} />
           </Field>
         </div>
+        </>)}
       </div>
 
-      {enCouple && (
+      {visP(2) && enCouple && (
         <div className="rounded-2xl p-5 space-y-4" style={{ background: "rgba(107,140,214,0.05)", border: "1px solid rgba(107,140,214,0.18)" }}>
           <div>
             <p className="text-[13px] font-bold text-white mb-0.5">Conjoint(e)</p>
@@ -208,6 +221,10 @@ function StepProfilPersonnel({ data, setData }) {
           )}
         </div>
       )}
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 10 }}>
+        <button onClick={retP} disabled={posP === 0} style={{ background: "none", border: "none", color: posP === 0 ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.6)", fontSize: 13, cursor: posP === 0 ? "default" : "pointer" }}>← Question précédente</button>
+        {posP < ecransP.length - 1 && <button onClick={suivP} style={{ background: "rgba(201,160,99,0.15)", border: "1px solid rgba(201,160,99,0.4)", color: "#C9A063", padding: "8px 18px", borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Continuer →</button>}
+      </div>
     </div>
   );
 }
