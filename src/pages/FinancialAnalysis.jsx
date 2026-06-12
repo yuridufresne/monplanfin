@@ -103,7 +103,7 @@ function ChampDateNaissance({ value, onChange }) {
   );
 }
 
-const defilerVersCarte = () => { try { const el = document.getElementById("abf-carte"); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) {} };
+const defilerVersCarte = () => { try { const el = document.getElementById("abf-stepper") || document.getElementById("abf-carte"); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) {} };
 
 function StepProfilPersonnel({ data, setData }) {
   const f = (k) => (v) => setData(p => ({ ...p, [k]: v }));
@@ -1765,7 +1765,7 @@ export default function FinancialAnalysis() {
           <p className="text-[14px] font-light mt-2" style={{ color: "#94A3B8" }}>Protection adéquate, libération des dettes, indépendance financière.</p>
         </div>
 
-        <div className="flex items-center gap-1 mb-10 overflow-x-auto pb-2" style={{ position: "sticky", top: modeConseiller ? 46 : 0, zIndex: 40, background: "rgba(8,9,12,0.92)", backdropFilter: "blur(8px)", paddingTop: 10 }}>
+        <div className="flex items-center gap-1 mb-10 overflow-x-auto pb-2" id="abf-stepper" style={{ scrollMarginTop: modeConseiller ? 54 : 10 }}>
           {STEPS.map((s, i) => {
             const Icon = s.icon;
             const isActive = i === currentStep;
