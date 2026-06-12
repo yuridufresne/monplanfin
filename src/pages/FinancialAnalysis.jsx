@@ -103,6 +103,8 @@ function ChampDateNaissance({ value, onChange }) {
   );
 }
 
+const defilerVersCarte = () => { try { const el = document.getElementById("abf-carte"); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) {} };
+
 function StepProfilPersonnel({ data, setData }) {
   const f = (k) => (v) => setData(p => ({ ...p, [k]: v }));
   const fc = (k) => (v) => setData(p => ({ ...p, conjoint: { ...(p.conjoint || {}), [k]: v } }));
@@ -122,8 +124,8 @@ function StepProfilPersonnel({ data, setData }) {
   const ecransP = [0, 1, ...(enCouple ? [2] : [])];
   const posP = Math.max(ecransP.indexOf(ecranP), 0);
   const visP = (n) => ecranP === n;
-  const suivP = () => { const i = ecransP.indexOf(ecranP); if (i < ecransP.length - 1) setEcranP(ecransP[i + 1]); };
-  const retP = () => { const i = ecransP.indexOf(ecranP); if (i > 0) setEcranP(ecransP[i - 1]); };
+  const suivP = () => { const i = ecransP.indexOf(ecranP); if (i < ecransP.length - 1) setEcranP(ecransP[i + 1]);  defilerVersCarte(); };
+  const retP = () => { const i = ecransP.indexOf(ecranP); if (i > 0) setEcranP(ecransP[i - 1]);  defilerVersCarte(); };
   const memeAdresse = conjoint.meme_adresse === true;
 
   return (
@@ -687,8 +689,8 @@ function StepRevenu({ data, setData, stepData }) {
   const empC = sitC === "travail" || sitC === "etudes";
   const ecrans = [0, ...(empP ? [1] : []), 2, ...(enCouple ? [3, ...(empC ? [4] : []), 5] : [])];
   const pos = Math.max(ecrans.indexOf(ecran), 0);
-  const allerSuivant = () => { const i = ecrans.indexOf(ecran); if (i < ecrans.length - 1) setEcran(ecrans[i + 1]); };
-  const allerRetour = () => { const i = ecrans.indexOf(ecran); if (i > 0) setEcran(ecrans[i - 1]); };
+  const allerSuivant = () => { const i = ecrans.indexOf(ecran); if (i < ecrans.length - 1) setEcran(ecrans[i + 1]);  defilerVersCarte(); };
+  const allerRetour = () => { const i = ecrans.indexOf(ecran); if (i > 0) setEcran(ecrans[i - 1]);  defilerVersCarte(); };
   return (
     <div className="space-y-5">
       <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
@@ -1072,8 +1074,8 @@ function StepRetraite({ data, setData, stepData }) {
   const [ecran, setEcran] = useState(0);
   const ecrans = [0, 1, 2, 3, ...(enCouple ? [4, 5, 6, 7] : [])];
   const pos = Math.max(ecrans.indexOf(ecran), 0);
-  const allerSuivant = () => { const i = ecrans.indexOf(ecran); if (i < ecrans.length - 1) setEcran(ecrans[i + 1]); };
-  const allerRetour = () => { const i = ecrans.indexOf(ecran); if (i > 0) setEcran(ecrans[i - 1]); };
+  const allerSuivant = () => { const i = ecrans.indexOf(ecran); if (i < ecrans.length - 1) setEcran(ecrans[i + 1]);  defilerVersCarte(); };
+  const allerRetour = () => { const i = ecrans.indexOf(ecran); if (i > 0) setEcran(ecrans[i - 1]);  defilerVersCarte(); };
   return (
     <div className="space-y-5">
       <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
@@ -1553,8 +1555,8 @@ function StepFondsUrgence({ data, setData }) {
   const [ecran, setEcran] = useState(0);
   const ecrans = data.a_fonds === "oui" ? [0, 1, 2] : [0, 2];
   const pos = Math.max(ecrans.indexOf(ecran), 0);
-  const allerSuivant = () => { const i = ecrans.indexOf(ecran); if (i < ecrans.length - 1) setEcran(ecrans[i + 1]); };
-  const allerRetour = () => { const i = ecrans.indexOf(ecran); if (i > 0) setEcran(ecrans[i - 1]); };
+  const allerSuivant = () => { const i = ecrans.indexOf(ecran); if (i < ecrans.length - 1) setEcran(ecrans[i + 1]);  defilerVersCarte(); };
+  const allerRetour = () => { const i = ecrans.indexOf(ecran); if (i > 0) setEcran(ecrans[i - 1]);  defilerVersCarte(); };
   const styleQ = { fontSize: 19, fontWeight: 700, color: "#fff", lineHeight: 1.35, marginBottom: 18 };
   return (
     <div>
@@ -1670,6 +1672,7 @@ export default function FinancialAnalysis() {
   }, [insight]);
 
   const step = STEPS[Math.max(0, Math.min(currentStep, STEPS.length - 1))] || STEPS[0];
+  useEffect(() => { if (currentStep > 0) defilerVersCarte(); }, [currentStep]);
   const StepComponent = STEP_COMPONENTS[step.key];
   const data = stepData[step.key] || {};
   const setData = (updater) => setStepData(prev => ({ ...prev, [step.key]: typeof updater === "function" ? updater(prev[step.key] || {}) : updater }));
@@ -1788,7 +1791,7 @@ export default function FinancialAnalysis() {
         <InsightCard insight={insight} />
         <AnimatePresence mode="wait">
           <motion.div key={step.key} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }}>
-            <div className="rounded-2xl overflow-hidden" style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012))", border: "1px solid rgba(201,160,99,0.18)", boxShadow: "0 24px 60px rgba(0,0,0,0.45)" }}>
+            <div id="abf-carte" className="rounded-2xl overflow-hidden" style={{ scrollMarginTop: 90, background: "linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012))", border: "1px solid rgba(201,160,99,0.18)", boxShadow: "0 24px 60px rgba(0,0,0,0.45)" }}>
               <div className="px-8 py-5 flex items-center gap-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)", background: "rgba(201,160,99,0.04)" }}>
                 <step.icon className="w-5 h-5 text-[#C9A063]" />
                 <h2 className="font-urbanist text-[18px] font-semibold text-white">{step.title}</h2>
