@@ -349,8 +349,8 @@ export default function Dashboard() {
 
   // ── Assurances / protection ────────────────────────────────────────────────
   const assuranceABF = bySection.assurance || {};
-  const hasAssurance = assuranceABF.assurance_vie === true;
-  const hasTestament = profil.testament === true;
+  const hasAssurance = (assuranceABF.assurance_vie === true || assuranceABF.a_assurance_vie === "oui" || assuranceABF.a_assurance_vie === true);
+  const hasTestament = (profil.testament === true || profil.testament === "oui" || profil.a_testament === "oui" || profil.a_testament === true || assuranceABF.testament === "oui" || assuranceABF.a_testament === "oui");
   const montantFonds = parseFloat(fondsABF.montant_fonds) || 0;
   const moisFonds    = totalExpenses > 0 ? montantFonds / totalExpenses : 0;
 
