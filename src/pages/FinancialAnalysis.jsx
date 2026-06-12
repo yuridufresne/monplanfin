@@ -392,11 +392,12 @@ function CarteAjout({ label, onClick, color = "#C9A063" }) {
   );
 }
 
-function RevenuPanel({ data, setData }) {
+function RevenuPanel({ data, setData, ecran }) {
   const emplois = data.emplois || [{ employeur: "", poste: "", revenu_brut: "", impot_mensuel: "", type: "salarie" }];
   const sidehustles = data.sidehustles || [];
   const situation = data.statut_principal || "travail";
   const montreEmplois = situation === "travail" || situation === "etudes";
+  const vis = (n) => ecran == null || ecran === n;
 
   const updateEmploi = (i, k, v) => {
     let updated = emplois.map((e, idx) => idx === i ? { ...e, [k]: v } : e);
@@ -435,6 +436,7 @@ function RevenuPanel({ data, setData }) {
 
   return (
     <div className="space-y-7">
+      {vis(0) && (<>
       {/* ── Situation actuelle ── */}
       <div>
         <div className="mb-3">
@@ -511,7 +513,9 @@ function RevenuPanel({ data, setData }) {
           💛 Aucun revenu d'emploi à saisir — votre contribution au foyer compte autrement. Vos <b style={{ color: "#C9A063" }}>allocations familiales</b> seront captées à la section Allocations, et tout revenu d'appoint peut s'ajouter ci-dessous.
         </motion.div>
       )}
+      </>)}
 
+      {vis(1) && (<>
       {/* ── Emplois (travail & études seulement) ── */}
       {montreEmplois && (
         <div>
@@ -577,7 +581,9 @@ function RevenuPanel({ data, setData }) {
           </div>
         </div>
       )}
+      </>)}
 
+      {vis(2) && (<>
       {/* ── Revenus supplémentaires (toutes situations) ── */}
       <div>
         <div className="mb-3">
@@ -646,32 +652,42 @@ function RevenuPanel({ data, setData }) {
       {data.retour_impot === "oui" && (
         <Field label="Montant estimé du retour ($)"><Input value={data.montant_retour} onChange={f("montant_retour")} type="number" /></Field>
       )}
+      </>)}
     </div>
   );
 }
 
 function StepRevenu({ data, setData, stepData }) {
-  const [activeTab, setActiveTab] = useState("principal");
   const profilData = stepData?.profil_personnel || {};
-  const enCouple = ["marie", "conjoint", "union_civile"].includes(profilData.situation);
-  const nomPrincipal = profilData.nom ? profilData.nom.split(" ")[0] : "Principal(e)";
-  const nomConjoint = profilData.conjoint?.nom ? profilData.conjoint.nom.split(" ")[0] : "Conjoint(e)";
+  const enCouple = ["marie", "conjoint", "union_civile", "conjoint_de_fait"].includes(profilData.situation || "");
+  const nomPrincipal = profilData.nom ? profilData.nom.split(" ")[0] : "vous";
+  const nomConjoint = profilData.conjoint?.nom ? profilData.conjoint.nom.split(" ")[0] : "votre conjoint(e)";
   const setConjointData = (updater) => setData(p => ({ ...p, conjoint: typeof updater === "function" ? updater(p.conjoint || {}) : updater }));
-
+  const [ecran, setEcran] = useState(0);
+  const sitP = data.statut_principal || "travail";
+  const sitC = (data.conjoint || {}).statut_principal || "travail";
+  const empP = sitP === "travail" || sitP === "etudes";
+  const empC = sitC === "travail" || sitC === "etudes";
+  const ecrans = [0, ...(empP ? [1] : []), 2, ...(enCouple ? [3, ...(empC ? [4] : []), 5] : [])];
+  const pos = Math.max(ecrans.indexOf(ecran), 0);
+  const allerSuivant = () => { const i = ecrans.indexOf(ecran); if (i < ecrans.length - 1) setEcran(ecrans[i + 1]); };
+  const allerRetour = () => { const i = ecrans.indexOf(ecran); if (i > 0) setEcran(ecrans[i - 1]); };
   return (
     <div className="space-y-5">
+      <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
+        {ecrans.map((e2, i) => <span key={e2} style={{ width: i === pos ? 22 : 8, height: 8, borderRadius: 99, background: i <= pos ? "#C9A063" : "rgba(255,255,255,0.12)", transition: "all .25s" }} />)}
+      </div>
       {enCouple && (
-        <div className="flex gap-2 p-1 rounded-xl" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-          {[{ key: "principal", label: nomPrincipal, color: "#C9A063" }, { key: "conjoint", label: nomConjoint, color: "#6B8ED6" }].map(tab => (
-            <button key={tab.key} onClick={() => setActiveTab(tab.key)} className="flex-1 py-2 rounded-lg text-[13px] font-semibold transition-all"
-              style={activeTab === tab.key ? { background: tab.color, color: tab.key === "principal" ? "#050810" : "#fff" } : { color: "rgba(255,255,255,0.45)" }}>
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        <p style={{ fontSize: 13, color: "#C9A063", fontWeight: 600, textTransform: "capitalize" }}>
+          {ecran < 3 ? nomPrincipal : nomConjoint}
+        </p>
       )}
-      {(!enCouple || activeTab === "principal") && <RevenuPanel data={data} setData={setData} />}
-      {enCouple && activeTab === "conjoint" && <RevenuPanel data={data.conjoint || {}} setData={setConjointData} />}
+      {ecran < 3 && <RevenuPanel data={data} setData={setData} ecran={ecran} />}
+      {ecran >= 3 && <RevenuPanel data={data.conjoint || {}} setData={setConjointData} ecran={ecran - 3} />}
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 10 }}>
+        <button onClick={allerRetour} disabled={pos === 0} style={{ background: "none", border: "none", color: pos === 0 ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.6)", fontSize: 13, cursor: pos === 0 ? "default" : "pointer" }}>← Question précédente</button>
+        {pos < ecrans.length - 1 && <button onClick={allerSuivant} style={{ background: "rgba(201,160,99,0.15)", border: "1px solid rgba(201,160,99,0.4)", color: "#C9A063", padding: "8px 18px", borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Continuer →</button>}
+      </div>
     </div>
   );
 }
