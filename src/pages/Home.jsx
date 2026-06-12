@@ -52,11 +52,14 @@ export default function Home() {
   const navigate = useNavigate();
 
   // Si déjà connecté → rediriger automatiquement vers le dashboard
+  const [verifAuth, setVerifAuth] = useState(true);
   useEffect(() => {
     base44.auth.me().then((user) => {
-      if (user) navigate(routeAccueil(user), { replace: true });
-    }).catch(() => {});
+      if (user) { navigate(routeAccueil(user), { replace: true }); } else { setVerifAuth(false); }
+    }).catch(() => setVerifAuth(false));
   }, [navigate]);
+  // Écran neutre pendant la vérification — évite le flash de la landing pour les connectés
+  if (verifAuth) return <div style={{ background: "#050810", minHeight: "100vh" }} />;
 
   return (
     <div style={{ background: "#050810", minHeight: "100vh", position: "relative", overflow: "hidden" }}>
