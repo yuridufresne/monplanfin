@@ -125,6 +125,9 @@ export default function StepBudget() {
 
   return (
     <div className="space-y-6">
+      <div style={{ display: "flex", gap: 6 }}>
+        {["revenus", "depenses"].map((t2, i) => <span key={t2} style={{ width: t2 === activeTab ? 22 : 8, height: 8, borderRadius: 99, background: i <= (activeTab === "revenus" ? 0 : 1) ? "#C9A063" : "rgba(255,255,255,0.12)", transition: "all .25s" }} />)}
+      </div>
       {/* Info */}
       <div className="rounded-xl p-4" style={{ background: "rgba(201,160,99,0.06)", border: "1px solid rgba(201,160,99,0.15)" }}>
         <p className="text-[12px]" style={{ color: "#C9A063" }}>Complétez votre budget mensuel. Utilisez la grille budgétaire pour remplir rapidement tous les postes, ou ajoutez manuellement.</p>
@@ -252,6 +255,10 @@ export default function StepBudget() {
             <p style={{ fontSize: 12, textAlign: "center", padding: "2.5rem 0", color: "#94A3B8" }}>Ajoutez des dépenses pour voir la répartition</p>
           )}
         </div>
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+        <button onClick={() => setActiveTab("revenus")} disabled={activeTab === "revenus"} style={{ background: "none", border: "none", color: activeTab === "revenus" ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.6)", fontSize: 13, cursor: activeTab === "revenus" ? "default" : "pointer" }}>← Question précédente</button>
+        {activeTab === "revenus" && <button onClick={() => setActiveTab("depenses")} style={{ background: "rgba(201,160,99,0.15)", border: "1px solid rgba(201,160,99,0.4)", color: "#C9A063", padding: "8px 18px", borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Continuer →</button>}
       </div>
 
       <AnimatePresence>
