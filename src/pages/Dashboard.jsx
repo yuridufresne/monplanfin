@@ -281,11 +281,11 @@ export default function Dashboard() {
   const totalExpenses = budgetEntries
     .filter(e => e.type === "depense" && e.label !== "Impôts (retenues à la source)")
     .reduce((s, e) => s + toMonthly(parseFloat(e.amount) || 0, e.frequency), 0);
-  const flux = totalRevenue - totalExpenses;
-  const savingsRate = totalRevenue > 0 ? (flux / totalRevenue) * 100 : 0;
-  const budgetIncomplet = totalExpenses <= 0;
   const aucunRevenu = totalRevenue <= 0 && (revGarantiAnnuel || 0) <= 0;
   const revenuMensuelAffiche = totalRevenue > 0 ? totalRevenue : (revGarantiAnnuel || 0) / 12;
+  const flux = revenuMensuelAffiche - totalExpenses;
+  const savingsRate = revenuMensuelAffiche > 0 ? (flux / revenuMensuelAffiche) * 100 : 0;
+  const budgetIncomplet = totalExpenses <= 0;
 
   // ── Actifs / Passifs ───────────────────────────────────────────────────────
   const investmentAssets = investments.reduce((s, i) => s + (i.current_value || 0), 0);
