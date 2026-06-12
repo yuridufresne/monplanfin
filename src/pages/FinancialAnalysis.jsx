@@ -850,7 +850,7 @@ function PrestationsBlock({ data, setData, salaireActuelPanel }) {
   );
 }
 
-function RetraitePanel({ data, setData, stepData, isPrincipal = true }) {
+function RetraitePanel({ data, setData, stepData, isPrincipal = true , ecran }) {
   const f = (k) => (v) => setData(p => ({ ...p, [k]: v }));
 
   const revData = stepData?.revenu || {};
@@ -882,8 +882,10 @@ function RetraitePanel({ data, setData, stepData, isPrincipal = true }) {
   const totalCotisations = COMPTES_TYPES.reduce((s, t) => s + (comptes[t.key] || []).reduce((ss, c) => ss + (parseFloat(c.cotisation_mensuelle) || 0), 0), 0) + (parseFloat(fondPension.cotisation_salariale) || 0) + (parseFloat(fondPension.cotisation_patronale) || 0);
   const fmt = (v) => new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v || 0);
 
+  const visE = (n) => ecran == null || ecran === n;
   return (
     <div className="space-y-6">
+      {visE(0) && (<>
       <div className="rounded-xl p-4" style={{ background: "rgba(201,160,99,0.06)", border: "1px solid rgba(201,160,99,0.15)" }}>
         <p className="text-[12px]" style={{ color: "#C9A063" }}>Ces informations sont essentielles pour calculer votre <strong style={{ color: "#fff" }}>Numéro d'indépendance financière (NIF)</strong> — le capital requis pour ne plus avoir besoin de travailler.</p>
       </div>
@@ -898,7 +900,9 @@ function RetraitePanel({ data, setData, stepData, isPrincipal = true }) {
           <Input value={data.revenu_retraite_pct} onChange={handlePctChange} type="number" placeholder="80" />
         </Field>
       </div>
+      </>)}
 
+      {visE(1) && (<>
       <PrestationsBlock data={data} setData={setData} salaireActuelPanel={salaireActuelPanel} />
 
       <Field label="Souhaitez-vous laisser un héritage ?">
@@ -907,7 +911,9 @@ function RetraitePanel({ data, setData, stepData, isPrincipal = true }) {
       {data.heritage === "oui" && (
         <Field label="Montant d'héritage visé ($)"><Input value={data.montant_heritage} onChange={f("montant_heritage")} type="number" /></Field>
       )}
+      </>)}
 
+      {visE(2) && (<>
       <div className="space-y-5">
         <p className="text-[14px] font-semibold text-white">
           Fonds de pension (employeur)
@@ -1026,7 +1032,9 @@ function RetraitePanel({ data, setData, stepData, isPrincipal = true }) {
           </AnimatePresence>
         </div>
       </div>
+      </>)}
 
+      {visE(3) && (<>
       <div>
         <p className="text-[14px] font-semibold text-white mb-1">
           Comptes d'épargne & placements
@@ -1050,23 +1058,38 @@ function RetraitePanel({ data, setData, stepData, isPrincipal = true }) {
           </div>
         </div>
       )}
+      </>)}
     </div>
   );
 }
 
 function StepRetraite({ data, setData, stepData }) {
-  const [activeTab, setActiveTab] = useState("principal");
   const profilData = stepData?.profil_personnel || {};
-  const enCouple = ["marie", "conjoint", "union_civile"].includes(profilData.situation);
-  const nomPrincipal = profilData.nom ? profilData.nom.split(" ")[0] : "Principal(e)";
-  const nomConjoint = profilData.conjoint?.nom ? profilData.conjoint.nom.split(" ")[0] : "Conjoint(e)";
+  const enCouple = ["marie", "conjoint", "union_civile", "conjoint_de_fait"].includes(profilData.situation || "");
+  const nomPrincipal = profilData.nom ? profilData.nom.split(" ")[0] : "vous";
+  const nomConjoint = profilData.conjoint?.nom ? profilData.conjoint.nom.split(" ")[0] : "votre conjoint(e)";
   const setConjointData = (updater) => setData(p => ({ ...p, conjoint: typeof updater === "function" ? updater(p.conjoint || {}) : updater }));
-
+  const [ecran, setEcran] = useState(0);
+  const ecrans = [0, 1, 2, 3, ...(enCouple ? [4, 5, 6, 7] : [])];
+  const pos = Math.max(ecrans.indexOf(ecran), 0);
+  const allerSuivant = () => { const i = ecrans.indexOf(ecran); if (i < ecrans.length - 1) setEcran(ecrans[i + 1]); };
+  const allerRetour = () => { const i = ecrans.indexOf(ecran); if (i > 0) setEcran(ecrans[i - 1]); };
   return (
     <div className="space-y-5">
-      {enCouple && <PersonTabs activeTab={activeTab} setActiveTab={setActiveTab} nomPrincipal={nomPrincipal} nomConjoint={nomConjoint} />}
-      {(!enCouple || activeTab === "principal") && <RetraitePanel data={data} setData={setData} stepData={stepData} isPrincipal={true} />}
-      {enCouple && activeTab === "conjoint" && <RetraitePanel data={data.conjoint || {}} setData={setConjointData} stepData={stepData} isPrincipal={false} />}
+      <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
+        {ecrans.map((e2, i) => <span key={e2} style={{ width: i === pos ? 22 : 8, height: 8, borderRadius: 99, background: i <= pos ? "#C9A063" : "rgba(255,255,255,0.12)", transition: "all .25s" }} />)}
+      </div>
+      {enCouple && (
+        <p style={{ fontSize: 13, color: "#C9A063", fontWeight: 600, textTransform: "capitalize" }}>
+          {ecran < 4 ? nomPrincipal : nomConjoint}
+        </p>
+      )}
+      {ecran < 4 && <RetraitePanel data={data} setData={setData} stepData={stepData} isPrincipal={true} ecran={ecran} />}
+      {ecran >= 4 && <RetraitePanel data={data.conjoint || {}} setData={setConjointData} stepData={stepData} isPrincipal={false} ecran={ecran - 4} />}
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 10 }}>
+        <button onClick={allerRetour} disabled={pos === 0} style={{ background: "none", border: "none", color: pos === 0 ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.6)", fontSize: 13, cursor: pos === 0 ? "default" : "pointer" }}>← Question précédente</button>
+        {pos < ecrans.length - 1 && <button onClick={allerSuivant} style={{ background: "rgba(201,160,99,0.15)", border: "1px solid rgba(201,160,99,0.4)", color: "#C9A063", padding: "8px 18px", borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Continuer →</button>}
+      </div>
     </div>
   );
 }
