@@ -57,6 +57,7 @@ export default function NIFCalculator({ profiles }) {
   const anneeRet = kpis?.annee_retraite || (anneeAuj + 35);
   const nAnnees = anneeRet - anneeAuj;
   const ageRetMarie = pB?.ageRetraite || null;
+  const dejaRetraite = (pA?.age ?? 0) >= (pA?.ageRetraite ?? 65);
   const fi = payload.hypotheses?.inflation
     ? Math.pow(1 + payload.hypotheses.inflation, nAnnees)
     : 1;
@@ -128,8 +129,8 @@ export default function NIFCalculator({ profiles }) {
           <span style={{fontSize:11,color:C.txt30,textTransform:"uppercase",letterSpacing:".05em"}}>$ auj.</span>
         </div>
         <div style={{...cell,background:C.headBg,padding:"14px 16px"}}>
-          <div style={{fontSize:13,fontWeight:500,color:"#fff"}}>Valeur à la 1re retraite</div>
-          <div style={{fontSize:12,color:C.txt40,marginTop:2}}>{anneeRet} · {pA?.prenom} {pA?.ageRetraite}{pB?` / ${pB.prenom} ${ageRetMarie}`:""}</div>
+          <div style={{fontSize:13,fontWeight:500,color:"#fff"}}>{dejaRetraite ? "Valeur à la retraite (en cours)" : "Valeur à la 1re retraite"}</div>
+          <div style={{fontSize:12,color:C.txt40,marginTop:2}}>{dejaRetraite ? "Déjà à la retraite — capital requis maintenant" : <>{anneeRet} · {pA?.prenom} {pA?.ageRetraite}{pB?` / ${pB.prenom} ${ageRetMarie}`:""}</>}</div>
         </div>
         <div style={{...cell,background:C.headBg,display:"flex",alignItems:"center",justifyContent:"flex-end"}}>
           <span style={{fontSize:11,color:C.txt30,textTransform:"uppercase",letterSpacing:".05em"}}>$ nominal</span>
