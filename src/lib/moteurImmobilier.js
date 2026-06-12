@@ -138,7 +138,7 @@ export function calculerQualification(p) {
   // Mise REQUISE pour un prix donné (jamais bornée par l'épargne du client)
   const miseRequisePour = (prix) => {
     if (stratPct !== null) return prix * stratPct;
-    return miseLegaleMin(prix);                // auto = minimum légal → capacité maximale
+    return Math.max(miseLegaleMin(prix), Math.min(miseDeFondsDispo, prix)); // auto = toute la mise dispo (mais jamais sous le minimum légal)
   };
 
   // Amortissement : 30 ans permis seulement si non-assuré (≥20 %) OU
