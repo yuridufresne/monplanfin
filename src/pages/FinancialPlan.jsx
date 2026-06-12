@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -63,10 +63,20 @@ export default function FinancialPlan() {
   const [editDebt, setEditDebt] = useState(null);
   const queryClient = useQueryClient();
 
-  const { data: budgetEntries = [] } = useQuery({ queryKey: ["budgetEntries"], queryFn: () => base44.entities.BudgetEntry.list() });
-  const { data: investments = [] } = useQuery({ queryKey: ["investments"], queryFn: () => base44.entities.Investment.list() });
-  const { data: debts = [] } = useQuery({ queryKey: ["debts"], queryFn: () => base44.entities.Debt.list() });
-  const { data: goals = [] } = useQuery({ queryKey: ["goals"], queryFn: () => base44.entities.FinancialGoal.list() });
+  const clientCible = new URLSearchParams(window.location.search).get("client");
+  const [moi, setMoi] = useState(null);
+  useEffect(() => { base44.auth.me().then(setMoi).catch(() => {}); }, []);
+  const modeConseiller = !!clientCible && !!moi && (moi.type_compte === "agent" || moi.role === "admin" || moi.type_compte === "directeur");
+  const cible = modeConseiller ? clientCible : moi?.email;
+  const filtreCible = (rows) => (rows || []).filter(r => r.created_by === cible || r.client_courriel === cible);
+  const { data: budgetEntriesBruts = [] } = useQuery({ queryKey: ["budgetEntries"], queryFn: () => base44.entities.BudgetEntry.list() });
+  const { data: investmentsBruts = [] } = useQuery({ queryKey: ["investments"], queryFn: () => base44.entities.Investment.list() });
+  const { data: debtsBruts = [] } = useQuery({ queryKey: ["debts"], queryFn: () => base44.entities.Debt.list() });
+  const { data: goalsBruts = [] } = useQuery({ queryKey: ["goals"], queryFn: () => base44.entities.FinancialGoal.list() });
+  const budgetEntries = filtreCible(budgetEntriesBruts);
+  const investments = filtreCible(investmentsBruts);
+  const debts = filtreCible(debtsBruts);
+  const goals = filtreCible(goalsBruts);
 
   const goalCreate = useMutation({ mutationFn: (d) => base44.entities.FinancialGoal.create(d), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["goals"] }); setShowGoalForm(false); } });
   const goalUpdate = useMutation({ mutationFn: ({ id, data }) => base44.entities.FinancialGoal.update(id, data), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["goals"] }); setEditGoal(null); } });
