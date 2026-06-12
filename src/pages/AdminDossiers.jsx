@@ -61,6 +61,24 @@ export default function AdminDossiers() {
   const [search, setSearch] = useState("");
   const [expandedId, setExpandedId] = useState(null);
   const [agents, setAgents] = useState([]);
+  const [agentVue, setAgentVue] = useState("");
+  const refActivite = (d) => (d.derniere_activite_agent && d.derniere_activite_agent > (d.date_assignation || "")) ? d.derniere_activite_agent : d.date_assignation;
+  const estUrgentAdm = (d) => { if (!d.date_assignation || d.statut === "ferme_converti" || d.statut === "ferme_perdu") return false; return (Date.now() - new Date(refActivite(d)).getTime()) > 86400000; };
+  const heuresDepuisAct = (d) => Math.floor((Date.now() - new Date(refActivite(d)).getTime()) / 3600000);
+  const fmtH = (ms) => { if (!isFinite(ms) || ms <= 0) return "—"; const h = ms / 3600000; if (h < 1) return Math.round(ms / 60000) + " min"; if (h < 48) return Math.round(h) + " h"; return Math.round(h / 24) + " j"; };
+  const metriquesAgent = (courriel) => {
+    const ds = dossiers.filter(d => d.agent_assigne_courriel === courriel);
+    const actifs = ds.filter(d => d.statut !== "ferme_converti" && d.statut !== "ferme_perdu").length;
+    const convertis = ds.filter(d => d.statut === "ferme_converti").length;
+    const urgents = ds.filter(estUrgentAdm).length;
+    const contacts = ds.filter(d => d.date_premier_contact && d.date_assignation).map(d => new Date(d.date_premier_contact) - new Date(d.date_assignation)).filter(x => x > 0);
+    const delaiContact = contacts.length ? fmtH(contacts.reduce((a, b) => a + b, 0) / contacts.length) : "—";
+    const gaps = [];
+    ds.forEach(d => { const ev = (d.historique || []).filter(h => h.type === "statut" || h.type === "note").map(h => new Date(h.date).getTime()).sort((a, b) => a - b); for (let i = 1; i < ev.length; i++) gaps.push(ev[i] - ev[i - 1]); });
+    const delaiMaj = gaps.length ? fmtH(gaps.reduce((a, b) => a + b, 0) / gaps.length) : "—";
+    return { actifs, convertis, urgents, delaiContact, delaiMaj, total: ds.length };
+  };
+  const delaiAdminMoyen = (() => { const xs = dossiers.filter(d => d.date_assignation && d.created_date).map(d => new Date(d.date_assignation) - new Date(d.created_date)).filter(x => x > 0); return xs.length ? fmtH(xs.reduce((a, b) => a + b, 0) / xs.length) : "—"; })();
 
   // Charger la liste des agents disponibles
   useEffect(() => {
@@ -115,13 +133,14 @@ export default function AdminDossiers() {
   const filtered = useMemo(() => dossiers.filter(d => {
     if (filtreStatut !== "tous" && d.statut !== filtreStatut) return false;
     if (filtreUrgence !== "tous" && d.priorite_urgence !== filtreUrgence) return false;
+    if (agentVue && d.agent_assigne_courriel !== agentVue) return false;
     if (search) {
       const s = search.toLowerCase();
       return (d.client_nom || "").toLowerCase().includes(s)
-          || (d.client_courriel || "").toLowerCase().includes(s);
+          || (d.client_courriel || "").toLowerCase().includes(s) || (d.agent_assigne_nom || "").toLowerCase().includes(s) || (d.agent_assigne_courriel || "").toLowerCase().includes(s);
     }
     return true;
-  }), [dossiers, filtreStatut, filtreUrgence, search]);
+  }), [dossiers, filtreStatut, filtreUrgence, search, agentVue]);
 
   const changerStatut = async (id, nouveauStatut) => {
     try {
@@ -189,7 +208,7 @@ export default function AdminDossiers() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr auto auto", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
             <div style={{ position: "relative" }}>
               <Search size={14} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,0.4)" }} />
-              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher par nom ou courriel..."
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher un client ou un agent…"
                 style={{ width: "100%", padding: "9px 12px 9px 34px", borderRadius: 9, background: "#080d18", border: "1px solid rgba(255,255,255,0.08)", color: "#fff", fontSize: 13, outline: "none" }} />
             </div>
             <select value={filtreStatut} onChange={e => setFiltreStatut(e.target.value)}
@@ -205,6 +224,48 @@ export default function AdminDossiers() {
           </div>
         </div>
 
+        {(() => { const urg = dossiers.filter(estUrgentAdm); return urg.length > 0 ? (
+          <div style={{ marginBottom: 16, padding: "14px 16px", borderRadius: 14, background: "rgba(220,80,80,0.08)", border: "1px solid rgba(220,80,80,0.35)" }}>
+            <p style={{ fontSize: 13, fontWeight: 700, color: "#f87171", marginBottom: 8 }}>⚠ Urgence — sans action de l’agent depuis plus de 24 h ({urg.length})</p>
+            {urg.map(u => (
+              <div key={u.id} style={{ display: "flex", justifyContent: "space-between", gap: 10, fontSize: 13, color: "rgba(255,255,255,0.85)", marginBottom: 4 }}>
+                <span style={{ cursor: "pointer" }} onClick={() => setExpandedId(expandedId === u.id ? null : u.id)}>{u.client_nom} · {(STATUTS[u.statut] || {}).label || u.statut} · <span style={{ color: "#C9A063" }}>{u.agent_assigne_nom || "non assigné"}</span></span>
+                <span style={{ color: "#f87171", fontWeight: 700 }}>{heuresDepuisAct(u)} h</span>
+              </div>
+            ))}
+            <p style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 8 }}>Sort de cette zone uniquement quand l’agent met le dossier à jour. Tu peux réassigner en tout temps.</p>
+          </div>
+        ) : null; })()}
+        {(() => { const tr = dossiers.filter(d2 => d2.transfert_en_attente); return tr.length > 0 ? (
+          <div style={{ marginBottom: 16, padding: "14px 16px", borderRadius: 14, background: "rgba(201,160,99,0.07)", border: "1px solid rgba(201,160,99,0.3)" }}>
+            <p style={{ fontSize: 13, fontWeight: 700, color: "#C9A063", marginBottom: 8 }}>⇄ Dossiers transférés — en attente d’action du nouvel agent ({tr.length})</p>
+            {tr.map(u => (
+              <div key={u.id} style={{ display: "flex", justifyContent: "space-between", gap: 10, fontSize: 13, color: "rgba(255,255,255,0.85)", marginBottom: 4 }}>
+                <span style={{ cursor: "pointer" }} onClick={() => setExpandedId(expandedId === u.id ? null : u.id)}>{u.client_nom} → <span style={{ color: "#C9A063" }}>{u.agent_assigne_nom}</span></span>
+                <span style={{ color: "rgba(255,255,255,0.5)" }}>{u.date_assignation ? new Date(u.date_assignation).toLocaleDateString("fr-CA") : ""}</span>
+              </div>
+            ))}
+          </div>
+        ) : null; })()}
+        <div style={{ marginBottom: 16, padding: "14px 16px", borderRadius: 14, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.1)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>Vue par agent :</span>
+            <select value={agentVue} onChange={e => setAgentVue(e.target.value)} style={{ background: "#101318", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, padding: "7px 10px", fontSize: 13, color: "#fff" }}>
+              <option value="">— Tous les agents —</option>
+              {agents.map(a => <option key={a.courriel} value={a.courriel}>{a.nom}</option>)}
+            </select>
+            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>Ton délai moyen d’attribution : <b style={{ color: "#C9A063" }}>{delaiAdminMoyen}</b></span>
+          </div>
+          {agentVue ? (() => { const mts = metriquesAgent(agentVue); return (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10, marginTop: 12 }}>
+              <div style={{ padding: "10px 12px", borderRadius: 10, background: "rgba(255,255,255,0.04)" }}><p style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginBottom: 2 }}>Dossiers actifs</p><p style={{ fontSize: 18, fontWeight: 800, color: "#fff" }}>{mts.actifs}<span style={{ fontSize: 11, fontWeight: 400, color: "rgba(255,255,255,0.4)" }}> / {mts.total}</span></p></div>
+              <div style={{ padding: "10px 12px", borderRadius: 10, background: "rgba(255,255,255,0.04)" }}><p style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginBottom: 2 }}>Délai moyen 1er contact</p><p style={{ fontSize: 18, fontWeight: 800, color: "#6B8ED6" }}>{mts.delaiContact}</p></div>
+              <div style={{ padding: "10px 12px", borderRadius: 10, background: "rgba(255,255,255,0.04)" }}><p style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginBottom: 2 }}>Délai entre mises à jour</p><p style={{ fontSize: 18, fontWeight: 800, color: "#A87DD3" }}>{mts.delaiMaj}</p></div>
+              <div style={{ padding: "10px 12px", borderRadius: 10, background: "rgba(255,255,255,0.04)" }}><p style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginBottom: 2 }}>En urgence +24 h</p><p style={{ fontSize: 18, fontWeight: 800, color: mts.urgents > 0 ? "#f87171" : "#5BC4A0" }}>{mts.urgents}</p></div>
+              <div style={{ padding: "10px 12px", borderRadius: 10, background: "rgba(255,255,255,0.04)" }}><p style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginBottom: 2 }}>Convertis</p><p style={{ fontSize: 18, fontWeight: 800, color: "#5BC4A0" }}>{mts.convertis}</p></div>
+            </div>
+          ); })() : null}
+        </div>
         {/* ─── Liste ─── */}
         {loading ? (
           <div style={{ textAlign: "center", padding: 40 }}>
@@ -469,6 +530,19 @@ function DossierCard({ d, expanded, agents = [], onToggle, onChangerStatut, onSa
             <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.4)", lineHeight: 1.6 }}>
               🔒 Consentement explicite donné le <strong style={{ color: "rgba(255,255,255,0.6)" }}>{fmtDate(d.date_consentement)}</strong> · Conforme Loi 25
             </p>
+          </div>
+          <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+            <p style={{ fontSize: 12, fontWeight: 700, color: "#C9A063", marginBottom: 8 }}>Activité & notes de l’agent</p>
+            {(d.historique || []).length === 0 ? (
+              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>Aucune activité enregistrée pour ce dossier.</p>
+            ) : (
+              (d.historique || []).slice().reverse().slice(0, 12).map((h, i) => (
+                <div key={i} style={{ fontSize: 12.5, color: "rgba(255,255,255,0.8)", marginBottom: 5, padding: "7px 10px", background: "rgba(255,255,255,0.04)", borderRadius: 8 }}>
+                  <span style={{ color: "rgba(255,255,255,0.45)", fontSize: 11 }}>{new Date(h.date).toLocaleString("fr-CA")} · </span>
+                  {h.type === "note" ? <>📝 {h.note}</> : h.type === "statut" ? <>Statut : {h.de || "—"} → <b>{h.a}</b></> : h.type === "transfert" ? <>⇄ Transfert : {h.de} → {h.a}</> : <>Assigné à {h.a}</>}
+                </div>
+              ))
+            )}
           </div>
         </div>
       )}
