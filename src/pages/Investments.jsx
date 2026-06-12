@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
@@ -23,8 +23,15 @@ export default function Investments() {
   const [editing, setEditing] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const qc = useQueryClient();
+  const clientCible = new URLSearchParams(window.location.search).get("client");
+  const [moi, setMoi] = useState(null);
+  useEffect(() => { base44.auth.me().then(setMoi).catch(() => {}); }, []);
+  const modeConseiller = !!clientCible && !!moi && (moi.type_compte === "agent" || moi.role === "admin" || moi.type_compte === "directeur");
+  const cible = modeConseiller ? clientCible : moi?.email;
+  const filtreCible = (rows) => (rows || []).filter(r => r.created_by === cible || r.client_courriel === cible);
 
-  const { data: investments = [] } = useQuery({ queryKey: ["investments"], queryFn: () => base44.entities.Investment.list() });
+  const { data: investmentsBruts = [] } = useQuery({ queryKey: ["investments"], queryFn: () => base44.entities.Investment.list() });
+  const investments = filtreCible(investmentsBruts);
   const deleteMutation = useMutation({ mutationFn: (id) => base44.entities.Investment.delete(id), onSuccess: () => qc.invalidateQueries({ queryKey: ["investments"] }) });
 
   const handleRefresh = async () => {
