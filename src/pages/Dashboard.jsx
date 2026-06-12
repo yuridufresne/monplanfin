@@ -284,6 +284,8 @@ export default function Dashboard() {
   const flux = totalRevenue - totalExpenses;
   const savingsRate = totalRevenue > 0 ? (flux / totalRevenue) * 100 : 0;
   const budgetIncomplet = totalExpenses <= 0;
+  const aucunRevenu = totalRevenue <= 0 && (revGarantiAnnuel || 0) <= 0;
+  const revenuMensuelAffiche = totalRevenue > 0 ? totalRevenue : (revGarantiAnnuel || 0) / 12;
 
   // ── Actifs / Passifs ───────────────────────────────────────────────────────
   const investmentAssets = investments.reduce((s, i) => s + (i.current_value || 0), 0);
@@ -449,11 +451,11 @@ export default function Dashboard() {
           <motion.div {...fadeUp(0.02)} style={{ marginBottom: 20, padding: "22px 24px", borderRadius: 16, background: "linear-gradient(135deg, rgba(201,160,99,0.10), rgba(201,160,99,0.03))", border: "1px solid rgba(201,160,99,0.25)" }}>
             <p style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: ".14em", textTransform: "uppercase", color: "rgba(201,160,99,0.85)", marginBottom: 6 }}>Votre effort mensuel — indépendance financière</p>
             <div style={{ display: "flex", alignItems: "baseline", gap: 14, flexWrap: "wrap" }}>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: "clamp(2rem,4vw,2.6rem)", fontWeight: 800, color: "#fff", lineHeight: 1.1 }}>{fmt(Math.max(cotSupp, 0))}<span style={{ fontSize: "1.1rem", fontWeight: 600, color: "rgba(255,255,255,0.55)" }}>/mois</span></span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: "clamp(2rem,4vw,2.6rem)", fontWeight: 800, color: "#fff", lineHeight: 1.1 }}>{aucunRevenu ? "—" : fmt(Math.max(cotSupp, 0))}<span style={{ fontSize: "1.1rem", fontWeight: 600, color: "rgba(255,255,255,0.55)" }}>/mois</span></span>
               <span style={{ padding: "3px 10px", borderRadius: 8, fontSize: 11, fontWeight: 700, background: `${nifColor}20`, color: nifColor, border: `1px solid ${nifColor}40` }}>{statutLabels[statut] || statut}</span>
             </div>
             <p style={{ fontSize: 13.5, color: "rgba(255,255,255,0.65)", marginTop: 8, lineHeight: 1.5 }}>
-              {cotSupp <= 0 ? "Vous êtes en avance sur votre objectif — continuez ainsi." : `Il vous manque environ ${fmt(cotSupp)}/mois d’épargne pour atteindre votre indépendance à ${ageRetraite} ans.`}
+              {aucunRevenu ? "Complétez la section Revenu de votre ABF pour voir votre effort." : cotSupp <= 0 ? "Vous êtes en avance sur votre objectif — continuez ainsi." : `Il vous manque environ ${fmt(cotSupp)}/mois d’épargne pour atteindre votre indépendance à ${ageRetraite} ans.`}
             </p>
           </motion.div>
         )}
@@ -512,8 +514,8 @@ export default function Dashboard() {
                 },
                 {
                   label: "Revenu net mensuel",
-                  value: fmt(totalRevenue),
-                  sub: allocMensuel > 0 ? `dont ${fmt(allocMensuel)} alloc.` : "Après impôts & cotisations",
+                  value: aucunRevenu ? "—" : fmt(revenuMensuelAffiche),
+                  sub: totalRevenue <= 0 && (revGarantiAnnuel || 0) > 0 ? "Revenus garantis (retraite)" : allocMensuel > 0 ? `dont ${fmt(allocMensuel)} alloc.` : "Après impôts & cotisations",
                   color: "#C9A063",
                   info: "Revenu net calculé après impôts fédéral+provincial et cotisations sociales (RRQ, RQAP, AE). Inclut les allocations familiales non-imposables.",
                 },
