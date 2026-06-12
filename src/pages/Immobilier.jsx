@@ -37,7 +37,7 @@ export default function Immobilier() {
     queryKey: ["financialProfiles"],
     queryFn: () => base44.entities.FinancialProfile.list(),
   });
-  const profiles = filtreCible(profilsBruts);
+  const profiles = useMemo(() => filtreCible(profilsBruts), [profilsBruts, cible]);
 
   const initialPayload = useMemo(() => {
     const unwrap = (raw) => raw?.data?.data || raw?.data || raw || {};
