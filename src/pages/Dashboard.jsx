@@ -432,7 +432,7 @@ export default function Dashboard() {
       {showReset && <ResetDataModal onClose={() => setShowReset(false)} />}
       {showSoumettre && <SoumettreDossierModal profiles={profiles} user={user} onClose={() => setShowSoumettre(false)} />}
 
-      <div className="relative max-w-7xl mx-auto px-5 lg:px-10 py-12 md:py-16">
+      <div className="relative max-w-7xl mx-auto px-5 lg:px-10 pt-2 pb-12 md:pt-3 md:pb-16">
 
         {/* ── Header ──────────────────────────────────────────────────────── */}
         <motion.div {...fadeUp(0)} className="mb-8">
