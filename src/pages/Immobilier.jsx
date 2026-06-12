@@ -262,7 +262,7 @@ export default function Immobilier() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 14, marginTop: 22, maxWidth: 800, margin: "22px auto 0" }}>
             <MiniKPI label="Paiement mensuel" value={`${fmt(reco.paiementHypoReel)}/m`} hint={`hypothèque seule, taux ${reco.tauxContractuel.toFixed(2)}%`} />
             <MiniKPI label="PITH total" value={`${fmt(reco.pithReel)}/m`} hint="hypothèque + taxes + chauffage" />
-            <MiniKPI label="Mise requise" value={fmt(reco.miseMinRequise)} hint={`${pct(reco.misePct / 100)} effective`} />
+            <MiniKPI label="Mise utilisée" value={fmt(reco.miseEffective)} hint={`${pct(reco.misePct / 100)} · min. légal ${fmt(reco.miseMinRequise)}`} />
             <MiniKPI label="Cash au closing" value={fmt(reco.cashTotalRequis)} hint="mise + frais d'achat" />
           </div>
         </div>
