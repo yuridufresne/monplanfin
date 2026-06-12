@@ -768,10 +768,34 @@ export default function FeuilleResume() {
   return (
     <div style={{ background: "linear-gradient(135deg, #050810 0%, #080d1a 60%, #050810 100%)", minHeight: "100vh", position: "relative" }}>
       {modeConseiller && <BarreDossierClient />}
+      <style>{`
+        @media screen { .print-seulement { display: none !important; } }
+        @media print {
+          @page { margin: 12mm; }
+          html, body { background: #fff !important; }
+          body * { visibility: hidden !important; }
+          #rapport-conseiller, #rapport-conseiller * { visibility: visible !important; }
+          #rapport-conseiller { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; max-width: 100% !important; padding: 0 !important; }
+          #rapport-conseiller * { color: #111 !important; background: transparent !important; border-color: #bbb !important; box-shadow: none !important; text-shadow: none !important; }
+          #rapport-conseiller button, #rapport-conseiller .no-print { display: none !important; }
+          #rapport-conseiller h2, #rapport-conseiller h3 { break-after: avoid; }
+          #rapport-conseiller > div { break-inside: avoid; }
+        }
+      `}</style>
       {/* Ambient */}
       <div style={{ position: "absolute", top: "-10%", right: "-5%", width: 700, height: 700, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(201,160,99,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
 
-      <div className="max-w-7xl mx-auto px-5 lg:px-10 py-14 md:py-20">
+      <div id="rapport-conseiller" className="max-w-7xl mx-auto px-5 lg:px-10 py-14 md:py-20">
+        <div className="print-seulement" style={{ borderBottom: "2px solid #111", paddingBottom: 10, marginBottom: 18 }}>
+          <p style={{ fontSize: 20, fontWeight: 800, color: "#111", margin: 0 }}>MonPlanFin — Rapport de planification financière</p>
+          <p style={{ fontSize: 12, color: "#444", margin: "4px 0 0 0" }}>
+            {(() => { const n = new URLSearchParams(window.location.search).get("nom"); return n ? "Client : " + n + " · " : ""; })()}
+            Préparé le {new Date().toLocaleDateString("fr-CA", { year: "numeric", month: "long", day: "numeric" })} · Document confidentiel
+          </p>
+        </div>
+        <div className="no-print" style={{ display: "flex", justifyContent: "flex-end", marginBottom: 10 }}>
+          <button onClick={() => window.print()} style={{ background: "rgba(201,160,99,0.15)", border: "1px solid rgba(201,160,99,0.4)", color: "#C9A063", padding: "9px 18px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>🖨 Imprimer / Exporter en PDF</button>
+        </div>
 
         {/* ── HEADER ──────────────────────────────────────────────────── */}
         <div style={{ marginBottom: 40 }}>
