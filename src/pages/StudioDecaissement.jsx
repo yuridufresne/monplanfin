@@ -36,8 +36,8 @@ export default function StudioDecaissement({ embedded = false, profiles: profile
   const [moi, setMoi] = useState(null);
   useEffect(() => { base44.auth.me().then(setMoi).catch(() => {}); }, []);
   const modeConseiller = !!clientCible && !!moi && (moi.type_compte === "agent" || moi.role === "admin" || moi.type_compte === "directeur");
-  const cible = modeConseiller ? clientCible : moi?.email;
-  const filtreCible = (rows) => (rows || []).filter(r => r.created_by === cible || r.client_courriel === cible);
+  const courrielCible = modeConseiller ? clientCible : moi?.email;
+  const filtreCible = (rows) => (rows || []).filter(r => r.created_by === courrielCible || r.client_courriel === courrielCible);
   const profiles = embedded ? (profilesProp || []) : filtreCible(profilesQuery);
 
   // ── Source unique : buildPayload (même que Dashboard / ModelisationRetraite) ──
