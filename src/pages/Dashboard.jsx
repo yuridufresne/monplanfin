@@ -274,21 +274,21 @@ function VersoDecaissement({ nif, profiles }) {
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={sr.trajectoire} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
                     <defs>
-                      <linearGradient id="gNetVerso" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor={VERT} stopOpacity={0.35} />
-                        <stop offset="100%" stopColor={VERT} stopOpacity={0.02} />
-                      </linearGradient>
+                      <linearGradient id="gFerr" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={OR} stopOpacity={0.5} /><stop offset="100%" stopColor={OR} stopOpacity={0.08} /></linearGradient>
+                      <linearGradient id="gCeli" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={VERT} stopOpacity={0.5} /><stop offset="100%" stopColor={VERT} stopOpacity={0.08} /></linearGradient>
+                      <linearGradient id="gNr" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={SEC} stopOpacity={0.4} /><stop offset="100%" stopColor={SEC} stopOpacity={0.05} /></linearGradient>
                     </defs>
                     <XAxis dataKey="age" tick={{ fontSize: 9, fill: SEC }} tickLine={false} axisLine={{ stroke: "rgba(255,255,255,0.1)" }} />
                     <YAxis tick={{ fontSize: 9, fill: SEC }} tickLine={false} axisLine={false} width={40} tickFormatter={(v) => fmtk(v)} />
-                    <Tooltip formatter={(v, n) => [fmt(v), n === "net" ? "Revenu net" : "Cible"]} labelFormatter={(a) => a + " ans"} contentStyle={{ background: "#050810", border: "1px solid rgba(201,160,99,0.3)", borderRadius: 8, fontSize: 11 }} />
-                    <Area type="monotone" dataKey="cible" stroke={OR} strokeWidth={1} strokeDasharray="4 3" fill="none" dot={false} isAnimationActive={false} />
-                    <Area type="monotone" dataKey="net" stroke={VERT} strokeWidth={2} fill="url(#gNetVerso)" dot={false} isAnimationActive={false} />
+                    <Tooltip formatter={(v, n) => [fmt(v), n === "ferr" ? "REER/FERR" : n === "celi" ? "CELI" : "Non-enr."]} labelFormatter={(a) => a + " ans"} contentStyle={{ background: "#050810", border: "1px solid rgba(201,160,99,0.3)", borderRadius: 8, fontSize: 11 }} />
+                    <Area type="monotone" dataKey="ferr" stackId="cap" stroke={OR} strokeWidth={1.5} fill="url(#gFerr)" dot={false} isAnimationActive={false} />
+                    <Area type="monotone" dataKey="celi" stackId="cap" stroke={VERT} strokeWidth={1.5} fill="url(#gCeli)" dot={false} isAnimationActive={false} />
+                    <Area type="monotone" dataKey="nonReg" stackId="cap" stroke={SEC} strokeWidth={1.5} fill="url(#gNr)" dot={false} isAnimationActive={false} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
             )}
-            <p style={{ fontSize: 10, color: SEC }}>Revenu net soutenable (vert) vs cible (or), par âge — selon vos données et la stratégie recommandée.</p>
+            <p style={{ fontSize: 10, color: SEC }}>Évolution de ton capital — REER/FERR (or), CELI (vert), non-enregistré (gris) — pendant la retraite, selon la stratégie recommandée.</p>
           </div>
         )}
         <div style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(201,160,99,0.08)", border: "1px solid rgba(201,160,99,0.25)", marginTop: 4 }}>
