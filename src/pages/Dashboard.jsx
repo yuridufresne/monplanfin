@@ -206,8 +206,8 @@ function VersoDecaissement({ nif, profiles }) {
   const [ageSel, setAgeSel] = useState(null);
   const d = decaissementSimple(nif);
   const OR = "#C9A063", VERT = "#5BC4A0", ROUGE = "#f87171", SEC = "#94A3B8", MONO = "var(--font-mono)";
-  if (!d || d.etatVide) {
   const sr = strategieReelle(profiles);
+  if (!d || d.etatVide) {
     return (
       <div style={{ textAlign: "center", padding: "24px 8px", color: SEC }}>
         <p style={{ fontSize: 14, marginBottom: 14 }}>Complétez vos sections Retraite et Revenus pour voir votre projection.</p>
