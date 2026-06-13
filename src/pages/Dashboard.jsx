@@ -202,7 +202,7 @@ function BarreDossierClient() {
   );
 }
 
-function VersoDecaissement({ nif }) {
+function VersoDecaissement({ nif, profiles }) {
   const [ageSel, setAgeSel] = useState(null);
   const d = decaissementSimple(nif);
   const OR = "#C9A063", VERT = "#5BC4A0", ROUGE = "#f87171", SEC = "#94A3B8", MONO = "var(--font-mono)";
@@ -255,47 +255,7 @@ function VersoDecaissement({ nif }) {
         </div>
       </div>
             <p style={{ fontSize: 12, fontWeight: 700, marginBottom: 8 }}>Projection du décaissement</p>
-      {(() => {
-        const g = d.graphiques || { options: [], series: {} };
-        const ages = g.options || [];
-        const selected = (ageSel != null && ages.indexOf(ageSel) >= 0) ? ageSel : g.ageCentre;
-        const serie = (g.series && g.series[selected]) || { cible: [], actuelle: [] };
-        const allPts = serie.cible.concat(serie.actuelle);
-        const maxY = Math.max(1, ...allPts.map((p) => (p.rrq||0)+(p.psv||0)+(p.pd||0)+(p.portefeuille||0)));
-        const BLEU = "#6B8ED6", VIOLET = "#A87DD3";
-        const Graphe = ({ data, titre }) => (
-          <div style={{ flex: "1 1 260px", minWidth: 230 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: SEC, marginBottom: 6 }}>{titre}</p>
-            <ResponsiveContainer width="100%" height={180}>
-              <AreaChart data={data} margin={{ top: 4, right: 6, left: -10, bottom: 0 }}>
-                <XAxis dataKey="age" tick={{ fontSize: 9, fill: SEC }} />
-                <YAxis domain={[0, maxY]} width={40} tick={{ fontSize: 9, fill: SEC }} tickFormatter={(val) => fmtk(val)} />
-                <Tooltip formatter={(val, n) => [fmt(val), n]} labelFormatter={(l) => l + " ans"} contentStyle={{ background: "#0A1628", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, fontSize: 11 }} />
-                <Area type="monotone" dataKey="rrq" stackId="1" stroke={VERT} fill={VERT} fillOpacity={0.75} name="RRQ" />
-                <Area type="monotone" dataKey="psv" stackId="1" stroke={BLEU} fill={BLEU} fillOpacity={0.75} name="PSV" />
-                <Area type="monotone" dataKey="pd" stackId="1" stroke={VIOLET} fill={VIOLET} fillOpacity={0.75} name="Pension PD" />
-                <Area type="monotone" dataKey="portefeuille" stackId="1" stroke={OR} fill={OR} fillOpacity={0.75} name="Portefeuille" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        );
-        return (
-          <div>
-            <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-              {ages.map((a) => (
-                <button key={a} onClick={() => setAgeSel(a)} style={{ flex: 1, padding: "8px", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 13, border: "1px solid " + (a === selected ? OR : "rgba(255,255,255,0.12)"), background: a === selected ? "rgba(201,160,99,0.18)" : "rgba(255,255,255,0.03)", color: a === selected ? OR : SEC, boxShadow: a === selected ? "0 0 0 3px rgba(201,160,99,0.15)" : "none" }}>{a} ans</button>
-              ))}
-            </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 10 }}>
-              <Graphe data={serie.cible} titre="Cible (NIF)" />
-              <Graphe data={serie.actuelle} titre="Votre trajectoire actuelle" />
-            </div>
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", fontSize: 10, color: SEC, marginBottom: 16 }}>
-              <span style={{ color: VERT }}>RRQ</span><span style={{ color: BLEU }}>PSV</span><span style={{ color: VIOLET }}>Pension PD</span><span style={{ color: OR }}>Portefeuille</span>
-            </div>
-          </div>
-        );
-      })()}
+      <StudioDecaissement embedded profiles={profiles} />
       <div style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(201,160,99,0.08)", border: "1px solid rgba(201,160,99,0.25)", marginBottom: 12 }}>
         <p style={{ fontSize: 12, fontWeight: 700, color: OR, marginBottom: 6 }}>🔓 Débloquez l'analyse complète</p>
         <p style={{ fontSize: 11, color: SEC }}>Ordre de décaissement fiscalement optimal · fractionnement de revenu · gestion de la récupération PSV.</p>
@@ -657,7 +617,7 @@ export default function Dashboard() {
                   onFlip={setNifFlipped}
                   front={<NIFCalculator profiles={profiles} />}
                   frontStyle={{ background: "transparent", border: "none", padding: 0 }}
-                  back={<div style={{padding:"0 4px"}}><VersoDecaissement nif={nif} /></div>}
+                  back={<div style={{padding:"0 4px"}}><VersoDecaissement nif={nif} profiles={profiles} /></div>}
                 />
               </motion.div>
 
