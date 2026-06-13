@@ -231,6 +231,16 @@ function VersoDecaissement({ nif }) {
           </div>
         ))}
       </div>
+            <p style={{ fontSize: 12, fontWeight: 700, marginBottom: 8 }}>Capital projeté selon l’âge de retraite</p>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8, marginBottom: 16 }}>
+        {t1.map((r) => { const ok = (r.capitalProjete || 0) >= (r.nif || 0); return (
+          <div key={"p" + r.age} style={{ padding: "10px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <p style={{ fontSize: 11, color: SEC }}>{r.age} ans</p>
+            <p style={{ fontFamily: MONO, fontSize: 15, fontWeight: 700, color: ok ? VERT : ROUGE }}>{fmtk(r.capitalProjete)}</p>
+            <p style={{ fontSize: 10, color: ok ? VERT : ROUGE, marginTop: 4 }}>{ok ? "Objectif atteint" : ("Manque " + fmtk(r.nif - r.capitalProjete))}</p>
+          </div>
+        ); })}
+      </div>
       <p style={{ fontSize: 12, fontWeight: 700, marginBottom: 8 }}>Votre trajectoire</p>
       <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
         <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 10px", borderRadius: 8, background: "rgba(91,196,160,0.08)" }}>
