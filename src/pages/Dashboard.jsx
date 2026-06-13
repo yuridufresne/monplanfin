@@ -288,6 +288,7 @@ function VersoDecaissement({ nif, profiles }) {
                 </ResponsiveContainer>
               </div>
             )}
+            <p style={{ fontSize: 9, color: "#f87171", fontFamily: MONO }}>DEBUG pts={(sr.trajectoire||[]).length} | a0={JSON.stringify((sr.trajectoire||[])[0]||null)} | strat={String(sr.strategie)}</p>
             <p style={{ fontSize: 10, color: SEC }}>Évolution de ton capital — REER/FERR (or), CELI (vert), non-enregistré (gris) — pendant la retraite, selon la stratégie recommandée.</p>
           </div>
         )}
