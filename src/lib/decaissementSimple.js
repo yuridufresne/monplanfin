@@ -3,6 +3,9 @@
 // Distinct du moteur complet (payant). Consomme la sortie de calcNIFFromProfiles.
 // ============================================================================
 import { RENDEMENT_ACCUM, RENDEMENT_DECAISS, INFLATION } from "@/lib/calcNIF";
+import { buildPayload, IQPF } from "@/lib/clientPayload";
+import { projeterSoldesRetraite } from "@/lib/moteurDecaissement";
+import { comparerStrategies } from "@/lib/moteurStrategies";
 
 const TAUX_RETRAIT = 0.04;
 const TAUX_IMPOT_EFFECTIF_MOYEN = 0.18; // A VALIDER
@@ -134,4 +137,44 @@ export function decaissementSimple(nif) {
     graphiques: { ageCentre: ageRetraite, options: optionAges, series },
     hypotheses: { rendementAccum: RENDEMENT_ACCUM, rendementDecaiss: RENDEMENT_DECAISS, inflation: INFLATION, tauxRetrait: TAUX_RETRAIT, tauxImpotEffectifMoyen: TAUX_IMPOT_EFFECTIF_MOYEN },
   };
+}
+
+// Strategie de decaissement REELLE (meme pipeline que le Studio). Lecture seule.
+export function strategieReelle(profiles) {
+  try {
+    const payload = buildPayload(profiles);
+    if (!payload || !payload.conjoint_a) return { etatVide: true };
+    const pA = payload.conjoint_a, pB = payload.conjoint_b;
+    const enCouple = !!payload.enCouple;
+    const ep = payload.epargne || {}, obj = payload.objectifs || {}, hyp = payload.hypotheses || {};
+    const rg = payload.revenus_garantis || {};
+    const dAgeA = pA.age || 38, dAgeB = (pB && pB.age) || 36;
+    const dRetA = pA.ageRetraite || 65, dRetB = (pB && pB.ageRetraite) || 65;
+    const dReerA = ep.solde_reer_a != null ? ep.solde_reer_a : (pA.soldeReer || 0);
+    const dCeliA = ep.solde_celi_a != null ? ep.solde_celi_a : (pA.soldeCeli || 0);
+    const dReerB = ep.solde_reer_b != null ? ep.solde_reer_b : ((pB && pB.soldeReer) || 0);
+    const dCeliB = ep.solde_celi_b != null ? ep.solde_celi_b : ((pB && pB.soldeCeli) || 0);
+    const dCotReerA = ep.cot_reer_a != null ? ep.cot_reer_a : (pA.cotReer || 0);
+    const dCotCeliA = ep.cot_celi_a != null ? ep.cot_celi_a : (pA.cotCeli || 0);
+    const dCotReerB = ep.cot_reer_b != null ? ep.cot_reer_b : ((pB && pB.cotReer) || 0);
+    const dCotCeliB = ep.cot_celi_b != null ? ep.cot_celi_b : ((pB && pB.cotCeli) || 0);
+    const dRrqA = pA.rrqAjuste || 0, dRrqB = (pB && pB.rrqAjuste) || 0;
+    const cible = obj.cible_annuelle || Math.round(((pA.salaire||0) + ((pB && pB.salaire)||0)) * 0.7) || 75000;
+    const esp = hyp.esperance_vie || (IQPF && IQPF.ESP_VIE) || 95;
+    const rend = (IQPF && IQPF.REND_DECAISSE != null) ? IQPF.REND_DECAISSE : 0.05;
+    const rendAcc = (IQPF && IQPF.REND_ACCUM != null) ? IQPF.REND_ACCUM : 0.07;
+    const inf = 0.023;
+    const projete = projeterSoldesRetraite({ ageA: dAgeA, ageRetraiteA: dRetA, reerA: dReerA, celiA: dCeliA, cotReerA: dCotReerA, cotCeliA: dCotCeliA, ageB: enCouple ? dAgeB : null, ageRetraiteB: enCouple ? dRetB : null, reerB: enCouple ? dReerB : 0, celiB: enCouple ? dCeliB : 0, cotReerB: enCouple ? dCotReerB : 0, cotCeliB: enCouple ? dCotCeliB : 0, rendement: rendAcc });
+    const gapPremiere = Math.max(0, dRetA - dAgeA);
+    const personnes = [{ nom: pA.prenom || "Conjoint A", ageInitial: dRetA, ageRetraite: dRetA, renteRRQ65: dRrqA, soldeReer: projete.reerA, soldeCeli: projete.celiA, salaire: pA.salaire || 0, pension: rg.pension_a_idx || 0, tauxIdxPension: rg.taux_indexation_pension_a != null ? rg.taux_indexation_pension_a : inf, celiRoomDispo: pA.celiRoomDispo || 0 }];
+    if (enCouple) personnes.push({ nom: (pB && pB.prenom) || "Conjoint B", ageInitial: dAgeB + gapPremiere, ageRetraite: dRetB, renteRRQ65: dRrqB, soldeReer: projete.reerB, soldeCeli: projete.celiB, salaire: (pB && pB.salaire) || 0, pension: rg.pension_b_idx || 0, tauxIdxPension: rg.taux_indexation_pension_b != null ? rg.taux_indexation_pension_b : inf, celiRoomDispo: (pB && pB.celiRoomDispo) || 0 });
+    const out = comparerStrategies({ anneeDebut: 2026 + gapPremiere, inflation: inf, rendement: rend, esperanceVie: esp, revenuCibleNet: cible, personnes });
+    if (!out || !out.resultats || !out.resultats.length) return { etatVide: true };
+    const reco = out.resultats.find(function(r){ return r.strat === out.recommandee; }) || out.resultats[0];
+    const m = reco.metriques || {};
+    const traj = (reco.lignes || []).map(function(l){ const a = typeof l.age === "number" ? l.age : (Array.isArray(l.age) ? l.age[0] : 0); return { age: a, net: Math.round(l.net || 0), cible: Math.round(l.cible || 0) }; });
+    return { etatVide: false, strategie: reco.nom, cible: Math.round(cible), esperanceVie: esp, metriques: m, trajectoire: traj };
+  } catch (e) {
+    return { etatVide: true, raison: String(e && e.message || e) };
+  }
 }
