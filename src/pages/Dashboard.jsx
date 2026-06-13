@@ -206,7 +206,7 @@ function VersoDecaissement({ nif, profiles }) {
   const [ageSel, setAgeSel] = useState(null);
   const d = decaissementSimple(nif);
   const OR = "#C9A063", VERT = "#5BC4A0", ROUGE = "#f87171", SEC = "#94A3B8", MONO = "var(--font-mono)";
-  const sr = strategieReelle(profiles);
+  const sr = strategieReelle(nif);
   if (!d || d.etatVide) {
     return (
       <div style={{ textAlign: "center", padding: "24px 8px", color: SEC }}>
@@ -244,29 +244,28 @@ function VersoDecaissement({ nif, profiles }) {
           </div>
         ); })}
       </div>
-        {/* Projection du decaissement — calcul reel (moteur du Studio), vue resumee */}
+        {/* Projection du decaissement — source unique: la carte NIF (capital projete) */}
         <p style={{ fontSize: 12, fontWeight: 700, marginBottom: 8 }}>Projection du décaissement</p>
         {sr.etatVide ? (
-          <p style={{ fontSize: 11, color: SEC, marginBottom: 16 }}>Complétez votre profil (épargne, rentes, objectifs) pour afficher la projection.</p>
+          <p style={{ fontSize: 11, color: SEC, marginBottom: 16 }}>Complétez votre profil (retraite, revenus, épargne) pour afficher la projection.</p>
         ) : (
           <div style={{ marginBottom: 16 }}>
-            <p style={{ fontSize: 11, color: SEC, marginBottom: 10 }}>Stratégie retenue : <span style={{ color: OR }}>{sr.strategie}</span></p>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 8, marginBottom: 12 }}>
               <div style={{ padding: "10px", borderRadius: 10, background: "rgba(255,255,255,0.03)" }}>
-                <p style={{ fontSize: 10, color: SEC }}>Revenu net visé</p>
-                <p style={{ fontFamily: MONO, fontSize: 15, fontWeight: 700, color: "#fff" }}>{fmt(sr.cible)}<span style={{ fontSize: 10, color: SEC }}>/an</span></p>
+                <p style={{ fontSize: 10, color: SEC }}>Revenu cible</p>
+                <p style={{ fontFamily: MONO, fontSize: 15, fontWeight: 700, color: "#fff" }}>{fmt(sr.cibleAuj)}<span style={{ fontSize: 10, color: SEC }}>/an</span></p>
               </div>
               <div style={{ padding: "10px", borderRadius: 10, background: "rgba(255,255,255,0.03)" }}>
-                <p style={{ fontSize: 10, color: SEC }}>Années en déficit</p>
-                <p style={{ fontFamily: MONO, fontSize: 15, fontWeight: 700, color: (sr.metriques.anneesDeficit || 0) === 0 ? VERT : ROUGE }}>{sr.metriques.anneesDeficit || 0}{(sr.metriques.anneesDeficit || 0) === 0 ? " · couvert" : ""}</p>
+                <p style={{ fontSize: 10, color: SEC }}>Rentes garanties</p>
+                <p style={{ fontFamily: MONO, fontSize: 15, fontWeight: 700, color: VERT }}>{fmt(sr.revGarAuj)}<span style={{ fontSize: 10, color: SEC }}>/an</span></p>
               </div>
               <div style={{ padding: "10px", borderRadius: 10, background: "rgba(255,255,255,0.03)" }}>
-                <p style={{ fontSize: 10, color: SEC }}>Legs net (après impôt)</p>
-                <p style={{ fontFamily: MONO, fontSize: 15, fontWeight: 700, color: OR }}>{fmtk(sr.metriques.legsNet || 0)}</p>
+                <p style={{ fontSize: 10, color: SEC }}>Capital projeté (retraite)</p>
+                <p style={{ fontFamily: MONO, fontSize: 15, fontWeight: 700, color: OR }}>{fmtk(sr.capitalProjete)}</p>
               </div>
               <div style={{ padding: "10px", borderRadius: 10, background: "rgba(255,255,255,0.03)" }}>
-                <p style={{ fontSize: 10, color: SEC }}>Récupération PSV</p>
-                <p style={{ fontFamily: MONO, fontSize: 15, fontWeight: 700, color: (sr.metriques.clawbackVie || 0) > 0 ? ROUGE : VERT }}>{(sr.metriques.clawbackVie || 0) > 0 ? fmtk(sr.metriques.clawbackVie) : "Aucune"}</p>
+                <p style={{ fontSize: 10, color: SEC }}>Capital épuisé</p>
+                <p style={{ fontFamily: MONO, fontSize: 15, fontWeight: 700, color: sr.couvert ? VERT : ROUGE }}>{sr.couvert ? "Couvert · " + sr.esperanceVie + " ans" : sr.ageEpuise + " ans"}</p>
               </div>
             </div>
             {sr.trajectoire && sr.trajectoire.length > 1 && (
@@ -274,22 +273,17 @@ function VersoDecaissement({ nif, profiles }) {
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={sr.trajectoire} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
                     <defs>
-                      <linearGradient id="gFerr" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={OR} stopOpacity={0.5} /><stop offset="100%" stopColor={OR} stopOpacity={0.08} /></linearGradient>
-                      <linearGradient id="gCeli" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={VERT} stopOpacity={0.5} /><stop offset="100%" stopColor={VERT} stopOpacity={0.08} /></linearGradient>
-                      <linearGradient id="gNr" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={SEC} stopOpacity={0.4} /><stop offset="100%" stopColor={SEC} stopOpacity={0.05} /></linearGradient>
+                      <linearGradient id="gCap" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={OR} stopOpacity={0.5} /><stop offset="100%" stopColor={OR} stopOpacity={0.05} /></linearGradient>
                     </defs>
                     <XAxis dataKey="age" tick={{ fontSize: 9, fill: SEC }} tickLine={false} axisLine={{ stroke: "rgba(255,255,255,0.1)" }} />
                     <YAxis tick={{ fontSize: 9, fill: SEC }} tickLine={false} axisLine={false} width={40} tickFormatter={(v) => fmtk(v)} />
-                    <Tooltip formatter={(v, n) => [fmt(v), n === "ferr" ? "REER/FERR" : n === "celi" ? "CELI" : "Non-enr."]} labelFormatter={(a) => a + " ans"} contentStyle={{ background: "#050810", border: "1px solid rgba(201,160,99,0.3)", borderRadius: 8, fontSize: 11 }} />
-                    <Area type="monotone" dataKey="ferr" stackId="cap" stroke={OR} strokeWidth={1.5} fill="url(#gFerr)" dot={false} isAnimationActive={false} />
-                    <Area type="monotone" dataKey="celi" stackId="cap" stroke={VERT} strokeWidth={1.5} fill="url(#gCeli)" dot={false} isAnimationActive={false} />
-                    <Area type="monotone" dataKey="nonReg" stackId="cap" stroke={SEC} strokeWidth={1.5} fill="url(#gNr)" dot={false} isAnimationActive={false} />
+                    <Tooltip formatter={(v) => [fmt(v), "Capital"]} labelFormatter={(a) => a + " ans"} contentStyle={{ background: "#050810", border: "1px solid rgba(201,160,99,0.3)", borderRadius: 8, fontSize: 11 }} />
+                    <Area type="monotone" dataKey="capital" stroke={OR} strokeWidth={2} fill="url(#gCap)" dot={false} isAnimationActive={false} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
             )}
-            <p style={{ fontSize: 9, color: "#f87171", fontFamily: MONO }}>DEBUG pts={(sr.trajectoire||[]).length} | a0={JSON.stringify((sr.trajectoire||[])[0]||null)} | strat={String(sr.strategie)}</p>
-            <p style={{ fontSize: 10, color: SEC }}>Évolution de ton capital — REER/FERR (or), CELI (vert), non-enregistré (gris) — pendant la retraite, selon la stratégie recommandée.</p>
+            <p style={{ fontSize: 10, color: SEC }}>Capital projeté à la retraite, décaissé chaque année (cible indexée − rentes garanties). Même source que ta carte NIF.</p>
           </div>
         )}
         <div style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(201,160,99,0.08)", border: "1px solid rgba(201,160,99,0.25)", marginTop: 4 }}>
