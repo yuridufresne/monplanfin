@@ -172,8 +172,8 @@ export function strategieReelle(profiles) {
     if (!out || !out.resultats || !out.resultats.length) return { etatVide: true };
     const reco = out.resultats.find(function(r){ return r.strat === out.recommandee; }) || out.resultats[0];
     const m = reco.metriques || {};
-    const traj = (reco.lignes || []).map(function(l){ const a = typeof l.age === "number" ? l.age : (Array.isArray(l.age) ? l.age[0] : 0); return { age: a, net: Math.round(l.net || 0), cible: Math.round(l.cible || 0) }; });
-    return { etatVide: false, strategie: reco.nom, cible: Math.round(cible), esperanceVie: esp, metriques: m, trajectoire: traj };
+    const traj = (reco.lignes || []).map(function(l){ const a = (l.ages && l.ages[0]) || 0; const pat = l.patrimoine || []; const ferr = pat.reduce(function(s,p){ return s + (p.ferr || 0); }, 0); const celi = pat.reduce(function(s,p){ return s + (p.celi || 0); }, 0); const nonReg = pat.reduce(function(s,p){ return s + (p.nonReg || 0); }, 0); return { age: a, ferr: Math.round(ferr), celi: Math.round(celi), nonReg: Math.round(nonReg) }; });
+    return { etatVide: false, strategie: reco.strat, cible: Math.round(cible), esperanceVie: esp, metriques: m, trajectoire: traj };
   } catch (e) {
     return { etatVide: true, raison: String(e && e.message || e) };
   }
