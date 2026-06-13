@@ -94,7 +94,8 @@ export function decaissementSimple(nif) {
     const rMois       = RENDEMENT_ACCUM / 12;
     const facteurAnnuite = (Math.pow(1 + rMois, moisAccum) - 1) / rMois;
     const epargneAddMois = facteurAnnuite > 0 ? manqueCapital / facteurAnnuite : 0;
-    return { age: ageRet, nif: Math.round(nifNominal), rentesGouvAnnuel: Math.round(garantisAuj), pensionPDAnnuel: Math.round(pdAnnuel), epargneAddMois: Math.round(epargneAddMois), anneesAFinancer };
+    const capitalProjete = fvSolde + cotMensuelle * facteurAnnuite;
+    return { age: ageRet, nif: Math.round(nifNominal), rentesGouvAnnuel: Math.round(garantisAuj), pensionPDAnnuel: Math.round(pdAnnuel), epargneAddMois: Math.round(epargneAddMois), capitalProjete: Math.round(capitalProjete), anneesAFinancer };
   }
   const optionAges = [ageRetraite - 5, ageRetraite, ageRetraite + 5].filter((a) => a >= ageActuel + 1 && a < esperanceVie);
   const horizons = optionAges.map((a) => {
