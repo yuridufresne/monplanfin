@@ -4,7 +4,7 @@ import { queryClientInstance } from '@/lib/query-client'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import AppLayout from '@/components/layout/AppLayout';
@@ -29,6 +29,41 @@ import AgentDossiers from '@/pages/AgentDossiers';
 import AgentDebug from '@/pages/AgentDebug';
 
 const PUBLIC_PATHS = ['/', '/calculatrices'];
+
+function PremiumGate({ children }) {
+  const [unlocked, setUnlocked] = useState(() => {
+    try { return localStorage.getItem("mpf_studio_premium") === "1"; } catch (e) { return false; }
+  });
+  const [code, setCode] = useState("");
+  const [err, setErr] = useState(false);
+
+  const submit = (e) => {
+    e.preventDefault();
+    if (code.trim().toLowerCase() === "monplanfin") {
+      try { localStorage.setItem("mpf_studio_premium", "1"); } catch (e2) {}
+      setUnlocked(true);
+    } else {
+      setErr(true);
+    }
+  };
+
+  if (unlocked) return children;
+
+  return (
+    <div style={{ minHeight: "70vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px", background: "#050810" }}>
+      <div style={{ maxWidth: 460, width: "100%", textAlign: "center", padding: "40px 32px", borderRadius: 20, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(201,160,99,0.25)" }}>
+        <div style={{ fontSize: 12, letterSpacing: ".18em", textTransform: "uppercase", color: "#C9A063", fontWeight: 700, marginBottom: 12 }}>Fonctionnalite Premium</div>
+        <h2 style={{ fontSize: 24, fontWeight: 800, color: "#fff", marginBottom: 10 }}>Studio de decaissement</h2>
+        <p style={{ fontSize: 14, color: "rgba(255,255,255,0.6)", lineHeight: 1.5, marginBottom: 24 }}>Strategies de retraite annee par annee. Acces reserve, entre ton code d'acces pour debloquer.</p>
+        <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <input type="text" value={code} onChange={(e) => { setCode(e.target.value); setErr(false); }} placeholder="Code d'acces" style={{ padding: "12px 14px", borderRadius: 10, background: "rgba(255,255,255,0.05)", border: "1px solid " + (err ? "#ef5e0b" : "rgba(255,255,255,0.15)"), color: "#fff", fontSize: 15, outline: "none", textAlign: "center" }} />
+          {err && <span style={{ color: "#ef5e0b", fontSize: 13 }}>Code invalide.</span>}
+          <button type="submit" style={{ padding: "12px 14px", borderRadius: 10, background: "#C9A063", color: "#050810", fontWeight: 700, fontSize: 15, border: "none", cursor: "pointer" }}>Debloquer</button>
+        </form>
+      </div>
+    </div>
+  );
+}
 
 const AuthenticatedApp = () => {
   // One-time cleanup of duplicate debt entry
@@ -74,7 +109,7 @@ const AuthenticatedApp = () => {
         <Route path="/resume" element={<FeuilleResume />} />
         <Route path="/avance" element={<AdvancedMode />} />
       
-        <Route path="/studio" element={<StudioDecaissement />} />
+        <Route path="/studio" element={<PremiumGate><StudioDecaissement /></PremiumGate>} />
         <Route path="/protection" element={<ProtectionAssurance />} />
         <Route path="/immobilier" element={<Immobilier />} />
         <Route path="/conditions" element={<Conditions />} />
