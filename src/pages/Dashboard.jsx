@@ -20,6 +20,7 @@ import { calcNIFFromProfiles } from "@/lib/calcNIF";
 import { buildPayload } from "@/lib/clientPayload";
 import InfoTooltip from "@/components/ui/InfoTooltip";
 import FlipCard from "@/components/ui/FlipCard";
+import { decaissementSimple } from "@/lib/decaissementSimple";
 import DetteStrategie from "@/components/dashboard/DetteStrategie";
 import PlacementStrategie from "@/components/dashboard/PlacementStrategie";
 import PlanDecaissement from "@/components/dashboard/PlanDecaissement";
@@ -196,6 +197,57 @@ function BarreDossierClient() {
           <button key={path} onClick={() => navigate(path + suffixe)} disabled={location.pathname === path} style={{ background: location.pathname === path ? "#C9A063" : "rgba(201,160,99,0.12)", border: "1px solid rgba(201,160,99,0.4)", color: location.pathname === path ? "#050810" : "#C9A063", borderRadius: 8, padding: "5px 12px", fontSize: 12, fontWeight: 600, cursor: location.pathname === path ? "default" : "pointer" }}>{lbl}</button>
         ))}
       </div>
+    </div>
+  );
+}
+
+function VersoDecaissement({ nif }) {
+  const d = decaissementSimple(nif);
+  const OR = "#C9A063", VERT = "#5BC4A0", ROUGE = "#f87171", SEC = "#94A3B8", MONO = "var(--font-mono)";
+  if (!d || d.etatVide) {
+    return (
+      <div style={{ textAlign: "center", padding: "24px 8px", color: SEC }}>
+        <p style={{ fontSize: 14, marginBottom: 14 }}>Complétez vos sections Retraite et Revenus pour voir votre projection.</p>
+        <a href="/analyse" style={{ display: "inline-block", padding: "10px 16px", borderRadius: 10, background: OR, color: "#050810", fontWeight: 700, textDecoration: "none", fontSize: 13 }}>Compléter mon ABF →</a>
+      </div>
+    );
+  }
+  const t1 = d.tableau1_horizons || [];
+  const tc = d.tableau2_trajectoires.cible;
+  const ta = d.tableau2_trajectoires.actuelle;
+  const hy = d.hypotheses;
+  return (
+    <div style={{ color: "#fff" }}>
+      <p style={{ fontSize: 11, letterSpacing: ".16em", textTransform: "uppercase", color: OR, fontWeight: 700, marginBottom: 4 }}>Aperçu décaissement</p>
+      <p style={{ fontSize: 12, color: SEC, marginBottom: 14 }}>Estimation simplifiée — l'analyse complète (optimisation fiscale, ordre de décaissement) est dans la version Pro.</p>
+      <p style={{ fontSize: 12, fontWeight: 700, marginBottom: 8 }}>Capital requis (NIF) selon l'âge de retraite</p>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8, marginBottom: 16 }}>
+        {t1.map((r) => (
+          <div key={r.age} style={{ padding: "10px", borderRadius: 10, background: r.source === "recto" ? "rgba(201,160,99,0.12)" : "rgba(255,255,255,0.03)", border: "1px solid " + (r.source === "recto" ? "rgba(201,160,99,0.4)" : "rgba(255,255,255,0.08)") }}>
+            <p style={{ fontSize: 11, color: SEC }}>{r.age} ans</p>
+            <p style={{ fontFamily: MONO, fontSize: 15, fontWeight: 700, color: OR }}>{fmtk(r.nif)}</p>
+            <p style={{ fontSize: 10, color: SEC, marginTop: 4 }}>Rentes gouv. {fmtk(r.rentesGouvAnnuel)}/an</p>
+            <p style={{ fontSize: 10, color: SEC }}>Épargne {fmt(r.epargneAddMois)}/mois</p>
+          </div>
+        ))}
+      </div>
+      <p style={{ fontSize: 12, fontWeight: 700, marginBottom: 8 }}>Votre trajectoire</p>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 10px", borderRadius: 8, background: "rgba(91,196,160,0.08)" }}>
+          <span style={{ fontSize: 12, color: VERT }}>Cible (NIF) — soutenable jusqu'à {tc.tientJusqua} ans</span>
+          <span style={{ fontFamily: MONO, fontSize: 12, color: VERT }}>{fmt(tc.decaissementAnnuelSoutenable)}/an</span>
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 10px", borderRadius: 8, background: ta.tientJusquEsperance ? "rgba(91,196,160,0.08)" : "rgba(248,113,113,0.10)" }}>
+          <span style={{ fontSize: 12, color: ta.tientJusquEsperance ? VERT : ROUGE }}>{ta.tientJusquEsperance ? "Votre épargne tient jusqu'à l'espérance de vie" : ("Votre épargne s'épuise à " + ta.ageEpuisement + " ans")}</span>
+          <span style={{ fontFamily: MONO, fontSize: 12, color: ta.tientJusquEsperance ? VERT : ROUGE }}>{ta.ecartAnnees === null || ta.ecartAnnees >= 0 ? "OK" : (ta.ecartAnnees + " ans")}</span>
+        </div>
+      </div>
+      <div style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(201,160,99,0.08)", border: "1px solid rgba(201,160,99,0.25)", marginBottom: 12 }}>
+        <p style={{ fontSize: 12, fontWeight: 700, color: OR, marginBottom: 6 }}>🔓 Débloquez l'analyse complète</p>
+        <p style={{ fontSize: 11, color: SEC }}>Ordre de décaissement fiscalement optimal · fractionnement de revenu · gestion de la récupération PSV.</p>
+      </div>
+      <p style={{ fontSize: 10, color: SEC, lineHeight: 1.5 }}>Hypothèses : rendement {Math.round(hy.rendementAccum*100)}% (accum.) / {Math.round(hy.rendementDecaiss*100)}% (décaiss.), inflation {(hy.inflation*100).toFixed(1)}%, retrait {Math.round(hy.tauxRetrait*100)}%, impôt effectif moyen {Math.round(hy.tauxImpotEffectifMoyen*100)}%.</p>
+      <p style={{ fontSize: 10, color: SEC, marginTop: 8, fontStyle: "italic" }}>Projection à titre indicatif — MonPlanFin n'est pas un planificateur financier agréé. À valider avec un professionnel.</p>
     </div>
   );
 }
@@ -551,7 +603,7 @@ export default function Dashboard() {
                   onFlip={setNifFlipped}
                   front={<NIFCalculator profiles={profiles} />}
                   frontStyle={{ background: "transparent", border: "none", padding: 0 }}
-                  back={<div style={{padding:"0 4px"}}><StudioDecaissement embedded profiles={profiles} /></div>}
+                  back={<div style={{padding:"0 4px"}}><VersoDecaissement nif={nif} /></div>}
                 />
               </motion.div>
 
