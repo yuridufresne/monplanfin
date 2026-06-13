@@ -87,21 +87,21 @@ export default function Calculators() {
   const current = tabs.find((t) => t.value === active);
 
   return (
-    <div className="bg-slate-50 min-h-screen">
+    <div className="min-h-screen" style={{ background: "#050810" }}>
       <div className="max-w-6xl mx-auto px-6 lg:px-10 py-14 md:py-20">
 
         {/* Header */}
         <motion.div {...fadeUp(0)} className="mb-12">
           <div className="inline-flex items-center gap-2.5 mb-6">
             <span className="w-5 h-[1.5px] bg-accent" />
-            <span className="text-[11px] font-bold tracking-[0.14em] uppercase text-muted-foreground/60">
+            <span className="text-[11px] font-bold tracking-[0.14em] uppercase text-white/60/60">
               Outils gratuits
             </span>
           </div>
-          <h1 className="text-[2rem] md:text-[2.75rem] headline-section text-foreground mb-4">
+          <h1 className="text-[2rem] md:text-[2.75rem] headline-section text-white mb-4">
             Calculatrices financières
           </h1>
-          <p className="text-[16px] text-muted-foreground leading-relaxed max-w-xl font-light">
+          <p className="text-[16px] text-white/60 leading-relaxed max-w-xl font-light">
             10 outils de précision pour modéliser vos scénarios financiers — épargne, fiscalité, retraite et plus.
           </p>
         </motion.div>
@@ -110,11 +110,11 @@ export default function Calculators() {
         <motion.div {...fadeUp(0.04)} className="mb-8">
           <div className="flex gap-2 flex-wrap">
             <button onClick={() => setSection("local")}
-              className={`px-5 py-2.5 rounded-xl text-[13px] font-semibold transition-all border ${section === "local" ? "bg-primary text-white border-primary shadow-float" : "bg-white border-slate-200 text-foreground hover:border-primary/30"}`}>
+              className={`px-5 py-2.5 rounded-xl text-[13px] font-semibold transition-all border ${section === "local" ? "bg-primary text-white border-primary shadow-float" : "bg-white/5 border-white/10 text-white hover:border-primary/30"}`}>
               🇨🇦 Simulateurs QC / Canada
             </button>
             <button onClick={() => setSection("externe")}
-              className={`px-5 py-2.5 rounded-xl text-[13px] font-semibold transition-all border ${section === "externe" ? "bg-primary text-white border-primary shadow-float" : "bg-white border-slate-200 text-foreground hover:border-primary/30"}`}>
+              className={`px-5 py-2.5 rounded-xl text-[13px] font-semibold transition-all border ${section === "externe" ? "bg-primary text-white border-primary shadow-float" : "bg-white/5 border-white/10 text-white hover:border-primary/30"}`}>
               Calculatrices générales
             </button>
           </div>
@@ -126,13 +126,13 @@ export default function Calculators() {
             <div className="flex gap-2 mb-6 flex-wrap">
               {LOCAL_TOOLS.map(t => (
                 <button key={t.value} onClick={() => setActiveTool(t.value)}
-                  className={`text-left px-4 py-3 rounded-xl border transition-all text-[13px] font-semibold ${activeTool === t.value ? "bg-primary text-white border-primary shadow-float" : "bg-white border-slate-200 text-foreground hover:border-primary/30 shadow-sm"}`}>
+                  className={`text-left px-4 py-3 rounded-xl border transition-all text-[13px] font-semibold ${activeTool === t.value ? "bg-primary text-white border-primary shadow-float" : "bg-white/5 border-white/10 text-white hover:border-primary/30 shadow-sm"}`}>
                   {t.label}
-                  <p className={`text-[11px] font-light mt-0.5 ${activeTool === t.value ? "text-white/60" : "text-muted-foreground"}`}>{t.sub}</p>
+                  <p className={`text-[11px] font-light mt-0.5 ${activeTool === t.value ? "text-white/60" : "text-white/60"}`}>{t.sub}</p>
                 </button>
               ))}
             </div>
-            <div className="rounded-2xl overflow-hidden border border-slate-200 shadow-lg mb-16">
+            <div className="rounded-2xl overflow-hidden border border-white/10 shadow-lg mb-16">
               {activeTool === "impot"    && <SimulateurImpot />}
               {activeTool === "retraite" && <SimulateurRetraite />}
               {activeTool === "dettes"   && <OptimiseurDettes />}
@@ -153,13 +153,13 @@ export default function Calculators() {
                 className={`group text-left px-4 py-3.5 rounded-xl border transition-all duration-200 ${
                   active === tab.value
                     ? "bg-primary border-primary text-white shadow-float"
-                    : "bg-white border-slate-200 text-foreground hover:border-primary/30 hover:shadow-md shadow-sm"
+                    : "bg-white/5 border-white/10 text-white hover:border-primary/30 hover:shadow-md shadow-sm"
                 }`}
               >
-                <p className={`text-[12.5px] font-semibold leading-snug ${active === tab.value ? "text-white" : "text-foreground"}`}>
+                <p className={`text-[12.5px] font-semibold leading-snug ${active === tab.value ? "text-white" : "text-white"}`}>
                   {tab.label}
                 </p>
-                <p className={`text-[11px] font-light mt-0.5 ${active === tab.value ? "text-white/60" : "text-muted-foreground"}`}>
+                <p className={`text-[11px] font-light mt-0.5 ${active === tab.value ? "text-white/60" : "text-white/60"}`}>
                   {tab.sub}
                 </p>
               </button>
@@ -176,14 +176,14 @@ export default function Calculators() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
           >
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden mb-16">
+            <div className="bg-white/5 rounded-2xl border border-white/10 shadow-lg overflow-hidden mb-16">
               {/* Card header */}
               <div className="flex items-center justify-between px-7 py-5 border-b border-slate-100">
                 <div>
-                  <h2 className="text-[15px] font-semibold text-foreground tracking-tight">
+                  <h2 className="text-[15px] font-semibold text-white tracking-tight">
                     {current.label}
                   </h2>
-                  <p className="text-[12.5px] text-muted-foreground font-light mt-0.5">
+                  <p className="text-[12.5px] text-white/60 font-light mt-0.5">
                     {current.sub}
                   </p>
                 </div>
@@ -191,7 +191,7 @@ export default function Calculators() {
                   href={current.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground hover:text-primary transition-colors"
+                  className="inline-flex items-center gap-1.5 text-[12px] text-white/60 hover:text-primary transition-colors"
                 >
                   Ouvrir dans un nouvel onglet
                   <ArrowUpRight className="w-3.5 h-3.5" />
