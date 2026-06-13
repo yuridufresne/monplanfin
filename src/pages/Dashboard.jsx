@@ -20,7 +20,7 @@ import { calcNIFFromProfiles } from "@/lib/calcNIF";
 import { buildPayload } from "@/lib/clientPayload";
 import InfoTooltip from "@/components/ui/InfoTooltip";
 import FlipCard from "@/components/ui/FlipCard";
-import { decaissementSimple } from "@/lib/decaissementSimple";
+import { decaissementSimple, strategieReelle } from "@/lib/decaissementSimple";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import DetteStrategie from "@/components/dashboard/DetteStrategie";
 import PlacementStrategie from "@/components/dashboard/PlacementStrategie";
@@ -207,6 +207,7 @@ function VersoDecaissement({ nif, profiles }) {
   const d = decaissementSimple(nif);
   const OR = "#C9A063", VERT = "#5BC4A0", ROUGE = "#f87171", SEC = "#94A3B8", MONO = "var(--font-mono)";
   if (!d || d.etatVide) {
+  const sr = strategieReelle(profiles);
     return (
       <div style={{ textAlign: "center", padding: "24px 8px", color: SEC }}>
         <p style={{ fontSize: 14, marginBottom: 14 }}>Complétez vos sections Retraite et Revenus pour voir votre projection.</p>
@@ -243,20 +244,54 @@ function VersoDecaissement({ nif, profiles }) {
           </div>
         ); })}
       </div>
-      <p style={{ fontSize: 12, fontWeight: 700, marginBottom: 8 }}>Votre trajectoire</p>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 10px", borderRadius: 8, background: "rgba(91,196,160,0.08)" }}>
-          <span style={{ fontSize: 12, color: VERT }}>Cible (NIF) — soutenable jusqu'à {tc.tientJusqua} ans</span>
-          <span style={{ fontFamily: MONO, fontSize: 12, color: VERT }}>{fmt(tc.decaissementAnnuelSoutenable)}/an</span>
-        </div>
-        <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 10px", borderRadius: 8, background: ta.tientJusquEsperance ? "rgba(91,196,160,0.08)" : "rgba(248,113,113,0.10)" }}>
-          <span style={{ fontSize: 12, color: ta.tientJusquEsperance ? VERT : ROUGE }}>{ta.tientJusquEsperance ? "Votre épargne tient jusqu'à l'espérance de vie" : ("Votre épargne s'épuise à " + ta.ageEpuisement + " ans")}</span>
-          <span style={{ fontFamily: MONO, fontSize: 12, color: ta.tientJusquEsperance ? VERT : ROUGE }}>{ta.ecartAnnees === null || ta.ecartAnnees >= 0 ? "OK" : (ta.ecartAnnees + " ans")}</span>
-        </div>
-      </div>
-            <p style={{ fontSize: 12, fontWeight: 700, marginBottom: 8 }}>Projection du décaissement</p>
-      <StudioDecaissement embedded profiles={profiles} />
-      <div style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(201,160,99,0.08)", border: "1px solid rgba(201,160,99,0.25)", marginBottom: 12 }}>
+        {/* Projection du decaissement — calcul reel (moteur du Studio), vue resumee */}
+        <p style={{ fontSize: 12, fontWeight: 700, marginBottom: 8 }}>Projection du décaissement</p>
+        {sr.etatVide ? (
+          <p style={{ fontSize: 11, color: SEC, marginBottom: 16 }}>Complétez votre profil (épargne, rentes, objectifs) pour afficher la projection.</p>
+        ) : (
+          <div style={{ marginBottom: 16 }}>
+            <p style={{ fontSize: 11, color: SEC, marginBottom: 10 }}>Stratégie retenue : <span style={{ color: OR }}>{sr.strategie}</span></p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 8, marginBottom: 12 }}>
+              <div style={{ padding: "10px", borderRadius: 10, background: "rgba(255,255,255,0.03)" }}>
+                <p style={{ fontSize: 10, color: SEC }}>Revenu net visé</p>
+                <p style={{ fontFamily: MONO, fontSize: 15, fontWeight: 700, color: "#fff" }}>{fmt(sr.cible)}<span style={{ fontSize: 10, color: SEC }}>/an</span></p>
+              </div>
+              <div style={{ padding: "10px", borderRadius: 10, background: "rgba(255,255,255,0.03)" }}>
+                <p style={{ fontSize: 10, color: SEC }}>Années en déficit</p>
+                <p style={{ fontFamily: MONO, fontSize: 15, fontWeight: 700, color: (sr.metriques.anneesDeficit || 0) === 0 ? VERT : ROUGE }}>{sr.metriques.anneesDeficit || 0}{(sr.metriques.anneesDeficit || 0) === 0 ? " · couvert" : ""}</p>
+              </div>
+              <div style={{ padding: "10px", borderRadius: 10, background: "rgba(255,255,255,0.03)" }}>
+                <p style={{ fontSize: 10, color: SEC }}>Legs net (après impôt)</p>
+                <p style={{ fontFamily: MONO, fontSize: 15, fontWeight: 700, color: OR }}>{fmtk(sr.metriques.legsNet || 0)}</p>
+              </div>
+              <div style={{ padding: "10px", borderRadius: 10, background: "rgba(255,255,255,0.03)" }}>
+                <p style={{ fontSize: 10, color: SEC }}>Récupération PSV</p>
+                <p style={{ fontFamily: MONO, fontSize: 15, fontWeight: 700, color: (sr.metriques.clawbackVie || 0) > 0 ? ROUGE : VERT }}>{(sr.metriques.clawbackVie || 0) > 0 ? fmtk(sr.metriques.clawbackVie) : "Aucune"}</p>
+              </div>
+            </div>
+            {sr.trajectoire && sr.trajectoire.length > 1 && (
+              <div style={{ height: 150, marginBottom: 6 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={sr.trajectoire} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
+                    <defs>
+                      <linearGradient id="gNetVerso" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={VERT} stopOpacity={0.35} />
+                        <stop offset="100%" stopColor={VERT} stopOpacity={0.02} />
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="age" tick={{ fontSize: 9, fill: SEC }} tickLine={false} axisLine={{ stroke: "rgba(255,255,255,0.1)" }} />
+                    <YAxis tick={{ fontSize: 9, fill: SEC }} tickLine={false} axisLine={false} width={40} tickFormatter={(v) => fmtk(v)} />
+                    <Tooltip formatter={(v, n) => [fmt(v), n === "net" ? "Revenu net" : "Cible"]} labelFormatter={(a) => a + " ans"} contentStyle={{ background: "#050810", border: "1px solid rgba(201,160,99,0.3)", borderRadius: 8, fontSize: 11 }} />
+                    <Area type="monotone" dataKey="cible" stroke={OR} strokeWidth={1} strokeDasharray="4 3" fill="none" dot={false} isAnimationActive={false} />
+                    <Area type="monotone" dataKey="net" stroke={VERT} strokeWidth={2} fill="url(#gNetVerso)" dot={false} isAnimationActive={false} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+            <p style={{ fontSize: 10, color: SEC }}>Revenu net soutenable (vert) vs cible (or), par âge — selon vos données et la stratégie recommandée.</p>
+          </div>
+        )}
+        <div style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(201,160,99,0.08)", border: "1px solid rgba(201,160,99,0.25)", marginTop: 4 }}>
         <p style={{ fontSize: 12, fontWeight: 700, color: OR, marginBottom: 6 }}>🔓 Débloquez l'analyse complète</p>
         <p style={{ fontSize: 11, color: SEC }}>Ordre de décaissement fiscalement optimal · fractionnement de revenu · gestion de la récupération PSV.</p>
       </div>
