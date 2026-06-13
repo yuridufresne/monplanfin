@@ -19,9 +19,9 @@
 import { getRevenusGarantisABF, indexerRevenusGarantis, PRESTATIONS_2026 } from '@/lib/prestationsGouvernementales';
 import { buildPayload } from '@/lib/clientPayload';
 
-const RENDEMENT_ACCUM   = 0.07;
-const RENDEMENT_DECAISS = 0.05;
-const INFLATION         = 0.023;
+export const RENDEMENT_ACCUM   = 0.07;
+export const RENDEMENT_DECAISS = 0.05;
+export const INFLATION         = 0.023;
 const PSV_MENSUEL       = PRESTATIONS_2026.psv.mensuel65; // 713.34 $/mois — source unique
 
 // ─────────────────────────────────────────────────────────────────────────────
