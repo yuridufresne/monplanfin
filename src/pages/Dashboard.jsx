@@ -494,9 +494,11 @@ export default function Dashboard() {
       nb_enfants: nbEnf, cout_etudes_par_enfant: etudesParEnfant,
       annees_remplacement_secur: 3, duree_pref_principale: "T20", fumeur: false,
     };
-    const recoA = calculerRecommandations({ ...base, age: ageDe(profil.dob), sexe: "homme", salaire_brut: salaireA, epargne_actuelle: epargneA });
+    const reerA = (comptes.reer || []).reduce((s, c) => s + (parseFloat(c.solde) || 0), 0);
+    const reerB = (comptesConj.reer || []).reduce((s, c) => s + (parseFloat(c.solde) || 0), 0);
+    const recoA = calculerRecommandations({ ...base, age: ageDe(profil.dob), sexe: "homme", salaire_brut: salaireA, epargne_actuelle: epargneA, reer_actuel: reerA });
     const recoB = enCouple
-      ? calculerRecommandations({ ...base, age: ageDe(profil.conjoint?.dob), sexe: "femme", salaire_brut: salaireB, epargne_actuelle: epargneB })
+      ? calculerRecommandations({ ...base, age: ageDe(profil.conjoint?.dob), sexe: "femme", salaire_brut: salaireB, epargne_actuelle: epargneB, reer_actuel: reerB })
       : null;
 
     return {
