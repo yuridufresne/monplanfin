@@ -189,7 +189,8 @@ function readPersonne(ret = {}, profil = {}, salaireAnnuel = 0) {
   };
 }
 
-export function buildPayload(profiles = []) {
+export function buildPayload(profiles = [], opts = {}) {
+  const REND_ACCUM_EFF = (opts && typeof opts.rendAccum === "number") ? opts.rendAccum : IQPF.REND_ACCUM;
   const dict = {};
   (profiles || []).forEach(p => {
     // Section peut être à la racine (p.section) OU imbriquée dans data (p.data.section)
@@ -296,14 +297,14 @@ export function buildPayload(profiles = []) {
     : manqueFutur * nRetrait;
   const nif = Math.round((nif_4pct + nif_rente) / 2);
 
-  const capA = fv(pA.soldeReer + pA.soldeCeli, pA.cotReer + pA.cotCeli, IQPF.REND_ACCUM, nA);
-  const capB = pB ? fv(pB.soldeReer + pB.soldeCeli, pB.cotReer + pB.cotCeli, IQPF.REND_ACCUM, nB) : 0;
+  const capA = fv(pA.soldeReer + pA.soldeCeli, pA.cotReer + pA.cotCeli, REND_ACCUM_EFF, nA);
+  const capB = pB ? fv(pB.soldeReer + pB.soldeCeli, pB.cotReer + pB.cotCeli, REND_ACCUM_EFF, nB) : 0;
   const capitalProjecte = Math.round(capA + capB);
 
   const nifNominal = nif;
   const scoreNIF = nifNominal > 0 ? Math.min(Math.round(capitalProjecte / nifNominal * 100), 999) : 100;
 
-  const rM = IQPF.REND_ACCUM / 12, nMois = nA * 12;
+  const rM = REND_ACCUM_EFF / 12, nMois = nA * 12;
   const annuFactor = rM > 0 ? (Math.pow(1 + rM, nMois) - 1) / rM : nMois;
   const manqueCapital = Math.max(0, nifNominal - capitalProjecte);
   const cotSupp = manqueCapital > 0 && annuFactor > 0
