@@ -61,10 +61,10 @@ function seriesPourAge(ageRet, P) {
 }
 
 // Strategie de decaissement REELLE (meme pipeline que le Studio). Lecture seule.
-export function strategieReelle(profiles, delta) {
+export function strategieReelle(profiles, delta, rendAccum) {
   try {
     const eff = (delta && delta !== 0) ? shiftRetraite(profiles, delta) : profiles;
-    const p = buildPayload(eff);
+    const p = buildPayload(eff, (typeof rendAccum === "number") ? { rendAccum: rendAccum } : {});
     if (!p) return { etatVide: true };
     const k = p.kpis || {};
     const obj = p.objectifs || {};
@@ -148,9 +148,10 @@ function shiftRetraite(profiles, delta) {
 }
 
 // 3 horizons (-5 / age / +5): capital requis (NIF) et capital projete, meme moteur IQPF.
-export function nifParAge(profiles) {
+export function nifParAge(profiles, rendAccum) {
   try {
-    const base = buildPayload(profiles);
+    const optsR = (typeof rendAccum === "number") ? { rendAccum: rendAccum } : {};
+    const base = buildPayload(profiles, optsR);
     if (!base || !base.kpis) return [];
     const pA = base.conjoint_a || {};
     const baseAge = pA.ageRetraite || 65;
@@ -160,7 +161,7 @@ export function nifParAge(profiles) {
     deltas.forEach(function (delta) {
       const age = baseAge + delta;
       if (age < ageActuel + 1) return;
-      const pay = delta === 0 ? base : buildPayload(shiftRetraite(profiles, delta));
+      const pay = delta === 0 ? base : buildPayload(shiftRetraite(profiles, delta), optsR);
       if (!pay || !pay.kpis) return;
       const requis = pay.kpis.nif_nominal || 0;
       const projete = pay.kpis.capital_projete || 0;
