@@ -20,8 +20,8 @@ import { calcNIFFromProfiles } from "@/lib/calcNIF";
 import { buildPayload } from "@/lib/clientPayload";
 import InfoTooltip from "@/components/ui/InfoTooltip";
 import FlipCard from "@/components/ui/FlipCard";
-import { decaissementSimple, strategieReelle } from "@/lib/decaissementSimple";
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { strategieReelle } from "@/lib/decaissementSimple";
+import { AreaChart, Area, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import DetteStrategie from "@/components/dashboard/DetteStrategie";
 import PlacementStrategie from "@/components/dashboard/PlacementStrategie";
 import PlanDecaissement from "@/components/dashboard/PlanDecaissement";
@@ -203,95 +203,60 @@ function BarreDossierClient() {
 }
 
 function VersoDecaissement({ nif, profiles }) {
-  const [ageSel, setAgeSel] = useState(null);
-  const d = decaissementSimple(nif);
-  const OR = "#C9A063", VERT = "#5BC4A0", ROUGE = "#f87171", SEC = "#94A3B8", MONO = "var(--font-mono)";
   const sr = strategieReelle(profiles);
-  if (!d || d.etatVide) {
+  const BLEU = "#3B82F6";
+  if (sr.etatVide) {
     return (
-      <div style={{ textAlign: "center", padding: "24px 8px", color: SEC }}>
-        <p style={{ fontSize: 14, marginBottom: 14 }}>Complétez vos sections Retraite et Revenus pour voir votre projection.</p>
-        <a href="/analyse" style={{ display: "inline-block", padding: "10px 16px", borderRadius: 10, background: OR, color: "#050810", fontWeight: 700, textDecoration: "none", fontSize: 13 }}>Compléter mon ABF →</a>
+      <div style={{ color: "#fff" }}>
+        <p style={{ fontSize: 11, color: SEC }}>Complétez votre profil (retraite, revenus, épargne) pour afficher la projection de décaissement.</p>
       </div>
     );
   }
-  const t1 = d.tableau1_horizons || [];
-  const tc = d.tableau2_trajectoires.cible;
-  const ta = d.tableau2_trajectoires.actuelle;
-  const hy = d.hypotheses;
   return (
     <div style={{ color: "#fff" }}>
-      <p style={{ fontSize: 11, letterSpacing: ".16em", textTransform: "uppercase", color: OR, fontWeight: 700, marginBottom: 4 }}>Aperçu décaissement</p>
-      <p style={{ fontSize: 12, color: SEC, marginBottom: 14 }}>Estimation simplifiée — l'analyse complète (optimisation fiscale, ordre de décaissement) est dans la version Pro.</p>
-      <p style={{ fontSize: 12, fontWeight: 700, marginBottom: 8 }}>Capital requis (NIF) selon l'âge de retraite</p>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8, marginBottom: 16 }}>
-        {t1.map((r) => (
-          <div key={r.age} style={{ padding: "10px", borderRadius: 10, background: r.source === "recto" ? "rgba(201,160,99,0.12)" : "rgba(255,255,255,0.03)", border: "1px solid " + (r.source === "recto" ? "rgba(201,160,99,0.4)" : "rgba(255,255,255,0.08)") }}>
-            <p style={{ fontSize: 11, color: SEC }}>{r.age} ans</p>
-            <p style={{ fontFamily: MONO, fontSize: 15, fontWeight: 700, color: OR }}>{fmtk(r.nif)}</p>
-            <p style={{ fontSize: 10, color: SEC, marginTop: 4 }}>Rentes gouv. {fmtk(r.rentesGouvAnnuel)}/an</p>
-            <p style={{ fontSize: 10, color: SEC }}>Épargne {fmt(r.epargneAddMois)}/mois</p>
-          </div>
-        ))}
+      <p style={{ fontSize: 11, letterSpacing: ".16em", textTransform: "uppercase", color: OR, fontWeight: 700, marginBottom: 6 }}>Projection du décaissement</p>
+      <p style={{ fontSize: 12, color: SEC, marginBottom: 14 }}>Revenu perçu par année — cible (NIF) vs ta projection actuelle. Survole la courbe pour voir le détail des sources.</p>
+      <div style={{ display: "flex", gap: 16, marginBottom: 8, fontSize: 11 }}>
+        <span style={{ color: VERT }}>● Cible (NIF)</span>
+        <span style={{ color: BLEU }}>● Projection actuelle</span>
       </div>
-            <p style={{ fontSize: 12, fontWeight: 700, marginBottom: 8 }}>Capital projeté selon l’âge de retraite</p>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8, marginBottom: 16 }}>
-        {t1.map((r) => { const ok = (r.capitalProjete || 0) >= (r.nif || 0); return (
-          <div key={"p" + r.age} style={{ padding: "10px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
-            <p style={{ fontSize: 11, color: SEC }}>{r.age} ans</p>
-            <p style={{ fontFamily: MONO, fontSize: 15, fontWeight: 700, color: ok ? VERT : ROUGE }}>{fmtk(r.capitalProjete)}</p>
-            <p style={{ fontSize: 10, color: ok ? VERT : ROUGE, marginTop: 4 }}>{ok ? "Objectif atteint" : ("Manque " + fmtk(r.nif - r.capitalProjete))}</p>
-          </div>
-        ); })}
+      <div style={{ height: 200, marginBottom: 8 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={sr.trajectoire} margin={{ top: 6, right: 10, bottom: 0, left: 0 }}>
+            <XAxis dataKey="age" tick={{ fontSize: 9, fill: SEC }} tickLine={false} axisLine={{ stroke: "rgba(255,255,255,0.1)" }} />
+            <YAxis tick={{ fontSize: 9, fill: SEC }} tickLine={false} axisLine={false} width={44} tickFormatter={(v) => fmtk(v)} />
+            <Tooltip content={({ active, payload }) => {
+              if (!active || !payload || !payload.length) return null;
+              const d = payload[0].payload;
+              const row = (lbl, val, col) => (
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 14 }}><span style={{ color: col || SEC }}>{lbl}</span><span style={{ fontFamily: MONO, color: "#fff" }}>{fmt(val)}</span></div>
+              );
+              return (
+                <div style={{ background: "#050810", border: "1px solid rgba(201,160,99,0.3)", borderRadius: 8, padding: "10px 12px", fontSize: 11, minWidth: 180 }}>
+                  <p style={{ color: "#fff", fontWeight: 700, marginBottom: 6 }}>{d.age} ans</p>
+                  {row("Revenu perçu", d.percu, BLEU)}
+                  {row("Cible (NIF)", d.cible, VERT)}
+                  <div style={{ height: 1, background: "rgba(255,255,255,0.1)", margin: "6px 0" }} />
+                  {row("RRQ", d.rrq)}
+                  {row("PSV", d.psv)}
+                  {row("Pension", d.pension)}
+                  {row("REER/FERR", d.reer)}
+                  {row("CELI", d.celi)}
+                </div>
+              );
+            }} />
+            <Line type="monotone" dataKey="cible" stroke={VERT} strokeWidth={2} dot={false} isAnimationActive={false} />
+            <Line type="monotone" dataKey="percu" stroke={BLEU} strokeWidth={2} dot={false} isAnimationActive={false} />
+          </LineChart>
+        </ResponsiveContainer>
       </div>
-        {/* Projection du decaissement — source unique: la carte NIF (capital projete) */}
-        <p style={{ fontSize: 12, fontWeight: 700, marginBottom: 8 }}>Projection du décaissement</p>
-        {sr.etatVide ? (
-          <p style={{ fontSize: 11, color: SEC, marginBottom: 16 }}>Complétez votre profil (retraite, revenus, épargne) pour afficher la projection.</p>
-        ) : (
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 8, marginBottom: 12 }}>
-              <div style={{ padding: "10px", borderRadius: 10, background: "rgba(255,255,255,0.03)" }}>
-                <p style={{ fontSize: 10, color: SEC }}>Revenu cible</p>
-                <p style={{ fontFamily: MONO, fontSize: 15, fontWeight: 700, color: "#fff" }}>{fmt(sr.cibleAuj)}<span style={{ fontSize: 10, color: SEC }}>/an</span></p>
-              </div>
-              <div style={{ padding: "10px", borderRadius: 10, background: "rgba(255,255,255,0.03)" }}>
-                <p style={{ fontSize: 10, color: SEC }}>Rentes garanties</p>
-                <p style={{ fontFamily: MONO, fontSize: 15, fontWeight: 700, color: VERT }}>{fmt(sr.garantiAuj)}<span style={{ fontSize: 10, color: SEC }}>/an</span></p>
-              </div>
-              <div style={{ padding: "10px", borderRadius: 10, background: "rgba(255,255,255,0.03)" }}>
-                <p style={{ fontSize: 10, color: SEC }}>Capital projeté (retraite)</p>
-                <p style={{ fontFamily: MONO, fontSize: 15, fontWeight: 700, color: OR }}>{fmtk(sr.capitalProjete)}</p>
-              </div>
-              <div style={{ padding: "10px", borderRadius: 10, background: "rgba(255,255,255,0.03)" }}>
-                <p style={{ fontSize: 10, color: SEC }}>Capital épuisé</p>
-                <p style={{ fontFamily: MONO, fontSize: 15, fontWeight: 700, color: sr.couvert ? VERT : ROUGE }}>{sr.couvert ? "Couvert · " + sr.esperanceVie + " ans" : sr.ageEpuise + " ans"}</p>
-              </div>
-            </div>
-            {sr.trajectoire && sr.trajectoire.length > 1 && (
-              <div style={{ height: 150, marginBottom: 6 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={sr.trajectoire} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
-                    <defs>
-                      <linearGradient id="gCap" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={OR} stopOpacity={0.5} /><stop offset="100%" stopColor={OR} stopOpacity={0.05} /></linearGradient>
-                    </defs>
-                    <XAxis dataKey="age" tick={{ fontSize: 9, fill: SEC }} tickLine={false} axisLine={{ stroke: "rgba(255,255,255,0.1)" }} />
-                    <YAxis tick={{ fontSize: 9, fill: SEC }} tickLine={false} axisLine={false} width={40} tickFormatter={(v) => fmtk(v)} />
-                    <Tooltip formatter={(v) => [fmt(v), "Capital"]} labelFormatter={(a) => a + " ans"} contentStyle={{ background: "#050810", border: "1px solid rgba(201,160,99,0.3)", borderRadius: 8, fontSize: 11 }} />
-                    <Area type="monotone" dataKey="capital" stroke={OR} strokeWidth={2} fill="url(#gCap)" dot={false} isAnimationActive={false} />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-            <p style={{ fontSize: 10, color: SEC }}>Capital projeté à la retraite, décaissé chaque année (cible indexée − rentes garanties). Même source que ta carte NIF.</p>
-          </div>
-        )}
-        <div style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(201,160,99,0.08)", border: "1px solid rgba(201,160,99,0.25)", marginTop: 4 }}>
-        <p style={{ fontSize: 12, fontWeight: 700, color: OR, marginBottom: 6 }}>🔓 Débloquez l'analyse complète</p>
-        <p style={{ fontSize: 11, color: SEC }}>Ordre de décaissement fiscalement optimal · fractionnement de revenu · gestion de la récupération PSV.</p>
+      <p style={{ fontSize: 10, color: SEC, marginBottom: 16 }}>Quand la courbe bleue passe sous la verte, ton capital projeté ne suffit plus pour atteindre la cible et tu ne reçois que les rentes garanties (RRQ + PSV + pension).</p>
+      <div style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(201,160,99,0.08)", border: "1px solid rgba(201,160,99,0.25)", marginTop: 4 }}>
+        <p style={{ fontSize: 12, fontWeight: 700, color: OR, marginBottom: 6 }}>🔒 Débloquez l’analyse complète</p>
+        <p style={{ fontSize: 11, color: SEC }}>Ordre de décaissement fiscalement optimal · fractionnement de revenu · gestion de la récupération PSV</p>
       </div>
-      <p style={{ fontSize: 10, color: SEC, lineHeight: 1.5 }}>Hypothèses : rendement {Math.round(hy.rendementAccum*100)}% (accum.) / {Math.round(hy.rendementDecaiss*100)}% (décaiss.), inflation {(hy.inflation*100).toFixed(1)}%, retrait {Math.round(hy.tauxRetrait*100)}%, impôt effectif moyen {Math.round(hy.tauxImpotEffectifMoyen*100)}%.</p>
-      <p style={{ fontSize: 10, color: SEC, marginTop: 8, fontStyle: "italic" }}>Projection à titre indicatif — MonPlanFin n'est pas un planificateur financier agréé. À valider avec un professionnel.</p>
+      <p style={{ fontSize: 10, color: SEC, lineHeight: 1.5, marginTop: 12 }}>Hypothèses : rendement décaissement 5 %, inflation 2,5 %, impôt effectif moyen 18 %. Source : moteur IQPF (même que la carte NIF).</p>
+      <p style={{ fontSize: 10, color: SEC, marginTop: 8, fontStyle: "italic" }}>Projection à titre indicatif — MonPlanFin n’est pas un planificateur financier agréé. À valider avec un professionnel.</p>
     </div>
   );
 }
