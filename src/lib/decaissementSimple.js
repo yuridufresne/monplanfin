@@ -119,3 +119,52 @@ export function strategieReelle(profiles) {
     return { etatVide: true, raison: String(e && e.message || e) };
   }
 }
+
+// Decale l age de retraite des deux conjoints (clone profond du profil).
+function shiftRetraite(profiles, delta) {
+  let cloned;
+  try { cloned = JSON.parse(JSON.stringify(profiles)); } catch (e) { return profiles; }
+  if (!Array.isArray(cloned)) return profiles;
+  cloned.forEach(function (p) {
+    const section = (p && (p.section || (p.data && p.data.section))) || "";
+    if (section === "retraite") {
+      const d = (p && p.data) ? p.data : p;
+      if (d && typeof d === "object") {
+        const baseA = parseInt(d.age_retraite) || 65;
+        d.age_retraite = baseA + delta;
+        d.age_debut_rrq = (parseInt(d.age_debut_rrq) || baseA) + delta;
+        d.age_debut_psv = (parseInt(d.age_debut_psv) || baseA) + delta;
+        if (d.conjoint && typeof d.conjoint === "object") {
+          const baseB = parseInt(d.conjoint.age_retraite) || 65;
+          d.conjoint.age_retraite = baseB + delta;
+          d.conjoint.age_debut_rrq = (parseInt(d.conjoint.age_debut_rrq) || baseB) + delta;
+          d.conjoint.age_debut_psv = (parseInt(d.conjoint.age_debut_psv) || baseB) + delta;
+        }
+      }
+    }
+  });
+  return cloned;
+}
+
+// 3 horizons (-5 / age / +5): capital requis (NIF) et capital projete, meme moteur IQPF.
+export function nifParAge(profiles) {
+  try {
+    const base = buildPayload(profiles);
+    if (!base || !base.kpis) return [];
+    const pA = base.conjoint_a || {};
+    const baseAge = pA.ageRetraite || 65;
+    const ageActuel = pA.age || 38;
+    const deltas = [-5, 0, 5];
+    const out = [];
+    deltas.forEach(function (delta) {
+      const age = baseAge + delta;
+      if (age < ageActuel + 1) return;
+      const pay = delta === 0 ? base : buildPayload(shiftRetraite(profiles, delta));
+      if (!pay || !pay.kpis) return;
+      const requis = pay.kpis.nif_nominal || 0;
+      const projete = pay.kpis.capital_projete || 0;
+      out.push({ age: age, requis: requis, projete: projete, manque: Math.max(0, requis - projete) });
+    });
+    return out;
+  } catch (e) { return []; }
+}
