@@ -205,6 +205,10 @@ function BarreDossierClient() {
 function VersoDecaissement({ nif, profiles }) {
   const sr = strategieReelle(profiles);
   const BLEU = "#3B82F6";
+  const OR = "#C9A063";
+  const SEC = "#94A3B8";
+  const VERT = "#5BC4A0";
+  const MONO = "var(--font-mono)";
   if (sr.etatVide) {
     return (
       <div style={{ color: "#fff" }}>
