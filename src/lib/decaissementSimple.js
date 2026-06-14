@@ -61,9 +61,10 @@ function seriesPourAge(ageRet, P) {
 }
 
 // Strategie de decaissement REELLE (meme pipeline que le Studio). Lecture seule.
-export function strategieReelle(profiles) {
+export function strategieReelle(profiles, delta) {
   try {
-    const p = buildPayload(profiles);
+    const eff = (delta && delta !== 0) ? shiftRetraite(profiles, delta) : profiles;
+    const p = buildPayload(eff);
     if (!p) return { etatVide: true };
     const k = p.kpis || {};
     const obj = p.objectifs || {};
@@ -163,7 +164,7 @@ export function nifParAge(profiles) {
       if (!pay || !pay.kpis) return;
       const requis = pay.kpis.nif_nominal || 0;
       const projete = pay.kpis.capital_projete || 0;
-      out.push({ age: age, requis: requis, projete: projete, manque: Math.max(0, requis - projete) });
+      out.push({ age: age, delta: delta, requis: requis, projete: projete, manque: Math.max(0, requis - projete) });
     });
     return out;
   } catch (e) { return []; }
