@@ -20,7 +20,7 @@ import { calcNIFFromProfiles } from "@/lib/calcNIF";
 import { buildPayload } from "@/lib/clientPayload";
 import InfoTooltip from "@/components/ui/InfoTooltip";
 import FlipCard from "@/components/ui/FlipCard";
-import { strategieReelle } from "@/lib/decaissementSimple";
+import { strategieReelle, nifParAge } from "@/lib/decaissementSimple";
 import { AreaChart, Area, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import DetteStrategie from "@/components/dashboard/DetteStrategie";
 import PlacementStrategie from "@/components/dashboard/PlacementStrategie";
@@ -209,6 +209,8 @@ function VersoDecaissement({ nif, profiles }) {
   const SEC = "#94A3B8";
   const VERT = "#5BC4A0";
   const MONO = "var(--font-mono)";
+  const ROUGE = "#f87171";
+  const horizons = nifParAge(profiles);
   if (sr.etatVide) {
     return (
       <div style={{ color: "#fff" }}>
@@ -218,6 +220,29 @@ function VersoDecaissement({ nif, profiles }) {
   }
   return (
     <div style={{ color: "#fff" }}>
+      {horizons.length > 0 && (
+        <div style={{ marginBottom: 18 }}>
+          <p style={{ fontSize: 12, fontWeight: 700, marginBottom: 8 }}>Capital requis (NIF) selon l’âge de retraite</p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(" + horizons.length + ",1fr)", gap: 8, marginBottom: 14 }}>
+            {horizons.map((h) => (
+              <div key={"r" + h.age} style={{ padding: "10px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                <p style={{ fontSize: 11, color: SEC }}>{h.age} ans</p>
+                <p style={{ fontFamily: MONO, fontSize: 15, fontWeight: 700, color: OR }}>{fmtk(h.requis)}</p>
+              </div>
+            ))}
+          </div>
+          <p style={{ fontSize: 12, fontWeight: 700, marginBottom: 8 }}>Capital projeté selon l’âge de retraite</p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(" + horizons.length + ",1fr)", gap: 8 }}>
+            {horizons.map((h) => (
+              <div key={"p" + h.age} style={{ padding: "10px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                <p style={{ fontSize: 11, color: SEC }}>{h.age} ans</p>
+                <p style={{ fontFamily: MONO, fontSize: 15, fontWeight: 700, color: h.projete >= h.requis ? VERT : ROUGE }}>{fmtk(h.projete)}</p>
+                <p style={{ fontSize: 10, color: h.projete >= h.requis ? VERT : ROUGE, marginTop: 2 }}>{h.projete >= h.requis ? "Objectif atteint" : "Manque " + fmtk(h.manque)}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       <p style={{ fontSize: 11, letterSpacing: ".16em", textTransform: "uppercase", color: OR, fontWeight: 700, marginBottom: 6 }}>Projection du décaissement</p>
       <p style={{ fontSize: 12, color: SEC, marginBottom: 14 }}>Revenu perçu par année — cible (NIF) vs ta projection actuelle. Survole la courbe pour voir le détail des sources.</p>
       <div style={{ display: "flex", gap: 16, marginBottom: 8, fontSize: 11 }}>
