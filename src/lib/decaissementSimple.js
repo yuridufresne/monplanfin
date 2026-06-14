@@ -3,6 +3,7 @@
 // Distinct du moteur complet (payant). Consomme la sortie de calcNIFFromProfiles.
 // ============================================================================
 import { RENDEMENT_ACCUM, RENDEMENT_DECAISS, INFLATION } from "@/lib/calcNIF";
+import { buildPayload } from "@/lib/clientPayload";
 
 const TAUX_RETRAIT = 0.04;
 const TAUX_IMPOT_EFFECTIF_MOYEN = 0.18; // A VALIDER
@@ -137,24 +138,28 @@ export function decaissementSimple(nif) {
 }
 
 // Strategie de decaissement REELLE (meme pipeline que le Studio). Lecture seule.
-export function strategieReelle(nif) {
+export function strategieReelle(profiles) {
   try {
-    if (!nif || typeof nif !== "object") return { etatVide: true };
-    const ageRet = Number(nif.ageRetraite) || 65;
-    const esp = Number(nif.esperanceVie) || 95;
-    const ageAct = Number(nif.ageActuel) || 38;
-    const capital0 = Number(nif.capitalProjeteNominal) || Number(nif.capitalProjete) || 0;
-    const revBrut = Number(nif.revBrut) || 0;
-    const tauxRempl = (Number(nif.tauxRemplacement) || 80) / 100;
-    const revGarAuj = Number(nif.revGarantiAnnuel) || 0;
-    const cibleAuj = Math.round(revBrut * tauxRempl);
+    const p = buildPayload(profiles);
+    if (!p) return { etatVide: true };
+    const k = p.kpis || {};
+    const obj = p.objectifs || {};
+    const hyp = p.hypotheses || {};
+    const pA = p.conjoint_a || {};
+    const cibleAuj = (typeof obj.cible_annuelle === "number") ? obj.cible_annuelle : 0;
+    const manqueAuj = (typeof k.manque_annuel === "number") ? k.manque_annuel : 0;
+    const garantiAuj = Math.max(0, cibleAuj - manqueAuj);
+    const capital0 = (typeof k.capital_projete === "number") ? k.capital_projete : 0;
+    const ageRet = pA.ageRetraite || 65;
+    const ageAct = pA.age || 38;
+    const esp = (typeof hyp.esperance_vie === "number") ? hyp.esperance_vie : 95;
+    const inf = (typeof hyp.inflation === "number") ? hyp.inflation : 0.023;
     if (capital0 <= 0 && cibleAuj <= 0) return { etatVide: true };
     const anneesAvant = Math.max(1, ageRet - ageAct);
-    const fInfl = Math.pow(1 + INFLATION, anneesAvant);
-    const gapNet0 = Math.max(0, cibleAuj * fInfl - revGarAuj * fInfl);
+    const fInfl = Math.pow(1 + inf, anneesAvant);
     const TAUX_IMPOT = 0.18;
     let capital = capital0;
-    let besoinNet = gapNet0;
+    let besoinNet = manqueAuj * fInfl;
     let ageEpuise = null;
     const traj = [];
     for (let age = ageRet; age <= esp; age++) {
@@ -163,16 +168,13 @@ export function strategieReelle(nif) {
       capital = (capital - retraitBrut) * (1 + RENDEMENT_DECAISS);
       if (capital <= 0 && ageEpuise === null) ageEpuise = age + 1;
       if (capital < 0) capital = 0;
-      besoinNet *= (1 + INFLATION);
+      besoinNet *= (1 + inf);
     }
-    const capRequis = Math.round(Number(nif.capitalNIFNominal) || Number(nif.capitalNIF) || 0);
     return {
       etatVide: false,
       cibleAuj: cibleAuj,
-      revGarAuj: Math.round(revGarAuj),
-      capitalProjete: Math.round(capital0),
-      capitalRequis: capRequis,
-      manque: Math.max(0, capRequis - Math.round(capital0)),
+      garantiAuj: garantiAuj,
+      capitalProjete: capital0,
       ageEpuise: ageEpuise,
       ageRetraite: ageRet,
       esperanceVie: esp,
