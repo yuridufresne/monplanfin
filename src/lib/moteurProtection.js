@@ -163,7 +163,7 @@ function layeringParComposantes(p, montantNet, composantesBrutes) {
 
 /** Urgence = Hypothèque + Dettes + Funéraires − (épargne liquide × 50%) */
 function calculUrgence(p) {
-  const besoin = (p.hypotheque_solde || 0) + (p.dettes_autres || 0) + (p.frais_funeraires || 18000);
+  const besoin = (p.hypotheque_solde || 0) + (p.dettes_autres || 0) + (p.frais_funeraires || 50000);
   return Math.max(0, besoin - (p.epargne_actuelle || 0) * 0.5 - (p.assurance_existante || 0));
 }
 
@@ -192,7 +192,7 @@ function composantesUrgence(p) {
   return [
     { terme: "T10", label: "Dettes", montant: p.dettes_autres || 0 },
     { terme: "HYPO", label: "Hypothèque", montant: p.hypotheque_solde || 0 },
-    { terme: "LONG", label: "Frais funéraires", montant: p.frais_funeraires || 18000 },
+    { terme: "LONG", label: "Frais funéraires", montant: p.frais_funeraires || 50000 },
   ];
 }
 function composantesSecuritaire(p) {
@@ -201,7 +201,7 @@ function composantesSecuritaire(p) {
     { terme: "T10", label: "Dettes", montant: p.dettes_autres || 0 },
     { terme: "T10", label: "Revenu transitoire", montant: revTrans },
     { terme: "HYPO", label: "Hypothèque", montant: p.hypotheque_solde || 0 },
-    { terme: "LONG", label: "Frais funéraires", montant: p.frais_funeraires || 18000 },
+    { terme: "LONG", label: "Frais funéraires", montant: p.frais_funeraires || 50000 },
   ];
 }
 function composantesOptimal(p) {
@@ -217,7 +217,7 @@ function composantesOptimal(p) {
     { terme: "T20", label: "Revenu prolongé", montant: Math.round(revenu * 0.5) },
     { terme: "T20", label: "Études", montant: etudes },
     { terme: "HYPO", label: "Hypothèque", montant: p.hypotheque_solde || 0 },
-    { terme: "LONG", label: "Frais funéraires", montant: p.frais_funeraires || 18000 },
+    { terme: "LONG", label: "Frais funéraires", montant: p.frais_funeraires || 50000 },
   ];
 }
 
@@ -228,7 +228,7 @@ function evaluerPermanente(p) {
   const sexe = p.sexe || "homme", fumeur = p.fumeur || false;
   const reerImposable = (typeof p.reer_actuel === "number") ? p.reer_actuel : (p.epargne_actuelle || 0) * 0.6;
   const impotSucc = reerImposable * 0.48;
-  const besoinPermanent = Math.max(0, (p.frais_funeraires || 18000) + impotSucc);
+  const besoinPermanent = Math.max(0, (p.frais_funeraires || 50000) + impotSucc);
   const primeT100 = estimerPrime({ duree: "T100", age, sexe, fumeur, couverture: besoinPermanent });
   const primeT20 = estimerPrime({ duree: "T20", age, sexe, fumeur, couverture: besoinPermanent });
   const ratio = primeT20 && primeT100 ? primeT20 / primeT100 : 0;
@@ -280,7 +280,7 @@ export function calculerRecommandations(p) {
       composantes: [
         { label: "Hypothèque", montant: p.hypotheque_solde || 0 },
         { label: "Autres dettes", montant: p.dettes_autres || 0 },
-        { label: "Frais funéraires", montant: p.frais_funeraires || 18000 },
+        { label: "Frais funéraires", montant: p.frais_funeraires || 50000 },
         { label: "Moins : épargne liquide", montant: -Math.round((p.epargne_actuelle || 0) * 0.5) },
       ],
       multiTerm: layeringParComposantes(p, round25(urgence), composantesUrgence(p)),
@@ -324,7 +324,7 @@ export function calculerRecommandations(p) {
       taux_remplacement_net: 0.72,
       annees_jusqu_independance: anOptimal,
       cout_etudes_par_enfant: p.cout_etudes_par_enfant || 60000,
-      frais_funeraires: p.frais_funeraires || 18000,
+      frais_funeraires: p.frais_funeraires || 50000,
     },
   };
 }
