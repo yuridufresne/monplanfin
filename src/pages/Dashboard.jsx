@@ -159,13 +159,12 @@ function ProtectionPaliers({ reco }) {
                 </div>
                 <div style={{ textAlign: "right" }}>
                   <p style={{ fontFamily: "var(--font-mono)", fontSize: 15, fontWeight: 700, color: win ? "#C9A063" : "#fff", lineHeight: 1 }}>{fmtk(p.couverture)}</p>
-                  <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#5BC4A0", marginTop: 3 }}>{prime ? `${fmt(prime)}/mois` : "—"}</p>
                 </div>
               </div>
               {p.nbTermes > 1 && (
                 <p style={{ fontSize: 9.5, color: "rgba(255,255,255,0.35)", marginTop: 7 }}>
                   {p.nbTermes} termes · {p.termes}
-                  {p.economiePct > 0 && <span style={{ color: "#5BC4A0" }}> · −{p.economiePct}%</span>}
+                  
                 </p>
               )}
             </div>
