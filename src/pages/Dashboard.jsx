@@ -203,14 +203,15 @@ function BarreDossierClient() {
 
 function VersoDecaissement({ nif, profiles }) {
   const [selDelta, setSelDelta] = useState(0);
-  const sr = strategieReelle(profiles, selDelta);
+  const [selRend, setSelRend] = useState(0.07);
+  const sr = strategieReelle(profiles, selDelta, selRend);
   const BLEU = "#3B82F6";
   const OR = "#C9A063";
   const SEC = "#94A3B8";
   const VERT = "#5BC4A0";
   const MONO = "var(--font-mono)";
   const ROUGE = "#f87171";
-  const horizons = nifParAge(profiles);
+  const horizons = nifParAge(profiles, selRend);
   const selHz = horizons.find((h) => h.delta === selDelta) || {};
   if (sr.etatVide) {
     return (
@@ -221,6 +222,12 @@ function VersoDecaissement({ nif, profiles }) {
   }
   return (
     <div style={{ color: "#fff" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
+        <span style={{ fontSize: 11, color: SEC }}>Rendement annuel :</span>
+        {[0.05, 0.07, 0.09].map((r) => (
+          <button key={r} onClick={() => setSelRend(r)} style={{ cursor: "pointer", fontFamily: MONO, fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 8, background: selRend === r ? "rgba(201,160,99,0.15)" : "transparent", border: selRend === r ? "1px solid " + OR : "1px solid rgba(255,255,255,0.12)", color: selRend === r ? OR : SEC }}>{Math.round(r * 100)} %</button>
+        ))}
+      </div>
       {horizons.length > 0 && (
         <div style={{ marginBottom: 18 }}>
           <p style={{ fontSize: 12, fontWeight: 700, marginBottom: 8 }}>Capital requis (NIF) selon l’âge de retraite</p>
