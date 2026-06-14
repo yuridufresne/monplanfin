@@ -144,43 +144,54 @@ export function strategieReelle(profiles) {
     if (!p) return { etatVide: true };
     const k = p.kpis || {};
     const obj = p.objectifs || {};
+    const gar = p.revenus_garantis || {};
+    const ep = p.epargne || {};
     const hyp = p.hypotheses || {};
     const pA = p.conjoint_a || {};
-    const cibleAuj = (typeof obj.cible_annuelle === "number") ? obj.cible_annuelle : 0;
-    const manqueAuj = (typeof k.manque_annuel === "number") ? k.manque_annuel : 0;
-    const garantiAuj = Math.max(0, cibleAuj - manqueAuj);
-    const capital0 = (typeof k.capital_projete === "number") ? k.capital_projete : 0;
     const ageRet = pA.ageRetraite || 65;
-    const ageAct = pA.age || 38;
     const esp = (typeof hyp.esperance_vie === "number") ? hyp.esperance_vie : 95;
-    const inf = (typeof hyp.inflation === "number") ? hyp.inflation : 0.023;
-    if (capital0 <= 0 && cibleAuj <= 0) return { etatVide: true };
-    const anneesAvant = Math.max(1, ageRet - ageAct);
-    const fInfl = Math.pow(1 + inf, anneesAvant);
+    const inf = (typeof hyp.inflation === "number") ? hyp.inflation : 0.025;
+    const rendDec = (typeof hyp.rendement_decaissement === "number") ? hyp.rendement_decaissement : ((typeof hyp.rendement === "number") ? hyp.rendement : 0.05);
     const TAUX_IMPOT = 0.18;
-    let capital = capital0;
-    let besoinNet = manqueAuj * fInfl;
-    let ageEpuise = null;
+    const cibleRet = (typeof k.cible_annuelle_idx === "number") ? k.cible_annuelle_idx : (obj.cible_annuelle || 0);
+    let rrq = (gar.rrq_a_idx || 0) + (gar.rrq_b_idx || 0);
+    let psv = (gar.sv_a_idx || 0) + (gar.sv_b_idx || 0);
+    let pension = (gar.pension_a_idx || 0) + (gar.pension_b_idx || 0);
+    const capital0 = (typeof k.capital_projete === "number") ? k.capital_projete : 0;
+    const curReer = (ep.solde_reer_a || 0) + (ep.solde_reer_b || 0);
+    const curCeli = (ep.solde_celi_a || 0) + (ep.solde_celi_b || 0);
+    const cur = curReer + curCeli;
+    let reer = cur > 0 ? capital0 * (curReer / cur) : capital0;
+    let celi = cur > 0 ? capital0 * (curCeli / cur) : 0;
+    if (cibleRet <= 0 && capital0 <= 0) return { etatVide: true };
+    let cible = cibleRet;
     const traj = [];
     for (let age = ageRet; age <= esp; age++) {
-      traj.push({ age: age, capital: Math.max(0, Math.round(capital)) });
-      const retraitBrut = besoinNet / (1 - TAUX_IMPOT);
-      capital = (capital - retraitBrut) * (1 + RENDEMENT_DECAISS);
-      if (capital <= 0 && ageEpuise === null) ageEpuise = age + 1;
-      if (capital < 0) capital = 0;
-      besoinNet *= (1 + inf);
+      const garanti = rrq + psv + pension;
+      let gapNet = Math.max(0, cible - garanti);
+      let reerNet = 0;
+      if (gapNet > 0 && reer > 0) {
+        const grossNeed = gapNet / (1 - TAUX_IMPOT);
+        const gross = Math.min(reer, grossNeed);
+        reer -= gross;
+        reerNet = gross * (1 - TAUX_IMPOT);
+        gapNet -= reerNet;
+      }
+      let celiNet = 0;
+      if (gapNet > 0 && celi > 0) {
+        celiNet = Math.min(celi, gapNet);
+        celi -= celiNet;
+        gapNet -= celiNet;
+      }
+      const percu = garanti + reerNet + celiNet;
+      traj.push({ age: age, cible: Math.round(cible), percu: Math.round(percu), rrq: Math.round(rrq), psv: Math.round(psv), pension: Math.round(pension), reer: Math.round(reerNet), celi: Math.round(celiNet) });
+      reer *= (1 + rendDec);
+      celi *= (1 + rendDec);
+      cible *= (1 + inf);
+      rrq *= (1 + inf);
+      psv *= (1 + inf);
     }
-    return {
-      etatVide: false,
-      cibleAuj: cibleAuj,
-      garantiAuj: garantiAuj,
-      capitalProjete: capital0,
-      ageEpuise: ageEpuise,
-      ageRetraite: ageRet,
-      esperanceVie: esp,
-      couvert: ageEpuise === null || ageEpuise > esp,
-      trajectoire: traj
-    };
+    return { etatVide: false, ageRetraite: ageRet, esperanceVie: esp, trajectoire: traj };
   } catch (e) {
     return { etatVide: true, raison: String(e && e.message || e) };
   }
