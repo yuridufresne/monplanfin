@@ -490,7 +490,7 @@ export default function Dashboard() {
 
     const base = {
       hypotheque_solde: hypoTotal, hypotheque_annees_restantes: anneesHypo,
-      dettes_autres: dettesAutresTotal, frais_funeraires: 18000,
+      dettes_autres: dettesAutresTotal, frais_funeraires: 50000,
       nb_enfants: nbEnf, cout_etudes_par_enfant: etudesParEnfant,
       annees_remplacement_secur: 3, duree_pref_principale: "T20", fumeur: false,
     };
