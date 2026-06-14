@@ -226,9 +226,9 @@ function evaluerPermanente(p) {
   const age = p.age || 35;
   if (age < 60) return { recommandee: false };
   const sexe = p.sexe || "homme", fumeur = p.fumeur || false;
-  const ferrEstime = (p.epargne_actuelle || 0) * 0.5;
-  const impotSucc = ferrEstime * 0.30;
-  const besoinPermanent = Math.max(25000, Math.min(150000, (p.frais_funeraires || 18000) + impotSucc));
+  const reerImposable = (typeof p.reer_actuel === "number") ? p.reer_actuel : (p.epargne_actuelle || 0) * 0.6;
+  const impotSucc = reerImposable * 0.48;
+  const besoinPermanent = Math.max(0, (p.frais_funeraires || 18000) + impotSucc);
   const primeT100 = estimerPrime({ duree: "T100", age, sexe, fumeur, couverture: besoinPermanent });
   const primeT20 = estimerPrime({ duree: "T20", age, sexe, fumeur, couverture: besoinPermanent });
   const ratio = primeT20 && primeT100 ? primeT20 / primeT100 : 0;
