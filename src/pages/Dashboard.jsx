@@ -206,7 +206,7 @@ function VersoDecaissement({ nif, profiles }) {
   const [ageSel, setAgeSel] = useState(null);
   const d = decaissementSimple(nif);
   const OR = "#C9A063", VERT = "#5BC4A0", ROUGE = "#f87171", SEC = "#94A3B8", MONO = "var(--font-mono)";
-  const sr = strategieReelle(nif);
+  const sr = strategieReelle(profiles);
   if (!d || d.etatVide) {
     return (
       <div style={{ textAlign: "center", padding: "24px 8px", color: SEC }}>
@@ -257,7 +257,7 @@ function VersoDecaissement({ nif, profiles }) {
               </div>
               <div style={{ padding: "10px", borderRadius: 10, background: "rgba(255,255,255,0.03)" }}>
                 <p style={{ fontSize: 10, color: SEC }}>Rentes garanties</p>
-                <p style={{ fontFamily: MONO, fontSize: 15, fontWeight: 700, color: VERT }}>{fmt(sr.revGarAuj)}<span style={{ fontSize: 10, color: SEC }}>/an</span></p>
+                <p style={{ fontFamily: MONO, fontSize: 15, fontWeight: 700, color: VERT }}>{fmt(sr.garantiAuj)}<span style={{ fontSize: 10, color: SEC }}>/an</span></p>
               </div>
               <div style={{ padding: "10px", borderRadius: 10, background: "rgba(255,255,255,0.03)" }}>
                 <p style={{ fontSize: 10, color: SEC }}>Capital projeté (retraite)</p>
