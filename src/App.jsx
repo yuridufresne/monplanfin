@@ -27,8 +27,9 @@ import AdminDossiers from '@/pages/AdminDossiers';
 import AdminFeedback from '@/pages/AdminFeedback';
 import AgentDossiers from '@/pages/AgentDossiers';
 import AgentDebug from '@/pages/AgentDebug';
+import EducationFinanciere from '@/pages/EducationFinanciere';
 
-const PUBLIC_PATHS = ['/', '/calculatrices'];
+const PUBLIC_PATHS = ['/', '/calculatrices', '/education'];
 
 function PremiumGate({ children }) {
   const [unlocked, setUnlocked] = useState(() => {
@@ -100,6 +101,7 @@ const AuthenticatedApp = () => {
         {/* Public routes — always accessible */}
         <Route path="/" element={<Home />} />
         <Route path="/calculatrices" element={<Calculators />} />
+          <Route path="/education" element={<EducationFinanciere />} />
         {/* Private routes */}
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/budget" element={<Budget />} />
