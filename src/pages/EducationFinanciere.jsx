@@ -146,7 +146,7 @@ export default function EducationFinanciere() {
     <div style={{ maxWidth: 920, margin: "0 auto", padding: "28px 20px 60px", color: C.text }}>
       <p style={{ fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: C.faint, margin: 0 }}>Éducation financière</p>
       <h1 style={{ fontSize: 28, fontWeight: 800, margin: "6px 0 6px" }}>Dictionnaire financier</h1>
-      <p style={{ color: C.dim, fontSize: 14, lineHeight: 1.6, margin: "0 0 20px" }}>Les termes financiers du Québec et du Canada, expliqués simplement, avec leur usage courant et des exemples. Phase 1 : retraite et revenus. Chiffres à jour pour 2026.</p>
+      <p style={{ color: C.dim, fontSize: 14, lineHeight: 1.6, margin: "0 0 20px" }}>Les termes financiers du Québec et du Canada, expliqués simplement, avec leur usage courant et des exemples. Retraite, revenus et placements. Chiffres à jour pour 2026.</p>
       <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Rechercher un terme (ex. FERR, récupération, fractionnement)..." style={{ width: "100%", boxSizing: "border-box", background: C.cardBg, border: C.cardBorder, borderRadius: 12, padding: "12px 14px", color: C.text, fontSize: 14, outline: "none", marginBottom: 14 }} />
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 18 }}>
         {["Toutes", ...CATS].map((c) => {
