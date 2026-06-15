@@ -295,10 +295,6 @@ export function calcNIFFromProfiles(profiles) {
   const cotMensuelle = (sumCotis(retraite)   + (inclureConj ? sumCotis(retraiteC)   : 0)) || 0;
 
   // ── Progression vers le NIF ───────────────────────────────────────────────────
-  // ✅ Source unique du NIF : valeur canonique de buildPayload (carte dashboard)
-  const _nifCanon = buildPayload(profiles)?.kpis?.nif_nominal;
-  if (Number.isFinite(_nifCanon) && _nifCanon > 0) nifResult.nif = _nifCanon;
-
   const progression = calcAtteintNIF({
     nifResult,
     soldeActuel:  soldeTotal,
