@@ -557,7 +557,7 @@ function Quiz({ theme, done, onComplete }) {
   const total = theme.quiz.length;
   const score = theme.quiz.reduce((s, q, i) => s + (rep[i] === q.r ? 1 : 0), 0);
   const reussi = score >= Math.ceil(total * 0.75);
-  if (done) return (<div style={{ background: "#E1F5EE", borderRadius: 16, padding: "18px 20px", marginTop: 14, display: "flex", alignItems: "center", gap: 12 }}><Award size={24} color="#0F6E56" /><div><div style={{ fontSize: 15, fontWeight: 800, color: "#0F6E56" }}>Badge obtenu !</div><div style={{ fontSize: 13, color: "#3B6D11" }}>Tu maîtrises ce thème. +60 pts gagnés.</div></div></div>);
+  if (done) return (<div style={{ background: "#E1F5EE", borderRadius: 16, padding: "18px 20px", marginTop: 14, display: "flex", alignItems: "center", gap: 12 }}><Award size={24} color="#0F6E56" /><div><div style={{ fontSize: 15, fontWeight: 800, color: "#0F6E56" }}>Badge obtenu !</div><div style={{ fontSize: 13, color: "#3B6D11" }}>Tu maîtrises ce thème. +60 pts gagnés.</div></div><button onClick={() => { setSoumis(false); setRep({}); }} style={{ marginLeft: "auto", background: "transparent", border: "1px solid #0F6E56", color: "#0F6E56", borderRadius: 8, padding: "6px 12px", fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>Refaire</button></div>);
   return (
     <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 16, padding: "20px 22px", marginTop: 18 }}>
       <div style={{ fontSize: 12, letterSpacing: ".05em", textTransform: "uppercase", color: "#0F6E56", fontWeight: 700, marginBottom: 4 }}>Quiz du thème</div>
@@ -583,6 +583,17 @@ function ThemeDetail({ theme, prog, onBack, onLue, onComplete, perso }) {
       {(THEME_CALCS[theme.id] || []).map((k) => { const Comp = CALCS[k]; return Comp ? <Comp key={k} perso={perso} /> : null; })}
       {theme.lecons.map(l => <LeconCard key={l.id} lecon={l} lu={prog.lecons.includes(l.id)} onLue={onLue} />)}
       <Quiz theme={theme} done={done} onComplete={() => onComplete(theme.id)} />
+    </div>
+  );
+}
+
+function Diplome({ niveau }) {
+  return (
+    <div style={{ background: "#ffffff", border: "2px solid #C9A063", borderRadius: 18, padding: "26px 28px", marginBottom: 22, textAlign: "center" }}>
+      <div style={{ display: "inline-flex", width: 56, height: 56, borderRadius: 99, background: "#FAEEDA", alignItems: "center", justifyContent: "center", color: "#BA7517", marginBottom: 10 }}><Award size={30} /></div>
+      <div style={{ fontSize: 12, letterSpacing: ".1em", textTransform: "uppercase", color: "#9a8f78" }}>Félicitations</div>
+      <div style={{ fontSize: 24, fontWeight: 800, color: "#1b2433", margin: "4px 0 6px" }}>Tu as complété tous les thèmes !</div>
+      <div style={{ fontSize: 14, color: "#5d6470" }}>Niveau {niveau} atteint — tu maîtrises les bases qui font travailler ton argent.</div>
     </div>
   );
 }
@@ -665,6 +676,7 @@ function CommentArgentTravaille() {
         <div>
           <h1 style={{ fontSize: 29, fontWeight: 800, letterSpacing: "-0.5px", margin: "0 0 4px", color: "#1b2433" }}>Comment l'argent travaille</h1>
           <p style={{ color: "#5d6470", fontSize: 14, margin: "0 0 22px" }}>Apprends les principes, gagne des points, monte de niveau.</p>
+          {THEMES_ACTIFS.every((t) => prog.themes.includes(t.id)) ? <Diplome niveau={niveauInfo(prog.points)} /> : null}
           <ProgressHeader prog={prog} />
           <ThemesLanding prog={prog} onOpen={(id) => setVue(id)} />
         </div>
