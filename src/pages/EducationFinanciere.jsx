@@ -575,16 +575,18 @@ function Quiz({ theme, done, onComplete }) {
   );
 }
 
-function ThemeDetail({ theme, prog, onBack, onLue, onComplete, perso, onTerme }) {
+function ThemeDetail({ theme, prog, onBack, onLue, onComplete, perso, onTerme, onGoto }) {
   const done = prog.themes.includes(theme.id);
+  const suiv = THEMES[THEMES.findIndex((x) => x.id === theme.id) + 1];
   return (
     <div>
-      <button onClick={onBack} style={{ background: "transparent", border: "none", color: "#0F6E56", fontSize: 13.5, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, padding: 0, marginBottom: 16 }}><ArrowLeft size={16} /> Retour aux thèmes</button>
+      <button onClick={onBack} style={{ background: "#ffffff", border: "1px solid rgba(0,0,0,0.12)", color: "#0F6E56", fontSize: 13.5, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 99, marginBottom: 18 }}><ArrowLeft size={16} /> Tous les thèmes</button>
       <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.5px", margin: "0 0 8px", color: "#1b2433" }}>{theme.titre}</h1>
       <p style={{ color: "#5d6470", fontSize: 14, lineHeight: 1.6, margin: "0 0 20px", maxWidth: 470 }}>{theme.teaser}</p>
       {(THEME_CALCS[theme.id] || []).map((k) => { const Comp = CALCS[k]; return Comp ? <Comp key={k} perso={perso} /> : null; })}
       {theme.lecons.map(l => <LeconCard key={l.id} lecon={l} lu={prog.lecons.includes(l.id)} onLue={onLue} onTerme={onTerme} />)}
       <Quiz theme={theme} done={done} onComplete={() => onComplete(theme.id)} />
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginTop: 26, flexWrap: "wrap" }}><button onClick={onBack} style={{ background: "#ffffff", border: "1px solid rgba(0,0,0,0.12)", color: "#0F6E56", fontSize: 13.5, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, padding: "10px 16px", borderRadius: 12 }}><ArrowLeft size={16} /> Tous les thèmes</button>{suiv ? <button onClick={() => onGoto(suiv.id)} style={{ background: "#1D9E75", border: "none", color: "#fff", fontSize: 13.5, fontWeight: 700, cursor: "pointer", padding: "10px 16px", borderRadius: 12 }}>Thème suivant : {suiv.court} →</button> : null}</div>
     </div>
   );
 }
@@ -674,7 +676,7 @@ function CommentArgentTravaille({ onTerme }) {
   return (
     <div style={{ background: "#F7F3EA", borderRadius: 20, padding: "30px 30px 46px", margin: "18px 0 44px", color: "#1b2433" }}>
       <div style={{ fontSize: 11, letterSpacing: ".2em", textTransform: "uppercase", color: "#9a8f78", marginBottom: 16 }}>Comment l'argent travaille</div>
-      {!prog ? (<div style={{ padding: 30, color: "#9a8f78", fontSize: 14 }}>Chargement de ta progression…</div>) : theme ? (<ThemeDetail theme={theme} prog={prog} onBack={() => setVue("themes")} onLue={onLue} onComplete={onComplete} perso={perso} onTerme={onTerme} />) : (
+      {!prog ? (<div style={{ padding: 30, color: "#9a8f78", fontSize: 14 }}>Chargement de ta progression…</div>) : theme ? (<ThemeDetail theme={theme} prog={prog} onBack={() => setVue("themes")} onLue={onLue} onComplete={onComplete} perso={perso} onTerme={onTerme} onGoto={(id) => setVue(id)} />) : (
         <div>
           <h1 style={{ fontSize: 29, fontWeight: 800, letterSpacing: "-0.5px", margin: "0 0 4px", color: "#1b2433" }}>Comment l'argent travaille</h1>
           <p style={{ color: "#5d6470", fontSize: 14, margin: "0 0 22px" }}>Apprends les principes, gagne des points, monte de niveau.</p>
