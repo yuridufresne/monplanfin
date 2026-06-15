@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { base44 } from "@/api/base44Client";
-import { Menu, LogOut, ChevronRight } from "lucide-react";
+import { Menu, LogOut, ChevronRight, ChevronDown, Briefcase } from "lucide-react";
 
 const publicLinks = [
   { label: "Accueil", path: "/" },
@@ -19,6 +19,21 @@ const privateLinks = [
   { label: "Immobilier", path: "/immobilier" },
   { label: "Éducation", path: "/education" },
 ];
+
+function NavDropdown({ label, items, location }) {
+  const [open, setOpen] = useState(false);
+  const actif = items.some((it) => location.pathname === it.path);
+  return (
+    <div style={{ position: "relative" }} onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+      <button style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "transparent", border: "none", cursor: "pointer", padding: "8px 14px", fontSize: 13.5, fontWeight: 500, color: actif ? "#C9A063" : "rgba(148,163,184,0.75)", borderRadius: 10 }}>{label} <ChevronDown size={14} /></button>
+      {open ? (
+        <div style={{ position: "absolute", top: "100%", left: 0, background: "#11192b", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 12, padding: 6, minWidth: 210, zIndex: 60, boxShadow: "0 10px 30px rgba(0,0,0,0.4)" }}>
+          {items.map((it) => { const a = location.pathname === it.path; return (<Link key={it.path} to={it.path} style={{ display: "block", padding: "9px 12px", fontSize: 13.5, color: a ? "#C9A063" : "rgba(226,232,240,0.85)", textDecoration: "none", borderRadius: 8 }} onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }} onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}>{it.label}</Link>); })}
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 export default function Navbar() {
   const location = useLocation();
@@ -46,7 +61,7 @@ export default function Navbar() {
     : [
         ...publicLinks,
         ...privateLinks,
-        ...(isAgent ? [{ label: "Mes dossiers", path: "/agent" }] : []),
+        ...(isAgent ? [{ label: "Dossiers clients", path: "/agent" }] : []),
         ...(isAdmin ? [{ label: "Administration", path: "/admin/dossiers" }] : []),
       ];
 
@@ -87,20 +102,19 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-0.5">
-            {links.map(link => (
-              <Link key={link.path} to={link.path} style={{
-                position: "relative", padding: "8px 14px", fontSize: 13.5, fontWeight: 500,
-                color: isActive(link.path) ? "#C9A063" : "rgba(148,163,184,0.75)",
-                textDecoration: "none", borderRadius: 10, transition: "color 0.15s",
-              }}>
-                {link.label}
-                {isActive(link.path) && (
-                  <span style={{ position: "absolute", bottom: 3, left: "50%", transform: "translateX(-50%)", width: 16, height: 2, borderRadius: 99, background: "#C9A063", boxShadow: "0 0 6px rgba(201,160,99,0.6)" }} />
-                )}
-              </Link>
-            ))}
-          </div>
+        <div className="hidden md:flex items-center gap-1">
+          <Link to="/" style={{ padding: "8px 14px", fontSize: 13.5, fontWeight: 500, color: isActive("/") ? "#C9A063" : "rgba(148,163,184,0.75)", textDecoration: "none", borderRadius: 10 }}>Accueil</Link>
+          {isAuthenticated ? (
+            <>
+              <NavDropdown label="Mon dossier" items={[{ label: "Tableau de bord", path: "/dashboard" }, { label: "Analyse ABF", path: "/analyse" }, { label: "Feuille Résumé", path: "/resume" }, { label: "Plan financier", path: "/plan" }]} location={location} />
+              <NavDropdown label="Outils" items={[{ label: "Calculatrices", path: "/calculatrices" }, { label: "Placements", path: "/placements" }, { label: "Studio de décaissement", path: "/studio" }, { label: "Immobilier", path: "/immobilier" }, { label: "Protection", path: "/protection" }]} location={location} />
+              <Link to="/education" style={{ padding: "8px 14px", fontSize: 13.5, fontWeight: 500, color: isActive("/education") ? "#C9A063" : "rgba(148,163,184,0.75)", textDecoration: "none", borderRadius: 10 }}>Éducation</Link>
+              {isAgent ? (<Link to="/agent" style={{ display: "inline-flex", alignItems: "center", gap: 6, marginLeft: 6, padding: "7px 13px", fontSize: 13, fontWeight: 600, color: isActive("/agent") ? "#0a0f1e" : "#C9A063", background: isActive("/agent") ? "#C9A063" : "rgba(201,160,99,0.12)", border: "1px solid rgba(201,160,99,0.35)", textDecoration: "none", borderRadius: 99 }}><Briefcase size={14} /> Dossiers clients</Link>) : null}
+            </>
+          ) : (
+            <Link to="/calculatrices" style={{ padding: "8px 14px", fontSize: 13.5, fontWeight: 500, color: isActive("/calculatrices") ? "#C9A063" : "rgba(148,163,184,0.75)", textDecoration: "none", borderRadius: 10 }}>Calculatrices</Link>
+          )}
+        </div>
 
           {/* Right */}
           <div className="hidden md:flex items-center gap-3">
