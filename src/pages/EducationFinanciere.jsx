@@ -250,10 +250,11 @@ function TermCard({ t, open, onToggle }) {
   );
 }
 
-function Dictionnaire() {
+function Dictionnaire({ initialQ }) {
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("Toutes");
   const [openKey, setOpenKey] = useState(null);
+  useEffect(() => { if (initialQ) setQ(initialQ); }, [initialQ]);
   const [selSort, setSelSort] = useState("suggere");
   const filtres = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -538,7 +539,8 @@ function CalcLouerAcheter() {
 const CALCS = { compose: CalculateurTot, regle72: CalcRegle72, carte: CalcCarte, reercelti: CalcReerCeli, seaux: CalcSeaux, responsabilite: CalcResponsabilite, louerAcheter: CalcLouerAcheter };
 const THEME_CALCS = { forces: ["compose", "regle72"], dettes: ["carte"], impot: ["reercelti"], investir: ["seaux"], proteger: ["responsabilite"], maison: ["louerAcheter"] };
 
-function LeconCard({ lecon, lu, onLue }) {
+const LECON_TERMES = { c1: ["NIF", "RRQ", "PSV"], f1: ["Intérêts composés"], f4: ["Inflation", "Rendement réel"], t1: ["REER"], t2: ["CELI"], t3: ["REER", "CELI"], t4: ["Décaissement", "Récupération de la PSV"], i1: ["Action", "Obligation"], i3: ["Diversification"], m2: ["Hypothèque"], m3: ["Droits de mutation"], g2: ["REER", "CELI"] };
+function LeconCard({ lecon, lu, onLue, onTerme }) {
   const [open, setOpen] = useState(false);
   return (
     <div style={{ background: "#fff", border: lu ? "1px solid rgba(29,158,117,0.4)" : "1px solid rgba(0,0,0,0.07)", borderRadius: 14, padding: "14px 18px", marginBottom: 10 }}>
@@ -546,7 +548,7 @@ function LeconCard({ lecon, lu, onLue }) {
         <span style={{ display: "flex", alignItems: "center", gap: 9, fontSize: 15, fontWeight: 700, color: "#1b2433" }}>{lu ? <Check size={16} color="#0F6E56" /> : null}{lecon.t}</span>
         <span style={{ fontSize: 20, color: "#1D9E75", lineHeight: 1 }}>{open ? "−" : "+"}</span>
       </div>
-      {open ? (<div style={{ marginTop: 10 }}><p style={{ color: "#5d6470", fontSize: 13.5, lineHeight: 1.6, margin: "0 0 12px" }}>{lecon.c}</p>{lu ? <span style={{ fontSize: 12.5, color: "#0F6E56", fontWeight: 600 }}>Lu · +20 pts</span> : <button onClick={() => onLue(lecon.id)} style={{ background: "#1D9E75", color: "#fff", border: "none", borderRadius: 10, padding: "8px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Marquer comme lu (+20 pts)</button>}</div>) : null}
+      {open ? (<div style={{ marginTop: 10 }}><p style={{ color: "#5d6470", fontSize: 13.5, lineHeight: 1.6, margin: "0 0 12px" }}>{lecon.c}</p>{lu ? <span style={{ fontSize: 12.5, color: "#0F6E56", fontWeight: 600 }}>Lu · +20 pts</span> : <button onClick={() => onLue(lecon.id)} style={{ background: "#1D9E75", color: "#fff", border: "none", borderRadius: 10, padding: "8px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Marquer comme lu (+20 pts)</button>}{LECON_TERMES[lecon.id] ? <div style={{ marginTop: 12, display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}><span style={{ fontSize: 11.5, color: "#9a8f78" }}>Voir au dictionnaire :</span>{LECON_TERMES[lecon.id].map((tm) => <button key={tm} onClick={(e) => { e.stopPropagation(); if (onTerme) onTerme(tm); }} style={{ background: "#E1F5EE", color: "#0F6E56", border: "none", borderRadius: 99, padding: "3px 10px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>{tm}</button>)}</div> : null}</div>) : null}
     </div>
   );
 }
@@ -573,7 +575,7 @@ function Quiz({ theme, done, onComplete }) {
   );
 }
 
-function ThemeDetail({ theme, prog, onBack, onLue, onComplete, perso }) {
+function ThemeDetail({ theme, prog, onBack, onLue, onComplete, perso, onTerme }) {
   const done = prog.themes.includes(theme.id);
   return (
     <div>
@@ -581,7 +583,7 @@ function ThemeDetail({ theme, prog, onBack, onLue, onComplete, perso }) {
       <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.5px", margin: "0 0 8px", color: "#1b2433" }}>{theme.titre}</h1>
       <p style={{ color: "#5d6470", fontSize: 14, lineHeight: 1.6, margin: "0 0 20px", maxWidth: 470 }}>{theme.teaser}</p>
       {(THEME_CALCS[theme.id] || []).map((k) => { const Comp = CALCS[k]; return Comp ? <Comp key={k} perso={perso} /> : null; })}
-      {theme.lecons.map(l => <LeconCard key={l.id} lecon={l} lu={prog.lecons.includes(l.id)} onLue={onLue} />)}
+      {theme.lecons.map(l => <LeconCard key={l.id} lecon={l} lu={prog.lecons.includes(l.id)} onLue={onLue} onTerme={onTerme} />)}
       <Quiz theme={theme} done={done} onComplete={() => onComplete(theme.id)} />
     </div>
   );
@@ -643,7 +645,7 @@ function ThemesLanding({ prog, onOpen }) {
   );
 }
 
-function CommentArgentTravaille() {
+function CommentArgentTravaille({ onTerme }) {
   const [vue, setVue] = useState("themes");
   const [prog, setProg] = useState(null);
   const [perso, setPerso] = useState({});
@@ -672,7 +674,7 @@ function CommentArgentTravaille() {
   return (
     <div style={{ background: "#F7F3EA", borderRadius: 20, padding: "30px 30px 46px", margin: "18px 0 44px", color: "#1b2433" }}>
       <div style={{ fontSize: 11, letterSpacing: ".2em", textTransform: "uppercase", color: "#9a8f78", marginBottom: 16 }}>Comment l'argent travaille</div>
-      {!prog ? (<div style={{ padding: 30, color: "#9a8f78", fontSize: 14 }}>Chargement de ta progression…</div>) : theme ? (<ThemeDetail theme={theme} prog={prog} onBack={() => setVue("themes")} onLue={onLue} onComplete={onComplete} perso={perso} />) : (
+      {!prog ? (<div style={{ padding: 30, color: "#9a8f78", fontSize: 14 }}>Chargement de ta progression…</div>) : theme ? (<ThemeDetail theme={theme} prog={prog} onBack={() => setVue("themes")} onLue={onLue} onComplete={onComplete} perso={perso} onTerme={onTerme} />) : (
         <div>
           <h1 style={{ fontSize: 29, fontWeight: 800, letterSpacing: "-0.5px", margin: "0 0 4px", color: "#1b2433" }}>Comment l'argent travaille</h1>
           <p style={{ color: "#5d6470", fontSize: 14, margin: "0 0 22px" }}>Apprends les principes, gagne des points, monte de niveau.</p>
@@ -687,6 +689,7 @@ function CommentArgentTravaille() {
 
 export default function EducationFinanciere() {
   const [onglet, setOnglet] = useState("dictionnaire");
+  const [dictQ, setDictQ] = useState("");
   const tabs = [["dictionnaire", "Dictionnaire"], ["argent", "Comment l'argent travaille"]];
   return (
     <div>
@@ -695,7 +698,7 @@ export default function EducationFinanciere() {
           {tabs.map(([k, lbl]) => { const a = onglet === k; return (<button key={k} onClick={() => setOnglet(k)} style={{ background: "transparent", border: "none", borderBottom: a ? ("2px solid " + C.gold) : "2px solid transparent", color: a ? C.gold : C.dim, padding: "10px 8px", fontSize: 14.5, fontWeight: 700, cursor: "pointer", marginBottom: -1 }}>{lbl}</button>); })}
         </div>
       </div>
-      <div style={{ maxWidth: 920, margin: "0 auto", padding: "0 20px" }}>{onglet === "dictionnaire" ? <Dictionnaire /> : <CommentArgentTravaille />}</div>
+      <div style={{ maxWidth: 920, margin: "0 auto", padding: "0 20px" }}>{onglet === "dictionnaire" ? <Dictionnaire initialQ={dictQ} /> : <CommentArgentTravaille onTerme={(t) => { setDictQ(t); setOnglet("dictionnaire"); }} />}</div>
     </div>
   );
 }
