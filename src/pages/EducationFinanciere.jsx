@@ -247,7 +247,7 @@ function TermCard({ t, open, onToggle }) {
   );
 }
 
-export default function EducationFinanciere() {
+function Dictionnaire() {
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("Toutes");
   const [openKey, setOpenKey] = useState(null);
@@ -265,7 +265,7 @@ export default function EducationFinanciere() {
     return res;
   }, [q, cat, selSort]);
   return (
-    <div style={{ maxWidth: 920, margin: "0 auto", padding: "28px 20px 60px", color: C.text }}>
+    <div style={{ padding: "8px 0 60px", color: C.text }}>
       <p style={{ fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: C.faint, margin: 0 }}>Éducation financière</p>
       <h1 style={{ fontSize: 28, fontWeight: 800, margin: "6px 0 6px" }}>Dictionnaire financier</h1>
       <p style={{ color: C.dim, fontSize: 14, lineHeight: 1.6, margin: "0 0 20px" }}>Les termes financiers du Québec et du Canada, expliqués simplement, avec leur usage courant et des exemples. Retraite, revenus et placements. Chiffres à jour pour 2026.</p>
@@ -283,6 +283,121 @@ export default function EducationFinanciere() {
       <p style={{ fontSize: 12, color: C.faint, margin: "0 0 12px", fontFamily: C.mono }}>{filtres.length} terme{filtres.length > 1 ? "s" : ""}</p>
       {filtres.map((t) => (<TermCard key={t.terme} t={t} open={openKey === t.terme} onToggle={() => setOpenKey(openKey === t.terme ? null : t.terme)} />))}
       {filtres.length === 0 && (<p style={{ color: C.faint, fontSize: 14, marginTop: 24 }}>Aucun terme ne correspond à votre recherche.</p>)}
+    </div>
+  );
+}
+
+
+// ============================ COMMENT L'ARGENT TRAVAILLE ============================
+const VERT = "#5BC4A0";
+function fmtArgent(n) { return Math.round(n).toLocaleString("fr-CA") + " $"; }
+function fvMensuel(pmt, tauxAnnuel, annees) {
+  const r = tauxAnnuel / 12, n = Math.round(annees * 12);
+  return r > 0 ? pmt * (Math.pow(1 + r, n) - 1) / r : pmt * n;
+}
+
+function CalculateurTot() {
+  const [mensuel, setMensuel] = useState(200);
+  const [ageDebut, setAgeDebut] = useState(25);
+  const [rend, setRend] = useState(0.06);
+  const annees = Math.max(0, 65 - ageDebut);
+  const capital = fvMensuel(mensuel, rend, annees);
+  const contrib = mensuel * 12 * annees;
+  const interets = Math.max(0, capital - contrib);
+  const tard = fvMensuel(mensuel, rend, Math.max(0, 65 - (ageDebut + 10)));
+  const pts = [];
+  for (let y = 0; y <= annees; y++) pts.push(fvMensuel(mensuel, rend, y));
+  const maxV = pts[pts.length - 1] || 1;
+  const W = 560, H = 150;
+  const coords = pts.map((v, i) => { const x = annees > 0 ? (i / annees) * W : 0; const yy = H - (v / maxV) * (H - 6); return x.toFixed(1) + "," + yy.toFixed(1); });
+  const linePts = coords.join(" ");
+  const areaPts = "0," + H + " " + linePts + " " + W + "," + H;
+  const lab = { fontSize: 11, color: C.faint, textTransform: "uppercase", letterSpacing: ".06em", display: "block", marginBottom: 6 };
+  return (
+    <div style={{ background: C.cardBg, border: C.cardBorder, borderRadius: 16, padding: 20, marginBottom: 30 }}>
+      <p style={{ fontSize: 12.5, fontWeight: 700, color: C.gold, margin: "0 0 4px", textTransform: "uppercase", letterSpacing: ".06em" }}>Le pouvoir de commencer tôt</p>
+      <p style={{ fontSize: 13, color: C.dim, margin: "0 0 18px", lineHeight: 1.5 }}>Tu investis un montant fixe chaque mois jusqu'à 65 ans. Bouge les curseurs et regarde l'effet.</p>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 18, marginBottom: 18 }}>
+        <label style={{ fontSize: 13, color: C.text }}><span style={lab}>Montant mensuel : <b style={{ color: C.gold }}>{fmtArgent(mensuel)}</b></span><input type="range" min="25" max="1000" step="25" value={mensuel} onChange={(e) => setMensuel(Number(e.target.value))} style={{ width: "100%", accentColor: C.gold }} /></label>
+        <label style={{ fontSize: 13, color: C.text }}><span style={lab}>Âge de début : <b style={{ color: C.gold }}>{ageDebut} ans</b></span><input type="range" min="18" max="55" step="1" value={ageDebut} onChange={(e) => setAgeDebut(Number(e.target.value))} style={{ width: "100%", accentColor: C.gold }} /></label>
+        <label style={{ fontSize: 13, color: C.text }}><span style={lab}>Rendement : <b style={{ color: C.gold }}>{Math.round(rend * 100)} %</b></span><input type="range" min="0.03" max="0.09" step="0.01" value={rend} onChange={(e) => setRend(Number(e.target.value))} style={{ width: "100%", accentColor: C.gold }} /></label>
+      </div>
+      <svg viewBox={"0 0 " + W + " " + H} preserveAspectRatio="none" style={{ width: "100%", height: 120, display: "block", marginBottom: 14 }}>
+        <polygon points={areaPts} fill="rgba(201,160,99,0.12)" />
+        <polyline points={linePts} fill="none" stroke={C.gold} strokeWidth="2.5" />
+      </svg>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 22 }}>
+        <div><span style={lab}>Capital à 65 ans</span><div style={{ fontSize: 24, fontWeight: 800, color: C.gold, fontFamily: C.mono }}>{fmtArgent(capital)}</div></div>
+        <div><span style={lab}>Tes versements</span><div style={{ fontSize: 18, fontWeight: 700, color: C.dim, fontFamily: C.mono }}>{fmtArgent(contrib)}</div></div>
+        <div><span style={lab}>Croissance (intérêts)</span><div style={{ fontSize: 18, fontWeight: 700, color: VERT, fontFamily: C.mono }}>{fmtArgent(interets)}</div></div>
+      </div>
+      <p style={{ fontSize: 12.5, color: C.dim, margin: "16px 0 0", lineHeight: 1.55, borderTop: C.cardBorder, paddingTop: 14 }}>Si tu attendais 10 ans (début à {ageDebut + 10} ans), tu finirais avec <b style={{ color: C.text }}>{fmtArgent(tard)}</b> — soit <b style={{ color: ROUGE }}>{fmtArgent(Math.max(0, capital - tard))} de moins</b>. C'est le temps qui fait la différence, encore plus que le montant.</p>
+    </div>
+  );
+}
+
+const ROUGE = "#f87171";
+const LECONS = [
+  { ch: "Prends le contrôle", t: "La retraite, c'est un montant — pas un âge", c: "On ne prend pas sa retraite à un âge magique, mais quand on a accumulé assez de capital pour vivre de ses revenus. Ton « nombre » dépend de tes dépenses, de tes rentes garanties (RRQ, PSV) et de l'inflation. C'est exactement ce que ton indicateur NIF estime." },
+  { ch: "Prends le contrôle", t: "Concentre-toi sur ce que tu contrôles", c: "Tu ne contrôles ni les marchés, ni l'inflation, ni les taux d'intérêt. Mais tu contrôles combien tu épargnes, tes dettes, la diversification de tes placements et le moment où tu commences. C'est là qu'il faut mettre ton énergie." },
+  { ch: "Prends le contrôle", t: "Ce n'est pas ce que tu gagnes, c'est ce que tu gardes", c: "Un gros salaire ne garantit rien si tout est dépensé. Distinguer un besoin d'une envie, et garder un écart entre ce qu'on gagne et ce qu'on dépense, voilà le vrai moteur de la richesse." },
+  { ch: "Prends le contrôle", t: "Paye-toi en premier", c: "Avant de payer les factures, mets de côté un montant fixe, automatiquement, chaque mois. L'épargne automatique transforme une bonne intention en habitude. Même un petit montant investi régulièrement devient énorme avec le temps." },
+  { ch: "Les forces qui font grossir l'argent", t: "Les intérêts composés : l'effet boule de neige", c: "Tes rendements génèrent à leur tour des rendements. Au début c'est lent, puis ça accélère de plus en plus vite. C'est pourquoi le temps est ton meilleur allié — souvent plus que le montant que tu investis." },
+  { ch: "Les forces qui font grossir l'argent", t: "Commence tôt : le temps bat le montant", c: "Une personne qui investit dix ans plus tôt, même avec moins d'argent au total, finit souvent avec plus qu'une personne qui commence tard mais investit davantage. Le calculateur ci-dessus le démontre : recule l'âge de début et observe la chute." },
+  { ch: "Les forces qui font grossir l'argent", t: "La règle de 72", c: "Pour estimer en combien d'années ton argent double, divise 72 par le rendement. À 6 %, ton argent double en environ 12 ans; à 8 %, en environ 9 ans. Un calcul mental simple et puissant." },
+  { ch: "Les forces qui font grossir l'argent", t: "L'inflation : l'argent qui dort perd de la valeur", c: "À 2 % d'inflation, 100 $ d'aujourd'hui n'achèteront plus qu'environ 67 $ de biens dans 20 ans. Laisser trop d'argent dans un compte à faible taux, c'est perdre du pouvoir d'achat. L'objectif : un rendement supérieur à l'inflation (le rendement réel)." },
+];
+
+function Lecon({ l, open, onToggle }) {
+  return (
+    <div style={{ background: open ? C.goldBg : C.cardBg, border: open ? C.goldBorder : C.cardBorder, borderRadius: 14, padding: "15px 18px", marginBottom: 10, cursor: "pointer" }} onClick={onToggle}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+        <span style={{ fontSize: 15, fontWeight: 700, color: C.text }}>{l.t}</span>
+        <span style={{ fontSize: 18, color: C.gold }}>{open ? "−" : "+"}</span>
+      </div>
+      {open && <p style={{ margin: "10px 0 0", color: C.dim, fontSize: 13.5, lineHeight: 1.6 }}>{l.c}</p>}
+    </div>
+  );
+}
+
+function CommentArgentTravaille() {
+  const [openL, setOpenL] = useState(null);
+  let lastCh = null;
+  return (
+    <div style={{ padding: "8px 0 60px", color: C.text }}>
+      <p style={{ fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: C.faint, margin: 0 }}>Éducation financière</p>
+      <h1 style={{ fontSize: 28, fontWeight: 800, margin: "6px 0 6px" }}>Comment l'argent travaille</h1>
+      <p style={{ color: C.dim, fontSize: 14, lineHeight: 1.6, margin: "0 0 22px" }}>Les principes intemporels qui font grandir — ou fondre — ton argent, expliqués simplement et avec un exemple chiffré.</p>
+      <CalculateurTot />
+      {LECONS.map((l, i) => {
+        const showCh = l.ch !== lastCh; lastCh = l.ch;
+        return (
+          <div key={i}>
+            {showCh && <p style={{ fontSize: 12.5, fontWeight: 700, color: C.gold, textTransform: "uppercase", letterSpacing: ".07em", margin: "26px 0 12px" }}>{l.ch}</p>}
+            <Lecon l={l} open={openL === i} onToggle={() => setOpenL(openL === i ? null : i)} />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+export default function EducationFinanciere() {
+  const [onglet, setOnglet] = useState("dictionnaire");
+  const tabs = [["dictionnaire", "Dictionnaire"], ["argent", "Comment l'argent travaille"]];
+  return (
+    <div>
+      <div style={{ maxWidth: 920, margin: "0 auto", padding: "26px 20px 0" }}>
+        <div style={{ display: "flex", gap: 6, borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+          {tabs.map(([k, lbl]) => {
+            const a = onglet === k;
+            return (<button key={k} onClick={() => setOnglet(k)} style={{ background: "transparent", border: "none", borderBottom: a ? ("2px solid " + C.gold) : "2px solid transparent", color: a ? C.gold : C.dim, padding: "10px 8px", fontSize: 14.5, fontWeight: 700, cursor: "pointer", marginBottom: -1 }}>{lbl}</button>);
+          })}
+        </div>
+      </div>
+      <div style={{ maxWidth: 920, margin: "0 auto", padding: "0 20px" }}>
+        {onglet === "dictionnaire" ? <Dictionnaire /> : <CommentArgentTravaille />}
+      </div>
     </div>
   );
 }
