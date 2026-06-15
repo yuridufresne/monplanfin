@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Compass, TrendingUp, CreditCard, Landmark, Receipt, Shield, Check, Lock, ArrowLeft, Award } from "lucide-react";
+import { buildPayload } from "@/lib/clientPayload";
 
 /**
  * src/pages/EducationFinanciere.jsx
@@ -332,9 +333,9 @@ const MAX_PTS = THEMES_ACTIFS.reduce((s, t) => s + t.lecons.length * PT_LECON + 
 function niveauInfo(points) { const r = MAX_PTS > 0 ? points / MAX_PTS : 0; if (r >= 0.9) return "Expert"; if (r >= 0.55) return "Averti"; if (r >= 0.25) return "Initié"; return "Débutant"; }
 function pctQc(points) { return Math.min(96, Math.round((points / Math.max(1, MAX_PTS)) * 92)); }
 
-function CalculateurTot() {
+function CalculateurTot({ perso }) {
   const [mensuel, setMensuel] = useState(200);
-  const [ageDebut, setAgeDebut] = useState(25);
+  const [ageDebut, setAgeDebut] = useState(perso && perso.age ? Math.min(55, Math.max(18, perso.age)) : 25);
   const [rend, setRend] = useState(0.06);
   const annees = Math.max(0, 65 - ageDebut);
   const capital = fvMensuel(mensuel, rend, annees);
@@ -348,7 +349,7 @@ function CalculateurTot() {
   const lab = { fontSize: 11, color: "#9a8f78", textTransform: "uppercase", letterSpacing: ".06em", display: "block", marginBottom: 6 };
   return (
     <div style={{ background: "#ffffff", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 18, padding: 22, marginBottom: 22 }}>
-      <div style={{ fontSize: 12, letterSpacing: ".05em", textTransform: "uppercase", color: "#0F6E56", fontWeight: 700, marginBottom: 6 }}>Le pouvoir de commencer tôt</div>
+      <div style={{ fontSize: 12, letterSpacing: ".05em", textTransform: "uppercase", color: "#0F6E56", fontWeight: 700, marginBottom: 6 }}>Le pouvoir de commencer tôt {perso && perso.age ? <TagPerso /> : null}</div>
       <p style={{ fontSize: 13, color: "#5d6470", margin: "0 0 16px", lineHeight: 1.5 }}>Tu investis un montant fixe chaque mois jusqu'à 65 ans. Bouge les curseurs.</p>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 16, marginBottom: 16 }}>
         <label style={{ fontSize: 13, color: "#1b2433" }}><span style={lab}>Montant mensuel : <b style={{ color: "#0F6E56" }}>{fmtArgent(mensuel)}</b></span><input type="range" min="25" max="1000" step="25" value={mensuel} onChange={(e) => setMensuel(Number(e.target.value))} style={{ width: "100%", accentColor: "#1D9E75" }} /></label>
@@ -366,6 +367,136 @@ function CalculateurTot() {
     </div>
   );
 }
+
+const CARD_C = { background: "#ffffff", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 18, padding: 22, marginBottom: 22 };
+const TIT_C = { fontSize: 12, letterSpacing: ".05em", textTransform: "uppercase", color: "#0F6E56", fontWeight: 700, marginBottom: 6 };
+const SOUS_C = { fontSize: 13, color: "#5d6470", margin: "0 0 16px", lineHeight: 1.5 };
+const LAB_C = { fontSize: 11, color: "#9a8f78", textTransform: "uppercase", letterSpacing: ".06em", display: "block", marginBottom: 6 };
+function TagPerso() { return <span style={{ display: "inline-block", background: "#E1F5EE", color: "#0F6E56", fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 99, marginLeft: 8 }}>Pré-rempli avec tes données</span>; }
+
+function CalcRegle72() {
+  const [rend, setRend] = useState(6);
+  const ans = 72 / rend;
+  return (
+    <div style={CARD_C}>
+      <div style={TIT_C}>La règle de 72</div>
+      <p style={SOUS_C}>Divise 72 par ton rendement annuel pour estimer en combien d'années ton argent double.</p>
+      <label style={{ fontSize: 13, color: "#1b2433" }}><span style={LAB_C}>Rendement annuel : <b style={{ color: "#0F6E56" }}>{rend} %</b></span><input type="range" min="1" max="12" step="1" value={rend} onChange={(e) => setRend(Number(e.target.value))} style={{ width: "100%", accentColor: "#1D9E75" }} /></label>
+      <div style={{ marginTop: 16 }}><span style={LAB_C}>Ton argent double en</span><div style={{ fontSize: 30, fontWeight: 800, color: "#0F6E56" }}>{ans.toFixed(1)} ans</div></div>
+    </div>
+  );
+}
+
+function CalcCarte({ perso }) {
+  const p = perso || {};
+  const [solde, setSolde] = useState(p.carteSolde ? Math.min(15000, Math.round(p.carteSolde)) : 2000);
+  const [taux, setTaux] = useState(p.carteTaux ? Math.min(26, Math.max(10, Math.round(p.carteTaux))) : 20);
+  const [fixe, setFixe] = useState(150);
+  function payoff(paie) { let s = solde, mois = 0, inter = 0; const r = taux / 100 / 12; while (s > 0.5 && mois < 1200) { const i = s * r; const pmt = Math.min(s + i, paie(s)); if (pmt <= i) { mois = 1200; break; } s = s + i - pmt; inter += i; mois++; } return { mois, inter }; }
+  const min = payoff(s => Math.max(10, s * 0.05));
+  const fix = payoff(() => fixe);
+  const usePerso = !!(p.carteSolde || p.carteTaux);
+  return (
+    <div style={CARD_C}>
+      <div style={TIT_C}>Le vrai coût d'un solde de carte {usePerso ? <TagPerso /> : null}</div>
+      <p style={SOUS_C}>Au Québec, le paiement minimum est de 5 % du solde depuis 2025 — bien mieux que le 2 % d'ailleurs. Mais payer plus que le minimum change tout.</p>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+        <label style={{ fontSize: 13 }}><span style={LAB_C}>Solde : <b style={{ color: "#0F6E56" }}>{fmtArgent(solde)}</b></span><input type="range" min="500" max="15000" step="100" value={solde} onChange={(e) => setSolde(Number(e.target.value))} style={{ width: "100%", accentColor: "#1D9E75" }} /></label>
+        <label style={{ fontSize: 13 }}><span style={LAB_C}>Taux d'intérêt : <b style={{ color: "#0F6E56" }}>{taux} %</b></span><input type="range" min="10" max="26" step="1" value={taux} onChange={(e) => setTaux(Number(e.target.value))} style={{ width: "100%", accentColor: "#1D9E75" }} /></label>
+      </div>
+      <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+        <div style={{ flex: 1, minWidth: 200, background: "#FAECE7", borderRadius: 12, padding: "14px 16px" }}><div style={{ fontSize: 12, fontWeight: 700, color: "#993C1D" }}>Au paiement minimum (5 %)</div><div style={{ fontSize: 22, fontWeight: 800, color: "#993C1D", marginTop: 4 }}>{(min.mois / 12).toFixed(1)} ans</div><div style={{ fontSize: 12.5, color: "#993C1D" }}>{fmtArgent(min.inter)} d'intérêts</div></div>
+        <div style={{ flex: 1, minWidth: 200, background: "#E1F5EE", borderRadius: 12, padding: "14px 16px" }}><div style={{ fontSize: 12, fontWeight: 700, color: "#0F6E56" }}>En payant {fmtArgent(fixe)}/mois</div><div style={{ fontSize: 22, fontWeight: 800, color: "#0F6E56", marginTop: 4 }}>{fix.mois >= 1200 ? "—" : (fix.mois / 12).toFixed(1) + " ans"}</div><div style={{ fontSize: 12.5, color: "#0F6E56" }}>{fix.mois >= 1200 ? "paiement trop bas" : fmtArgent(fix.inter) + " d'intérêts"}</div></div>
+      </div>
+      <label style={{ fontSize: 13, display: "block", marginTop: 14 }}><span style={LAB_C}>Paiement fixe par mois : <b style={{ color: "#0F6E56" }}>{fmtArgent(fixe)}</b></span><input type="range" min="25" max="800" step="25" value={fixe} onChange={(e) => setFixe(Number(e.target.value))} style={{ width: "100%", accentColor: "#1D9E75" }} /></label>
+      {fix.mois < 1200 && min.inter > fix.inter ? <div style={{ fontSize: 12.5, color: "#854F0B", background: "#FAEEDA", borderRadius: 10, padding: "10px 14px", marginTop: 12 }}>En payant un montant fixe plutôt que le minimum, tu économises environ <b>{fmtArgent(min.inter - fix.inter)}</b> d'intérêts.</div> : null}
+    </div>
+  );
+}
+
+function CalcReerCeli() {
+  const [montant, setMontant] = useState(5000);
+  const [tNow, setTNow] = useState(37);
+  const [tRet, setTRet] = useState(27);
+  const [rend, setRend] = useState(6);
+  const [annees, setAnnees] = useState(25);
+  const croiss = Math.pow(1 + rend / 100, annees);
+  const reer = montant * croiss * (1 - tRet / 100);
+  const celi = montant * (1 - tNow / 100) * croiss;
+  const reerGagne = reer >= celi;
+  return (
+    <div style={CARD_C}>
+      <div style={TIT_C}>REER ou CELI ?</div>
+      <p style={SOUS_C}>À partir d'un même revenu brut, le gagnant dépend surtout de ton taux d'imposition aujourd'hui par rapport à celui à la retraite.</p>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px,1fr))", gap: 14, marginBottom: 16 }}>
+        <label style={{ fontSize: 13 }}><span style={LAB_C}>Montant : <b style={{ color: "#0F6E56" }}>{fmtArgent(montant)}</b></span><input type="range" min="1000" max="20000" step="500" value={montant} onChange={(e) => setMontant(Number(e.target.value))} style={{ width: "100%", accentColor: "#1D9E75" }} /></label>
+        <label style={{ fontSize: 13 }}><span style={LAB_C}>Taux aujourd'hui : <b style={{ color: "#0F6E56" }}>{tNow} %</b></span><input type="range" min="12" max="53" step="1" value={tNow} onChange={(e) => setTNow(Number(e.target.value))} style={{ width: "100%", accentColor: "#1D9E75" }} /></label>
+        <label style={{ fontSize: 13 }}><span style={LAB_C}>Taux à la retraite : <b style={{ color: "#0F6E56" }}>{tRet} %</b></span><input type="range" min="12" max="53" step="1" value={tRet} onChange={(e) => setTRet(Number(e.target.value))} style={{ width: "100%", accentColor: "#1D9E75" }} /></label>
+        <label style={{ fontSize: 13 }}><span style={LAB_C}>Horizon : <b style={{ color: "#0F6E56" }}>{annees} ans</b></span><input type="range" min="5" max="40" step="1" value={annees} onChange={(e) => setAnnees(Number(e.target.value))} style={{ width: "100%", accentColor: "#1D9E75" }} /></label>
+      </div>
+      <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+        <div style={{ flex: 1, minWidth: 180, background: reerGagne ? "#E1F5EE" : "#F1EFE8", borderRadius: 12, padding: "14px 16px" }}><div style={{ fontSize: 12, fontWeight: 700, color: reerGagne ? "#0F6E56" : "#5d6470" }}>REER (net d'impôt)</div><div style={{ fontSize: 24, fontWeight: 800, color: reerGagne ? "#0F6E56" : "#5d6470" }}>{fmtArgent(reer)}</div></div>
+        <div style={{ flex: 1, minWidth: 180, background: !reerGagne ? "#E1F5EE" : "#F1EFE8", borderRadius: 12, padding: "14px 16px" }}><div style={{ fontSize: 12, fontWeight: 700, color: !reerGagne ? "#0F6E56" : "#5d6470" }}>CELI (net d'impôt)</div><div style={{ fontSize: 24, fontWeight: 800, color: !reerGagne ? "#0F6E56" : "#5d6470" }}>{fmtArgent(celi)}</div></div>
+      </div>
+      <div style={{ fontSize: 12.5, color: "#5d6470", marginTop: 12, lineHeight: 1.55 }}>{tNow === tRet ? "À taux égal, REER et CELI donnent le même résultat net." : reerGagne ? "Le REER l'emporte ici : ton taux à la retraite est plus bas qu'aujourd'hui." : "Le CELI l'emporte ici : ton taux à la retraite est plus élevé qu'aujourd'hui."}</div>
+    </div>
+  );
+}
+
+function CalcSeaux() {
+  const [horizon, setHorizon] = useState(15);
+  const seaux = [
+    { nom: "Court terme", an: "0 à 2 ans", risque: "très faible", ex: "Liquidités, CPG, marché monétaire", bg: "#E6F1FB", fg: "#185FA5", min: 0, max: 2 },
+    { nom: "Moyen terme", an: "3 à 9 ans", risque: "modéré", ex: "Portefeuille équilibré (actions et obligations)", bg: "#FAEEDA", fg: "#854F0B", min: 3, max: 9 },
+    { nom: "Long terme", an: "10 ans et +", risque: "plus élevé", ex: "Actions, fonds indiciels de croissance", bg: "#E1F5EE", fg: "#0F6E56", min: 10, max: 999 },
+  ];
+  const actif = seaux.findIndex(s => horizon >= s.min && horizon <= s.max);
+  return (
+    <div style={CARD_C}>
+      <div style={TIT_C}>Les trois « seaux »</div>
+      <p style={SOUS_C}>On répartit son argent selon QUAND on en aura besoin. Plus l'horizon est long, plus on peut tolérer le risque.</p>
+      <label style={{ fontSize: 13, display: "block", marginBottom: 16 }}><span style={LAB_C}>Dans combien de temps en as-tu besoin ? <b style={{ color: "#0F6E56" }}>{horizon} ans</b></span><input type="range" min="0" max="25" step="1" value={horizon} onChange={(e) => setHorizon(Number(e.target.value))} style={{ width: "100%", accentColor: "#1D9E75" }} /></label>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px,1fr))", gap: 12 }}>
+        {seaux.map((s, i) => (<div key={i} style={{ background: i === actif ? s.bg : "#F7F3EA", border: i === actif ? ("1.5px solid " + s.fg) : "1px solid rgba(0,0,0,0.06)", borderRadius: 14, padding: 16, opacity: i === actif ? 1 : 0.55 }}><div style={{ fontSize: 14.5, fontWeight: 800, color: s.fg }}>{s.nom}</div><div style={{ fontSize: 11.5, color: s.fg, marginBottom: 8 }}>{s.an} · risque {s.risque}</div><div style={{ fontSize: 12.5, color: "#5d6470", lineHeight: 1.45 }}>{s.ex}</div></div>))}
+      </div>
+    </div>
+  );
+}
+
+function CalcResponsabilite({ perso }) {
+  const p = perso || {};
+  const [age, setAge] = useState(p.age ? Math.min(64, Math.max(25, p.age)) : 35);
+  const [revenu, setRevenu] = useState(60000);
+  const [dettes, setDettes] = useState(250000);
+  const besoin = (a) => { const rem = Math.max(0, (65 - a) / 40); return (a < 65 ? dettes : 0) + revenu * 10 * rem; };
+  const pts = []; for (let a = 25; a <= 65; a++) pts.push(besoin(a));
+  const maxV = pts[0] || 1; const W = 560, H = 140;
+  const coords = pts.map((v, i) => { const x = (i / 40) * W; const y = H - (v / maxV) * (H - 6); return x.toFixed(1) + "," + y.toFixed(1); });
+  const cx = ((age - 25) / 40) * W; const cy = H - (besoin(age) / maxV) * (H - 6);
+  const usePerso = !!p.age;
+  return (
+    <div style={CARD_C}>
+      <div style={TIT_C}>Ton besoin de protection diminue avec l'âge {usePerso ? <TagPerso /> : null}</div>
+      <p style={SOUS_C}>Jeune, avec des dettes et des personnes à charge, ton besoin d'assurance vie est élevé. Il baisse à mesure que tes dettes diminuent et que ton épargne grandit.</p>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px,1fr))", gap: 14, marginBottom: 14 }}>
+        <label style={{ fontSize: 13 }}><span style={LAB_C}>Ton âge : <b style={{ color: "#0F6E56" }}>{age} ans</b></span><input type="range" min="25" max="64" step="1" value={age} onChange={(e) => setAge(Number(e.target.value))} style={{ width: "100%", accentColor: "#1D9E75" }} /></label>
+        <label style={{ fontSize: 13 }}><span style={LAB_C}>Revenu : <b style={{ color: "#0F6E56" }}>{fmtArgent(revenu)}</b></span><input type="range" min="30000" max="150000" step="5000" value={revenu} onChange={(e) => setRevenu(Number(e.target.value))} style={{ width: "100%", accentColor: "#1D9E75" }} /></label>
+        <label style={{ fontSize: 13 }}><span style={LAB_C}>Dettes : <b style={{ color: "#0F6E56" }}>{fmtArgent(dettes)}</b></span><input type="range" min="0" max="600000" step="10000" value={dettes} onChange={(e) => setDettes(Number(e.target.value))} style={{ width: "100%", accentColor: "#1D9E75" }} /></label>
+      </div>
+      <svg viewBox={"0 0 " + W + " " + H} preserveAspectRatio="none" style={{ width: "100%", height: 120, display: "block" }}>
+        <polygon points={"0," + H + " " + coords.join(" ") + " " + W + "," + H} fill="rgba(24,95,165,0.10)" />
+        <polyline points={coords.join(" ")} fill="none" stroke="#185FA5" strokeWidth="2.5" />
+        <line x1={cx} y1="0" x2={cx} y2={H} stroke="#0F6E56" strokeWidth="1" strokeDasharray="4 4" />
+        <circle cx={cx} cy={cy} r="5" fill="#0F6E56" />
+      </svg>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#9a8f78", margin: "4px 0 14px" }}><span>25 ans</span><span>65 ans</span></div>
+      <div><span style={LAB_C}>Ton besoin estimé à {age} ans</span><div style={{ fontSize: 26, fontWeight: 800, color: "#185FA5" }}>{fmtArgent(besoin(age))}</div></div>
+    </div>
+  );
+}
+
+const CALCS = { compose: CalculateurTot, regle72: CalcRegle72, carte: CalcCarte, reercelti: CalcReerCeli, seaux: CalcSeaux, responsabilite: CalcResponsabilite };
+const THEME_CALCS = { forces: ["compose", "regle72"], dettes: ["carte"], impot: ["reercelti"], investir: ["seaux"], proteger: ["responsabilite"] };
 
 function LeconCard({ lecon, lu, onLue }) {
   const [open, setOpen] = useState(false);
@@ -402,14 +533,14 @@ function Quiz({ theme, done, onComplete }) {
   );
 }
 
-function ThemeDetail({ theme, prog, onBack, onLue, onComplete }) {
+function ThemeDetail({ theme, prog, onBack, onLue, onComplete, perso }) {
   const done = prog.themes.includes(theme.id);
   return (
     <div>
       <button onClick={onBack} style={{ background: "transparent", border: "none", color: "#0F6E56", fontSize: 13.5, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, padding: 0, marginBottom: 16 }}><ArrowLeft size={16} /> Retour aux thèmes</button>
       <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.5px", margin: "0 0 8px", color: "#1b2433" }}>{theme.titre}</h1>
       <p style={{ color: "#5d6470", fontSize: 14, lineHeight: 1.6, margin: "0 0 20px", maxWidth: 470 }}>{theme.teaser}</p>
-      {theme.calc ? <CalculateurTot /> : null}
+      {(THEME_CALCS[theme.id] || []).map((k) => { const Comp = CALCS[k]; return Comp ? <Comp key={k} perso={perso} /> : null; })}
       {theme.lecons.map(l => <LeconCard key={l.id} lecon={l} lu={prog.lecons.includes(l.id)} onLue={onLue} />)}
       <Quiz theme={theme} done={done} onComplete={() => onComplete(theme.id)} />
     </div>
@@ -453,7 +584,7 @@ function ThemesLanding({ prog, onOpen }) {
             <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 5, color: "#1b2433" }}>{t.titre}</div>
             <div style={{ fontSize: 12.5, color: "#5d6470", lineHeight: 1.5 }}>{t.teaser}</div>
             {!t.aVenir ? <div style={{ height: 6, background: "#ECE7DB", borderRadius: 99, overflow: "hidden", marginTop: 12 }}><div style={{ width: (nTot ? (nLus / nTot * 100) : 0) + "%", height: "100%", background: "#1D9E75" }} /></div> : null}
-            {!t.aVenir ? <div style={{ fontSize: 11.5, color: "#9a8f78", marginTop: 7 }}>{nLus} / {nTot} leçons{t.calc ? " · calculateur" : ""}</div> : null}
+            {!t.aVenir ? <div style={{ fontSize: 11.5, color: "#9a8f78", marginTop: 7 }}>{nLus} / {nTot} leçons{(THEME_CALCS[t.id] && THEME_CALCS[t.id].length) ? " · interactif" : ""}</div> : null}
           </div>
         );
       })}
@@ -462,8 +593,9 @@ function ThemesLanding({ prog, onOpen }) {
 }
 
 function CommentArgentTravaille() {
-  const [vue, setVue] = useState("themes");
+  const [vue, setVue] = useState("forces");
   const [prog, setProg] = useState(null);
+  const [perso, setPerso] = useState({});
   useEffect(() => {
     let on = true;
     (async () => {
@@ -477,6 +609,7 @@ function CommentArgentTravaille() {
     })();
     return () => { on = false; };
   }, []);
+  useEffect(() => { let on = true; (async () => { try { const me = await base44.auth.me(); const [profs, debts] = await Promise.all([base44.entities.FinancialProfile.list(), base44.entities.Debt.list()]); const mp = (profs || []).filter(r => r.created_by === (me && me.email)); const md = (debts || []).filter(r => r.created_by === (me && me.email)); const px = {}; try { const pay = buildPayload(mp); if (pay && pay.conjoint_a && pay.conjoint_a.age) px.age = pay.conjoint_a.age; if (pay && pay.epargne) { px.reer = pay.epargne.solde_reer_a || 0; px.celi = pay.epargne.solde_celi_a || 0; } if (pay && pay.kpis) px.nif = pay.kpis.nif_nominal || 0; } catch (e) {} const carte = md.find(d => d.type === "carte_credit") || md.find(d => d.type === "marge_credit"); if (carte) { px.carteSolde = carte.balance; px.carteTaux = carte.interest_rate; } if (on) setPerso(px); } catch (e) {} })(); return () => { on = false; }; }, []);
   const persist = (next) => {
     setProg(next);
     const payload = { lecons_completees: next.lecons, themes_completes: next.themes, points: next.points };
@@ -488,7 +621,7 @@ function CommentArgentTravaille() {
   return (
     <div style={{ background: "#F7F3EA", borderRadius: 20, padding: "30px 30px 46px", margin: "18px 0 44px", color: "#1b2433" }}>
       <div style={{ fontSize: 11, letterSpacing: ".2em", textTransform: "uppercase", color: "#9a8f78", marginBottom: 16 }}>Comment l'argent travaille</div>
-      {!prog ? (<div style={{ padding: 30, color: "#9a8f78", fontSize: 14 }}>Chargement de ta progression…</div>) : theme ? (<ThemeDetail theme={theme} prog={prog} onBack={() => setVue("themes")} onLue={onLue} onComplete={onComplete} />) : (
+      {!prog ? (<div style={{ padding: 30, color: "#9a8f78", fontSize: 14 }}>Chargement de ta progression…</div>) : theme ? (<ThemeDetail theme={theme} prog={prog} onBack={() => setVue("themes")} onLue={onLue} onComplete={onComplete} perso={perso} />) : (
         <div>
           <h1 style={{ fontSize: 29, fontWeight: 800, letterSpacing: "-0.5px", margin: "0 0 4px", color: "#1b2433" }}>Comment l'argent travaille</h1>
           <p style={{ color: "#5d6470", fontSize: 14, margin: "0 0 22px" }}>Apprends les principes, gagne des points, monte de niveau.</p>
@@ -501,7 +634,7 @@ function CommentArgentTravaille() {
 }
 
 export default function EducationFinanciere() {
-  const [onglet, setOnglet] = useState("dictionnaire");
+  const [onglet, setOnglet] = useState("argent");
   const tabs = [["dictionnaire", "Dictionnaire"], ["argent", "Comment l'argent travaille"]];
   return (
     <div>
