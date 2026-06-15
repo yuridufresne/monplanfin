@@ -288,8 +288,7 @@ function Dictionnaire() {
 }
 
 
-// ============================ COMMENT L'ARGENT TRAVAILLE ============================
-const VERT = "#5BC4A0";
+// ============================ COMMENT L'ARGENT TRAVAILLE (clair éditorial) ============================
 function fmtArgent(n) { return Math.round(n).toLocaleString("fr-CA") + " $"; }
 function fvMensuel(pmt, tauxAnnuel, annees) {
   const r = tauxAnnuel / 12, n = Math.round(annees * 12);
@@ -312,31 +311,31 @@ function CalculateurTot() {
   const coords = pts.map((v, i) => { const x = annees > 0 ? (i / annees) * W : 0; const yy = H - (v / maxV) * (H - 6); return x.toFixed(1) + "," + yy.toFixed(1); });
   const linePts = coords.join(" ");
   const areaPts = "0," + H + " " + linePts + " " + W + "," + H;
-  const lab = { fontSize: 11, color: C.faint, textTransform: "uppercase", letterSpacing: ".06em", display: "block", marginBottom: 6 };
+  const lab = { fontSize: 11, color: "#9a8f78", textTransform: "uppercase", letterSpacing: ".06em", display: "block", marginBottom: 6 };
   return (
-    <div style={{ background: C.cardBg, border: C.cardBorder, borderRadius: 16, padding: 20, marginBottom: 30 }}>
-      <p style={{ fontSize: 12.5, fontWeight: 700, color: C.gold, margin: "0 0 4px", textTransform: "uppercase", letterSpacing: ".06em" }}>Le pouvoir de commencer tôt</p>
-      <p style={{ fontSize: 13, color: C.dim, margin: "0 0 18px", lineHeight: 1.5 }}>Tu investis un montant fixe chaque mois jusqu'à 65 ans. Bouge les curseurs et regarde l'effet.</p>
+    <div style={{ background: "#ffffff", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 18, padding: 24, marginBottom: 30 }}>
+      <div style={{ fontSize: 12, letterSpacing: ".05em", textTransform: "uppercase", color: "#0F6E56", fontWeight: 700, marginBottom: 6 }}>Le pouvoir de commencer tôt</div>
+      <p style={{ fontSize: 13.5, color: "#5d6470", margin: "0 0 18px", lineHeight: 1.5 }}>Tu investis un montant fixe chaque mois jusqu'à 65 ans. Bouge les curseurs.</p>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 18, marginBottom: 18 }}>
-        <label style={{ fontSize: 13, color: C.text }}><span style={lab}>Montant mensuel : <b style={{ color: C.gold }}>{fmtArgent(mensuel)}</b></span><input type="range" min="25" max="1000" step="25" value={mensuel} onChange={(e) => setMensuel(Number(e.target.value))} style={{ width: "100%", accentColor: C.gold }} /></label>
-        <label style={{ fontSize: 13, color: C.text }}><span style={lab}>Âge de début : <b style={{ color: C.gold }}>{ageDebut} ans</b></span><input type="range" min="18" max="55" step="1" value={ageDebut} onChange={(e) => setAgeDebut(Number(e.target.value))} style={{ width: "100%", accentColor: C.gold }} /></label>
-        <label style={{ fontSize: 13, color: C.text }}><span style={lab}>Rendement : <b style={{ color: C.gold }}>{Math.round(rend * 100)} %</b></span><input type="range" min="0.03" max="0.09" step="0.01" value={rend} onChange={(e) => setRend(Number(e.target.value))} style={{ width: "100%", accentColor: C.gold }} /></label>
+        <label style={{ fontSize: 13, color: "#1b2433" }}><span style={lab}>Montant mensuel : <b style={{ color: "#0F6E56" }}>{fmtArgent(mensuel)}</b></span><input type="range" min="25" max="1000" step="25" value={mensuel} onChange={(e) => setMensuel(Number(e.target.value))} style={{ width: "100%", accentColor: "#1D9E75" }} /></label>
+        <label style={{ fontSize: 13, color: "#1b2433" }}><span style={lab}>Âge de début : <b style={{ color: "#0F6E56" }}>{ageDebut} ans</b></span><input type="range" min="18" max="55" step="1" value={ageDebut} onChange={(e) => setAgeDebut(Number(e.target.value))} style={{ width: "100%", accentColor: "#1D9E75" }} /></label>
+        <label style={{ fontSize: 13, color: "#1b2433" }}><span style={lab}>Rendement : <b style={{ color: "#0F6E56" }}>{Math.round(rend * 100)} %</b></span><input type="range" min="0.03" max="0.09" step="0.01" value={rend} onChange={(e) => setRend(Number(e.target.value))} style={{ width: "100%", accentColor: "#1D9E75" }} /></label>
       </div>
-      <svg viewBox={"0 0 " + W + " " + H} preserveAspectRatio="none" style={{ width: "100%", height: 120, display: "block", marginBottom: 14 }}>
-        <polygon points={areaPts} fill="rgba(201,160,99,0.12)" />
-        <polyline points={linePts} fill="none" stroke={C.gold} strokeWidth="2.5" />
+      <svg viewBox={"0 0 " + W + " " + H} preserveAspectRatio="none" style={{ width: "100%", height: 120, display: "block" }}>
+        <polygon points={areaPts} fill="rgba(29,158,117,0.12)" />
+        <polyline points={linePts} fill="none" stroke="#1D9E75" strokeWidth="2.5" />
       </svg>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 22 }}>
-        <div><span style={lab}>Capital à 65 ans</span><div style={{ fontSize: 24, fontWeight: 800, color: C.gold, fontFamily: C.mono }}>{fmtArgent(capital)}</div></div>
-        <div><span style={lab}>Tes versements</span><div style={{ fontSize: 18, fontWeight: 700, color: C.dim, fontFamily: C.mono }}>{fmtArgent(contrib)}</div></div>
-        <div><span style={lab}>Croissance (intérêts)</span><div style={{ fontSize: 18, fontWeight: 700, color: VERT, fontFamily: C.mono }}>{fmtArgent(interets)}</div></div>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#9a8f78", margin: "4px 0 18px" }}><span>{ageDebut} ans</span><span>65 ans</span></div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 26 }}>
+        <div><span style={lab}>Capital à 65 ans</span><div style={{ fontSize: 27, fontWeight: 800, color: "#0F6E56" }}>{fmtArgent(capital)}</div></div>
+        <div><span style={lab}>Tes versements</span><div style={{ fontSize: 18, fontWeight: 700, color: "#5d6470" }}>{fmtArgent(contrib)}</div></div>
+        <div><span style={lab}>Croissance</span><div style={{ fontSize: 18, fontWeight: 700, color: "#1D9E75" }}>{fmtArgent(interets)}</div></div>
       </div>
-      <p style={{ fontSize: 12.5, color: C.dim, margin: "16px 0 0", lineHeight: 1.55, borderTop: C.cardBorder, paddingTop: 14 }}>Si tu attendais 10 ans (début à {ageDebut + 10} ans), tu finirais avec <b style={{ color: C.text }}>{fmtArgent(tard)}</b> — soit <b style={{ color: ROUGE }}>{fmtArgent(Math.max(0, capital - tard))} de moins</b>. C'est le temps qui fait la différence, encore plus que le montant.</p>
+      <div style={{ background: "#FAEEDA", borderRadius: 12, padding: "13px 16px", marginTop: 18 }}><span style={{ fontSize: 13, color: "#854F0B", lineHeight: 1.55 }}>Si tu attendais 10 ans (début à {ageDebut + 10} ans), tu finirais avec <b style={{ color: "#BA7517" }}>{fmtArgent(tard)}</b> — soit <b style={{ color: "#BA7517" }}>{fmtArgent(Math.max(0, capital - tard))} de moins</b>. C'est le temps qui fait la différence.</span></div>
     </div>
   );
 }
 
-const ROUGE = "#f87171";
 const LECONS = [
   { ch: "Prends le contrôle", t: "La retraite, c'est un montant — pas un âge", c: "On ne prend pas sa retraite à un âge magique, mais quand on a accumulé assez de capital pour vivre de ses revenus. Ton « nombre » dépend de tes dépenses, de tes rentes garanties (RRQ, PSV) et de l'inflation. C'est exactement ce que ton indicateur NIF estime." },
   { ch: "Prends le contrôle", t: "Concentre-toi sur ce que tu contrôles", c: "Tu ne contrôles ni les marchés, ni l'inflation, ni les taux d'intérêt. Mais tu contrôles combien tu épargnes, tes dettes, la diversification de tes placements et le moment où tu commences. C'est là qu'il faut mettre ton énergie." },
@@ -348,14 +347,16 @@ const LECONS = [
   { ch: "Les forces qui font grossir l'argent", t: "L'inflation : l'argent qui dort perd de la valeur", c: "À 2 % d'inflation, 100 $ d'aujourd'hui n'achèteront plus qu'environ 67 $ de biens dans 20 ans. Laisser trop d'argent dans un compte à faible taux, c'est perdre du pouvoir d'achat. L'objectif : un rendement supérieur à l'inflation (le rendement réel)." },
 ];
 
+const CH_COULEUR = { "Prends le contrôle": { bg: "#E1F5EE", fg: "#0F6E56" }, "Les forces qui font grossir l'argent": { bg: "#FAEEDA", fg: "#BA7517" } };
+
 function Lecon({ l, open, onToggle }) {
   return (
-    <div style={{ background: open ? C.goldBg : C.cardBg, border: open ? C.goldBorder : C.cardBorder, borderRadius: 14, padding: "15px 18px", marginBottom: 10, cursor: "pointer" }} onClick={onToggle}>
+    <div style={{ background: "#ffffff", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 14, padding: "15px 18px", marginBottom: 10, cursor: "pointer" }} onClick={onToggle}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-        <span style={{ fontSize: 15, fontWeight: 700, color: C.text }}>{l.t}</span>
-        <span style={{ fontSize: 18, color: C.gold }}>{open ? "−" : "+"}</span>
+        <span style={{ fontSize: 15.5, fontWeight: 700, color: "#1b2433" }}>{l.t}</span>
+        <span style={{ fontSize: 20, color: "#1D9E75", lineHeight: 1 }}>{open ? "−" : "+"}</span>
       </div>
-      {open && <p style={{ margin: "10px 0 0", color: C.dim, fontSize: 13.5, lineHeight: 1.6 }}>{l.c}</p>}
+      {open && <p style={{ margin: "10px 0 0", color: "#5d6470", fontSize: 13.5, lineHeight: 1.6 }}>{l.c}</p>}
     </div>
   );
 }
@@ -364,16 +365,17 @@ function CommentArgentTravaille() {
   const [openL, setOpenL] = useState(null);
   let lastCh = null;
   return (
-    <div style={{ padding: "8px 0 60px", color: C.text }}>
-      <p style={{ fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: C.faint, margin: 0 }}>Éducation financière</p>
-      <h1 style={{ fontSize: 28, fontWeight: 800, margin: "6px 0 6px" }}>Comment l'argent travaille</h1>
-      <p style={{ color: C.dim, fontSize: 14, lineHeight: 1.6, margin: "0 0 22px" }}>Les principes intemporels qui font grandir — ou fondre — ton argent, expliqués simplement et avec un exemple chiffré.</p>
+    <div style={{ background: "#F7F3EA", borderRadius: 20, padding: "34px 32px 46px", margin: "18px 0 44px", color: "#1b2433" }}>
+      <div style={{ fontSize: 11, letterSpacing: ".2em", textTransform: "uppercase", color: "#9a8f78" }}>Éducation financière</div>
+      <h1 style={{ fontSize: 32, fontWeight: 800, letterSpacing: "-0.5px", margin: "6px 0 8px", color: "#1b2433" }}>Comment l'argent travaille</h1>
+      <p style={{ color: "#5d6470", fontSize: 14.5, lineHeight: 1.6, margin: "0 0 24px", maxWidth: 470 }}>Les principes qui font grandir — ou fondre — ton argent, expliqués simplement et avec un exemple chiffré.</p>
       <CalculateurTot />
       {LECONS.map((l, i) => {
         const showCh = l.ch !== lastCh; lastCh = l.ch;
+        const col = CH_COULEUR[l.ch] || { bg: "#E1F5EE", fg: "#0F6E56" };
         return (
           <div key={i}>
-            {showCh && <p style={{ fontSize: 12.5, fontWeight: 700, color: C.gold, textTransform: "uppercase", letterSpacing: ".07em", margin: "26px 0 12px" }}>{l.ch}</p>}
+            {showCh && <div style={{ display: "inline-block", background: col.bg, color: col.fg, fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: ".06em", padding: "5px 12px", borderRadius: 999, margin: "28px 0 12px" }}>{l.ch}</div>}
             <Lecon l={l} open={openL === i} onToggle={() => setOpenL(openL === i ? null : i)} />
           </div>
         );
@@ -383,7 +385,7 @@ function CommentArgentTravaille() {
 }
 
 export default function EducationFinanciere() {
-  const [onglet, setOnglet] = useState("dictionnaire");
+  const [onglet, setOnglet] = useState("argent");
   const tabs = [["dictionnaire", "Dictionnaire"], ["argent", "Comment l'argent travaille"]];
   return (
     <div>
