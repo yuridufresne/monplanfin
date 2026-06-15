@@ -251,14 +251,19 @@ export default function EducationFinanciere() {
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("Toutes");
   const [openKey, setOpenKey] = useState(null);
+  const [selSort, setSelSort] = useState("suggere");
   const filtres = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    return TERMES.filter((t) => {
+    let out = TERMES.filter((t) => {
       const okCat = cat === "Toutes" || t.cat === cat;
       const okQ = !needle || t.terme.toLowerCase().includes(needle) || (t.en || "").toLowerCase().includes(needle) || t.definition.toLowerCase().includes(needle);
       return okCat && okQ;
     });
-  }, [q, cat]);
+      let res = out;
+    if (selSort === "az") res = [...out].sort((a, b) => a.terme.localeCompare(b.terme, "fr"));
+    else if (selSort === "za") res = [...out].sort((a, b) => b.terme.localeCompare(a.terme, "fr"));
+    return res;
+  }, [q, cat, selSort]);
   return (
     <div style={{ maxWidth: 920, margin: "0 auto", padding: "28px 20px 60px", color: C.text }}>
       <p style={{ fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: C.faint, margin: 0 }}>Éducation financière</p>
@@ -270,6 +275,10 @@ export default function EducationFinanciere() {
           const active = c === cat;
           return (<button key={c} onClick={() => setCat(c)} style={{ background: active ? C.goldBg : "transparent", border: active ? C.goldBorder : C.cardBorder, color: active ? C.gold : C.dim, borderRadius: 999, padding: "6px 14px", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}>{c}</button>);
         })}
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", marginBottom: 12 }}>
+        <span style={{ fontSize: 11, color: C.faint, textTransform: "uppercase", letterSpacing: ".08em", marginRight: 4 }}>Trier :</span>
+        {[["suggere", "Suggéré"], ["az", "A → Z"], ["za", "Z → A"]].map(([key, lbl]) => { const active = selSort === key; return (<button key={key} onClick={() => setSelSort(key)} style={{ background: active ? C.goldBg : "transparent", border: active ? C.goldBorder : C.cardBorder, color: active ? C.gold : C.dim, borderRadius: 999, padding: "5px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>{lbl}</button>); })}
       </div>
       <p style={{ fontSize: 12, color: C.faint, margin: "0 0 12px", fontFamily: C.mono }}>{filtres.length} terme{filtres.length > 1 ? "s" : ""}</p>
       {filtres.map((t) => (<TermCard key={t.terme} t={t} open={openKey === t.terme} onToggle={() => setOpenKey(openKey === t.terme ? null : t.terme)} />))}
