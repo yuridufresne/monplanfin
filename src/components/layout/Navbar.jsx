@@ -7,7 +7,6 @@ import { Menu, LogOut, ChevronRight } from "lucide-react";
 const publicLinks = [
   { label: "Accueil", path: "/" },
   { label: "Calculatrices", path: "/calculatrices" },
-  { label: "Éducation", path: "/education" },
 ];
 const privateLinks = [
   { label: "Tableau de bord", path: "/dashboard" },
@@ -18,6 +17,7 @@ const privateLinks = [
   { label: "Studio de décaissement", path: "/studio" },
   { label: "Protection", path: "/protection" },
   { label: "Immobilier", path: "/immobilier" },
+  { label: "Éducation", path: "/education" },
 ];
 
 export default function Navbar() {
