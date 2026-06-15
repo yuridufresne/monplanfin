@@ -1,4 +1,6 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import { base44 } from "@/api/base44Client";
+import { Compass, TrendingUp, CreditCard, Landmark, Receipt, Shield, Check, Lock, ArrowLeft, Award } from "lucide-react";
 
 /**
  * src/pages/EducationFinanciere.jsx
@@ -288,12 +290,47 @@ function Dictionnaire() {
 }
 
 
-// ============================ COMMENT L'ARGENT TRAVAILLE (clair éditorial) ============================
+// ============================ COMMENT L'ARGENT TRAVAILLE (gamifié, clair éditorial) ============================
 function fmtArgent(n) { return Math.round(n).toLocaleString("fr-CA") + " $"; }
-function fvMensuel(pmt, tauxAnnuel, annees) {
-  const r = tauxAnnuel / 12, n = Math.round(annees * 12);
-  return r > 0 ? pmt * (Math.pow(1 + r, n) - 1) / r : pmt * n;
-}
+function fvMensuel(pmt, tauxAnnuel, annees) { const r = tauxAnnuel / 12, n = Math.round(annees * 12); return r > 0 ? pmt * (Math.pow(1 + r, n) - 1) / r : pmt * n; }
+
+const THEMES = [
+  { id: "controle", titre: "Prends le contrôle", court: "Contrôle", Icone: Compass, c: { bg: "#E1F5EE", fg: "#0F6E56" }, teaser: "Paye-toi en premier, besoin vs envie, ton nombre de retraite.",
+    lecons: [
+      { id: "c1", t: "La retraite, c'est un montant — pas un âge", c: "On ne prend pas sa retraite à un âge magique, mais quand on a accumulé assez de capital pour vivre de ses revenus. Ton « nombre » dépend de tes dépenses, de tes rentes garanties (RRQ, PSV) et de l'inflation. C'est exactement ce que ton indicateur NIF estime." },
+      { id: "c2", t: "Concentre-toi sur ce que tu contrôles", c: "Tu ne contrôles ni les marchés, ni l'inflation, ni les taux d'intérêt. Mais tu contrôles combien tu épargnes, tes dettes, la diversification de tes placements et le moment où tu commences. C'est là qu'il faut mettre ton énergie." },
+      { id: "c3", t: "Ce n'est pas ce que tu gagnes, c'est ce que tu gardes", c: "Un gros salaire ne garantit rien si tout est dépensé. Distinguer un besoin d'une envie, et garder un écart entre ce qu'on gagne et ce qu'on dépense, voilà le vrai moteur de la richesse." },
+      { id: "c4", t: "Paye-toi en premier", c: "Avant de payer les factures, mets de côté un montant fixe, automatiquement, chaque mois. L'épargne automatique transforme une bonne intention en habitude. Même un petit montant régulier devient énorme avec le temps." },
+    ],
+    quiz: [
+      { q: "La retraite, c'est avant tout…", o: ["Un âge précis, 65 ans", "Un montant de capital accumulé", "Une date fixée par le gouvernement"], r: 1 },
+      { q: "« Se payer en premier » veut dire…", o: ["Payer ses factures avant tout", "Mettre de côté un montant fixe avant les autres dépenses", "Se verser un gros salaire"], r: 1 },
+      { q: "Ce qui compte le plus pour bâtir sa richesse :", o: ["Combien on gagne", "L'écart entre ce qu'on gagne et ce qu'on dépense", "La chance"], r: 1 },
+      { q: "Lequel de ces éléments contrôles-tu vraiment ?", o: ["L'inflation", "Les taux d'intérêt", "Ton taux d'épargne"], r: 2 },
+    ] },
+  { id: "forces", titre: "Les forces qui font grossir l'argent", court: "Forces de l'argent", Icone: TrendingUp, c: { bg: "#EAF3DE", fg: "#3B6D11" }, teaser: "Intérêts composés, commencer tôt, règle de 72, inflation.", calc: true,
+    lecons: [
+      { id: "f1", t: "Les intérêts composés : l'effet boule de neige", c: "Tes rendements génèrent à leur tour des rendements. Au début c'est lent, puis ça accélère de plus en plus vite. C'est pourquoi le temps est ton meilleur allié — souvent plus que le montant que tu investis." },
+      { id: "f2", t: "Commence tôt : le temps bat le montant", c: "Une personne qui investit dix ans plus tôt, même avec moins d'argent au total, finit souvent avec plus qu'une personne qui commence tard mais investit davantage. Le calculateur ci-dessus le démontre : recule l'âge de début et observe la chute." },
+      { id: "f3", t: "La règle de 72", c: "Pour estimer en combien d'années ton argent double, divise 72 par le rendement. À 6 %, ton argent double en environ 12 ans; à 8 %, en environ 9 ans. Un calcul mental simple et puissant." },
+      { id: "f4", t: "L'inflation : l'argent qui dort perd de la valeur", c: "À 2 % d'inflation, 100 $ d'aujourd'hui n'achèteront plus qu'environ 67 $ de biens dans 20 ans. L'objectif : viser un rendement supérieur à l'inflation (le rendement réel)." },
+    ],
+    quiz: [
+      { q: "Les intérêts composés, c'est…", o: ["Des intérêts payés une seule fois", "Des rendements qui génèrent à leur tour des rendements", "Un type d'impôt"], r: 1 },
+      { q: "Pour l'épargne à long terme, qu'est-ce qui compte le plus ?", o: ["Commencer tôt", "Commencer avec un gros montant", "Choisir le bon moment du marché"], r: 0 },
+      { q: "La règle de 72 sert à estimer…", o: ["Ton taux d'imposition", "Le temps pour que ton argent double", "Ton espérance de vie"], r: 1 },
+      { q: "À 6 % de rendement, ton argent double environ tous les…", o: ["6 ans", "12 ans", "20 ans"], r: 1 },
+    ] },
+  { id: "dettes", titre: "Dompter les dettes", court: "Dettes", Icone: CreditCard, c: { bg: "#FAECE7", fg: "#993C1D" }, teaser: "Bonne vs mauvaise dette, le coût d'une carte, l'ordre de remboursement.", aVenir: true },
+  { id: "investir", titre: "Mettre l'argent au travail", court: "Investir", Icone: Landmark, c: { bg: "#FAEEDA", fg: "#854F0B" }, teaser: "Propriétaire vs prêteur, risque-rendement, rester investi.", aVenir: true },
+  { id: "impot", titre: "L'impôt comme levier", court: "Impôt", Icone: Receipt, c: { bg: "#EEEDFE", fg: "#3C3489" }, teaser: "REER vs CELI, l'abri fiscal, le moment des retraits.", aVenir: true },
+  { id: "proteger", titre: "Protéger ce qui compte", court: "Protéger", Icone: Shield, c: { bg: "#E6F1FB", fg: "#185FA5" }, teaser: "Tes besoins changent avec l'âge, protéger ton revenu, les 3 comptes.", aVenir: true },
+];
+const PT_LECON = 20, PT_QUIZ = 60;
+const THEMES_ACTIFS = THEMES.filter(t => !t.aVenir);
+const MAX_PTS = THEMES_ACTIFS.reduce((s, t) => s + t.lecons.length * PT_LECON + PT_QUIZ, 0);
+function niveauInfo(points) { const r = MAX_PTS > 0 ? points / MAX_PTS : 0; if (r >= 0.9) return "Expert"; if (r >= 0.55) return "Averti"; if (r >= 0.25) return "Initié"; return "Débutant"; }
+function pctQc(points) { return Math.min(96, Math.round((points / Math.max(1, MAX_PTS)) * 92)); }
 
 function CalculateurTot() {
   const [mensuel, setMensuel] = useState(200);
@@ -304,82 +341,161 @@ function CalculateurTot() {
   const contrib = mensuel * 12 * annees;
   const interets = Math.max(0, capital - contrib);
   const tard = fvMensuel(mensuel, rend, Math.max(0, 65 - (ageDebut + 10)));
-  const pts = [];
-  for (let y = 0; y <= annees; y++) pts.push(fvMensuel(mensuel, rend, y));
-  const maxV = pts[pts.length - 1] || 1;
-  const W = 560, H = 150;
+  const pts = []; for (let y = 0; y <= annees; y++) pts.push(fvMensuel(mensuel, rend, y));
+  const maxV = pts[pts.length - 1] || 1; const W = 560, H = 150;
   const coords = pts.map((v, i) => { const x = annees > 0 ? (i / annees) * W : 0; const yy = H - (v / maxV) * (H - 6); return x.toFixed(1) + "," + yy.toFixed(1); });
-  const linePts = coords.join(" ");
-  const areaPts = "0," + H + " " + linePts + " " + W + "," + H;
+  const linePts = coords.join(" "); const areaPts = "0," + H + " " + linePts + " " + W + "," + H;
   const lab = { fontSize: 11, color: "#9a8f78", textTransform: "uppercase", letterSpacing: ".06em", display: "block", marginBottom: 6 };
   return (
-    <div style={{ background: "#ffffff", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 18, padding: 24, marginBottom: 30 }}>
+    <div style={{ background: "#ffffff", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 18, padding: 22, marginBottom: 22 }}>
       <div style={{ fontSize: 12, letterSpacing: ".05em", textTransform: "uppercase", color: "#0F6E56", fontWeight: 700, marginBottom: 6 }}>Le pouvoir de commencer tôt</div>
-      <p style={{ fontSize: 13.5, color: "#5d6470", margin: "0 0 18px", lineHeight: 1.5 }}>Tu investis un montant fixe chaque mois jusqu'à 65 ans. Bouge les curseurs.</p>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 18, marginBottom: 18 }}>
+      <p style={{ fontSize: 13, color: "#5d6470", margin: "0 0 16px", lineHeight: 1.5 }}>Tu investis un montant fixe chaque mois jusqu'à 65 ans. Bouge les curseurs.</p>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 16, marginBottom: 16 }}>
         <label style={{ fontSize: 13, color: "#1b2433" }}><span style={lab}>Montant mensuel : <b style={{ color: "#0F6E56" }}>{fmtArgent(mensuel)}</b></span><input type="range" min="25" max="1000" step="25" value={mensuel} onChange={(e) => setMensuel(Number(e.target.value))} style={{ width: "100%", accentColor: "#1D9E75" }} /></label>
         <label style={{ fontSize: 13, color: "#1b2433" }}><span style={lab}>Âge de début : <b style={{ color: "#0F6E56" }}>{ageDebut} ans</b></span><input type="range" min="18" max="55" step="1" value={ageDebut} onChange={(e) => setAgeDebut(Number(e.target.value))} style={{ width: "100%", accentColor: "#1D9E75" }} /></label>
         <label style={{ fontSize: 13, color: "#1b2433" }}><span style={lab}>Rendement : <b style={{ color: "#0F6E56" }}>{Math.round(rend * 100)} %</b></span><input type="range" min="0.03" max="0.09" step="0.01" value={rend} onChange={(e) => setRend(Number(e.target.value))} style={{ width: "100%", accentColor: "#1D9E75" }} /></label>
       </div>
-      <svg viewBox={"0 0 " + W + " " + H} preserveAspectRatio="none" style={{ width: "100%", height: 120, display: "block" }}>
-        <polygon points={areaPts} fill="rgba(29,158,117,0.12)" />
-        <polyline points={linePts} fill="none" stroke="#1D9E75" strokeWidth="2.5" />
-      </svg>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#9a8f78", margin: "4px 0 18px" }}><span>{ageDebut} ans</span><span>65 ans</span></div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 26 }}>
-        <div><span style={lab}>Capital à 65 ans</span><div style={{ fontSize: 27, fontWeight: 800, color: "#0F6E56" }}>{fmtArgent(capital)}</div></div>
-        <div><span style={lab}>Tes versements</span><div style={{ fontSize: 18, fontWeight: 700, color: "#5d6470" }}>{fmtArgent(contrib)}</div></div>
-        <div><span style={lab}>Croissance</span><div style={{ fontSize: 18, fontWeight: 700, color: "#1D9E75" }}>{fmtArgent(interets)}</div></div>
+      <svg viewBox={"0 0 " + W + " " + H} preserveAspectRatio="none" style={{ width: "100%", height: 110, display: "block" }}><polygon points={areaPts} fill="rgba(29,158,117,0.12)" /><polyline points={linePts} fill="none" stroke="#1D9E75" strokeWidth="2.5" /></svg>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#9a8f78", margin: "4px 0 16px" }}><span>{ageDebut} ans</span><span>65 ans</span></div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 24 }}>
+        <div><span style={lab}>Capital à 65 ans</span><div style={{ fontSize: 25, fontWeight: 800, color: "#0F6E56" }}>{fmtArgent(capital)}</div></div>
+        <div><span style={lab}>Tes versements</span><div style={{ fontSize: 17, fontWeight: 700, color: "#5d6470" }}>{fmtArgent(contrib)}</div></div>
+        <div><span style={lab}>Croissance</span><div style={{ fontSize: 17, fontWeight: 700, color: "#1D9E75" }}>{fmtArgent(interets)}</div></div>
       </div>
-      <div style={{ background: "#FAEEDA", borderRadius: 12, padding: "13px 16px", marginTop: 18 }}><span style={{ fontSize: 13, color: "#854F0B", lineHeight: 1.55 }}>Si tu attendais 10 ans (début à {ageDebut + 10} ans), tu finirais avec <b style={{ color: "#BA7517" }}>{fmtArgent(tard)}</b> — soit <b style={{ color: "#BA7517" }}>{fmtArgent(Math.max(0, capital - tard))} de moins</b>. C'est le temps qui fait la différence.</span></div>
+      <div style={{ background: "#FAEEDA", borderRadius: 12, padding: "12px 15px", marginTop: 16 }}><span style={{ fontSize: 12.5, color: "#854F0B", lineHeight: 1.55 }}>Si tu attendais 10 ans (début à {ageDebut + 10} ans), tu finirais avec <b style={{ color: "#BA7517" }}>{fmtArgent(tard)}</b> — soit <b style={{ color: "#BA7517" }}>{fmtArgent(Math.max(0, capital - tard))} de moins</b>.</span></div>
     </div>
   );
 }
 
-const LECONS = [
-  { ch: "Prends le contrôle", t: "La retraite, c'est un montant — pas un âge", c: "On ne prend pas sa retraite à un âge magique, mais quand on a accumulé assez de capital pour vivre de ses revenus. Ton « nombre » dépend de tes dépenses, de tes rentes garanties (RRQ, PSV) et de l'inflation. C'est exactement ce que ton indicateur NIF estime." },
-  { ch: "Prends le contrôle", t: "Concentre-toi sur ce que tu contrôles", c: "Tu ne contrôles ni les marchés, ni l'inflation, ni les taux d'intérêt. Mais tu contrôles combien tu épargnes, tes dettes, la diversification de tes placements et le moment où tu commences. C'est là qu'il faut mettre ton énergie." },
-  { ch: "Prends le contrôle", t: "Ce n'est pas ce que tu gagnes, c'est ce que tu gardes", c: "Un gros salaire ne garantit rien si tout est dépensé. Distinguer un besoin d'une envie, et garder un écart entre ce qu'on gagne et ce qu'on dépense, voilà le vrai moteur de la richesse." },
-  { ch: "Prends le contrôle", t: "Paye-toi en premier", c: "Avant de payer les factures, mets de côté un montant fixe, automatiquement, chaque mois. L'épargne automatique transforme une bonne intention en habitude. Même un petit montant investi régulièrement devient énorme avec le temps." },
-  { ch: "Les forces qui font grossir l'argent", t: "Les intérêts composés : l'effet boule de neige", c: "Tes rendements génèrent à leur tour des rendements. Au début c'est lent, puis ça accélère de plus en plus vite. C'est pourquoi le temps est ton meilleur allié — souvent plus que le montant que tu investis." },
-  { ch: "Les forces qui font grossir l'argent", t: "Commence tôt : le temps bat le montant", c: "Une personne qui investit dix ans plus tôt, même avec moins d'argent au total, finit souvent avec plus qu'une personne qui commence tard mais investit davantage. Le calculateur ci-dessus le démontre : recule l'âge de début et observe la chute." },
-  { ch: "Les forces qui font grossir l'argent", t: "La règle de 72", c: "Pour estimer en combien d'années ton argent double, divise 72 par le rendement. À 6 %, ton argent double en environ 12 ans; à 8 %, en environ 9 ans. Un calcul mental simple et puissant." },
-  { ch: "Les forces qui font grossir l'argent", t: "L'inflation : l'argent qui dort perd de la valeur", c: "À 2 % d'inflation, 100 $ d'aujourd'hui n'achèteront plus qu'environ 67 $ de biens dans 20 ans. Laisser trop d'argent dans un compte à faible taux, c'est perdre du pouvoir d'achat. L'objectif : un rendement supérieur à l'inflation (le rendement réel)." },
-];
-
-const CH_COULEUR = { "Prends le contrôle": { bg: "#E1F5EE", fg: "#0F6E56" }, "Les forces qui font grossir l'argent": { bg: "#FAEEDA", fg: "#BA7517" } };
-
-function Lecon({ l, open, onToggle }) {
+function LeconCard({ lecon, lu, onLue }) {
+  const [open, setOpen] = useState(false);
   return (
-    <div style={{ background: "#ffffff", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 14, padding: "15px 18px", marginBottom: 10, cursor: "pointer" }} onClick={onToggle}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-        <span style={{ fontSize: 15.5, fontWeight: 700, color: "#1b2433" }}>{l.t}</span>
+    <div style={{ background: "#fff", border: lu ? "1px solid rgba(29,158,117,0.4)" : "1px solid rgba(0,0,0,0.07)", borderRadius: 14, padding: "14px 18px", marginBottom: 10 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, cursor: "pointer" }} onClick={() => setOpen(!open)}>
+        <span style={{ display: "flex", alignItems: "center", gap: 9, fontSize: 15, fontWeight: 700, color: "#1b2433" }}>{lu ? <Check size={16} color="#0F6E56" /> : null}{lecon.t}</span>
         <span style={{ fontSize: 20, color: "#1D9E75", lineHeight: 1 }}>{open ? "−" : "+"}</span>
       </div>
-      {open && <p style={{ margin: "10px 0 0", color: "#5d6470", fontSize: 13.5, lineHeight: 1.6 }}>{l.c}</p>}
+      {open ? (<div style={{ marginTop: 10 }}><p style={{ color: "#5d6470", fontSize: 13.5, lineHeight: 1.6, margin: "0 0 12px" }}>{lecon.c}</p>{lu ? <span style={{ fontSize: 12.5, color: "#0F6E56", fontWeight: 600 }}>Lu · +20 pts</span> : <button onClick={() => onLue(lecon.id)} style={{ background: "#1D9E75", color: "#fff", border: "none", borderRadius: 10, padding: "8px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Marquer comme lu (+20 pts)</button>}</div>) : null}
+    </div>
+  );
+}
+
+function Quiz({ theme, done, onComplete }) {
+  const [rep, setRep] = useState({});
+  const [soumis, setSoumis] = useState(false);
+  const total = theme.quiz.length;
+  const score = theme.quiz.reduce((s, q, i) => s + (rep[i] === q.r ? 1 : 0), 0);
+  const reussi = score >= Math.ceil(total * 0.75);
+  if (done) return (<div style={{ background: "#E1F5EE", borderRadius: 16, padding: "18px 20px", marginTop: 14, display: "flex", alignItems: "center", gap: 12 }}><Award size={24} color="#0F6E56" /><div><div style={{ fontSize: 15, fontWeight: 800, color: "#0F6E56" }}>Badge obtenu !</div><div style={{ fontSize: 13, color: "#3B6D11" }}>Tu maîtrises ce thème. +60 pts gagnés.</div></div></div>);
+  return (
+    <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 16, padding: "20px 22px", marginTop: 18 }}>
+      <div style={{ fontSize: 12, letterSpacing: ".05em", textTransform: "uppercase", color: "#0F6E56", fontWeight: 700, marginBottom: 4 }}>Quiz du thème</div>
+      <p style={{ fontSize: 13, color: "#5d6470", margin: "0 0 16px" }}>Réussis le quiz pour gagner le badge et +60 points.</p>
+      {theme.quiz.map((q, i) => (
+        <div key={i} style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 14.5, fontWeight: 700, color: "#1b2433", marginBottom: 8 }}>{i + 1}. {q.q}</div>
+          {q.o.map((opt, j) => { const sel = rep[i] === j; const bon = soumis && j === q.r; const mauvais = soumis && sel && j !== q.r; return (<div key={j} onClick={() => { if (!soumis) setRep({ ...rep, [i]: j }); }} style={{ border: bon ? "1.5px solid #1D9E75" : mauvais ? "1.5px solid #D85A30" : sel ? "1.5px solid #1b2433" : "1px solid rgba(0,0,0,0.1)", background: bon ? "#E1F5EE" : mauvais ? "#FAECE7" : "#fff", borderRadius: 10, padding: "10px 14px", marginBottom: 7, fontSize: 13.5, color: "#1b2433", cursor: soumis ? "default" : "pointer" }}>{opt}</div>); })}
+        </div>
+      ))}
+      {!soumis ? (<button onClick={() => { setSoumis(true); if (reussi) onComplete(); }} disabled={Object.keys(rep).length < total} style={{ background: Object.keys(rep).length < total ? "#d8d2c4" : "#1b2433", color: "#fff", border: "none", borderRadius: 10, padding: "10px 18px", fontSize: 14, fontWeight: 700, cursor: Object.keys(rep).length < total ? "default" : "pointer" }}>Valider mes réponses</button>) : reussi ? (<div style={{ fontSize: 14, fontWeight: 700, color: "#0F6E56" }}>Bravo ! {score}/{total} — badge débloqué.</div>) : (<div><div style={{ fontSize: 14, fontWeight: 700, color: "#D85A30", marginBottom: 8 }}>{score}/{total} — presque ! Relis et réessaie.</div><button onClick={() => { setSoumis(false); setRep({}); }} style={{ background: "#1b2433", color: "#fff", border: "none", borderRadius: 10, padding: "9px 16px", fontSize: 13.5, fontWeight: 700, cursor: "pointer" }}>Réessayer</button></div>)}
+    </div>
+  );
+}
+
+function ThemeDetail({ theme, prog, onBack, onLue, onComplete }) {
+  const done = prog.themes.includes(theme.id);
+  return (
+    <div>
+      <button onClick={onBack} style={{ background: "transparent", border: "none", color: "#0F6E56", fontSize: 13.5, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, padding: 0, marginBottom: 16 }}><ArrowLeft size={16} /> Retour aux thèmes</button>
+      <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.5px", margin: "0 0 8px", color: "#1b2433" }}>{theme.titre}</h1>
+      <p style={{ color: "#5d6470", fontSize: 14, lineHeight: 1.6, margin: "0 0 20px", maxWidth: 470 }}>{theme.teaser}</p>
+      {theme.calc ? <CalculateurTot /> : null}
+      {theme.lecons.map(l => <LeconCard key={l.id} lecon={l} lu={prog.lecons.includes(l.id)} onLue={onLue} />)}
+      <Quiz theme={theme} done={done} onComplete={() => onComplete(theme.id)} />
+    </div>
+  );
+}
+
+function ProgressHeader({ prog }) {
+  const pct = pctQc(prog.points); const niv = niveauInfo(prog.points);
+  const ring = 238.6; const off = ring - ring * (MAX_PTS > 0 ? Math.min(1, prog.points / MAX_PTS) : 0);
+  return (
+    <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 18, padding: "22px 24px", marginBottom: 22 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 22, flexWrap: "wrap" }}>
+        <svg viewBox="0 0 90 90" style={{ width: 82, height: 82, flexShrink: 0 }}><circle cx="45" cy="45" r="38" fill="none" stroke="#ECE7DB" strokeWidth="9" /><circle cx="45" cy="45" r="38" fill="none" stroke="#1D9E75" strokeWidth="9" strokeLinecap="round" strokeDasharray={ring} strokeDashoffset={off} transform="rotate(-90 45 45)" /><text x="45" y="50" textAnchor="middle" fontSize="18" fontWeight="800" fill="#0F6E56">{pct}%</text></svg>
+        <div style={{ flex: 1, minWidth: 230 }}>
+          <div style={{ fontSize: 12, color: "#9a8f78", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 3 }}>Niveau : {niv}</div>
+          <div style={{ fontSize: 19, fontWeight: 800, lineHeight: 1.2 }}>Tu en sais plus que ~{pct} % des Québécois <span title="Estimation ludique pour suivre ta progression, pas une mesure scientifique." style={{ fontSize: 11, fontWeight: 600, color: "#9a8f78", cursor: "help" }}>· estimation</span></div>
+          <div style={{ height: 8, background: "#ECE7DB", borderRadius: 99, overflow: "hidden", marginTop: 8 }}><div style={{ width: pct + "%", height: "100%", background: "#1D9E75" }} /></div>
+        </div>
+        <div style={{ textAlign: "center", flexShrink: 0 }}><div style={{ fontSize: 28, fontWeight: 800, color: "#BA7517", lineHeight: 1 }}>{prog.points}</div><div style={{ fontSize: 11, color: "#9a8f78", textTransform: "uppercase", letterSpacing: ".05em", marginTop: 2 }}>points</div></div>
+      </div>
+      <div style={{ display: "flex", gap: 10, marginTop: 18, paddingTop: 16, borderTop: "1px solid rgba(0,0,0,0.07)", flexWrap: "wrap" }}>
+        {THEMES_ACTIFS.map(t => { const g = prog.themes.includes(t.id); return (<div key={t.id} style={{ display: "flex", alignItems: "center", gap: 7, background: g ? t.c.bg : "#F1EFE8", color: g ? t.c.fg : "#a8a294", borderRadius: 99, padding: "6px 13px", fontSize: 12.5, fontWeight: 600 }}>{g ? <Award size={15} /> : <Lock size={14} />}{t.court}</div>); })}
+      </div>
+    </div>
+  );
+}
+
+function ThemesLanding({ prog, onOpen }) {
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 14 }}>
+      {THEMES.map(t => {
+        const done = prog.themes.includes(t.id);
+        const nLus = t.lecons ? t.lecons.filter(l => prog.lecons.includes(l.id)).length : 0;
+        const nTot = t.lecons ? t.lecons.length : 0;
+        return (
+          <div key={t.id} onClick={() => { if (!t.aVenir) onOpen(t.id); }} style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 16, padding: 18, cursor: t.aVenir ? "default" : "pointer", opacity: t.aVenir ? 0.6 : 1 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 12, background: t.c.bg, display: "flex", alignItems: "center", justifyContent: "center", color: t.c.fg }}><t.Icone size={20} /></div>
+              {t.aVenir ? <span style={{ fontSize: 11.5, color: "#a8a294", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".05em" }}>À venir</span> : done ? <span style={{ display: "flex", alignItems: "center", gap: 5, background: t.c.bg, color: t.c.fg, fontSize: 11.5, fontWeight: 700, padding: "4px 10px", borderRadius: 99 }}><Check size={13} /> Terminé</span> : nLus > 0 ? <span style={{ background: "#FAEEDA", color: "#854F0B", fontSize: 11.5, fontWeight: 700, padding: "4px 10px", borderRadius: 99 }}>En cours</span> : null}
+            </div>
+            <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 5, color: "#1b2433" }}>{t.titre}</div>
+            <div style={{ fontSize: 12.5, color: "#5d6470", lineHeight: 1.5 }}>{t.teaser}</div>
+            {!t.aVenir ? <div style={{ height: 6, background: "#ECE7DB", borderRadius: 99, overflow: "hidden", marginTop: 12 }}><div style={{ width: (nTot ? (nLus / nTot * 100) : 0) + "%", height: "100%", background: "#1D9E75" }} /></div> : null}
+            {!t.aVenir ? <div style={{ fontSize: 11.5, color: "#9a8f78", marginTop: 7 }}>{nLus} / {nTot} leçons{t.calc ? " · calculateur" : ""}</div> : null}
+          </div>
+        );
+      })}
     </div>
   );
 }
 
 function CommentArgentTravaille() {
-  const [openL, setOpenL] = useState(null);
-  let lastCh = null;
+  const [vue, setVue] = useState("themes");
+  const [prog, setProg] = useState(null);
+  useEffect(() => {
+    let on = true;
+    (async () => {
+      try {
+        const me = await base44.auth.me();
+        const rows = await base44.entities.EducationProgress.list();
+        const mine = (rows || []).find(r => r.created_by === (me && me.email));
+        if (!on) return;
+        setProg(mine ? { id: mine.id, lecons: mine.lecons_completees || [], themes: mine.themes_completes || [], points: mine.points || 0 } : { id: null, lecons: [], themes: [], points: 0 });
+      } catch (e) { if (on) setProg({ id: null, lecons: [], themes: [], points: 0 }); }
+    })();
+    return () => { on = false; };
+  }, []);
+  const persist = (next) => {
+    setProg(next);
+    const payload = { lecons_completees: next.lecons, themes_completes: next.themes, points: next.points };
+    (async () => { try { if (next.id) { await base44.entities.EducationProgress.update(next.id, payload); } else { const cr = await base44.entities.EducationProgress.create(payload); if (cr && cr.id) setProg(p => ({ ...p, id: cr.id })); } } catch (e) {} })();
+  };
+  const onLue = (leconId) => { if (!prog || prog.lecons.includes(leconId)) return; persist({ ...prog, lecons: [...prog.lecons, leconId], points: prog.points + PT_LECON }); };
+  const onComplete = (themeId) => { if (!prog || prog.themes.includes(themeId)) return; persist({ ...prog, themes: [...prog.themes, themeId], points: prog.points + PT_QUIZ }); };
+  const theme = THEMES.find(t => t.id === vue);
   return (
-    <div style={{ background: "#F7F3EA", borderRadius: 20, padding: "34px 32px 46px", margin: "18px 0 44px", color: "#1b2433" }}>
-      <div style={{ fontSize: 11, letterSpacing: ".2em", textTransform: "uppercase", color: "#9a8f78" }}>Éducation financière</div>
-      <h1 style={{ fontSize: 32, fontWeight: 800, letterSpacing: "-0.5px", margin: "6px 0 8px", color: "#1b2433" }}>Comment l'argent travaille</h1>
-      <p style={{ color: "#5d6470", fontSize: 14.5, lineHeight: 1.6, margin: "0 0 24px", maxWidth: 470 }}>Les principes qui font grandir — ou fondre — ton argent, expliqués simplement et avec un exemple chiffré.</p>
-      <CalculateurTot />
-      {LECONS.map((l, i) => {
-        const showCh = l.ch !== lastCh; lastCh = l.ch;
-        const col = CH_COULEUR[l.ch] || { bg: "#E1F5EE", fg: "#0F6E56" };
-        return (
-          <div key={i}>
-            {showCh && <div style={{ display: "inline-block", background: col.bg, color: col.fg, fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: ".06em", padding: "5px 12px", borderRadius: 999, margin: "28px 0 12px" }}>{l.ch}</div>}
-            <Lecon l={l} open={openL === i} onToggle={() => setOpenL(openL === i ? null : i)} />
-          </div>
-        );
-      })}
+    <div style={{ background: "#F7F3EA", borderRadius: 20, padding: "30px 30px 46px", margin: "18px 0 44px", color: "#1b2433" }}>
+      <div style={{ fontSize: 11, letterSpacing: ".2em", textTransform: "uppercase", color: "#9a8f78", marginBottom: 16 }}>Comment l'argent travaille</div>
+      {!prog ? (<div style={{ padding: 30, color: "#9a8f78", fontSize: 14 }}>Chargement de ta progression…</div>) : theme ? (<ThemeDetail theme={theme} prog={prog} onBack={() => setVue("themes")} onLue={onLue} onComplete={onComplete} />) : (
+        <div>
+          <h1 style={{ fontSize: 29, fontWeight: 800, letterSpacing: "-0.5px", margin: "0 0 4px", color: "#1b2433" }}>Comment l'argent travaille</h1>
+          <p style={{ color: "#5d6470", fontSize: 14, margin: "0 0 22px" }}>Apprends les principes, gagne des points, monte de niveau.</p>
+          <ProgressHeader prog={prog} />
+          <ThemesLanding prog={prog} onOpen={(id) => setVue(id)} />
+        </div>
+      )}
     </div>
   );
 }
@@ -391,15 +507,10 @@ export default function EducationFinanciere() {
     <div>
       <div style={{ maxWidth: 920, margin: "0 auto", padding: "26px 20px 0" }}>
         <div style={{ display: "flex", gap: 6, borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-          {tabs.map(([k, lbl]) => {
-            const a = onglet === k;
-            return (<button key={k} onClick={() => setOnglet(k)} style={{ background: "transparent", border: "none", borderBottom: a ? ("2px solid " + C.gold) : "2px solid transparent", color: a ? C.gold : C.dim, padding: "10px 8px", fontSize: 14.5, fontWeight: 700, cursor: "pointer", marginBottom: -1 }}>{lbl}</button>);
-          })}
+          {tabs.map(([k, lbl]) => { const a = onglet === k; return (<button key={k} onClick={() => setOnglet(k)} style={{ background: "transparent", border: "none", borderBottom: a ? ("2px solid " + C.gold) : "2px solid transparent", color: a ? C.gold : C.dim, padding: "10px 8px", fontSize: 14.5, fontWeight: 700, cursor: "pointer", marginBottom: -1 }}>{lbl}</button>); })}
         </div>
       </div>
-      <div style={{ maxWidth: 920, margin: "0 auto", padding: "0 20px" }}>
-        {onglet === "dictionnaire" ? <Dictionnaire /> : <CommentArgentTravaille />}
-      </div>
+      <div style={{ maxWidth: 920, margin: "0 auto", padding: "0 20px" }}>{onglet === "dictionnaire" ? <Dictionnaire /> : <CommentArgentTravaille />}</div>
     </div>
   );
 }

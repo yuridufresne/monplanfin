@@ -1,0 +1,59 @@
+{
+  "name": "EducationProgress",
+  "type": "object",
+  "description": "Progression gamifi\u00e9e du client dans la section \u00c9ducation (Comment l'argent travaille).",
+  "properties": {
+    "lecons_completees": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Identifiants des le\u00e7ons lues"
+    },
+    "themes_completes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Identifiants des th\u00e8mes dont le quiz est r\u00e9ussi (badge gagn\u00e9)"
+    },
+    "points": {
+      "type": "number",
+      "default": 0,
+      "description": "Total de points accumul\u00e9s"
+    }
+  },
+  "rls": {
+    "create": {},
+    "read": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  },
+  "required": []
+}
