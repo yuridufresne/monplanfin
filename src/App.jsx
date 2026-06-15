@@ -29,7 +29,7 @@ import AgentDossiers from '@/pages/AgentDossiers';
 import AgentDebug from '@/pages/AgentDebug';
 import EducationFinanciere from '@/pages/EducationFinanciere';
 
-const PUBLIC_PATHS = ['/', '/calculatrices', '/education'];
+const PUBLIC_PATHS = ['/', '/calculatrices'];
 
 function PremiumGate({ children }) {
   const [unlocked, setUnlocked] = useState(() => {
