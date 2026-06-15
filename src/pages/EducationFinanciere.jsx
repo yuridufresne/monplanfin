@@ -501,7 +501,7 @@ function CommentArgentTravaille() {
 }
 
 export default function EducationFinanciere() {
-  const [onglet, setOnglet] = useState("argent");
+  const [onglet, setOnglet] = useState("dictionnaire");
   const tabs = [["dictionnaire", "Dictionnaire"], ["argent", "Comment l'argent travaille"]];
   return (
     <div>
