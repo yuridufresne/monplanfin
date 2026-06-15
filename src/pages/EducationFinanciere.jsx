@@ -593,7 +593,7 @@ function ThemesLanding({ prog, onOpen }) {
 }
 
 function CommentArgentTravaille() {
-  const [vue, setVue] = useState("forces");
+  const [vue, setVue] = useState("themes");
   const [prog, setProg] = useState(null);
   const [perso, setPerso] = useState({});
   useEffect(() => {
@@ -634,7 +634,7 @@ function CommentArgentTravaille() {
 }
 
 export default function EducationFinanciere() {
-  const [onglet, setOnglet] = useState("argent");
+  const [onglet, setOnglet] = useState("dictionnaire");
   const tabs = [["dictionnaire", "Dictionnaire"], ["argent", "Comment l'argent travaille"]];
   return (
     <div>
