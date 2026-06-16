@@ -201,7 +201,7 @@ export function lireCibleRetraite(ret, brutAnnuelFoyer) {
   if (Number.isFinite(pctRaw) && pctRaw > 0) { taux = pctRaw > 2 ? pctRaw / 100 : pctRaw; } else { taux = 0.70; }
   let cibleAnnuelle;
   if (Number.isFinite(mensuel) && mensuel > 0) { cibleAnnuelle = Math.round(mensuel * 12); } else { cibleAnnuelle = Math.round(brut * taux); }
-  const tauxEffectif = brut > 0 ? Math.round((cibleAnnuelle / brut) * 100) / 100 : taux;
+  const tauxEffectif = brut > 0 ? Math.round((cibleAnnuelle / brut) * 100) : Math.round(taux * 100);
   return { cibleAnnuelle, taux, tauxEffectif };
 }
 
