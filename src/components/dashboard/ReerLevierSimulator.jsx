@@ -90,11 +90,11 @@ function simulate({ budget, pretPct, loanRateAnnual, invRateAnnual, taxRate, cyc
   return { reer: Math.round(reer), celi: Math.round(celi), total: Math.round(reer + celi), interets: Math.round(totalInterets), loanAmount: Math.round(loanAmount), retourImpot: Math.round(loanAmount * tax), chart: chartDataA };
 }
 
-function simulateB({ budget, invRateAnnual, taxRate, totalYears }) {
+function simulateB({ budget, invRateAnnual, taxRate, totalYears, reerFrac = 0.5 }) {
   const invRate = invRateAnnual / 100;
   const tax     = taxRate / 100;
-  const reerPmt = budget * 0.5;
-  const celiPmt = budget * 0.5;
+  const reerPmt = budget * reerFrac;
+  const celiPmt = budget * (1 - reerFrac);
   let reer = 0, celi = 0;
   const chart = [];
 
@@ -139,6 +139,7 @@ export default function ReerLevierSimulator() {
   const resA = useMemo(() => simulate(params), [budget, pretPct, loanRate, invRate, taxRate, cycleYears, totalYears]);
   const resB = useMemo(() => simulateB({ budget, invRateAnnual: invRate, taxRate, totalYears }), [budget, invRate, taxRate, totalYears]);
   const resC = useMemo(() => simulateC({ budget, invRateAnnual: invRate, totalYears }), [budget, invRate, totalYears]);
+  const resReer = useMemo(() => simulateB({ budget, invRateAnnual: invRate, taxRate, totalYears, reerFrac: 1 }), [budget, invRate, taxRate, totalYears]);
 
   // Graphique combiné
   const chartData = useMemo(() => resA.chart.map((pt, i) => ({
