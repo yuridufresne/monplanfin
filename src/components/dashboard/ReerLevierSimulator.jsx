@@ -229,7 +229,7 @@ export default function ReerLevierSimulator() {
         <span title={s.info} style={{ position: "absolute", top: 10, right: 10, width: 15, height: 15, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.25)", color: "rgba(255,255,255,0.55)", fontSize: 9, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", cursor: "help", zIndex: 2 }}>i</span>
                   {best === s.key && (
                     <span style={{ position: "absolute", top: 10, right: 36, fontSize: 9, fontWeight: 800, color: s.color, background: `${s.color}18`, padding: "2px 7px", borderRadius: 6, letterSpacing: "0.08em", textTransform: "uppercase" }}>
-                      Meilleur
+                      Potentiel ↑
                     </span>
                   )}
                   <p style={{ fontSize: 11, fontWeight: 700, color: s.color, marginBottom: 8 }}>{s.label}</p>
@@ -242,6 +242,15 @@ export default function ReerLevierSimulator() {
                 </div>
               ))}
             </div>
+
+          {/* Encadré risque */}
+          <div style={{ background: "rgba(226,75,74,0.08)", border: "1px solid rgba(226,75,74,0.3)", borderRadius: 14, padding: "13px 16px", display: "flex", gap: 11, alignItems: "flex-start" }}>
+            <span style={{ color: "#E24B4A", fontSize: 16, lineHeight: 1.2 }}>⚠</span>
+            <div>
+              <p style={{ fontSize: 12, fontWeight: 700, color: "#E8736F", marginBottom: 4 }}>Le levier amplifie tout — gains comme pertes</p>
+              <p style={{ fontSize: 11.5, color: "rgba(255,255,255,0.55)", lineHeight: 1.55 }}>Ces montants supposent un rendement de {invRate} %/an, jamais garanti. Si tes placements rapportent moins que {loanRate} % (le coût du prêt), le levier te fait perdre de l’argent. Emprunter pour investir ne convient qu’à un profil capable de tolérer des baisses et de continuer à rembourser même si le marché chute.</p>
+            </div>
+          </div>
 
             {/* Graphique */}
             <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "1rem" }}>
