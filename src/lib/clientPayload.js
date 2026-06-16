@@ -189,6 +189,22 @@ function readPersonne(ret = {}, profil = {}, salaireAnnuel = 0) {
   };
 }
 
+// Source unique : lecture de la cible de retraite depuis ABF
+// Priorite : montant mensuel saisi, puis pourcentage, puis defaut 70%. Normalise 80/0.8.
+export function lireCibleRetraite(ret, brutAnnuelFoyer) {
+  ret = ret || {};
+  const brut = parseFloat(brutAnnuelFoyer) || 0;
+  const mensuel = parseFloat(ret.revenu_retraite_mensuel);
+  let pctRaw = parseFloat(ret.taux_remplacement);
+  if (!Number.isFinite(pctRaw) || pctRaw <= 0) pctRaw = parseFloat(ret.revenu_retraite_pct);
+  let taux;
+  if (Number.isFinite(pctRaw) && pctRaw > 0) { taux = pctRaw > 2 ? pctRaw / 100 : pctRaw; } else { taux = 0.70; }
+  let cibleAnnuelle;
+  if (Number.isFinite(mensuel) && mensuel > 0) { cibleAnnuelle = Math.round(mensuel * 12); } else { cibleAnnuelle = Math.round(brut * taux); }
+  const tauxEffectif = brut > 0 ? Math.round((cibleAnnuelle / brut) * 100) / 100 : taux;
+  return { cibleAnnuelle, taux, tauxEffectif };
+}
+
 export function buildPayload(profiles = [], opts = {}) {
   const REND_ACCUM_EFF = (opts && typeof opts.rendAccum === "number") ? opts.rendAccum : IQPF.REND_ACCUM;
   const dict = {};
@@ -237,12 +253,10 @@ export function buildPayload(profiles = [], opts = {}) {
 
   const garantisTotal = rrqFoyer + svFoyer + pensionFoyer + srgFoyer;
 
-  const revenuRetMensABF = parseFloat(ret.revenu_retraite_mensuel) || 0;
-  const pctABF = parseFloat(ret.taux_remplacement)
-    || parseFloat(ret.revenu_retraite_pct)
-    || (IQPF.TAUX_REMPLACEMENT * 100);
-  const cibleAnnuelle = revenuRetMensABF > 0 ? revenuRetMensABF * 12 : Math.round(brutTotal * pctABF / 100);
-  const tauxEffectif = brutTotal > 0 ? Math.round(cibleAnnuelle / brutTotal * 100) : pctABF;
+  // Cible de retraite via la source unique (lireCibleRetraite)
+  const _cibleRet = lireCibleRetraite(ret, brutTotal);
+  const cibleAnnuelle = _cibleRet.cibleAnnuelle;
+  const tauxEffectif = _cibleRet.tauxEffectif;
 
   // Fallback si date de naissance manquante : 38 ans par défaut (évite calculs absurdes)
   // Sans ce fallback, age=null → nA=65 → indexation ×4.4 au lieu de ×2.2
