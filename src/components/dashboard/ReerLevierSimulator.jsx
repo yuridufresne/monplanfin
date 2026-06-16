@@ -146,12 +146,12 @@ export default function ReerLevierSimulator() {
     annee: pt.annee,
     "Prêt REER levier": pt.valeur,
     "50% REER + 50% CELI": resB.chart[i]?.valeur ?? 0,
-    "100% CELI": resC.chart[i]?.valeur ?? 0,
-  })), [resA, resB, resC]);
+      "100% CELI": resC.chart[i]?.valeur ?? 0,
+      "100% REER": resReer.chart[i]?.valeur ?? 0,
+  })), [resA, resB, resC, resReer]);
 
   // Verdict
-  const best = resA.total >= resB.total && resA.total >= resC.total ? "A"
-    : resB.total >= resA.total && resB.total >= resC.total ? "B" : "C";
+  const best = [["A", resA], ["B", resB], ["C", resC], ["D", resReer]].reduce(function(a, b){ return b[1].total > a[1].total ? b : a; })[0];
   const ecartAB = resA.total - resB.total;
   const spreadNet = invRate - loanRate;
 
@@ -165,6 +165,7 @@ export default function ReerLevierSimulator() {
     { key: "A", label: "Prêt REER levier",      res: resA, color: "#C9A063", sub: `Intérêts payés : ${fmt(resA.interets)}` , info: "Tu empruntes pour cotiser au REER tout de suite. Le budget rembourse le pret, le retour d'impot va au CELI. Plus haut potentiel, mais risque plus eleve." },
     { key: "B", label: "50% REER + 50% CELI",   res: resB, color: "#6B8ED6", sub: "Retour d'impôt → CELI (avril)" , info: "La moitie de ton budget au REER, la moitie au CELI. Le retour d'impot du REER est reinvesti au CELI. Equilibre, sans emprunt." },
     { key: "C", label: "100% CELI",              res: resC, color: "#5BC4A0", sub: "Budget complet chaque mois" , info: "Tout ton budget au CELI chaque mois. Le plus simple et le plus prudent, mais aucune deduction d'impot." },
+  { key: "D", label: "100% REER", res: resReer, color: "#A87DD3", sub: "Retour d’impôt → CELI", info: "Tout ton budget au REER chaque mois; le retour d’impôt est réinvesti au CELI. Aucune dette, mais une grosse déduction fiscale." },
   ];
 
   return (
@@ -218,7 +219,7 @@ export default function ReerLevierSimulator() {
             </div>
 
             {/* Cartes comparaison 3 stratégies */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
               {strategies.map(s => (
                 <div key={s.key} style={{
                   background: best === s.key ? `${s.color}10` : "rgba(255,255,255,0.03)",
@@ -261,6 +262,7 @@ export default function ReerLevierSimulator() {
                   <Line type="monotone" dataKey="Prêt REER levier"    stroke="#C9A063" strokeWidth={2.5} dot={false} />
                   <Line type="monotone" dataKey="50% REER + 50% CELI" stroke="#6B8ED6" strokeWidth={2} dot={false} strokeDasharray="5 4" />
                   <Line type="monotone" dataKey="100% CELI"           stroke="#5BC4A0" strokeWidth={2} dot={false} strokeDasharray="3 3" />
+                  <Line type="monotone" dataKey="100% REER"           stroke="#A87DD3" strokeWidth={2} dot={false} strokeDasharray="2 3" />
                 </LineChart>
               </ResponsiveContainer>
             </div>
