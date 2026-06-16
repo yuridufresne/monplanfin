@@ -162,9 +162,9 @@ export default function ReerLevierSimulator() {
     : `Tout mettre en CELI est optimal dans ce scénario. Le coût du prêt REER absorbe l'avantage fiscal. Augmentez le taux de rendement ou abaissez le taux du prêt pour rendre le levier profitable.`;
 
   const strategies = [
-    { key: "A", label: "Prêt REER levier",      res: resA, color: "#C9A063", sub: `Intérêts payés : ${fmt(resA.interets)}` },
-    { key: "B", label: "50% REER + 50% CELI",   res: resB, color: "#6B8ED6", sub: "Retour d'impôt → CELI (avril)" },
-    { key: "C", label: "100% CELI",              res: resC, color: "#5BC4A0", sub: "Budget complet chaque mois" },
+    { key: "A", label: "Prêt REER levier",      res: resA, color: "#C9A063", sub: `Intérêts payés : ${fmt(resA.interets)}` , info: "Tu empruntes pour cotiser au REER tout de suite. Le budget rembourse le pret, le retour d'impot va au CELI. Plus haut potentiel, mais risque plus eleve." },
+    { key: "B", label: "50% REER + 50% CELI",   res: resB, color: "#6B8ED6", sub: "Retour d'impôt → CELI (avril)" , info: "La moitie de ton budget au REER, la moitie au CELI. Le retour d'impot du REER est reinvesti au CELI. Equilibre, sans emprunt." },
+    { key: "C", label: "100% CELI",              res: resC, color: "#5BC4A0", sub: "Budget complet chaque mois" , info: "Tout ton budget au CELI chaque mois. Le plus simple et le plus prudent, mais aucune deduction d'impot." },
   ];
 
   return (
@@ -203,12 +203,13 @@ export default function ReerLevierSimulator() {
             {/* Info-cards */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
-                { label: "Montant du prêt",    val: fmt(resA.loanAmount),   sub: `Pmt : ${fmt(budget * pretPct / 100)}/mois`, color: "#C9A063" },
-                { label: "Retour d'impôt",     val: fmt(resA.retourImpot),  sub: `${taxRate}% × prêt`,                       color: "#A87DD3" },
-                { label: `Balance à ${totalYears} ans`, val: fmt(resA.total), sub: `REER ${fmt(resA.reer)} · CELI ${fmt(resA.celi)}`, color: best === "A" ? "#5BC4A0" : "#C9A063" },
-                { label: "vs Stratégie mixte", val: ecartAB >= 0 ? `+${fmt(ecartAB)}` : fmt(ecartAB), sub: ecartAB >= 0 ? "Surplus levier" : "Déficit levier", color: ecartAB >= 0 ? "#5BC4A0" : "#f87171" },
+                { label: "Montant du prêt",    val: fmt(resA.loanAmount),   sub: `Pmt : ${fmt(budget * pretPct / 100)}/mois`, color: "#C9A063" , info: "Ce que la banque te prete d'un coup pour cotiser au REER maintenant. Tes paiements le remboursent sur la duree." },
+                { label: "Retour d'impôt",     val: fmt(resA.retourImpot),  sub: `${taxRate}% × prêt`,                       color: "#A87DD3" , info: "L'argent que le gouvernement te redonne grace a la deduction REER. Il est reinvesti dans ton CELI." },
+                { label: `Balance à ${totalYears} ans`, val: fmt(resA.total), sub: `REER ${fmt(resA.reer)} · CELI ${fmt(resA.celi)}`, color: best === "A" ? "#5BC4A0" : "#C9A063" , info: "Valeur totale de tes placements (REER + CELI) apres la duree choisie, avec la strategie de pret levier." },
+                { label: "vs Stratégie mixte", val: ecartAB >= 0 ? `+${fmt(ecartAB)}` : fmt(ecartAB), sub: ecartAB >= 0 ? "Surplus levier" : "Déficit levier", color: ecartAB >= 0 ? "#5BC4A0" : "#f87171" , info: "Ce que le pret levier rapporte de plus qu'une approche prudente 50 % REER / 50 % CELI." },
               ].map(k => (
-                <div key={k.label} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, padding: "12px 14px" }}>
+                <div key={k.label} style={{ position: "relative", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, padding: "12px 14px" }}>
+        <span title={k.info} style={{ position: "absolute", top: 8, right: 9, width: 15, height: 15, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.25)", color: "rgba(255,255,255,0.5)", fontSize: 9, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", cursor: "help" }}>i</span>
                   <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.4)", marginBottom: 5 }}>{k.label}</p>
                   <p style={{ fontFamily: "var(--font-mono)", fontSize: 15, fontWeight: 700, color: k.color, lineHeight: 1 }}>{k.val}</p>
                   <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.3)", marginTop: 4 }}>{k.sub}</p>
@@ -224,8 +225,9 @@ export default function ReerLevierSimulator() {
                   border: best === s.key ? `1px solid ${s.color}40` : "1px solid rgba(255,255,255,0.07)",
                   borderRadius: 16, padding: "1rem 1.1rem", position: "relative",
                 }}>
+        <span title={s.info} style={{ position: "absolute", top: 10, right: 10, width: 15, height: 15, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.25)", color: "rgba(255,255,255,0.55)", fontSize: 9, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", cursor: "help", zIndex: 2 }}>i</span>
                   {best === s.key && (
-                    <span style={{ position: "absolute", top: 10, right: 10, fontSize: 9, fontWeight: 800, color: s.color, background: `${s.color}18`, padding: "2px 7px", borderRadius: 6, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                    <span style={{ position: "absolute", top: 10, right: 36, fontSize: 9, fontWeight: 800, color: s.color, background: `${s.color}18`, padding: "2px 7px", borderRadius: 6, letterSpacing: "0.08em", textTransform: "uppercase" }}>
                       Meilleur
                     </span>
                   )}
