@@ -188,14 +188,14 @@ export default function ReerLevierSimulator() {
           <div style={{ gridColumn: "span 1" }}>
             <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(201,160,99,0.55)", marginBottom: 16 }}>Paramètres</p>
             <Slider label="Budget mensuel total" min={300} max={2000} step={50} value={budget} onChange={setBudget} fmtFn={v => `${v} $`} />
-            <Slider label="Part du budget — prêt REER" min={20} max={80} step={5} value={pretPct} onChange={setPretPct} fmtFn={v => `${v} %`}
+            <Slider label="Combien va au prêt" min={20} max={80} step={5} value={pretPct} onChange={setPretPct} fmtFn={v => `${v} %`}
               note={`Remboursement : ${fmt(budget * pretPct / 100)}/mois · CELI : ${fmt(budget * (1 - pretPct / 100))}/mois`} />
-            <Slider label="Taux du prêt REER" min={4} max={10} step={0.25} value={loanRate} onChange={setLoanRate} fmtFn={v => `${v} %`} />
-            <Slider label="Rendement annuel" min={4} max={12} step={0.5} value={invRate} onChange={setInvRate} fmtFn={v => `${v} %`}
+            <Slider label="Taux d’intérêt du prêt" min={4} max={10} step={0.25} value={loanRate} onChange={setLoanRate} fmtFn={v => `${v} %`} />
+            <Slider label="Rendement espéré des placements" min={4} max={12} step={0.5} value={invRate} onChange={setInvRate} fmtFn={v => `${v} %`}
               note={`Écart rendement/taux : ${(invRate - loanRate).toFixed(2)} %`} />
-            <Slider label="Taux marginal combiné QC" min={30} max={54} step={0.5} value={taxRate} onChange={setTaxRate} fmtFn={v => `${v} %`} />
-            <Slider label="Cycle de renouvellement" min={2} max={5} step={1} value={cycleYears} onChange={setCycleYears} fmtFn={v => `${v} ans`} />
-            <Slider label="Horizon de placement" min={10} max={40} step={1} value={totalYears} onChange={setTotalYears} fmtFn={v => `${v} ans`} />
+            <Slider label="Ton taux d’impôt" min={30} max={54} step={0.5} value={taxRate} onChange={setTaxRate} fmtFn={v => `${v} %`} />
+            <Slider label="Renouvellement du prêt" min={2} max={5} step={1} value={cycleYears} onChange={setCycleYears} fmtFn={v => `${v} ans`} />
+            <Slider label="Durée" min={10} max={40} step={1} value={totalYears} onChange={setTotalYears} fmtFn={v => `${v} ans`} />
           </div>
 
           {/* ── RÉSULTATS ───────────────────────────────────── */}
