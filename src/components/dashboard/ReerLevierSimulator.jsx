@@ -243,11 +243,6 @@ export default function ReerLevierSimulator() {
                   borderRadius: 14, padding: "0.8rem 0.85rem", position: "relative",
                 }}>
         <InfoDot text={s.info} />
-                  {best === s.key && (
-                    <span style={{ display: "inline-block", marginBottom: 6, fontSize: 9, fontWeight: 800, color: s.color, background: `${s.color}18`, padding: "2px 7px", borderRadius: 6, letterSpacing: "0.08em", textTransform: "uppercase" }}>
-                      Potentiel ↑
-                    </span>
-                  )}
                   <p style={{ fontSize: 11, fontWeight: 700, color: s.color, marginBottom: 8 }}>{s.label}</p>
                   <p style={{ fontFamily: "var(--font-mono)", fontSize: "0.95rem", fontWeight: 800, color: "#fff", lineHeight: 1, marginBottom: 6 }}>{fmt(s.res.total)}</p>
                   <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", display: "flex", flexDirection: "column", gap: 3 }}>
