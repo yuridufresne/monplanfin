@@ -31,7 +31,7 @@ const tabs = [
     value: "inflation",
     label: "Inflation",
     sub: "Pouvoir d'achat futur",
-    url: "https://calculatrices-financieres.ca/#/inflation-inverse?palette=gold&hideHelp&hideSettings&shade=light",
+    native: "inflation",
   },
   {
     value: "pret-reer",
@@ -509,6 +509,86 @@ function CalcEmprunt() {
   );
 }
 
+function calcInflation(o) {
+  const ref = Number(o.montantRef) || 0;
+  const i = (Number(o.taux) || 0) / 100;
+  const dn = (Number(o.anneeCible) || 0) - (Number(o.anneeRef) || 0);
+  return ref * Math.pow(1 + i, dn);
+}
+
+function CalcInflation() {
+  const [montantRef, setMontantRef] = useState(100000);
+  const [anneeRef, setAnneeRef] = useState(2026);
+  const [taux, setTaux] = useState(2.25);
+  const [anneeCible, setAnneeCible] = useState(2046);
+
+  const aRef = Number(anneeRef) || 0;
+  const aCib = Number(anneeCible) || 0;
+  const i = (Number(taux) || 0) / 100;
+  const resultat = (Number(montantRef) || 0) * Math.pow(1 + i, aCib - aRef);
+  const y0 = Math.min(aRef, aCib), y1 = Math.max(aRef, aCib);
+  const rows = [];
+  if (y1 - y0 <= 200) { for (let y = y0; y <= y1; y++) rows.push({ annee: y, valeur: Math.round((Number(montantRef) || 0) * Math.pow(1 + i, y - aRef)) }); }
+  const futur = aCib > aRef;
+
+  const card = { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: "1rem 1.1rem" };
+  const lbl = { fontSize: 12.5, color: "rgba(255,255,255,0.55)", fontWeight: 600, display: "block", marginBottom: 6 };
+  const inp = { width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, color: "#fff", padding: "9px 11px", fontSize: 14, fontFamily: "ui-monospace, monospace" };
+
+  return (
+    <div style={{ color: "#fff", padding: "1.25rem" }}>
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-[340px_1fr]">
+        <div style={card}>
+          <div style={{ marginBottom: 14 }}>
+            <label style={lbl}>Montant de référence</label>
+            <input type="number" style={inp} value={montantRef} onChange={e => setMontantRef(e.target.value)} />
+          </div>
+          <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
+            <div style={{ flex: 1 }}>
+              <label style={lbl}>Année de référence</label>
+              <input type="number" style={inp} value={anneeRef} onChange={e => setAnneeRef(e.target.value)} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={lbl}>Année cible</label>
+              <input type="number" style={inp} value={anneeCible} onChange={e => setAnneeCible(e.target.value)} />
+            </div>
+          </div>
+          <div>
+            <label style={lbl}>Taux d'inflation (%)</label>
+            <input type="number" step="0.05" style={inp} value={taux} onChange={e => setTaux(e.target.value)} />
+          </div>
+        </div>
+
+        <div style={Object.assign({}, card, { display: "flex", flexDirection: "column" })}>
+          <div style={{ marginBottom: 4, fontSize: 12.5, color: EP_GOLD_DIM, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700 }}>Montant en {aCib}</div>
+          <div style={{ fontSize: "2.1rem", fontWeight: 800, color: EP_GOLD, fontFamily: "ui-monospace, monospace", marginBottom: 4 }}>{epFmt(resultat)}</div>
+          <div style={{ fontSize: 12.5, color: "rgba(255,255,255,0.5)", marginBottom: 16 }}>
+            {epFmt(montantRef)} de {aRef} {futur ? "coûteront" : "équivalent à"} {epFmt(resultat)} en {aCib} (inflation {Number(taux).toFixed(2)} % · {Math.abs(aCib - aRef)} ans).
+          </div>
+          <div style={{ width: "100%", height: 280 }}>
+            <ResponsiveContainer>
+              <AreaChart data={rows} margin={{ top: 6, right: 10, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="infGold" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={EP_GOLD} stopOpacity={0.5} />
+                    <stop offset="100%" stopColor={EP_GOLD} stopOpacity={0.04} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke="rgba(255,255,255,0.07)" vertical={false} />
+                <XAxis dataKey="annee" tick={{ fill: "rgba(255,255,255,0.45)", fontSize: 11 }} tickLine={false} axisLine={false} />
+                <YAxis tickFormatter={v => (Math.abs(v) >= 1000 ? Math.round(v / 1000) + "k" : v)} tick={{ fill: "rgba(255,255,255,0.45)", fontSize: 11 }} tickLine={false} axisLine={false} width={42} />
+                <Tooltip formatter={v => epFmt(v)} labelFormatter={l => "Année " + l} contentStyle={{ background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, color: "#fff", fontSize: 12 }} />
+                <Area type="monotone" dataKey="valeur" name="Valeur équivalente" stroke={EP_GOLD} fill="url(#infGold)" strokeWidth={2.5} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 12 }}>Calcul natif · montant × (1 + inflation) ^ (année cible − année de référence).</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Calculators() {
   const [section, setSection] = useState("local"); // "local" | "externe"
   const [activeTool, setActiveTool] = useState("impot");
@@ -629,7 +709,7 @@ export default function Calculators() {
               )}
               </div>
 
-                {current.native === "epargne" ? <CalcEpargne /> : current.native === "emprunt" ? <CalcEmprunt /> : (
+                {current.native === "epargne" ? <CalcEpargne /> : current.native === "emprunt" ? <CalcEmprunt /> : current.native === "inflation" ? <CalcInflation /> : (
                 <div style={{ background: "#efe9df", borderRadius: 14, padding: "12px 12px 6px", border: "1px solid rgba(201,160,99,0.35)" }}>
                   <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "#7d6845", margin: "0 0 10px 4px" }}>Outil de calcul externe — affichage clair</p>
                   <iframe src={current.url} title={current.label} width="100%" frameBorder="0" scrolling="no" className="block w-full" style={{ height: "2200px", borderRadius: 12, background: "#fff" }} />
