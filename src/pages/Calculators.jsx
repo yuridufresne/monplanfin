@@ -56,7 +56,7 @@ const tabs = [
     value: "vie-humaine",
     label: "Valeur de vie humaine",
     sub: "Valeur économique actuelle",
-    url: "https://calculatrices-financieres.ca/#/vie-humaine?palette=gold&hideHelp&hideSettings&shade=light",
+    native: "vie-humaine",
   },
 ];
 
@@ -1112,6 +1112,78 @@ function CalcBudgetRetraite() {
   );
 }
 
+function CalcVieHumaine() {
+  const [salaire, setSalaire] = useState(55000);
+  const [age, setAge] = useState(33);
+  const [ageRetraite, setAgeRetraite] = useState(67);
+  const [croissance, setCroissance] = useState(3);
+
+  const N = Math.max(0, (Number(ageRetraite) || 0) - (Number(age) || 0));
+  const g = (Number(croissance) || 0) / 100;
+  const sal = Number(salaire) || 0;
+  const rows = [{ age: Number(age) || 0, cumul: 0 }];
+  let cumul = 0;
+  for (let k = 0; k < N; k++) { cumul += sal * Math.pow(1 + g, k); rows.push({ age: (Number(age) || 0) + k + 1, cumul: Math.round(cumul) }); }
+  const valeur = cumul;
+
+  const card = { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: "1rem 1.1rem" };
+  const lbl = { fontSize: 12.5, color: "rgba(255,255,255,0.55)", fontWeight: 600, display: "block", marginBottom: 6 };
+  const inp = { width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, color: "#fff", padding: "9px 11px", fontSize: 14, fontFamily: "ui-monospace, monospace" };
+
+  return (
+    <div style={{ color: "#fff", padding: "1.25rem" }}>
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-[340px_1fr]">
+        <div style={card}>
+          <div style={{ marginBottom: 14 }}>
+            <label style={lbl}>Salaire annuel</label>
+            <input type="number" style={inp} value={salaire} onChange={e => setSalaire(e.target.value)} />
+          </div>
+          <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
+            <div style={{ flex: 1 }}>
+              <label style={lbl}>Âge</label>
+              <input type="number" style={inp} value={age} onChange={e => setAge(e.target.value)} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={lbl}>Âge à la retraite</label>
+              <input type="number" style={inp} value={ageRetraite} onChange={e => setAgeRetraite(e.target.value)} />
+            </div>
+          </div>
+          <div>
+            <label style={lbl}>Croissance prévue des revenus (%)</label>
+            <input type="number" step="0.1" style={inp} value={croissance} onChange={e => setCroissance(e.target.value)} />
+          </div>
+        </div>
+
+        <div style={Object.assign({}, card, { display: "flex", flexDirection: "column" })}>
+          <div style={{ marginBottom: 4, fontSize: 12.5, color: EP_GOLD_DIM, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700 }}>Valeur économique de la vie</div>
+          <div style={{ fontSize: "2.3rem", fontWeight: 800, color: EP_GOLD, fontFamily: "ui-monospace, monospace", marginBottom: 4 }}>{epFmt(valeur)}</div>
+          <div style={{ fontSize: 12.5, color: "rgba(255,255,255,0.5)", marginBottom: 18 }}>
+            Revenus totaux de {epFmt(salaire)} à {age} ans jusqu'à {ageRetraite} ans ({N} ans · croissance {Number(croissance).toFixed(1)} % / an). Sert de repère pour l'assurance vie.
+          </div>
+          <div style={{ width: "100%", height: 300 }}>
+            <ResponsiveContainer>
+              <AreaChart data={rows} margin={{ top: 6, right: 10, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="vvhGold" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={EP_GOLD} stopOpacity={0.5} />
+                    <stop offset="100%" stopColor={EP_GOLD} stopOpacity={0.04} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke="rgba(255,255,255,0.07)" vertical={false} />
+                <XAxis dataKey="age" tick={{ fill: "rgba(255,255,255,0.45)", fontSize: 11 }} tickLine={false} axisLine={false} />
+                <YAxis tickFormatter={v => (Math.abs(v) >= 1000000 ? (v / 1000000).toFixed(1) + "M" : Math.abs(v) >= 1000 ? Math.round(v / 1000) + "k" : v)} tick={{ fill: "rgba(255,255,255,0.45)", fontSize: 11 }} tickLine={false} axisLine={false} width={48} />
+                <Tooltip formatter={v => epFmt(v)} labelFormatter={l => l + " ans"} contentStyle={{ background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, color: "#fff", fontSize: 12 }} />
+                <Area type="monotone" dataKey="cumul" name="Revenus cumulés" stroke={EP_GOLD} fill="url(#vvhGold)" strokeWidth={2.5} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 12 }}>Calcul natif · somme des revenus futurs jusqu'à la retraite, non actualisée.</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Calculators() {
   const [section, setSection] = useState("local"); // "local" | "externe"
   const [activeTool, setActiveTool] = useState("impot");
@@ -1232,7 +1304,7 @@ export default function Calculators() {
               )}
               </div>
 
-                {current.native === "epargne" ? <CalcEpargne /> : current.native === "emprunt" ? <CalcEmprunt /> : current.native === "inflation" ? <CalcInflation /> : current.native === "revenus" ? <CalcRevenus /> : current.native === "report" ? <CalcReport /> : current.native === "epargne-reer" ? <CalcEconomieReer /> : current.native === "retraite-inflation" ? <CalcBudgetRetraite /> : (
+                {current.native === "epargne" ? <CalcEpargne /> : current.native === "emprunt" ? <CalcEmprunt /> : current.native === "inflation" ? <CalcInflation /> : current.native === "revenus" ? <CalcRevenus /> : current.native === "report" ? <CalcReport /> : current.native === "epargne-reer" ? <CalcEconomieReer /> : current.native === "retraite-inflation" ? <CalcBudgetRetraite /> : current.native === "vie-humaine" ? <CalcVieHumaine /> : (
                 <div style={{ background: "#efe9df", borderRadius: 14, padding: "12px 12px 6px", border: "1px solid rgba(201,160,99,0.35)" }}>
                   <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "#7d6845", margin: "0 0 10px 4px" }}>Outil de calcul externe — affichage clair</p>
                   <iframe src={current.url} title={current.label} width="100%" frameBorder="0" scrolling="no" className="block w-full" style={{ height: "2200px", borderRadius: 12, background: "#fff" }} />
