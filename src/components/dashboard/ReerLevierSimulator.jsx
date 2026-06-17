@@ -157,18 +157,20 @@ export default function ReerLevierSimulator() {
   const ecartAB = resA.total - resB.total;
   const spreadNet = invRate - loanRate;
 
-  const verdict = best === "A"
-    ? `La stratégie prêt REER en levier génère ${fmt(ecartAB)} de plus que l'approche mixte REER/CELI. Avec un écart rendement/taux de ${spreadNet.toFixed(2)}%, et malgré ${fmt(resA.interets)} d'intérêts payés, l'effet de levier est avantageux sur ${totalYears} ans.`
-    : best === "B"
-    ? `L'approche mixte 50% REER / 50% CELI est optimale ici. L'écart rendement/taux de ${spreadNet.toFixed(2)}% ne compense pas les ${fmt(resA.interets)} d'intérêts du prêt. Considérez un rendement plus élevé ou un taux de prêt plus bas.`
-    : `Tout mettre en CELI est optimal dans ce scénario. Le coût du prêt REER absorbe l'avantage fiscal. Augmentez le taux de rendement ou abaissez le taux du prêt pour rendre le levier profitable.`;
+  const bestStrat = strategies.find(s => s.key === best);
+  const levierWins = best === "A" || best === "E";
+  const verdict = bestStrat
+    ? `${bestStrat.label} donne le plus haut montant à ${totalYears} ans : ${fmt(bestStrat.res.total)}. ` + (levierWins
+        ? `Le levier est avantageux ici (écart rendement/taux de ${spreadNet.toFixed(2)} %), mais il amplifie aussi les pertes si le marché baisse — à réserver à un profil qui tolère le risque.`
+        : `Sans levier, le coût du prêt (${loanRate} %) absorbe l’avantage fiscal au rendement supposé. Le levier deviendrait gagnant si le rendement dépassait nettement le taux du prêt.`)
+    : "";
 
   const strategies = [
     { key: "D", label: "100% REER", res: resReer, color: "#A87DD3", sub: "Retour d’impôt → CELI", info: "Tout ton budget au REER chaque mois; le retour d’impôt est réinvesti au CELI. Aucune dette." },
     { key: "C", label: "100% CELI", res: resC, color: "#5BC4A0", sub: "Budget complet chaque mois", info: "Tout ton budget au CELI chaque mois. Le plus simple et le plus prudent, mais aucune déduction d’impôt." },
-    { key: "B", label: "50% REER + 50% CELI", res: resB, color: "#6B8ED6", sub: "Retour d’impôt → CELI", info: "La moitié au REER, la moitié au CELI. Le retour d’impôt du REER est réinvesti au CELI. Sans emprunt." },
-    { key: "E", label: "Prêt REER levier — max", res: resLevierMax, color: "#C9A063", sub: "100% du budget au prêt · cascade", info: "Tu empruntes le maximum que ton budget peut rembourser et tu mets tout au REER d’un coup. Le retour d’impôt rembourse le prêt en cascade; le surplus va au CELI. Plus haut potentiel, plus haut risque." },
-    { key: "A", label: "Prêt REER hybride", res: resA, color: "#E0A85C", sub: `${pretPct}% prêt · ${100 - pretPct}% CELI`, info: "Une partie du budget rembourse un prêt REER (même cascade), l’autre va au CELI. Le slider ajuste le partage, donc la taille du prêt." },
+    { key: "B", label: "Mixte 50/50", res: resB, color: "#6B8ED6", sub: "Retour d’impôt → CELI", info: "La moitié au REER, la moitié au CELI. Le retour d’impôt du REER est réinvesti au CELI. Sans emprunt." },
+    { key: "E", label: "Levier — max", res: resLevierMax, color: "#C9A063", sub: "100% du budget au prêt · cascade", info: "Tu empruntes le maximum que ton budget peut rembourser et tu mets tout au REER d’un coup. Le retour d’impôt rembourse le prêt en cascade; le surplus va au CELI. Plus haut potentiel, plus haut risque." },
+    { key: "A", label: "Levier hybride", res: resA, color: "#E0A85C", sub: `${pretPct}% prêt · ${100 - pretPct}% CELI`, info: "Une partie du budget rembourse un prêt REER (même cascade), l’autre va au CELI. Le slider ajuste le partage, donc la taille du prêt." },
   ];
 
   return (
@@ -225,7 +227,7 @@ export default function ReerLevierSimulator() {
                 <div key={s.key} style={{
                   background: best === s.key ? `${s.color}10` : "rgba(255,255,255,0.03)",
                   border: best === s.key ? `1px solid ${s.color}40` : "1px solid rgba(255,255,255,0.07)",
-                  borderRadius: 16, padding: "1rem 1.1rem", position: "relative",
+                  borderRadius: 14, padding: "0.8rem 0.85rem", position: "relative",
                 }}>
         <span title={s.info} style={{ position: "absolute", top: 10, right: 10, width: 15, height: 15, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.25)", color: "rgba(255,255,255,0.55)", fontSize: 9, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", cursor: "help", zIndex: 2 }}>i</span>
                   {best === s.key && (
@@ -234,7 +236,7 @@ export default function ReerLevierSimulator() {
                     </span>
                   )}
                   <p style={{ fontSize: 11, fontWeight: 700, color: s.color, marginBottom: 8 }}>{s.label}</p>
-                  <p style={{ fontFamily: "var(--font-mono)", fontSize: "1.25rem", fontWeight: 800, color: "#fff", lineHeight: 1, marginBottom: 6 }}>{fmt(s.res.total)}</p>
+                  <p style={{ fontFamily: "var(--font-mono)", fontSize: "0.95rem", fontWeight: 800, color: "#fff", lineHeight: 1, marginBottom: 6 }}>{fmt(s.res.total)}</p>
                   <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", display: "flex", flexDirection: "column", gap: 3 }}>
                     {s.res.reer > 0 && <span>REER {fmt(s.res.reer)}</span>}
                     <span>CELI {fmt(s.res.celi)}</span>
@@ -279,8 +281,8 @@ export default function ReerLevierSimulator() {
             </div>
 
             {/* Verdict */}
-            <div style={{ padding: "1rem 1.25rem", borderRadius: 14, background: best === "A" ? "rgba(201,160,99,0.07)" : best === "B" ? "rgba(107,142,214,0.07)" : "rgba(91,196,160,0.07)", border: `1px solid ${best === "A" ? "rgba(201,160,99,0.2)" : best === "B" ? "rgba(107,142,214,0.2)" : "rgba(91,196,160,0.2)"}` }}>
-              <p style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", color: best === "A" ? "#C9A063" : best === "B" ? "#6B8ED6" : "#5BC4A0", marginBottom: 6 }}>
+            <div style={{ padding: "1rem 1.25rem", borderRadius: 14, background: (bestStrat ? bestStrat.color + "12" : "rgba(91,196,160,0.07)"), border: `1px solid ${best === "A" ? "rgba(201,160,99,0.2)" : best === "B" ? "rgba(107,142,214,0.2)" : "rgba(91,196,160,0.2)"}` }}>
+              <p style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", color: (bestStrat ? bestStrat.color : "#5BC4A0"), marginBottom: 6 }}>
                 Verdict — {strategies.find(s => s.key === best)?.label}
               </p>
               <p style={{ fontSize: 12.5, color: "rgba(255,255,255,0.65)", lineHeight: 1.65 }}>{verdict}</p>
