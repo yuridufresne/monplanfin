@@ -16,7 +16,6 @@ import Investments from '@/pages/Investments';
 import FinancialAnalysis from '@/pages/FinancialAnalysis';
 import FeuilleResume from '@/pages/FeuilleResume';
 import AdvancedMode from '@/pages/AdvancedMode';
-import StudioDecaissement from '@/pages/StudioDecaissement';
 import ProtectionAssurance from '@/pages/ProtectionAssurance';
 import Immobilier from '@/pages/Immobilier';
 import Conditions from '@/pages/Conditions';
@@ -109,7 +108,6 @@ const AuthenticatedApp = () => {
         <Route path="/resume" element={<FeuilleResume />} />
         <Route path="/avance" element={<AdvancedMode />} />
       
-        <Route path="/studio" element={<PremiumGate><StudioDecaissement /></PremiumGate>} />
         <Route path="/protection" element={<ProtectionAssurance />} />
         <Route path="/immobilier" element={<Immobilier />} />
         <Route path="/conditions" element={<Conditions />} />
