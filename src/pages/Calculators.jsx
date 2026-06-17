@@ -4,6 +4,7 @@ import { ArrowUpRight } from "lucide-react";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, BarChart, Bar } from "recharts";
 import { calculateFullTax } from "@/lib/fiscal_engine_qc2026";
 import SimulateurImpot from "@/components/SimulateurImpot";
+import ReerLevierSimulator from "@/components/dashboard/ReerLevierSimulator";
 import SimulateurRetraite from "@/components/SimulateurRetraite";
 import OptimiseurDettes from "@/components/OptimiseurDettes";
 
@@ -26,7 +27,7 @@ const tabs = [
     value: "impot",
     label: "Taux d'imposition",
     sub: "Taux applicables",
-    url: "https://calculatrices-financieres.ca/#/taux-impot?palette=gold&hideHelp&hideSettings&shade=light",
+    native: "taux-impot",
   },
   {
     value: "inflation",
@@ -38,7 +39,7 @@ const tabs = [
     value: "pret-reer",
     label: "Prêt REER",
     sub: "Pertinence d'un prêt REER",
-    url: "https://calculatrices-financieres.ca/#/pret-reer?palette=gold&hideHelp&hideSettings&shade=light",
+    native: "pret-reer",
   },
   {
     value: "epargne-reer",
@@ -1304,7 +1305,7 @@ export default function Calculators() {
               )}
               </div>
 
-                {current.native === "epargne" ? <CalcEpargne /> : current.native === "emprunt" ? <CalcEmprunt /> : current.native === "inflation" ? <CalcInflation /> : current.native === "revenus" ? <CalcRevenus /> : current.native === "report" ? <CalcReport /> : current.native === "epargne-reer" ? <CalcEconomieReer /> : current.native === "retraite-inflation" ? <CalcBudgetRetraite /> : current.native === "vie-humaine" ? <CalcVieHumaine /> : (
+                {current.native === "epargne" ? <CalcEpargne /> : current.native === "emprunt" ? <CalcEmprunt /> : current.native === "inflation" ? <CalcInflation /> : current.native === "revenus" ? <CalcRevenus /> : current.native === "report" ? <CalcReport /> : current.native === "epargne-reer" ? <CalcEconomieReer /> : current.native === "retraite-inflation" ? <CalcBudgetRetraite /> : current.native === "vie-humaine" ? <CalcVieHumaine /> : current.native === "taux-impot" ? <SimulateurImpot /> : current.native === "pret-reer" ? <ReerLevierSimulator /> : (
                 <div style={{ background: "#efe9df", borderRadius: 14, padding: "12px 12px 6px", border: "1px solid rgba(201,160,99,0.35)" }}>
                   <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "#7d6845", margin: "0 0 10px 4px" }}>Outil de calcul externe — affichage clair</p>
                   <iframe src={current.url} title={current.label} width="100%" frameBorder="0" scrolling="no" className="block w-full" style={{ height: "2200px", borderRadius: 12, background: "#fff" }} />
