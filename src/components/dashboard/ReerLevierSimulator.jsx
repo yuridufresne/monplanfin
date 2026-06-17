@@ -202,12 +202,10 @@ export default function ReerLevierSimulator() {
           <div style={{ gridColumn: "span 2", display: "flex", flexDirection: "column", gap: 12 }}>
 
             {/* Info-cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-2 gap-3">
               {[
                 { label: "Montant du prêt",    val: fmt(resA.loanAmount),   sub: `Pmt : ${fmt(budget * pretPct / 100)}/mois`, color: "#C9A063" , info: "Ce que la banque te prete d'un coup pour cotiser au REER maintenant. Tes paiements le remboursent sur la duree." },
                 { label: "Retour d'impôt",     val: fmt(resA.retourImpot),  sub: `${taxRate}% × prêt`,                       color: "#A87DD3" , info: "L'argent que le gouvernement te redonne grace a la deduction REER. Il est reinvesti dans ton CELI." },
-                { label: `Balance à ${totalYears} ans`, val: fmt(resA.total), sub: `REER ${fmt(resA.reer)} · CELI ${fmt(resA.celi)}`, color: best === "A" ? "#5BC4A0" : "#C9A063" , info: "Valeur totale de tes placements (REER + CELI) apres la duree choisie, avec la strategie de pret levier." },
-                { label: "vs Stratégie mixte", val: ecartAB >= 0 ? `+${fmt(ecartAB)}` : fmt(ecartAB), sub: ecartAB >= 0 ? "Surplus levier" : "Déficit levier", color: ecartAB >= 0 ? "#5BC4A0" : "#f87171" , info: "Ce que le pret levier rapporte de plus qu'une approche prudente 50 % REER / 50 % CELI." },
               ].map(k => (
                 <div key={k.label} style={{ position: "relative", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, padding: "12px 14px" }}>
         <span title={k.info} style={{ position: "absolute", top: 8, right: 9, width: 15, height: 15, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.25)", color: "rgba(255,255,255,0.5)", fontSize: 9, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", cursor: "help" }}>i</span>
