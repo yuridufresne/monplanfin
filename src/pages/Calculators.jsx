@@ -8,12 +8,6 @@ import OptimiseurDettes from "@/components/OptimiseurDettes";
 
 const tabs = [
   {
-    value: "emprunt",
-    label: "Emprunt",
-    sub: "Facteurs d'un emprunt",
-    url: "https://calculatrices-financieres.ca/#/emprunt?palette=gold&hideHelp&hideSettings&shade=light",
-  },
-  {
     value: "revenus",
     label: "Revenus de placement",
     sub: "Revenus selon différents facteurs",
@@ -74,6 +68,7 @@ const LOCAL_TOOLS = [
   { value: "retraite",label: "🏖 Simulateur retraite", sub: "Projection REER/CELI" },
   { value: "dettes",  label: "💳 Optimiseur dettes",  sub: "Avalanche & hypo" },
   { value: "epargne", label: "💰 Épargne", sub: "Accumulation REER/CELI" },
+  { value: "emprunt", label: "🏦 Emprunt", sub: "Paiement & amortissement" },
 ];
 
 // ===== Calculatrice Épargne (native — remplace l'iframe externe) =====
@@ -312,10 +307,212 @@ function CalcEpargne() {
   );
 }
 
+const EM_TYPES = [
+  { v: "hypotheque", t: "Hypothèque", taux: 5, duree: 25 },
+  { v: "auto", t: "Auto", taux: 7, duree: 6 },
+  { v: "personnel", t: "Personnel", taux: 9, duree: 5 }
+];
+const EM_CIBLES = [
+  { v: "paiement", label: "Paiement" },
+  { v: "montant", label: "Montant du prêt" },
+  { v: "duree", label: "Durée" },
+  { v: "taux", label: "Taux d'intérêt" },
+  { v: "solde", label: "Solde restant" }
+];
+
+function projeterEmprunt(o) {
+  const p = Number(o.freq) || 12;
+  const annees = Math.max(0, Number(o.duree) || 0);
+  const n = Math.max(1, Math.round(annees * p));
+  const i = (Number(o.taux) || 0) / 100 / p;
+  const P = Number(o.montant) || 0;
+  const idx = o.indexer ? (Number(o.indexation) || 0) / 100 : 0;
+  let pmt;
+  if (o.pmtOverride != null && o.pmtOverride !== "") pmt = Number(o.pmtOverride);
+  else if (i === 0) pmt = P / n;
+  else pmt = P * i / (1 - Math.pow(1 + i, -n));
+  let bal = P, totalInt = 0, totalCap = 0;
+  const rows = [{ annee: 0, interet: 0, capital: 0, solde: Math.round(P) }];
+  const anneesEntier = Math.ceil(annees);
+  for (let an = 1; an <= anneesEntier; an++) {
+    const pmtAn = pmt * Math.pow(1 + idx, an - 1);
+    let yi = 0, yc = 0;
+    for (let k = 0; k < p; k++) {
+      const interet = bal * i;
+      let capital = pmtAn - interet;
+      if (capital > bal) capital = bal;
+      bal = bal - capital;
+      if (bal < 0) bal = 0;
+      yi += interet; yc += capital;
+    }
+    totalInt += yi; totalCap += yc;
+    rows.push({ annee: an, interet: Math.round(yi), capital: Math.round(yc), solde: Math.round(bal) });
+    if (bal <= 0) break;
+  }
+  return { pmt, rows, totalInt, totalCap, soldeFinal: bal };
+}
+
+function CalcEmprunt() {
+  const [cible, setCible] = useState("paiement");
+  const [typeEmprunt, setTypeEmprunt] = useState("hypotheque");
+  const [montant, setMontant] = useState(300000);
+  const [duree, setDuree] = useState(25);
+  const [taux, setTaux] = useState(5);
+  const [freq, setFreq] = useState(12);
+  const [indexer, setIndexer] = useState(false);
+  const [indexation, setIndexation] = useState(2.25);
+  const [paiementCible, setPaiementCible] = useState(1500);
+  const [vue, setVue] = useState("graphique");
+
+  const p = Number(freq) || 12;
+  const i = (Number(taux) || 0) / 100 / p;
+  const n = Math.max(1, Math.round(Number(duree) * p));
+  const P = Number(montant) || 0;
+  const pmtC = Number(paiementCible) || 0;
+
+  const eff = { montant: P, taux: Number(taux), duree: Number(duree), freq: p, indexer, indexation: Number(indexation) };
+  if (cible === "montant") { eff.montant = i === 0 ? pmtC * n : pmtC * (1 - Math.pow(1 + i, -n)) / i; }
+  else if (cible === "taux") {
+    const payAt = (ii) => ii === 0 ? P / n : P * ii / (1 - Math.pow(1 + ii, -n));
+    let lo = 0, hi = 1;
+    for (let it = 0; it < 100; it++) { const mid = (lo + hi) / 2; if (payAt(mid) < pmtC) lo = mid; else hi = mid; }
+    eff.taux = ((lo + hi) / 2) * p * 100;
+  }
+  else if (cible === "duree") {
+    if (pmtC > P * i && i > 0) { eff.duree = (-Math.log(1 - P * i / pmtC) / Math.log(1 + i)) / p; }
+    else if (i === 0 && pmtC > 0) { eff.duree = (P / pmtC) / p; }
+    else eff.duree = 999;
+  }
+  else if (cible === "solde") { eff.pmtOverride = pmtC; }
+
+  const res = projeterEmprunt(eff);
+
+  const card = { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: "1rem 1.1rem" };
+  const lbl = { fontSize: 12.5, color: "rgba(255,255,255,0.55)", fontWeight: 600, display: "block", marginBottom: 6 };
+  const inp = { width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, color: "#fff", padding: "9px 11px", fontSize: 14, fontFamily: "ui-monospace, monospace" };
+
+  let headlineTxt;
+  if (cible === "paiement") headlineTxt = epFmt(res.pmt);
+  else if (cible === "montant") headlineTxt = epFmt(eff.montant);
+  else if (cible === "solde") headlineTxt = epFmt(res.soldeFinal);
+  else if (cible === "taux") headlineTxt = (Number(eff.taux)).toFixed(2) + " %";
+  else headlineTxt = (eff.duree >= 999 ? "Jamais remboursé" : (Number(eff.duree)).toFixed(1) + " ans");
+  const headlineLabel = (EM_CIBLES.find(c => c.v === cible) || {}).label;
+
+  return (
+    <div style={{ color: "#fff", padding: "1.25rem" }}>
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-[340px_1fr]">
+        <div style={card}>
+          <div style={{ marginBottom: 14 }}>
+            <label style={lbl}>Valeur recherchée</label>
+            <select style={inp} value={cible} onChange={e => setCible(e.target.value)}>
+              {EM_CIBLES.map(c => <option key={c.v} value={c.v} style={{ color: "#000" }}>{c.label}</option>)}
+            </select>
+          </div>
+          {cible !== "paiement" && (
+            <div style={{ marginBottom: 14 }}>
+              <label style={lbl}>Paiement (par période)</label>
+              <input type="number" style={inp} value={paiementCible} onChange={e => setPaiementCible(e.target.value)} />
+            </div>
+          )}
+          <div style={{ marginBottom: 14 }}>
+            <label style={lbl}>Type d'emprunt</label>
+            <div style={{ display: "flex", gap: 6 }}>
+              {EM_TYPES.map(o => (
+                <button key={o.v} onClick={() => { setTypeEmprunt(o.v); setTaux(o.taux); setDuree(o.duree); }} style={{ flex: 1, padding: "8px 4px", borderRadius: 9, fontSize: 12.5, fontWeight: 600, cursor: "pointer", border: "1px solid " + (typeEmprunt === o.v ? EP_GOLD : "rgba(255,255,255,0.12)"), background: typeEmprunt === o.v ? "rgba(201,160,99,0.18)" : "transparent", color: typeEmprunt === o.v ? EP_GOLD : "rgba(255,255,255,0.7)" }}>{o.t}</button>
+              ))}
+            </div>
+          </div>
+          <div style={{ marginBottom: 14 }}>
+            <label style={lbl}>Montant du prêt</label>
+            <input type="number" style={inp} value={montant} disabled={cible === "montant"} onChange={e => setMontant(e.target.value)} />
+          </div>
+          <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
+            <div style={{ flex: 1 }}>
+              <label style={lbl}>Durée (ans)</label>
+              <input type="number" style={inp} value={cible === "duree" ? (eff.duree >= 999 ? "" : Number(eff.duree).toFixed(1)) : duree} disabled={cible === "duree"} onChange={e => setDuree(e.target.value)} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={lbl}>Taux d'intérêt (%)</label>
+              <input type="number" step="0.1" style={inp} value={cible === "taux" ? Number(eff.taux).toFixed(2) : taux} disabled={cible === "taux"} onChange={e => setTaux(e.target.value)} />
+            </div>
+          </div>
+          <div style={{ marginBottom: 14 }}>
+            <label style={lbl}>Fréquence de paiement</label>
+            <select style={inp} value={freq} onChange={e => setFreq(e.target.value)}>
+              {EP_FREQS.map(f => <option key={f.v} value={f.v} style={{ color: "#000" }}>{f.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={Object.assign({}, lbl, { display: "flex", alignItems: "center", gap: 8, cursor: "pointer" })}>
+              <input type="checkbox" checked={indexer} onChange={e => setIndexer(e.target.checked)} /> Indexer les paiements
+            </label>
+            {indexer && <input type="number" step="0.05" style={inp} value={indexation} onChange={e => setIndexation(e.target.value)} />}
+          </div>
+        </div>
+
+        <div style={Object.assign({}, card, { display: "flex", flexDirection: "column" })}>
+          <div style={{ marginBottom: 4, fontSize: 12.5, color: EP_GOLD_DIM, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700 }}>{headlineLabel}</div>
+          <div style={{ fontSize: "2.1rem", fontWeight: 800, color: EP_GOLD, fontFamily: "ui-monospace, monospace", marginBottom: 4 }}>{headlineTxt}</div>
+          <div style={{ fontSize: 12.5, color: "rgba(255,255,255,0.5)", marginBottom: 16 }}>Intérêts totaux : {epFmt(res.totalInt)} · Capital : {epFmt(res.totalCap)}</div>
+          <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+            {[["graphique", "Graphique"], ["tableau", "Tableau"]].map(o => (
+              <button key={o[0]} onClick={() => setVue(o[0])} style={{ padding: "6px 14px", borderRadius: 9, fontSize: 12.5, fontWeight: 600, cursor: "pointer", border: "1px solid " + (vue === o[0] ? EP_GOLD : "rgba(255,255,255,0.12)"), background: vue === o[0] ? "rgba(201,160,99,0.18)" : "transparent", color: vue === o[0] ? EP_GOLD : "rgba(255,255,255,0.7)" }}>{o[1]}</button>
+            ))}
+          </div>
+          {vue === "graphique" ? (
+            <div style={{ width: "100%", height: 300 }}>
+              <ResponsiveContainer>
+                <AreaChart data={res.rows} margin={{ top: 6, right: 10, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="emGold" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={EP_GOLD} stopOpacity={0.5} />
+                      <stop offset="100%" stopColor={EP_GOLD} stopOpacity={0.04} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid stroke="rgba(255,255,255,0.07)" vertical={false} />
+                  <XAxis dataKey="annee" tick={{ fill: "rgba(255,255,255,0.45)", fontSize: 11 }} tickLine={false} axisLine={false} />
+                  <YAxis tickFormatter={v => (Math.abs(v) >= 1000 ? Math.round(v / 1000) + "k" : v)} tick={{ fill: "rgba(255,255,255,0.45)", fontSize: 11 }} tickLine={false} axisLine={false} width={42} />
+                  <Tooltip formatter={v => epFmt(v)} labelFormatter={l => "Année " + l} contentStyle={{ background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, color: "#fff", fontSize: 12 }} />
+                  <Area type="monotone" dataKey="solde" name="Solde restant" stroke={EP_GOLD} fill="url(#emGold)" strokeWidth={2.5} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div style={{ maxHeight: 300, overflow: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
+                <thead>
+                  <tr style={{ color: "rgba(255,255,255,0.5)" }}>
+                    <th style={{ textAlign: "left", padding: "6px 8px", position: "sticky", top: 0, background: "#161616" }}>Année</th>
+                    <th style={{ textAlign: "right", padding: "6px 8px", position: "sticky", top: 0, background: "#161616" }}>Intérêts</th>
+                    <th style={{ textAlign: "right", padding: "6px 8px", position: "sticky", top: 0, background: "#161616" }}>Capital</th>
+                    <th style={{ textAlign: "right", padding: "6px 8px", position: "sticky", top: 0, background: "#161616" }}>Solde</th>
+                  </tr>
+                </thead>
+                <tbody style={{ fontFamily: "ui-monospace, monospace" }}>
+                  {res.rows.map(r => (
+                    <tr key={r.annee} style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                      <td style={{ textAlign: "left", padding: "5px 8px", color: "rgba(255,255,255,0.75)" }}>{r.annee}</td>
+                      <td style={{ textAlign: "right", padding: "5px 8px", color: "rgba(255,255,255,0.6)" }}>{epNum(r.interet)}</td>
+                      <td style={{ textAlign: "right", padding: "5px 8px", color: "rgba(255,255,255,0.6)" }}>{epNum(r.capital)}</td>
+                      <td style={{ textAlign: "right", padding: "5px 8px", color: EP_GOLD }}>{epNum(r.solde)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 12 }}>Calcul natif · amortissement standard, paiement de fin de période, taux nominal ÷ fréquence.</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Calculators() {
   const [section, setSection] = useState("local"); // "local" | "externe"
   const [activeTool, setActiveTool] = useState("impot");
-  const [active, setActive] = useState("emprunt");
+  const [active, setActive] = useState("revenus");
   const current = tabs.find((t) => t.value === active);
 
   return (
@@ -369,6 +566,7 @@ export default function Calculators() {
               {activeTool === "retraite" && <SimulateurRetraite />}
               {activeTool === "dettes"   && <OptimiseurDettes />}
         {activeTool === "epargne" && <CalcEpargne />}
+        {activeTool === "emprunt" && <CalcEmprunt />}
             </div>
           </motion.div>
         )}
