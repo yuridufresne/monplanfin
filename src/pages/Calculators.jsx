@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import SimulateurImpot from "@/components/SimulateurImpot";
 import SimulateurRetraite from "@/components/SimulateurRetraite";
 import OptimiseurDettes from "@/components/OptimiseurDettes";
@@ -19,7 +19,7 @@ const tabs = [
     value: "report",
     label: "Report d'investissement",
     sub: "Impact d'un report",
-    url: "https://calculatrices-financieres.ca/#/report-investissement?palette=gold&hideHelp&hideSettings&shade=light",
+    native: "report",
   },
   {
     value: "impot",
@@ -810,6 +810,168 @@ function CalcRevenus() {
   );
 }
 
+function accumulerReport(o, delai, cotBase) {
+  const p = Number(o.freq) || 12;
+  const duree = Math.max(0, Number(o.duree) || 0);
+  let annuel = (Number(o.rendement) || 0) / 100;
+  if (o.imposable) annuel = annuel * (1 - (Number(o.tauxImposition) || 0) / 100);
+  const i = Math.pow(1 + annuel, 1 / p) - 1;
+  let solde = Number(o.montantActuel) || 0;
+  const idx = o.indexer ? (Number(o.indexation) || 0) / 100 : 0;
+  const rows = [{ annee: 0, solde: Math.round(solde) }];
+  let totalCot = 0;
+  for (let an = 1; an <= Math.ceil(duree); an++) {
+    const contribue = an > delai;
+    const cotPeriode = contribue ? cotBase * Math.pow(1 + idx, an - delai - 1) : 0;
+    for (let k = 0; k < p; k++) { const av = solde + cotPeriode; const interet = av * i; solde = av + interet; totalCot += cotPeriode; }
+    rows.push({ annee: an, solde: Math.round(solde) });
+  }
+  return { solde, rows, totalCot };
+}
+
+function resoudreReport(o, delai, cible) {
+  const f = (x) => accumulerReport(o, delai, x).solde;
+  let lo = 0, hi = Math.max((Number(o.cotisation) || 1), 1) * 5, g = 0;
+  while (f(hi) < cible && g < 80) { hi = hi * 2; g++; }
+  for (let it = 0; it < 100; it++) { const mid = (lo + hi) / 2; if (f(mid) < cible) lo = mid; else hi = mid; }
+  return (lo + hi) / 2;
+}
+
+function CalcReport() {
+  const [montantActuel, setMontantActuel] = useState(5000);
+  const [cotisation, setCotisation] = useState(500);
+  const [freq, setFreq] = useState(12);
+  const [indexer, setIndexer] = useState(false);
+  const [indexation, setIndexation] = useState(2.25);
+  const [duree, setDuree] = useState(25);
+  const [rendement, setRendement] = useState(4);
+  const [imposable, setImposable] = useState(false);
+  const [tauxImposition, setTauxImposition] = useState(35);
+  const [report, setReport] = useState(3);
+  const [vue, setVue] = useState("graphique");
+
+  const o = { montantActuel, cotisation, freq, indexer, indexation, duree, rendement, imposable, tauxImposition };
+  const base = Number(cotisation) || 0;
+  const delai = Math.max(0, Number(report) || 0);
+  const sans = accumulerReport(o, 0, base);
+  const avec = accumulerReport(o, delai, base);
+  const cotNec = resoudreReport(o, delai, sans.solde);
+  const alt = accumulerReport(o, delai, cotNec);
+  const coutReport = alt.totalCot - sans.totalCot;
+  const data = sans.rows.map((r, idx) => ({ annee: r.annee, sans: r.solde, avec: avec.rows[idx] ? avec.rows[idx].solde : null, alt: alt.rows[idx] ? alt.rows[idx].solde : null }));
+
+  const card = { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: "1rem 1.1rem" };
+  const lbl = { fontSize: 12.5, color: "rgba(255,255,255,0.55)", fontWeight: 600, display: "block", marginBottom: 6 };
+  const inp = { width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, color: "#fff", padding: "9px 11px", fontSize: 14, fontFamily: "ui-monospace, monospace" };
+  const stat = { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "0.7rem 0.8rem" };
+  const statLbl = { fontSize: 11, color: "rgba(255,255,255,0.5)", marginBottom: 3 };
+  const statVal = { fontSize: "1.05rem", fontWeight: 800, fontFamily: "ui-monospace, monospace" };
+
+  return (
+    <div style={{ color: "#fff", padding: "1.25rem" }}>
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-[340px_1fr]">
+        <div style={card}>
+          <div style={{ marginBottom: 14 }}>
+            <label style={lbl}>Montant actuel</label>
+            <input type="number" style={inp} value={montantActuel} onChange={e => setMontantActuel(e.target.value)} />
+          </div>
+          <div style={{ marginBottom: 14 }}>
+            <label style={lbl}>Cotisation</label>
+            <div style={{ display: "flex", gap: 6 }}>
+              <input type="number" style={Object.assign({}, inp, { flex: 1 })} value={cotisation} onChange={e => setCotisation(e.target.value)} />
+              <select style={Object.assign({}, inp, { flex: 1 })} value={freq} onChange={e => setFreq(e.target.value)}>
+                {EP_FREQS.map(fr => <option key={fr.v} value={fr.v} style={{ color: "#000" }}>{fr.label}</option>)}
+              </select>
+            </div>
+          </div>
+          <div style={{ marginBottom: 14 }}>
+            <label style={Object.assign({}, lbl, { display: "flex", alignItems: "center", gap: 8, cursor: "pointer" })}>
+              <input type="checkbox" checked={indexer} onChange={e => setIndexer(e.target.checked)} /> Indexer les cotisations
+            </label>
+            {indexer && <input type="number" step="0.05" style={inp} value={indexation} onChange={e => setIndexation(e.target.value)} />}
+          </div>
+          <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
+            <div style={{ flex: 1 }}>
+              <label style={lbl}>Durée (ans)</label>
+              <input type="number" style={inp} value={duree} onChange={e => setDuree(e.target.value)} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={lbl}>Rendement (%)</label>
+              <input type="number" step="0.1" style={inp} value={rendement} onChange={e => setRendement(e.target.value)} />
+            </div>
+          </div>
+          <div style={{ marginBottom: 14 }}>
+            <label style={lbl}>Années de report</label>
+            <input type="number" style={inp} value={report} onChange={e => setReport(e.target.value)} />
+          </div>
+          <div>
+            <label style={Object.assign({}, lbl, { display: "flex", alignItems: "center", gap: 8, cursor: "pointer" })}>
+              <input type="checkbox" checked={imposable} onChange={e => setImposable(e.target.checked)} /> Imposable
+            </label>
+            {imposable && <input type="number" step="1" style={inp} value={tauxImposition} onChange={e => setTauxImposition(e.target.value)} />}
+          </div>
+        </div>
+
+        <div style={Object.assign({}, card, { display: "flex", flexDirection: "column" })}>
+          <div style={{ marginBottom: 4, fontSize: 12.5, color: EP_GOLD_DIM, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700 }}>Coût total du report</div>
+          <div style={{ fontSize: "2.1rem", fontWeight: 800, color: EP_GOLD, fontFamily: "ui-monospace, monospace", marginBottom: 12 }}>{epFmt(coutReport)}</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 16 }}>
+            <div style={stat}><div style={statLbl}>Accumulé sans report</div><div style={Object.assign({}, statVal, { color: EP_GOLD })}>{epFmt(sans.solde)}</div></div>
+            <div style={stat}><div style={statLbl}>Accumulé avec report</div><div style={Object.assign({}, statVal, { color: "#E08A8A" })}>{epFmt(avec.solde)}</div></div>
+            <div style={stat}><div style={statLbl}>Cotisation nécessaire pour combler</div><div style={Object.assign({}, statVal, { color: "#fff", fontSize: "1rem" })}>{epFmt(cotNec)}</div></div>
+            <div style={stat}><div style={statLbl}>Manque à la fin (report)</div><div style={Object.assign({}, statVal, { color: "#E08A8A", fontSize: "1rem" })}>{epFmt(sans.solde - avec.solde)}</div></div>
+          </div>
+          <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+            {[["graphique", "Graphique"], ["tableau", "Tableau"]].map(opt => (
+              <button key={opt[0]} onClick={() => setVue(opt[0])} style={{ padding: "6px 14px", borderRadius: 9, fontSize: 12.5, fontWeight: 600, cursor: "pointer", border: "1px solid " + (vue === opt[0] ? EP_GOLD : "rgba(255,255,255,0.12)"), background: vue === opt[0] ? "rgba(201,160,99,0.18)" : "transparent", color: vue === opt[0] ? EP_GOLD : "rgba(255,255,255,0.7)" }}>{opt[1]}</button>
+            ))}
+          </div>
+          {vue === "graphique" ? (
+            <div style={{ width: "100%", height: 300 }}>
+              <ResponsiveContainer>
+                <AreaChart data={data} margin={{ top: 6, right: 10, left: 0, bottom: 0 }}>
+                  <CartesianGrid stroke="rgba(255,255,255,0.07)" vertical={false} />
+                  <XAxis dataKey="annee" tick={{ fill: "rgba(255,255,255,0.45)", fontSize: 11 }} tickLine={false} axisLine={false} />
+                  <YAxis tickFormatter={v => (Math.abs(v) >= 1000 ? Math.round(v / 1000) + "k" : v)} tick={{ fill: "rgba(255,255,255,0.45)", fontSize: 11 }} tickLine={false} axisLine={false} width={42} />
+                  <Tooltip formatter={v => epFmt(v)} labelFormatter={l => "Année " + l} contentStyle={{ background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, color: "#fff", fontSize: 12 }} />
+                  <Legend wrapperStyle={{ fontSize: 11, color: "rgba(255,255,255,0.6)" }} />
+                  <Area type="monotone" dataKey="sans" name="Sans report" stroke={EP_GOLD} fill="none" strokeWidth={2.5} />
+                  <Area type="monotone" dataKey="avec" name="Avec report" stroke="#E08A8A" fill="none" strokeWidth={2} strokeDasharray="5 3" />
+                  <Area type="monotone" dataKey="alt" name="Report + cotisation ajustée" stroke="#6B8ED6" fill="none" strokeWidth={2} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div style={{ maxHeight: 300, overflow: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
+                <thead>
+                  <tr style={{ color: "rgba(255,255,255,0.5)" }}>
+                    <th style={{ textAlign: "left", padding: "6px 8px", position: "sticky", top: 0, background: "#161616" }}>Année</th>
+                    <th style={{ textAlign: "right", padding: "6px 8px", position: "sticky", top: 0, background: "#161616" }}>Sans report</th>
+                    <th style={{ textAlign: "right", padding: "6px 8px", position: "sticky", top: 0, background: "#161616" }}>Avec report</th>
+                    <th style={{ textAlign: "right", padding: "6px 8px", position: "sticky", top: 0, background: "#161616" }}>Ajusté</th>
+                  </tr>
+                </thead>
+                <tbody style={{ fontFamily: "ui-monospace, monospace" }}>
+                  {data.map(r => (
+                    <tr key={r.annee} style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                      <td style={{ textAlign: "left", padding: "5px 8px", color: "rgba(255,255,255,0.75)" }}>{r.annee}</td>
+                      <td style={{ textAlign: "right", padding: "5px 8px", color: EP_GOLD }}>{epNum(r.sans)}</td>
+                      <td style={{ textAlign: "right", padding: "5px 8px", color: "rgba(255,255,255,0.6)" }}>{epNum(r.avec)}</td>
+                      <td style={{ textAlign: "right", padding: "5px 8px", color: "rgba(255,255,255,0.6)" }}>{epNum(r.alt)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 12 }}>Calcul natif · reporter de {delai} an(s) oblige à cotiser {epFmt(cotNec)} (au lieu de {epFmt(base)}) pour atteindre le même résultat.</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Calculators() {
   const [section, setSection] = useState("local"); // "local" | "externe"
   const [activeTool, setActiveTool] = useState("impot");
@@ -930,7 +1092,7 @@ export default function Calculators() {
               )}
               </div>
 
-                {current.native === "epargne" ? <CalcEpargne /> : current.native === "emprunt" ? <CalcEmprunt /> : current.native === "inflation" ? <CalcInflation /> : current.native === "revenus" ? <CalcRevenus /> : (
+                {current.native === "epargne" ? <CalcEpargne /> : current.native === "emprunt" ? <CalcEmprunt /> : current.native === "inflation" ? <CalcInflation /> : current.native === "revenus" ? <CalcRevenus /> : current.native === "report" ? <CalcReport /> : (
                 <div style={{ background: "#efe9df", borderRadius: 14, padding: "12px 12px 6px", border: "1px solid rgba(201,160,99,0.35)" }}>
                   <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "#7d6845", margin: "0 0 10px 4px" }}>Outil de calcul externe — affichage clair</p>
                   <iframe src={current.url} title={current.label} width="100%" frameBorder="0" scrolling="no" className="block w-full" style={{ height: "2200px", borderRadius: 12, background: "#fff" }} />
