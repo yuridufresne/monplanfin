@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
+import { calculateFullTax } from "@/lib/fiscal_engine_qc2026";
 import SimulateurImpot from "@/components/SimulateurImpot";
 import SimulateurRetraite from "@/components/SimulateurRetraite";
 import OptimiseurDettes from "@/components/OptimiseurDettes";
@@ -43,7 +44,7 @@ const tabs = [
     value: "epargne-reer",
     label: "Économie REER",
     sub: "Économie d'impôt REER",
-    url: "https://calculatrices-financieres.ca/#/epargne-reer?palette=gold&hideHelp&hideSettings&shade=light",
+    native: "epargne-reer",
   },
   {
     value: "retraite-inflation",
@@ -972,6 +973,63 @@ function CalcReport() {
   );
 }
 
+function CalcEconomieReer() {
+  const [revenu, setRevenu] = useState(50000);
+  const [cotisation, setCotisation] = useState(6000);
+  let economie = 0, t0 = 0, t1 = 0, ok = true;
+  try {
+    t0 = calculateFullTax({ grossIncome: Number(revenu) || 0, reerDeduction: 0 }).totalTax;
+    t1 = calculateFullTax({ grossIncome: Number(revenu) || 0, reerDeduction: Number(cotisation) || 0 }).totalTax;
+    economie = t0 - t1;
+  } catch (e) { ok = false; }
+  const taux = (Number(cotisation) > 0 && ok) ? (economie / Number(cotisation)) * 100 : 0;
+  const coutNet = (Number(cotisation) || 0) - economie;
+
+  const card = { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: "1rem 1.1rem" };
+  const lbl = { fontSize: 12.5, color: "rgba(255,255,255,0.55)", fontWeight: 600, display: "block", marginBottom: 6 };
+  const inp = { width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, color: "#fff", padding: "9px 11px", fontSize: 14, fontFamily: "ui-monospace, monospace" };
+  const stat = { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "0.7rem 0.8rem" };
+  const statLbl = { fontSize: 11, color: "rgba(255,255,255,0.5)", marginBottom: 3 };
+  const statVal = { fontSize: "1.05rem", fontWeight: 800, fontFamily: "ui-monospace, monospace" };
+
+  return (
+    <div style={{ color: "#fff", padding: "1.25rem" }}>
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-[340px_1fr]">
+        <div style={card}>
+          <div style={{ marginBottom: 14 }}>
+            <label style={lbl}>Province</label>
+            <div style={Object.assign({}, inp, { display: "flex", alignItems: "center", color: EP_GOLD, fontWeight: 700 })}>Québec · 2026</div>
+          </div>
+          <div style={{ marginBottom: 14 }}>
+            <label style={lbl}>Revenu imposable</label>
+            <input type="number" style={inp} value={revenu} onChange={e => setRevenu(e.target.value)} />
+          </div>
+          <div>
+            <label style={lbl}>Cotisation REER</label>
+            <input type="number" style={inp} value={cotisation} onChange={e => setCotisation(e.target.value)} />
+          </div>
+        </div>
+
+        <div style={Object.assign({}, card, { display: "flex", flexDirection: "column" })}>
+          <div style={{ marginBottom: 4, fontSize: 12.5, color: EP_GOLD_DIM, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700 }}>Économie d'impôt</div>
+          <div style={{ fontSize: "2.3rem", fontWeight: 800, color: EP_GOLD, fontFamily: "ui-monospace, monospace", marginBottom: 4 }}>{ok ? epFmt(economie) : "—"}</div>
+          <div style={{ fontSize: 12.5, color: "rgba(255,255,255,0.5)", marginBottom: 18 }}>
+            Taux d'épargne effectif : {taux.toFixed(1)} % · coût net de la cotisation : {epFmt(coutNet)}
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 16 }}>
+            <div style={stat}><div style={statLbl}>Impôt sans cotisation REER</div><div style={Object.assign({}, statVal, { color: "#E08A8A" })}>{epFmt(t0)}</div></div>
+            <div style={stat}><div style={statLbl}>Impôt avec cotisation REER</div><div style={Object.assign({}, statVal, { color: EP_GOLD })}>{epFmt(t1)}</div></div>
+          </div>
+          <div style={{ background: "rgba(201,160,99,0.08)", border: "1px solid rgba(201,160,99,0.25)", borderRadius: 12, padding: "0.8rem 0.9rem", fontSize: 12.5, color: "rgba(255,255,255,0.7)", lineHeight: 1.55 }}>
+            Une cotisation REER de {epFmt(cotisation)} réduit ton impôt de {epFmt(economie)}. Concrètement, elle ne te coûte que {epFmt(coutNet)} de poche cette année.
+          </div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 12 }}>Calcul natif · moteur fiscal Québec 2026 du site (fédéral + provincial, abattement QC inclus).</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Calculators() {
   const [section, setSection] = useState("local"); // "local" | "externe"
   const [activeTool, setActiveTool] = useState("impot");
@@ -1092,7 +1150,7 @@ export default function Calculators() {
               )}
               </div>
 
-                {current.native === "epargne" ? <CalcEpargne /> : current.native === "emprunt" ? <CalcEmprunt /> : current.native === "inflation" ? <CalcInflation /> : current.native === "revenus" ? <CalcRevenus /> : current.native === "report" ? <CalcReport /> : (
+                {current.native === "epargne" ? <CalcEpargne /> : current.native === "emprunt" ? <CalcEmprunt /> : current.native === "inflation" ? <CalcInflation /> : current.native === "revenus" ? <CalcRevenus /> : current.native === "report" ? <CalcReport /> : current.native === "epargne-reer" ? <CalcEconomieReer /> : (
                 <div style={{ background: "#efe9df", borderRadius: 14, padding: "12px 12px 6px", border: "1px solid rgba(201,160,99,0.35)" }}>
                   <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "#7d6845", margin: "0 0 10px 4px" }}>Outil de calcul externe — affichage clair</p>
                   <iframe src={current.url} title={current.label} width="100%" frameBorder="0" scrolling="no" className="block w-full" style={{ height: "2200px", borderRadius: 12, background: "#fff" }} />
