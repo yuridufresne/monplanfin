@@ -302,7 +302,6 @@ export default function AdvancedMode() {
     { key: "nif",          label: "Calculatrice NIF",           icon: <TrendingUp style={{ width: 14, height: 14 }} /> },
     { key: "modelisation", label: "Modélisation retraite",      icon: <TrendingUp style={{ width: 14, height: 14 }} /> },
     { key: "scenarios", label: "Scénarios What-If",     icon: <GitBranch  style={{ width: 14, height: 14 }} /> },
-    { key: "params",    label: "Paramètres de calcul",  icon: <Sliders    style={{ width: 14, height: 14 }} /> },
     { key: "retraite",  label: "Rapport retraite",      icon: <TrendingUp style={{ width: 14, height: 14 }} /> },
     { key: "dettes",    label: "Optimisation dettes",   icon: <TrendingUp style={{ width: 14, height: 14 }} /> },
     { key: "reer",      label: "Prêt REER levier",      icon: <TrendingUp style={{ width: 14, height: 14 }} /> },
@@ -395,36 +394,6 @@ export default function AdvancedMode() {
           )}
 
           {/* Paramètres globaux */}
-          {activeTab === "params" && (
-            <div>
-              <div style={{ ...glass, borderRadius: 24, padding: "2rem", marginBottom: "1.5rem" }}>
-                <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: GOLD_DIM, marginBottom: 4 }}>Configuration</p>
-                <h2 style={{ fontFamily: "var(--font-urbanist)", fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 6 }}>Paramètres de calcul globaux</h2>
-                <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginBottom: 24 }}>Ces paramètres s'appliquent à tous les calculs du rapport de retraite et des scénarios.</p>
-                <GlobalParams calcParams={calcParams} setCalcParams={setCalcParams} />
-              </div>
-
-              {/* Résumé des hypothèses */}
-              <div style={{ ...glass, borderRadius: 24, padding: "1.5rem 2rem" }}>
-                <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: GOLD_DIM, marginBottom: 16 }}>Résumé des hypothèses actives</p>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10 }}>
-                  {[
-                    { l: "Inflation", v: `${calcParams.inflation.toFixed(1)} %` },
-                    { l: "Rendement pré-retraite", v: `${calcParams.rendAvant} %` },
-                    { l: "Rendement en retraite", v: `${calcParams.rendPend} %` },
-                    { l: "Taux marginal QC", v: `${calcParams.tauxMarginal} %` },
-                    { l: "Âge de retraite", v: `${calcParams.ageRetraite} ans` },
-                    { l: "Espérance de vie", v: `${calcParams.esperanceVie} ans` },
-                  ].map(x => (
-                    <div key={x.l} style={{ padding: "10px 14px", borderRadius: 12, background: "rgba(201,160,99,0.05)", border: "1px solid rgba(201,160,99,0.12)" }}>
-                      <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.35)", marginBottom: 4 }}>{x.l}</p>
-                      <p style={{ fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 700, color: GOLD }}>{x.v}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Rapport retraite */}
           {activeTab === "retraite" && (
