@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, BarChart, Bar } from "recharts";
 import { calculateFullTax } from "@/lib/fiscal_engine_qc2026";
 import SimulateurImpot from "@/components/SimulateurImpot";
 import SimulateurRetraite from "@/components/SimulateurRetraite";
@@ -50,7 +50,7 @@ const tabs = [
     value: "retraite-inflation",
     label: "Budget retraite",
     sub: "Effet de l'inflation",
-    url: "https://calculatrices-financieres.ca/#/effet-inflation?palette=gold&hideHelp&hideSettings&shade=light",
+    native: "retraite-inflation",
   },
   {
     value: "vie-humaine",
@@ -1030,6 +1030,88 @@ function CalcEconomieReer() {
   );
 }
 
+const BR_CATS = [
+  { k: "habitation", label: "Habitation", def: 950 },
+  { k: "alimentation", label: "Alimentation", def: 150 },
+  { k: "transport", label: "Transport", def: 300 },
+  { k: "telecom", label: "Télécom.", def: 150 },
+  { k: "sante", label: "Santé", def: 300 },
+  { k: "loisirs", label: "Loisirs", def: 300 },
+  { k: "autres", label: "Autres", def: 250 }
+];
+
+function CalcBudgetRetraite() {
+  const anneeActuelle = new Date().getFullYear();
+  const [vals, setVals] = useState(() => { const o = {}; BR_CATS.forEach(c => o[c.k] = c.def); return o; });
+  const [inflation, setInflation] = useState(2.25);
+  const [annee, setAnnee] = useState(anneeActuelle + 12);
+
+  const total = BR_CATS.reduce((s, c) => s + (Number(vals[c.k]) || 0), 0);
+  const ans = Math.max(0, (Number(annee) || anneeActuelle) - anneeActuelle);
+  const facteur = Math.pow(1 + (Number(inflation) || 0) / 100, ans);
+  const futur = total * facteur;
+  const data = BR_CATS.map(c => ({ cat: c.label, Actuel: Math.round(Number(vals[c.k]) || 0), Futur: Math.round((Number(vals[c.k]) || 0) * facteur) }));
+  const setCat = (k, v) => setVals(o => Object.assign({}, o, { [k]: v }));
+
+  const card = { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: "1rem 1.1rem" };
+  const lbl = { fontSize: 12.5, color: "rgba(255,255,255,0.55)", fontWeight: 600, display: "block", marginBottom: 6 };
+  const inp = { width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, color: "#fff", padding: "8px 10px", fontSize: 13.5, fontFamily: "ui-monospace, monospace" };
+  const stat = { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "0.8rem 0.9rem" };
+  const statLbl = { fontSize: 11.5, color: "rgba(255,255,255,0.5)", marginBottom: 4 };
+
+  return (
+    <div style={{ color: "#fff", padding: "1.25rem" }}>
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-[340px_1fr]">
+        <div style={card}>
+          <div style={{ fontSize: 12, color: EP_GOLD_DIM, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700, marginBottom: 10 }}>Dépenses mensuelles (dollars d'aujourd'hui)</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 14 }}>
+            {BR_CATS.map(c => (
+              <div key={c.k}>
+                <label style={lbl}>{c.label}</label>
+                <input type="number" style={inp} value={vals[c.k]} onChange={e => setCat(c.k, e.target.value)} />
+              </div>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: 10 }}>
+            <div style={{ flex: 1 }}>
+              <label style={lbl}>Taux d'inflation (%)</label>
+              <input type="number" step="0.05" style={inp} value={inflation} onChange={e => setInflation(e.target.value)} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={lbl}>Année cible</label>
+              <input type="number" style={inp} value={annee} onChange={e => setAnnee(e.target.value)} />
+            </div>
+          </div>
+        </div>
+
+        <div style={Object.assign({}, card, { display: "flex", flexDirection: "column" })}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 16 }}>
+            <div style={stat}><div style={statLbl}>Budget en dollars courants</div><div style={{ fontSize: "1.5rem", fontWeight: 800, color: "#fff", fontFamily: "ui-monospace, monospace" }}>{epFmt(total)}</div><div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>par mois ({anneeActuelle})</div></div>
+            <div style={stat}><div style={statLbl}>Budget en dollars futurs</div><div style={{ fontSize: "1.5rem", fontWeight: 800, color: EP_GOLD, fontFamily: "ui-monospace, monospace" }}>{epFmt(futur)}</div><div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>par mois ({Number(annee) || anneeActuelle})</div></div>
+          </div>
+          <div style={{ fontSize: 12.5, color: "rgba(255,255,255,0.5)", marginBottom: 14 }}>
+            En {Number(annee) || anneeActuelle}, il te faudra <span style={{ color: EP_GOLD, fontWeight: 700 }}>{epFmt(futur)}</span> par mois pour le même train de vie que <span style={{ color: "#fff" }}>{epFmt(total)}</span> aujourd'hui ({ans} ans · inflation {Number(inflation).toFixed(2)} %).
+          </div>
+          <div style={{ width: "100%", height: 300 }}>
+            <ResponsiveContainer>
+              <BarChart data={data} margin={{ top: 6, right: 10, left: 0, bottom: 0 }}>
+                <CartesianGrid stroke="rgba(255,255,255,0.07)" vertical={false} />
+                <XAxis dataKey="cat" tick={{ fill: "rgba(255,255,255,0.45)", fontSize: 10 }} tickLine={false} axisLine={false} interval={0} angle={-20} textAnchor="end" height={50} />
+                <YAxis tickFormatter={v => (Math.abs(v) >= 1000 ? Math.round(v / 1000) + "k" : v)} tick={{ fill: "rgba(255,255,255,0.45)", fontSize: 11 }} tickLine={false} axisLine={false} width={42} />
+                <Tooltip formatter={v => epFmt(v)} contentStyle={{ background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, color: "#fff", fontSize: 12 }} cursor={{ fill: "rgba(255,255,255,0.04)" }} />
+                <Legend wrapperStyle={{ fontSize: 11, color: "rgba(255,255,255,0.6)" }} />
+                <Bar dataKey="Actuel" fill="rgba(255,255,255,0.35)" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="Futur" fill={EP_GOLD} radius={[3, 3, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 12 }}>Calcul natif · budget × (1 + inflation) ^ (année cible − {anneeActuelle}).</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Calculators() {
   const [section, setSection] = useState("local"); // "local" | "externe"
   const [activeTool, setActiveTool] = useState("impot");
@@ -1150,7 +1232,7 @@ export default function Calculators() {
               )}
               </div>
 
-                {current.native === "epargne" ? <CalcEpargne /> : current.native === "emprunt" ? <CalcEmprunt /> : current.native === "inflation" ? <CalcInflation /> : current.native === "revenus" ? <CalcRevenus /> : current.native === "report" ? <CalcReport /> : current.native === "epargne-reer" ? <CalcEconomieReer /> : (
+                {current.native === "epargne" ? <CalcEpargne /> : current.native === "emprunt" ? <CalcEmprunt /> : current.native === "inflation" ? <CalcInflation /> : current.native === "revenus" ? <CalcRevenus /> : current.native === "report" ? <CalcReport /> : current.native === "epargne-reer" ? <CalcEconomieReer /> : current.native === "retraite-inflation" ? <CalcBudgetRetraite /> : (
                 <div style={{ background: "#efe9df", borderRadius: 14, padding: "12px 12px 6px", border: "1px solid rgba(201,160,99,0.35)" }}>
                   <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "#7d6845", margin: "0 0 10px 4px" }}>Outil de calcul externe — affichage clair</p>
                   <iframe src={current.url} title={current.label} width="100%" frameBorder="0" scrolling="no" className="block w-full" style={{ height: "2200px", borderRadius: 12, background: "#fff" }} />
