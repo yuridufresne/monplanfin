@@ -7,6 +7,8 @@ import SimulateurRetraite from "@/components/SimulateurRetraite";
 import OptimiseurDettes from "@/components/OptimiseurDettes";
 
 const tabs = [
+  { value: "epargne", label: "Épargne", sub: "Accumulation REER/CELI", native: "epargne" },
+  { value: "emprunt", label: "Emprunt", sub: "Paiement & amortissement", native: "emprunt" },
   {
     value: "revenus",
     label: "Revenus de placement",
@@ -67,8 +69,6 @@ const LOCAL_TOOLS = [
   { value: "impot",   label: "🧮 Impôt QC 2026",     sub: "Calcul interactif" },
   { value: "retraite",label: "🏖 Simulateur retraite", sub: "Projection REER/CELI" },
   { value: "dettes",  label: "💳 Optimiseur dettes",  sub: "Avalanche & hypo" },
-  { value: "epargne", label: "💰 Épargne", sub: "Accumulation REER/CELI" },
-  { value: "emprunt", label: "🏦 Emprunt", sub: "Paiement & amortissement" },
 ];
 
 // ===== Calculatrice Épargne (native — remplace l'iframe externe) =====
@@ -512,7 +512,7 @@ function CalcEmprunt() {
 export default function Calculators() {
   const [section, setSection] = useState("local"); // "local" | "externe"
   const [activeTool, setActiveTool] = useState("impot");
-  const [active, setActive] = useState("revenus");
+  const [active, setActive] = useState("epargne");
   const current = tabs.find((t) => t.value === active);
 
   return (
@@ -565,8 +565,6 @@ export default function Calculators() {
               {activeTool === "impot"    && <SimulateurImpot />}
               {activeTool === "retraite" && <SimulateurRetraite />}
               {activeTool === "dettes"   && <OptimiseurDettes />}
-        {activeTool === "epargne" && <CalcEpargne />}
-        {activeTool === "emprunt" && <CalcEmprunt />}
             </div>
           </motion.div>
         )}
@@ -618,6 +616,7 @@ export default function Calculators() {
                     {current.sub}
                   </p>
                 </div>
+              {!current.native && (
                 <a
                   href={current.url}
                   target="_blank"
@@ -627,21 +626,15 @@ export default function Calculators() {
                   Ouvrir dans un nouvel onglet
                   <ArrowUpRight className="w-3.5 h-3.5" />
                 </a>
+              )}
               </div>
 
-              {/* iFrame */}
-              <div style={{ background: "#efe9df", borderRadius: 14, padding: "12px 12px 6px", border: "1px solid rgba(201,160,99,0.35)" }}>
-                <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#7d6845", margin: "0 0 10px 4px" }}>Outil de calcul externe · affichage clair</p>
-              <iframe
-                src={current.url}
-                title={current.label}
-                width="100%"
-                frameBorder="0"
-                scrolling="no"
-                className="block w-full"
-                style={{ height: "2200px", borderRadius: 10, background: "#fff" }}
-              />
-              </div>
+                {current.native === "epargne" ? <CalcEpargne /> : current.native === "emprunt" ? <CalcEmprunt /> : (
+                <div style={{ background: "#efe9df", borderRadius: 14, padding: "12px 12px 6px", border: "1px solid rgba(201,160,99,0.35)" }}>
+                  <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "#7d6845", margin: "0 0 10px 4px" }}>Outil de calcul externe — affichage clair</p>
+                  <iframe src={current.url} title={current.label} width="100%" frameBorder="0" scrolling="no" className="block w-full" style={{ height: "2200px", borderRadius: 12, background: "#fff" }} />
+                </div>
+                )}
             </div>
           </motion.div>
         </AnimatePresence>
