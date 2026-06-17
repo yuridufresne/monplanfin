@@ -125,6 +125,18 @@ function simulateC({ budget, invRateAnnual, totalYears }) {
   return { reer: 0, celi: Math.round(celi), total: Math.round(celi), interets: 0, chart };
 }
 
+function InfoDot({ text }) {
+  const [h, setH] = useState(false);
+  return (
+    <span style={{ position: "absolute", top: 9, right: 9, zIndex: 5 }} onMouseEnter={() => setH(true)} onMouseLeave={() => setH(false)}>
+      <span style={{ width: 15, height: 15, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.3)", color: "rgba(255,255,255,0.6)", fontSize: 9, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", cursor: "help" }}>i</span>
+      {h && (
+        <span style={{ position: "absolute", top: 22, right: 0, width: 210, background: "#161c2b", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, padding: "9px 11px", fontSize: 11, fontWeight: 400, color: "rgba(255,255,255,0.85)", lineHeight: 1.45, zIndex: 30, boxShadow: "0 8px 24px rgba(0,0,0,0.45)" }}>{text}</span>
+      )}
+    </span>
+  );
+}
+
 export default function ReerLevierSimulator() {
   const [budget,     setBudget]     = useState(600);
   const [pretPct,    setPretPct]    = useState(50);
@@ -214,7 +226,7 @@ export default function ReerLevierSimulator() {
                 { label: "Retour d'impôt",     val: fmt(resA.retourImpot),  sub: `${taxRate}% × prêt`,                       color: "#A87DD3" , info: "L'argent que le gouvernement te redonne grace a la deduction REER. Il est reinvesti dans ton CELI." },
               ].map(k => (
                 <div key={k.label} style={{ position: "relative", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, padding: "12px 14px" }}>
-        <span title={k.info} style={{ position: "absolute", top: 8, right: 9, width: 15, height: 15, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.25)", color: "rgba(255,255,255,0.5)", fontSize: 9, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", cursor: "help" }}>i</span>
+        <InfoDot text={k.info} />
                   <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.4)", marginBottom: 5 }}>{k.label}</p>
                   <p style={{ fontFamily: "var(--font-mono)", fontSize: 15, fontWeight: 700, color: k.color, lineHeight: 1 }}>{k.val}</p>
                   <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.3)", marginTop: 4 }}>{k.sub}</p>
@@ -230,7 +242,7 @@ export default function ReerLevierSimulator() {
                   border: best === s.key ? `1px solid ${s.color}40` : "1px solid rgba(255,255,255,0.07)",
                   borderRadius: 14, padding: "0.8rem 0.85rem", position: "relative",
                 }}>
-        <span title={s.info} style={{ position: "absolute", top: 10, right: 10, width: 15, height: 15, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.25)", color: "rgba(255,255,255,0.55)", fontSize: 9, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", cursor: "help", zIndex: 2 }}>i</span>
+        <InfoDot text={s.info} />
                   {best === s.key && (
                     <span style={{ position: "absolute", top: 10, right: 36, fontSize: 9, fontWeight: 800, color: s.color, background: `${s.color}18`, padding: "2px 7px", borderRadius: 6, letterSpacing: "0.08em", textTransform: "uppercase" }}>
                       Potentiel ↑
