@@ -14,7 +14,6 @@ const privateLinks = [
   { label: "Feuille Résumé", path: "/resume" },
   { label: "Placements", path: "/placements" },
   
-  { label: "Studio de décaissement", path: "/studio" },
   { label: "Protection", path: "/protection" },
   { label: "Immobilier", path: "/immobilier" },
   { label: "Éducation", path: "/education" },
@@ -107,7 +106,7 @@ export default function Navbar() {
           {isAuthenticated ? (
             <>
               <NavDropdown label="Mon dossier" items={[{ label: "Tableau de bord", path: "/dashboard" }, { label: "Analyse ABF", path: "/analyse" }, { label: "Feuille Résumé", path: "/resume" }, ]} location={location} />
-              <NavDropdown label="Outils" items={[{ label: "Calculatrices", path: "/calculatrices" }, { label: "Placements", path: "/placements" }, { label: "Studio de décaissement", path: "/studio" }, { label: "Immobilier", path: "/immobilier" }, { label: "Protection", path: "/protection" }]} location={location} />
+              <NavDropdown label="Outils" items={[{ label: "Calculatrices", path: "/calculatrices" }, { label: "Placements", path: "/placements" }, { label: "Immobilier", path: "/immobilier" }, { label: "Protection", path: "/protection" }]} location={location} />
               <Link to="/education" style={{ padding: "8px 14px", fontSize: 13.5, fontWeight: 500, color: isActive("/education") ? "#C9A063" : "rgba(148,163,184,0.75)", textDecoration: "none", borderRadius: 10 }}>Éducation</Link>
               {isAgent ? (<Link to="/agent" style={{ display: "inline-flex", alignItems: "center", gap: 6, marginLeft: 6, padding: "7px 13px", fontSize: 13, fontWeight: 600, color: isActive("/agent") ? "#0a0f1e" : "#C9A063", background: isActive("/agent") ? "#C9A063" : "rgba(201,160,99,0.12)", border: "1px solid rgba(201,160,99,0.35)", textDecoration: "none", borderRadius: 99 }}><Briefcase size={14} /> Dossiers clients</Link>) : null}
             </>
