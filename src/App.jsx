@@ -12,7 +12,6 @@ import Home from '@/pages/Home';
 import Calculators from '@/pages/Calculators';
 import Dashboard from '@/pages/Dashboard';
 import Budget from '@/pages/Budget';
-import Investments from '@/pages/Investments';
 import FinancialAnalysis from '@/pages/FinancialAnalysis';
 import FeuilleResume from '@/pages/FeuilleResume';
 import AdvancedMode from '@/pages/AdvancedMode';
@@ -103,7 +102,6 @@ const AuthenticatedApp = () => {
         {/* Private routes */}
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/budget" element={<Budget />} />
-        <Route path="/placements" element={<Investments />} />
         <Route path="/analyse" element={<FinancialAnalysis />} />
         <Route path="/resume" element={<FeuilleResume />} />
         <Route path="/avance" element={<AdvancedMode />} />
