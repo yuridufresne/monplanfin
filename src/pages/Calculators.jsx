@@ -1185,6 +1185,125 @@ function CalcVieHumaine() {
   );
 }
 
+function projeterPretReer(o) {
+  const loan = Number(o.loan) || 0;
+  const refund = loan * ((Number(o.tauxMarginal) || 0) / 100) * ((Number(o.portionRefund) || 0) / 100);
+  const p = Number(o.freqPaiement) || 12;
+  const i = (Number(o.tauxInteret) || 0) / 100 / p;
+  const pmt = Number(o.paiement) || 0;
+  const annees = Math.max(1, Number(o.anneesRetraite) || 0);
+  const rend = (Number(o.rendement) || 0) / 100;
+  let bal = Math.max(0, loan - refund);
+  let periods = 0, totalInt = 0;
+  const rows = [{ annee: 0, emprunt: Math.round(bal), reer: Math.round(loan) }];
+  for (let an = 1; an <= annees; an++) {
+    for (let k = 0; k < p; k++) {
+      if (bal > 0.01) { bal -= pmt; if (bal < 0) bal = 0; const it = bal * i; bal += it; totalInt += it; periods++; }
+    }
+    rows.push({ annee: an, emprunt: Math.round(Math.max(0, bal)), reer: Math.round(loan * Math.pow(1 + rend, an)) });
+  }
+  return { loan, refund, dureeReelle: periods / p, periods, valeurRetraite: loan * Math.pow(1 + rend, annees), totalInt, rows };
+}
+
+function PretReerForfaitaire() {
+  const [loan, setLoan] = useState(12000);
+  const [rendement, setRendement] = useState(5);
+  const [anneesRetraite, setAnneesRetraite] = useState(25);
+  const [paiement, setPaiement] = useState(400);
+  const [freqPaiement, setFreqPaiement] = useState(12);
+  const [tauxInteret, setTauxInteret] = useState(5.68);
+  const [tauxMarginal, setTauxMarginal] = useState(38);
+  const [portionRefund, setPortionRefund] = useState(100);
+
+  const res = projeterPretReer({ loan, rendement, anneesRetraite, paiement, freqPaiement, tauxInteret, tauxMarginal, portionRefund });
+
+  const card = { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: "1rem 1.1rem" };
+  const lbl = { fontSize: 12.5, color: "rgba(255,255,255,0.55)", fontWeight: 600, display: "block", marginBottom: 6 };
+  const inp = { width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, color: "#fff", padding: "9px 11px", fontSize: 14, fontFamily: "ui-monospace, monospace" };
+  const stat = { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "0.7rem 0.8rem" };
+  const statLbl = { fontSize: 11, color: "rgba(255,255,255,0.5)", marginBottom: 3 };
+  const statVal = { fontSize: "1.05rem", fontWeight: 800, fontFamily: "ui-monospace, monospace" };
+
+  return (
+    <div style={{ color: "#fff" }}>
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-[340px_1fr]">
+        <div style={card}>
+          <div style={{ fontSize: 12, color: EP_GOLD_DIM, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700, marginBottom: 10 }}>Prêt & REER</div>
+          <div style={{ marginBottom: 12 }}>
+            <label style={lbl}>Cotisations REER inutilisées (montant du prêt)</label>
+            <input type="number" style={inp} value={loan} onChange={e => setLoan(e.target.value)} />
+          </div>
+          <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
+            <div style={{ flex: 1 }}><label style={lbl}>Rendement REER (%)</label><input type="number" step="0.1" style={inp} value={rendement} onChange={e => setRendement(e.target.value)} /></div>
+            <div style={{ flex: 1 }}><label style={lbl}>Années avant retraite</label><input type="number" style={inp} value={anneesRetraite} onChange={e => setAnneesRetraite(e.target.value)} /></div>
+          </div>
+          <div style={{ marginBottom: 12 }}>
+            <label style={lbl}>Paiement du prêt</label>
+            <div style={{ display: "flex", gap: 6 }}>
+              <input type="number" style={Object.assign({}, inp, { flex: 1 })} value={paiement} onChange={e => setPaiement(e.target.value)} />
+              <select style={Object.assign({}, inp, { flex: 1 })} value={freqPaiement} onChange={e => setFreqPaiement(e.target.value)}>
+                {EP_FREQS.map(fr => <option key={fr.v} value={fr.v} style={{ color: "#000" }}>{fr.label}</option>)}
+              </select>
+            </div>
+          </div>
+          <div style={{ marginBottom: 12 }}>
+            <label style={lbl}>Taux d'intérêt du prêt (%)</label>
+            <input type="number" step="0.01" style={inp} value={tauxInteret} onChange={e => setTauxInteret(e.target.value)} />
+          </div>
+          <div style={{ display: "flex", gap: 10 }}>
+            <div style={{ flex: 1 }}><label style={lbl}>Taux marginal d'impôt (%)</label><input type="number" style={inp} value={tauxMarginal} onChange={e => setTauxMarginal(e.target.value)} /></div>
+            <div style={{ flex: 1 }}><label style={lbl}>Retour d'impôt au prêt (%)</label><input type="number" style={inp} value={portionRefund} onChange={e => setPortionRefund(e.target.value)} /></div>
+          </div>
+        </div>
+
+        <div style={Object.assign({}, card, { display: "flex", flexDirection: "column" })}>
+          <div style={{ marginBottom: 4, fontSize: 12.5, color: EP_GOLD_DIM, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700 }}>Valeur du REER à la retraite</div>
+          <div style={{ fontSize: "2.2rem", fontWeight: 800, color: EP_GOLD, fontFamily: "ui-monospace, monospace", marginBottom: 14 }}>{epFmt(res.valeurRetraite)}</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 16 }}>
+            <div style={stat}><div style={statLbl}>Montant du prêt</div><div style={Object.assign({}, statVal, { color: "#fff" })}>{epFmt(res.loan)}</div></div>
+            <div style={stat}><div style={statLbl}>Retour d'impôt</div><div style={Object.assign({}, statVal, { color: EP_GOLD })}>{epFmt(res.refund)}</div></div>
+            <div style={stat}><div style={statLbl}>Remboursé en</div><div style={Object.assign({}, statVal, { color: "#fff", fontSize: "1rem" })}>{res.dureeReelle.toFixed(1)} ans</div></div>
+            <div style={stat}><div style={statLbl}>Intérêts payés</div><div style={Object.assign({}, statVal, { color: "#E08A8A", fontSize: "1rem" })}>{epFmt(res.totalInt)}</div></div>
+          </div>
+          <div style={{ width: "100%", height: 280 }}>
+            <ResponsiveContainer>
+              <AreaChart data={res.rows} margin={{ top: 6, right: 10, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="prGold" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={EP_GOLD} stopOpacity={0.4} /><stop offset="100%" stopColor={EP_GOLD} stopOpacity={0.03} /></linearGradient>
+                </defs>
+                <CartesianGrid stroke="rgba(255,255,255,0.07)" vertical={false} />
+                <XAxis dataKey="annee" tick={{ fill: "rgba(255,255,255,0.45)", fontSize: 11 }} tickLine={false} axisLine={false} />
+                <YAxis tickFormatter={v => (Math.abs(v) >= 1000 ? Math.round(v / 1000) + "k" : v)} tick={{ fill: "rgba(255,255,255,0.45)", fontSize: 11 }} tickLine={false} axisLine={false} width={42} />
+                <Tooltip formatter={v => epFmt(v)} labelFormatter={l => "Année " + l} contentStyle={{ background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, color: "#fff", fontSize: 12 }} />
+                <Legend wrapperStyle={{ fontSize: 11, color: "rgba(255,255,255,0.6)" }} />
+                <Area type="monotone" dataKey="reer" name="Valeur REER" stroke={EP_GOLD} fill="url(#prGold)" strokeWidth={2.5} />
+                <Area type="monotone" dataKey="emprunt" name="Solde du prêt" stroke="#E08A8A" fill="none" strokeWidth={2} strokeDasharray="5 3" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 12 }}>Calcul natif · le retour d'impôt ({epFmt(res.refund)}) réduit le prêt à {epFmt(res.loan - res.refund)} dès le départ, ce qui accélère le remboursement.</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CalcPretReer() {
+  const [mode, setMode] = useState("budget");
+  const tab = (v, t) => (
+    <button key={v} onClick={() => setMode(v)} style={{ padding: "8px 16px", borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: "pointer", border: "1px solid " + (mode === v ? EP_GOLD : "rgba(255,255,255,0.12)"), background: mode === v ? "rgba(201,160,99,0.18)" : "transparent", color: mode === v ? EP_GOLD : "rgba(255,255,255,0.7)" }}>{t}</button>
+  );
+  return (
+    <div style={{ padding: "1.25rem", color: "#fff" }}>
+      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+        {tab("budget", "Budget mensuel (stratégies)")}
+        {tab("pret", "Prêt forfaitaire (cotisations inutilisées)")}
+      </div>
+      {mode === "budget" ? <ReerLevierSimulator /> : <PretReerForfaitaire />}
+    </div>
+  );
+}
+
 export default function Calculators() {
   const [section, setSection] = useState("local"); // "local" | "externe"
   const [activeTool, setActiveTool] = useState("impot");
@@ -1305,7 +1424,7 @@ export default function Calculators() {
               )}
               </div>
 
-                {current.native === "epargne" ? <CalcEpargne /> : current.native === "emprunt" ? <CalcEmprunt /> : current.native === "inflation" ? <CalcInflation /> : current.native === "revenus" ? <CalcRevenus /> : current.native === "report" ? <CalcReport /> : current.native === "epargne-reer" ? <CalcEconomieReer /> : current.native === "retraite-inflation" ? <CalcBudgetRetraite /> : current.native === "vie-humaine" ? <CalcVieHumaine /> : current.native === "taux-impot" ? <SimulateurImpot /> : current.native === "pret-reer" ? <ReerLevierSimulator /> : (
+                {current.native === "epargne" ? <CalcEpargne /> : current.native === "emprunt" ? <CalcEmprunt /> : current.native === "inflation" ? <CalcInflation /> : current.native === "revenus" ? <CalcRevenus /> : current.native === "report" ? <CalcReport /> : current.native === "epargne-reer" ? <CalcEconomieReer /> : current.native === "retraite-inflation" ? <CalcBudgetRetraite /> : current.native === "vie-humaine" ? <CalcVieHumaine /> : current.native === "taux-impot" ? <SimulateurImpot /> : current.native === "pret-reer" ? <CalcPretReer /> : (
                 <div style={{ background: "#efe9df", borderRadius: 14, padding: "12px 12px 6px", border: "1px solid rgba(201,160,99,0.35)" }}>
                   <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "#7d6845", margin: "0 0 10px 4px" }}>Outil de calcul externe — affichage clair</p>
                   <iframe src={current.url} title={current.label} width="100%" frameBorder="0" scrolling="no" className="block w-full" style={{ height: "2200px", borderRadius: 12, background: "#fff" }} />
