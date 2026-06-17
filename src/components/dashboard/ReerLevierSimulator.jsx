@@ -244,7 +244,7 @@ export default function ReerLevierSimulator() {
                 }}>
         <InfoDot text={s.info} />
                   {best === s.key && (
-                    <span style={{ position: "absolute", top: 10, right: 36, fontSize: 9, fontWeight: 800, color: s.color, background: `${s.color}18`, padding: "2px 7px", borderRadius: 6, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                    <span style={{ display: "inline-block", marginBottom: 6, fontSize: 9, fontWeight: 800, color: s.color, background: `${s.color}18`, padding: "2px 7px", borderRadius: 6, letterSpacing: "0.08em", textTransform: "uppercase" }}>
                       Potentiel ↑
                     </span>
                   )}
