@@ -13,7 +13,7 @@ const tabs = [
     value: "revenus",
     label: "Revenus de placement",
     sub: "Revenus selon différents facteurs",
-    url: "https://calculatrices-financieres.ca/#/revenus?palette=gold&hideHelp&hideSettings&shade=light",
+    native: "revenus",
   },
   {
     value: "report",
@@ -589,6 +589,227 @@ function CalcInflation() {
   );
 }
 
+const EV_CIBLES = [
+  { v: "solde", label: "Solde final" },
+  { v: "capital", label: "Capital requis" },
+  { v: "retraits", label: "Retrait soutenable" },
+  { v: "duree", label: "Durée" },
+  { v: "rendement", label: "Rendement requis" }
+];
+
+function projeterRevenus(o) {
+  const p = Number(o.freq) || 1;
+  const dureeAcc = Math.max(0, Number(o.duree) || 0);
+  let annuel = (Number(o.rendement) || 0) / 100;
+  if (o.typePlacement === "non" && o.imposable) annuel = annuel * (1 - (Number(o.tauxImposition) || 0) / 100);
+  const i = Math.pow(1 + annuel, 1 / p) - 1;
+  let solde = Number(o.capital) || 0;
+  const base = Number(o.retrait) || 0;
+  const idx = o.indexer ? (Number(o.indexation) || 0) / 100 : 0;
+  const rows = [{ annee: 0, retrait: 0, interets: 0, solde: Math.round(solde) }];
+  let totalRet = 0, totalInt = 0, depletion = null;
+  const anEntier = Math.ceil(dureeAcc);
+  for (let an = 1; an <= anEntier; an++) {
+    const retPeriode = base * Math.pow(1 + idx, an - 1);
+    let yr = 0, yi = 0;
+    for (let k = 0; k < p; k++) {
+      let w = retPeriode;
+      if (w > solde) w = Math.max(0, solde);
+      solde -= w;
+      const interet = solde * i;
+      solde += interet;
+      yr += w; yi += interet;
+    }
+    totalRet += yr; totalInt += yi;
+    if (depletion === null && solde <= 0.01) depletion = an;
+    rows.push({ annee: an, retrait: Math.round(yr), interets: Math.round(yi), solde: Math.round(solde) });
+  }
+  return { solde, rows, totalRet, totalInt, depletion };
+}
+
+function resoudreRevenus(o, cible) {
+  const cle = o.cible;
+  const f = (x) => {
+    const oo = Object.assign({}, o);
+    if (cle === "capital") oo.capital = x;
+    else if (cle === "rendement") oo.rendement = x;
+    else if (cle === "retraits") oo.retrait = x;
+    else if (cle === "duree") oo.duree = x;
+    return projeterRevenus(oo).solde;
+  };
+  let lo, hi;
+  if (cle === "rendement") { lo = 0; hi = 50; }
+  else if (cle === "duree") { lo = 0; hi = 120; }
+  else if (cle === "retraits") { lo = 0; hi = Math.max((Number(o.capital) || 0), 1); }
+  else { lo = 0; hi = Math.max(Number(cible), 1); }
+  const increasing = (cle !== "retraits");
+  if (increasing) { let g = 0; while (f(hi) < cible && g < 80) { hi = hi * 2; g++; } }
+  for (let it = 0; it < 120; it++) { const mid = (lo + hi) / 2; const v = f(mid); if ((v < cible) === increasing) lo = mid; else hi = mid; }
+  return (lo + hi) / 2;
+}
+
+function CalcRevenus() {
+  const [cible, setCible] = useState("solde");
+  const [typePlacement, setTypePlacement] = useState("reer");
+  const [capital, setCapital] = useState(1000000);
+  const [duree, setDuree] = useState(25);
+  const [rendement, setRendement] = useState(5);
+  const [freq, setFreq] = useState(1);
+  const [retrait, setRetrait] = useState(50000);
+  const [indexer, setIndexer] = useState(false);
+  const [indexation, setIndexation] = useState(2.25);
+  const [imposable, setImposable] = useState(true);
+  const [tauxImposition, setTauxImposition] = useState(35);
+  const [cibleSolde, setCibleSolde] = useState(0);
+  const [vue, setVue] = useState("graphique");
+
+  const params = { typePlacement, capital, duree, rendement, freq, retrait, indexer, indexation, imposable, tauxImposition, cible };
+  const solved = cible === "solde" ? null : resoudreRevenus(params, Number(cibleSolde));
+  const effParams = Object.assign({}, params);
+  if (solved !== null) {
+    if (cible === "capital") effParams.capital = solved;
+    else if (cible === "rendement") effParams.rendement = solved;
+    else if (cible === "retraits") effParams.retrait = solved;
+    else if (cible === "duree") effParams.duree = solved;
+  }
+  const res = projeterRevenus(effParams);
+
+  const card = { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: "1rem 1.1rem" };
+  const lbl = { fontSize: 12.5, color: "rgba(255,255,255,0.55)", fontWeight: 600, display: "block", marginBottom: 6 };
+  const inp = { width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, color: "#fff", padding: "9px 11px", fontSize: 14, fontFamily: "ui-monospace, monospace" };
+  const isNonReg = typePlacement === "non";
+
+  let headlineTxt;
+  if (cible === "solde") headlineTxt = epFmt(res.solde);
+  else if (cible === "capital") headlineTxt = epFmt(effParams.capital);
+  else if (cible === "retraits") headlineTxt = epFmt(effParams.retrait);
+  else if (cible === "rendement") headlineTxt = Number(effParams.rendement).toFixed(2) + " %";
+  else headlineTxt = Number(effParams.duree).toFixed(1) + " ans";
+  const headlineLabel = (EV_CIBLES.find(c => c.v === cible) || {}).label;
+
+  return (
+    <div style={{ color: "#fff", padding: "1.25rem" }}>
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-[340px_1fr]">
+        <div style={card}>
+          <div style={{ marginBottom: 14 }}>
+            <label style={lbl}>Valeur recherchée</label>
+            <select style={inp} value={cible} onChange={e => setCible(e.target.value)}>
+              {EV_CIBLES.map(c => <option key={c.v} value={c.v} style={{ color: "#000" }}>{c.label}</option>)}
+            </select>
+          </div>
+          {cible !== "solde" && (
+            <div style={{ marginBottom: 14 }}>
+              <label style={lbl}>Solde final visé</label>
+              <input type="number" style={inp} value={cibleSolde} onChange={e => setCibleSolde(e.target.value)} />
+            </div>
+          )}
+          <div style={{ marginBottom: 14 }}>
+            <label style={lbl}>Type de placement</label>
+            <div style={{ display: "flex", gap: 6 }}>
+              {[["reer", "REER"], ["celi", "CELI"], ["non", "Non enreg."]].map(opt => (
+                <button key={opt[0]} onClick={() => setTypePlacement(opt[0])} style={{ flex: 1, padding: "8px 4px", borderRadius: 9, fontSize: 12.5, fontWeight: 600, cursor: "pointer", border: "1px solid " + (typePlacement === opt[0] ? EP_GOLD : "rgba(255,255,255,0.12)"), background: typePlacement === opt[0] ? "rgba(201,160,99,0.18)" : "transparent", color: typePlacement === opt[0] ? EP_GOLD : "rgba(255,255,255,0.7)" }}>{opt[1]}</button>
+              ))}
+            </div>
+          </div>
+          <div style={{ marginBottom: 14 }}>
+            <label style={lbl}>Capital de départ</label>
+            <input type="number" style={inp} value={capital} disabled={cible === "capital"} onChange={e => setCapital(e.target.value)} />
+          </div>
+          <div style={{ marginBottom: 14 }}>
+            <label style={lbl}>Retrait (par période)</label>
+            <div style={{ display: "flex", gap: 6 }}>
+              <input type="number" style={Object.assign({}, inp, { flex: 1 })} value={retrait} disabled={cible === "retraits"} onChange={e => setRetrait(e.target.value)} />
+              <select style={Object.assign({}, inp, { flex: 1 })} value={freq} onChange={e => setFreq(e.target.value)}>
+                {EP_FREQS.map(fr => <option key={fr.v} value={fr.v} style={{ color: "#000" }}>{fr.label}</option>)}
+              </select>
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
+            <div style={{ flex: 1 }}>
+              <label style={lbl}>Durée (ans)</label>
+              <input type="number" style={inp} value={cible === "duree" ? Number(effParams.duree).toFixed(1) : duree} disabled={cible === "duree"} onChange={e => setDuree(e.target.value)} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={lbl}>Rendement (%)</label>
+              <input type="number" step="0.1" style={inp} value={cible === "rendement" ? Number(effParams.rendement).toFixed(2) : rendement} disabled={cible === "rendement"} onChange={e => setRendement(e.target.value)} />
+            </div>
+          </div>
+          <div style={{ marginBottom: 14 }}>
+            <label style={Object.assign({}, lbl, { display: "flex", alignItems: "center", gap: 8, cursor: "pointer" })}>
+              <input type="checkbox" checked={indexer} onChange={e => setIndexer(e.target.checked)} /> Indexer les retraits
+            </label>
+            {indexer && <input type="number" step="0.05" style={inp} value={indexation} onChange={e => setIndexation(e.target.value)} />}
+          </div>
+          {isNonReg && (
+            <div>
+              <label style={Object.assign({}, lbl, { display: "flex", alignItems: "center", gap: 8, cursor: "pointer" })}>
+                <input type="checkbox" checked={imposable} onChange={e => setImposable(e.target.checked)} /> Imposable
+              </label>
+              {imposable && <input type="number" step="1" style={inp} value={tauxImposition} onChange={e => setTauxImposition(e.target.value)} />}
+            </div>
+          )}
+        </div>
+
+        <div style={Object.assign({}, card, { display: "flex", flexDirection: "column" })}>
+          <div style={{ marginBottom: 4, fontSize: 12.5, color: EP_GOLD_DIM, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700 }}>{headlineLabel}</div>
+          <div style={{ fontSize: "2.1rem", fontWeight: 800, color: EP_GOLD, fontFamily: "ui-monospace, monospace", marginBottom: 4 }}>{headlineTxt}</div>
+          <div style={{ fontSize: 12.5, color: "rgba(255,255,255,0.5)", marginBottom: 16 }}>
+            Retraits totaux : {epFmt(res.totalRet)} · Intérêts : {epFmt(res.totalInt)}{res.depletion ? " · Capital épuisé en année " + res.depletion : ""}
+          </div>
+          <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+            {[["graphique", "Graphique"], ["tableau", "Tableau"]].map(opt => (
+              <button key={opt[0]} onClick={() => setVue(opt[0])} style={{ padding: "6px 14px", borderRadius: 9, fontSize: 12.5, fontWeight: 600, cursor: "pointer", border: "1px solid " + (vue === opt[0] ? EP_GOLD : "rgba(255,255,255,0.12)"), background: vue === opt[0] ? "rgba(201,160,99,0.18)" : "transparent", color: vue === opt[0] ? EP_GOLD : "rgba(255,255,255,0.7)" }}>{opt[1]}</button>
+            ))}
+          </div>
+          {vue === "graphique" ? (
+            <div style={{ width: "100%", height: 300 }}>
+              <ResponsiveContainer>
+                <AreaChart data={res.rows} margin={{ top: 6, right: 10, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="evGold" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={EP_GOLD} stopOpacity={0.5} />
+                      <stop offset="100%" stopColor={EP_GOLD} stopOpacity={0.04} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid stroke="rgba(255,255,255,0.07)" vertical={false} />
+                  <XAxis dataKey="annee" tick={{ fill: "rgba(255,255,255,0.45)", fontSize: 11 }} tickLine={false} axisLine={false} />
+                  <YAxis tickFormatter={v => (Math.abs(v) >= 1000 ? Math.round(v / 1000) + "k" : v)} tick={{ fill: "rgba(255,255,255,0.45)", fontSize: 11 }} tickLine={false} axisLine={false} width={42} />
+                  <Tooltip formatter={v => epFmt(v)} labelFormatter={l => "Année " + l} contentStyle={{ background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, color: "#fff", fontSize: 12 }} />
+                  <Area type="monotone" dataKey="solde" name="Solde" stroke={EP_GOLD} fill="url(#evGold)" strokeWidth={2.5} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div style={{ maxHeight: 300, overflow: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
+                <thead>
+                  <tr style={{ color: "rgba(255,255,255,0.5)" }}>
+                    <th style={{ textAlign: "left", padding: "6px 8px", position: "sticky", top: 0, background: "#161616" }}>Année</th>
+                    <th style={{ textAlign: "right", padding: "6px 8px", position: "sticky", top: 0, background: "#161616" }}>Retraits</th>
+                    <th style={{ textAlign: "right", padding: "6px 8px", position: "sticky", top: 0, background: "#161616" }}>Intérêts</th>
+                    <th style={{ textAlign: "right", padding: "6px 8px", position: "sticky", top: 0, background: "#161616" }}>Solde</th>
+                  </tr>
+                </thead>
+                <tbody style={{ fontFamily: "ui-monospace, monospace" }}>
+                  {res.rows.map(r => (
+                    <tr key={r.annee} style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                      <td style={{ textAlign: "left", padding: "5px 8px", color: "rgba(255,255,255,0.75)" }}>{r.annee}</td>
+                      <td style={{ textAlign: "right", padding: "5px 8px", color: "rgba(255,255,255,0.6)" }}>{epNum(r.retrait)}</td>
+                      <td style={{ textAlign: "right", padding: "5px 8px", color: "rgba(255,255,255,0.6)" }}>{epNum(r.interets)}</td>
+                      <td style={{ textAlign: "right", padding: "5px 8px", color: EP_GOLD }}>{epNum(r.solde)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 12 }}>Calcul natif · retrait en début de période, croissance sur le solde restant. {isNonReg && imposable ? "Rendement net d'impôt." : "À l'abri de l'impôt (REER/CELI)."}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Calculators() {
   const [section, setSection] = useState("local"); // "local" | "externe"
   const [activeTool, setActiveTool] = useState("impot");
@@ -709,7 +930,7 @@ export default function Calculators() {
               )}
               </div>
 
-                {current.native === "epargne" ? <CalcEpargne /> : current.native === "emprunt" ? <CalcEmprunt /> : current.native === "inflation" ? <CalcInflation /> : (
+                {current.native === "epargne" ? <CalcEpargne /> : current.native === "emprunt" ? <CalcEmprunt /> : current.native === "inflation" ? <CalcInflation /> : current.native === "revenus" ? <CalcRevenus /> : (
                 <div style={{ background: "#efe9df", borderRadius: 14, padding: "12px 12px 6px", border: "1px solid rgba(201,160,99,0.35)" }}>
                   <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "#7d6845", margin: "0 0 10px 4px" }}>Outil de calcul externe — affichage clair</p>
                   <iframe src={current.url} title={current.label} width="100%" frameBorder="0" scrolling="no" className="block w-full" style={{ height: "2200px", borderRadius: 12, background: "#fff" }} />
