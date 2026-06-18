@@ -110,7 +110,7 @@ export default function RetirementReport({ profiles }) {
 
   const {
     // NIF fixe
-    capitalNIF, nifResult,
+    capitalNIF: capitalNIFCalc, nifResult,
     // Progression
     capitalProjecte, cotSupp, progression,
     // Contexte
@@ -124,6 +124,8 @@ export default function RetirementReport({ profiles }) {
 
   // Données d'épargne via source unique buildPayload
   const pl = useMemo(() => buildPayload(profiles), [profiles]);
+  // NIF affiché = source unique buildPayload (repli sur calcNIF si absent)
+  const capitalNIF = (pl && pl.kpis && Number.isFinite(pl.kpis.nif_nominal)) ? pl.kpis.nif_nominal : capitalNIFCalc;
 
   const anneesAvant = anneesAccum;
   const anneesPend  = anneesDecaisse;
