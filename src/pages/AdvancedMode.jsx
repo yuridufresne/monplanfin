@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { IQPF } from "@/lib/clientPayload";
+import { IQPF, nifMoyenne } from "@/lib/clientPayload";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
@@ -52,16 +52,15 @@ function Slider({ label, value, min, max, step, fmtFn, onChange, note }) {
 // ── Calculs retraite ──────────────────────────────────────────────────────────
 const INF_DEFAULT = 0.021;
 
-function calcNIF({ ageActuel, ageRetraite, esperanceVie, revenuDesireAuj, rendAvant, rendPend, revenuGarantiAuj, inflation }) {
+function calcNIF({ ageActuel, ageRetraite, esperanceVie, revenuDesireAuj, rendAvant, rendPend, revenuGarantiAuj, inflation, pensionAnnuelle = 0, pensionIndexee = false }) {
   const n = Math.max(1, ageRetraite - ageActuel);
   const d = Math.max(1, esperanceVie - ageRetraite);
   const inf = inflation / 100;
-  const manqueFutur = Math.max(0,
-    revenuDesireAuj * Math.pow(1 + inf, n) - revenuGarantiAuj * Math.pow(1 + inf, n)
-  );
-  const rReel = ((1 + rendPend / 100) / (1 + inf)) - 1;
-  if (rReel <= 0) return manqueFutur * d;
-  return manqueFutur * ((1 - Math.pow(1 + rReel, -d)) / rReel);
+  const cibleFutur = revenuDesireAuj * Math.pow(1 + inf, n);
+  const pensFutur = (Number(pensionAnnuelle) || 0) * (pensionIndexee ? Math.pow(1 + inf, n) : 1);
+  const garantiFutur = (Number(revenuGarantiAuj) || 0) * Math.pow(1 + inf, n) + pensFutur;
+  const manqueFutur = Math.max(0, cibleFutur - garantiFutur);
+  return nifMoyenne(manqueFutur, d, rendPend / 100, inf).nif;
 }
 
 function calcPMT({ nif, epargneActuelle, rendAvant, anneesAvant }) {
@@ -96,7 +95,7 @@ function WhatIfScenario({ params, profiles }) {
     revenuDesireAuj: localParams.revenuDesireAuj,
     rendAvant: localParams.rendAvant,
     rendPend: localParams.rendPend,
-    revenuGarantiAuj: (localParams.revenuGarantiAuj || 0) + (localParams.pensionAnnuelle || 0),
+    revenuGarantiAuj: localParams.revenuGarantiAuj, pensionAnnuelle: localParams.pensionAnnuelle, pensionIndexee: localParams.pensionIndexee,
     inflation: localParams.inflation,
   }), [localParams]);
 
@@ -120,7 +119,7 @@ function WhatIfScenario({ params, profiles }) {
   const baseNif = useMemo(() => calcNIF({
     ageActuel: params.ageActuel, ageRetraite: params.ageRetraite, esperanceVie: params.esperanceVie,
     revenuDesireAuj: params.revenuDesireAuj, rendAvant: params.rendAvant, rendPend: params.rendPend,
-    revenuGarantiAuj: (params.revenuGarantiAuj || 0) + (params.pensionAnnuelle || 0), inflation: params.inflation,
+    revenuGarantiAuj: params.revenuGarantiAuj, pensionAnnuelle: params.pensionAnnuelle, pensionIndexee: params.pensionIndexee, inflation: params.inflation,
   }), [params]);
 
   const delta = nif - baseNif;
@@ -286,6 +285,8 @@ export default function AdvancedMode() {
     let cotis = sumCotis(retraite) + sumCotis(retraiteC) || 500;
       const fpPartWI = (r) => (parseFloat(r && r.fond_pension && r.fond_pension.rente_mensuelle_estimee) || 0) * 12;
       const pensionAnnuelleWI = fpPartWI(retraite) + fpPartWI(retraiteC);
+      const pensIdxWI = (r) => { const fp = r && r.fond_pension; return fp ? (String(fp.indexation_avant_retraite || "oui").toLowerCase() !== "non") : false; };
+      const pensionIndexeeWI = pensIdxWI(retraite) || pensIdxWI(retraiteC);
 
     return {
       ageActuel,
@@ -294,6 +295,7 @@ export default function AdvancedMode() {
       revenuDesireAuj: revDesire,
       revenuGarantiAuj: Math.max(0, revGaranti - pensionAnnuelleWI),
       pensionAnnuelle: pensionAnnuelleWI,
+      pensionIndexee: pensionIndexeeWI,
       epargneActuelle: epargne,
       epargneMensActuelle: cotis,
       rendAvant: calcParams.rendAvant,
