@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { IQPF } from "@/lib/clientPayload";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
@@ -220,12 +221,12 @@ export default function AdvancedMode() {
 
   // Paramètres globaux par défaut
   const [calcParams, setCalcParams] = useState({
-    inflation: 2.1,
-    rendAvant: 7,
-    rendPend: 5,
+    inflation: IQPF.INFLATION * 100,
+    rendAvant: IQPF.REND_ACCUM * 100,
+    rendPend: IQPF.REND_DECAISSE * 100,
     tauxMarginal: 47.5,
     ageRetraite: 65,
-    esperanceVie: 88,
+    esperanceVie: IQPF.ESP_VIE,
   });
 
   // Extraction données ABF pour scénario what-if
