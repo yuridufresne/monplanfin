@@ -96,7 +96,7 @@ function WhatIfScenario({ params, profiles }) {
     revenuDesireAuj: localParams.revenuDesireAuj,
     rendAvant: localParams.rendAvant,
     rendPend: localParams.rendPend,
-    revenuGarantiAuj: localParams.revenuGarantiAuj,
+    revenuGarantiAuj: (localParams.revenuGarantiAuj || 0) + (localParams.pensionAnnuelle || 0),
     inflation: localParams.inflation,
   }), [localParams]);
 
@@ -142,6 +142,7 @@ function WhatIfScenario({ params, profiles }) {
         <Slider label="Rendement pendant retraite" min={1} max={10} step={0.25} value={localParams.rendPend} onChange={v => set("rendPend", v)} fmtFn={v => `${v} %`} />
         <Slider label="Inflation anticipée" min={0.5} max={5} step={0.1} value={localParams.inflation} onChange={v => set("inflation", v)} fmtFn={v => `${v} %`} />
         <Slider label="Revenus garantis (RRQ+SV)" min={0} max={60000} step={500} value={localParams.revenuGarantiAuj} onChange={v => set("revenuGarantiAuj", v)} fmtFn={v => `${fmt(v)}/an`} />
+        <Slider label="Pension (fonds de retraite)" min={0} max={120000} step={500} value={localParams.pensionAnnuelle || 0} onChange={v => set("pensionAnnuelle", v)} fmtFn={v => fmt(v) + "/an"} />
       </div>
 
       {/* Résultats */}
@@ -283,13 +284,16 @@ export default function AdvancedMode() {
     };
     let epargne = sumEpargne(retraite) + sumEpargne(retraiteC) || 25000;
     let cotis = sumCotis(retraite) + sumCotis(retraiteC) || 500;
+      const fpPartWI = (r) => (parseFloat(r && r.fond_pension && r.fond_pension.rente_mensuelle_estimee) || 0) * 12;
+      const pensionAnnuelleWI = fpPartWI(retraite) + fpPartWI(retraiteC);
 
     return {
       ageActuel,
       ageRetraite: parseInt(retraite.age_retraite) || calcParams.ageRetraite,
       esperanceVie: parseInt(retraite.esperance_vie) || calcParams.esperanceVie,
       revenuDesireAuj: revDesire,
-      revenuGarantiAuj: revGaranti,
+      revenuGarantiAuj: Math.max(0, revGaranti - pensionAnnuelleWI),
+      pensionAnnuelle: pensionAnnuelleWI,
       epargneActuelle: epargne,
       epargneMensActuelle: cotis,
       rendAvant: calcParams.rendAvant,
