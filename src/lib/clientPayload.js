@@ -205,6 +205,17 @@ export function lireCibleRetraite(ret, brutAnnuelFoyer) {
   return { cibleAnnuelle, taux, tauxEffectif };
 }
 
+// ===== FORMULE NIF UNIQUE (partagée par buildPayload ET calcNIF) =====
+export function nifMoyenne(manqueFutur, anneesDecaisse, rendementDecaissement, inflation, tauxRetrait) {
+  const tr = (tauxRetrait === undefined || tauxRetrait === null) ? 0.04 : tauxRetrait;
+  const rReel = (1 + rendementDecaissement) / (1 + inflation) - 1;
+  const nif_4pct = manqueFutur / tr;
+  const nif_rente = rReel > 0.001
+    ? manqueFutur * ((1 - Math.pow(1 + rReel, -anneesDecaisse)) / rReel)
+    : manqueFutur * anneesDecaisse;
+  return { nif: (nif_4pct + nif_rente) / 2, nif_4pct, nif_rente };
+}
+
 export function buildPayload(profiles = [], opts = {}) {
   const REND_ACCUM_EFF = (opts && typeof opts.rendAccum === "number") ? opts.rendAccum : IQPF.REND_ACCUM;
   const dict = {};
@@ -304,12 +315,7 @@ export function buildPayload(profiles = [], opts = {}) {
   const manqueFutur    = Math.max(0, cibleFuture - garantisFuturs);
   const manque         = Math.max(0, cibleAnnuelle - garantisTotal);
 
-  const rReel = ((1 + IQPF.REND_DECAISSE) / (1 + IQPF.INFLATION)) - 1;
-  const nif_4pct  = manqueFutur / 0.04;
-  const nif_rente = rReel > 0.001
-    ? manqueFutur * ((1 - Math.pow(1 + rReel, -nRetrait)) / rReel)
-    : manqueFutur * nRetrait;
-  const nif = Math.round((nif_4pct + nif_rente) / 2);
+  const nif = Math.round(nifMoyenne(manqueFutur, nRetrait, IQPF.REND_DECAISSE, IQPF.INFLATION).nif);
 
   const capA = fv(pA.soldeReer + pA.soldeCeli, pA.cotReer + pA.cotCeli, REND_ACCUM_EFF, nA);
   const capB = pB ? fv(pB.soldeReer + pB.soldeCeli, pB.cotReer + pB.cotCeli, REND_ACCUM_EFF, nB) : 0;
