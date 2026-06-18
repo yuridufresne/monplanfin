@@ -120,7 +120,7 @@ function WhatIfScenario({ params, profiles }) {
   const baseNif = useMemo(() => calcNIF({
     ageActuel: params.ageActuel, ageRetraite: params.ageRetraite, esperanceVie: params.esperanceVie,
     revenuDesireAuj: params.revenuDesireAuj, rendAvant: params.rendAvant, rendPend: params.rendPend,
-    revenuGarantiAuj: params.revenuGarantiAuj, inflation: params.inflation,
+    revenuGarantiAuj: (params.revenuGarantiAuj || 0) + (params.pensionAnnuelle || 0), inflation: params.inflation,
   }), [params]);
 
   const delta = nif - baseNif;
@@ -290,7 +290,7 @@ export default function AdvancedMode() {
     return {
       ageActuel,
       ageRetraite: parseInt(retraite.age_retraite) || calcParams.ageRetraite,
-      esperanceVie: parseInt(retraite.esperance_vie) || calcParams.esperanceVie,
+      esperanceVie: calcParams.esperanceVie,
       revenuDesireAuj: revDesire,
       revenuGarantiAuj: Math.max(0, revGaranti - pensionAnnuelleWI),
       pensionAnnuelle: pensionAnnuelleWI,
