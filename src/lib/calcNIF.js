@@ -17,7 +17,7 @@
  */
 
 import { getRevenusGarantisABF, indexerRevenusGarantis, PRESTATIONS_2026 } from '@/lib/prestationsGouvernementales';
-import { buildPayload } from '@/lib/clientPayload';
+import { buildPayload, nifMoyenne } from '@/lib/clientPayload';
 
 export const RENDEMENT_ACCUM   = 0.07;
 export const RENDEMENT_DECAISS = 0.05;
@@ -70,15 +70,8 @@ export function calcNIF({
 
   // ── NIF en dollars futurs nominaux via taux nominal
   // méthode 1 — règle des 4% (taux de retrait nominal)
-  const nif_4pct = manqueFutur / tauxRetrait;
-
-  // méthode 2 — rente viagère actuarielle (taux nominal)
-  const nif_rente = rendementDecaissement > 0.005
-    ? manqueFutur * ((1 - Math.pow(1 + rendementDecaissement, -anneesDecaisse)) / rendementDecaissement)
-    : manqueFutur * anneesDecaisse;
-
-  // NIF final = moyenne des deux méthodes — en DOLLARS FUTURS NOMINAUX
-  const nif = (nif_4pct + nif_rente) / 2;
+  // NIF via la formule UNIQUE partagée (clientPayload.nifMoyenne) — même chiffre que le dashboard
+  const { nif, nif_4pct, nif_rente } = nifMoyenne(manqueFutur, anneesDecaisse, rendementDecaissement, inflation, tauxRetrait);
 
   return {
     // ── NIF — en dollars futurs nominaux ──
