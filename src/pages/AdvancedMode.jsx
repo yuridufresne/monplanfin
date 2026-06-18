@@ -290,7 +290,7 @@ export default function AdvancedMode() {
     return {
       ageActuel,
       ageRetraite: parseInt(retraite.age_retraite) || calcParams.ageRetraite,
-      esperanceVie: calcParams.esperanceVie,
+      esperanceVie: parseInt(retraite.esperance_vie) || calcParams.esperanceVie,
       revenuDesireAuj: revDesire,
       revenuGarantiAuj: Math.max(0, revGaranti - pensionAnnuelleWI),
       pensionAnnuelle: pensionAnnuelleWI,
