@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { IQPF, nifMoyenne, buildPayload } from "@/lib/clientPayload";
+import { IQPF, nifMoyenne, buildPayload, facteurRRQ, facteurPSV } from "@/lib/clientPayload";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
@@ -87,6 +87,7 @@ function WhatIfScenario({ params, profiles }) {
   const [localParams, setLocalParams] = useState({ ...params });
 
   const set = (key, val) => setLocalParams(p => ({ ...p, [key]: val }));
+  const garantiRRQSV = (p) => (Number(p.rrqBase65) || 0) * facteurRRQ(p.ageDebutRRQ) + (Number(p.svBase65) || 0) * facteurPSV(p.ageDebutPSV) + (Number(p.srgFoyer) || 0);
 
   const nif = useMemo(() => calcNIF({
     ageActuel: localParams.ageActuel,
@@ -95,7 +96,7 @@ function WhatIfScenario({ params, profiles }) {
     revenuDesireAuj: localParams.revenuDesireAuj,
     rendAvant: localParams.rendAvant,
     rendPend: localParams.rendPend,
-    revenuGarantiAuj: localParams.revenuGarantiAuj, pensionAnnuelle: localParams.pensionAnnuelle, pensionIndexee: localParams.pensionIndexee,
+    revenuGarantiAuj: garantiRRQSV(localParams), pensionAnnuelle: localParams.pensionAnnuelle, pensionIndexee: localParams.pensionIndexee,
     inflation: localParams.inflation,
   }), [localParams]);
 
@@ -119,7 +120,7 @@ function WhatIfScenario({ params, profiles }) {
   const baseNif = useMemo(() => calcNIF({
     ageActuel: params.ageActuel, ageRetraite: params.ageRetraite, esperanceVie: params.esperanceVie,
     revenuDesireAuj: params.revenuDesireAuj, rendAvant: params.rendAvant, rendPend: params.rendPend,
-    revenuGarantiAuj: params.revenuGarantiAuj, pensionAnnuelle: params.pensionAnnuelle, pensionIndexee: params.pensionIndexee, inflation: params.inflation,
+    revenuGarantiAuj: garantiRRQSV(params), pensionAnnuelle: params.pensionAnnuelle, pensionIndexee: params.pensionIndexee, inflation: params.inflation,
   }), [params]);
 
   const delta = nif - baseNif;
@@ -141,7 +142,8 @@ function WhatIfScenario({ params, profiles }) {
         <Slider label="Rendement avant retraite" min={2} max={14} step={0.25} value={localParams.rendAvant} onChange={v => set("rendAvant", v)} fmtFn={v => `${v} %`} />
         <Slider label="Rendement pendant retraite" min={1} max={10} step={0.25} value={localParams.rendPend} onChange={v => set("rendPend", v)} fmtFn={v => `${v} %`} />
         <Slider label="Inflation anticipée" min={0.5} max={5} step={0.1} value={localParams.inflation} onChange={v => set("inflation", v)} fmtFn={v => `${v} %`} />
-        <Slider label="Revenus garantis (RRQ+SV)" min={0} max={60000} step={500} value={localParams.revenuGarantiAuj} onChange={v => set("revenuGarantiAuj", v)} fmtFn={v => `${fmt(v)}/an`} />
+        <Slider label="Âge de début du RRQ" min={60} max={72} step={1} value={localParams.ageDebutRRQ} onChange={v => set("ageDebutRRQ", v)} fmtFn={v => v + " ans"} />
+        <Slider label="Âge de début de la PSV" min={65} max={70} step={1} value={localParams.ageDebutPSV} onChange={v => set("ageDebutPSV", v)} fmtFn={v => v + " ans"} />
         <Slider label="Pension (fonds de retraite)" min={0} max={120000} step={500} value={localParams.pensionAnnuelle || 0} onChange={v => set("pensionAnnuelle", v)} fmtFn={v => fmt(v) + "/an"} />
       </div>
 
@@ -291,6 +293,10 @@ export default function AdvancedMode() {
       const plWI = buildPayload(profiles);
       const rgWI = (plWI && plWI.revenus_garantis) || {};
       const objWI = (plWI && plWI.objectifs) || {};
+      const ageRRQ_ABF = parseInt(retraite.age_debut_rrq) || parseInt(retraite.age_retraite) || 65;
+      const agePSV_ABF = Math.max(65, parseInt(retraite.age_debut_psv) || parseInt(retraite.age_retraite) || 65);
+      const rrqBase65WI = (rgWI.rrq_foyer || 0) / facteurRRQ(ageRRQ_ABF);
+      const svBase65WI = (rgWI.sv_foyer || 0) / facteurPSV(agePSV_ABF);
 
     return {
       ageActuel,
@@ -298,6 +304,11 @@ export default function AdvancedMode() {
       esperanceVie: parseInt(retraite.esperance_vie) || calcParams.esperanceVie,
       revenuDesireAuj: Math.round(objWI.cible_annuelle || revDesire),
       revenuGarantiAuj: Math.round((rgWI.rrq_foyer || 0) + (rgWI.sv_foyer || 0) + (rgWI.srg_foyer || 0)),
+      rrqBase65: Math.round(rrqBase65WI),
+      svBase65: Math.round(svBase65WI),
+      srgFoyer: Math.round(rgWI.srg_foyer || 0),
+      ageDebutRRQ: ageRRQ_ABF,
+      ageDebutPSV: agePSV_ABF,
       pensionAnnuelle: Math.round(rgWI.pension_foyer || 0),
       pensionIndexee: pensionIndexeeWI,
       epargneActuelle: epargne,
