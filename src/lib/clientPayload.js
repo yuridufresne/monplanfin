@@ -40,6 +40,19 @@ export function adjPSV(psvBase, ageDebut) {
   return Math.round(psvBase * (1 + moisApres * 0.006));
 }
 
+// Facteurs d'ajustement RRQ / PSV selon l'âge de début (source unique)
+export function facteurRRQ(ageDebut) {
+  const a = Number(ageDebut) || 65;
+  if (a < 65) return Math.max(0.64, 1 - Math.min((65 - a) * 12, 60) * IQPF.RRQ_RED_AVANT);
+  if (a > 65) return 1 + Math.min((a - 65) * 12, 84) * IQPF.RRQ_BONIF_APRES;
+  return 1;
+}
+export function facteurPSV(ageDebut) {
+  const a = Number(ageDebut) || 65;
+  if (a <= 65) return 1;
+  return 1 + Math.min((a - 65) * 12, 60) * IQPF.PSV_REPORT_MOIS;
+}
+
 function unwrap(raw) {
   if (!raw || typeof raw !== 'object') return {};
   if (Array.isArray(raw)) return {};
