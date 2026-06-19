@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { IQPF, nifMoyenne } from "@/lib/clientPayload";
+import { IQPF, nifMoyenne, buildPayload } from "@/lib/clientPayload";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
@@ -288,14 +288,17 @@ export default function AdvancedMode() {
       const pensionAnnuelleWI = fpPartWI(retraite) + fpPartWI(retraiteC);
       const pensIdxWI = (r) => { const fp = r && r.fond_pension; return fp ? (String(fp.indexation_avant_retraite || "oui").toLowerCase() !== "non") : false; };
       const pensionIndexeeWI = pensIdxWI(retraite) || pensIdxWI(retraiteC);
+      const plWI = buildPayload(profiles);
+      const rgWI = (plWI && plWI.revenus_garantis) || {};
+      const objWI = (plWI && plWI.objectifs) || {};
 
     return {
       ageActuel,
       ageRetraite: parseInt(retraite.age_retraite) || calcParams.ageRetraite,
       esperanceVie: parseInt(retraite.esperance_vie) || calcParams.esperanceVie,
-      revenuDesireAuj: revDesire,
-      revenuGarantiAuj: Math.max(0, revGaranti - pensionAnnuelleWI),
-      pensionAnnuelle: pensionAnnuelleWI,
+      revenuDesireAuj: Math.round(objWI.cible_annuelle || revDesire),
+      revenuGarantiAuj: Math.round((rgWI.rrq_foyer || 0) + (rgWI.sv_foyer || 0) + (rgWI.srg_foyer || 0)),
+      pensionAnnuelle: Math.round(rgWI.pension_foyer || 0),
       pensionIndexee: pensionIndexeeWI,
       epargneActuelle: epargne,
       epargneMensActuelle: cotis,
