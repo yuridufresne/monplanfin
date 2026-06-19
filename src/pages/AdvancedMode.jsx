@@ -132,7 +132,7 @@ function WhatIfScenario({ params, profiles }) {
         <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: GOLD_DIM, marginBottom: 16 }}>
           Paramètres du scénario
         </p>
-        <button onClick={() => setLocalParams(params)} style={{ marginBottom: 16, display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 9, fontSize: 12.5, fontWeight: 600, cursor: "pointer", border: "1px solid rgba(201,160,99,0.4)", background: "rgba(201,160,99,0.12)", color: "#C9A063" }}>↺ Réinitialiser le scénario</button>
+        <button onClick={() => setLocalParams(params)} style={{ marginBottom: 16, display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 9, fontSize: 12.5, fontWeight: 600, cursor: "pointer", border: "1px solid rgba(201,160,99,0.4)", background: "rgba(201,160,99,0.12)", color: "#C9A063" }}>↺ Réinitialiser (valeurs du dossier)</button>
         <Slider label="Âge de retraite" min={50} max={75} step={1} value={localParams.ageRetraite} onChange={v => set("ageRetraite", v)} fmtFn={v => `${v} ans`} />
         <Slider label="Espérance de vie" min={75} max={100} step={1} value={localParams.esperanceVie} onChange={v => set("esperanceVie", v)} fmtFn={v => `${v} ans`} />
         <Slider label="Revenu désiré à la retraite" min={20000} max={200000} step={1000} value={localParams.revenuDesireAuj} onChange={v => set("revenuDesireAuj", v)} fmtFn={v => `${fmt(v)}/an`} />
