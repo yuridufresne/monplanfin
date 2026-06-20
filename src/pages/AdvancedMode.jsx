@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, TrendingUp, Sliders, GitBranch } from "lucide-react";
-import DebtSimulator from "@/components/dashboard/DebtSimulator";
 import ReerLevierSimulator from "@/components/dashboard/ReerLevierSimulator";
 import RetirementReport from "@/components/dashboard/RetirementReport";
 import NIFCalculator from "@/components/dashboard/NIFCalculator";
@@ -323,7 +322,6 @@ export default function AdvancedMode() {
     { key: "nif",          label: "Calculatrice NIF",           icon: <TrendingUp style={{ width: 14, height: 14 }} /> },
     { key: "scenarios", label: "Scénarios What-If",     icon: <GitBranch  style={{ width: 14, height: 14 }} /> },
     { key: "retraite",  label: "Rapport retraite",      icon: <TrendingUp style={{ width: 14, height: 14 }} /> },
-    { key: "dettes",    label: "Optimisation dettes",   icon: <TrendingUp style={{ width: 14, height: 14 }} /> },
     { key: "reer",      label: "Prêt REER levier",      icon: <TrendingUp style={{ width: 14, height: 14 }} /> },
   ];
 
@@ -408,10 +406,6 @@ export default function AdvancedMode() {
             <RetirementReport profiles={profiles} />
           )}
 
-          {/* Dettes */}
-          {activeTab === "dettes" && (
-            <DebtSimulator debts={debts} />
-          )}
 
           {/* REER levier */}
           {activeTab === "reer" && (
