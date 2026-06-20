@@ -213,6 +213,87 @@ function GlobalParams({ calcParams, setCalcParams }) {
 }
 
 // ── Page principale ───────────────────────────────────────────────────────────
+function PierreTroisCoups() {
+  const GREEN = "#5BB98B", RED = "#E0625C";
+  const [pretSolde, setPretSolde] = useState(15000);
+  const [pretTaux, setPretTaux] = useState(6);
+  const [pretDuree, setPretDuree] = useState(5);
+  const [tmi, setTmi] = useState(38);
+  const [carteSolde, setCarteSolde] = useState(5000);
+  const [carteTaux, setCarteTaux] = useState(20);
+  const [cartePaiement, setCartePaiement] = useState(250);
+
+  const calc = useMemo(() => {
+    const r = pretTaux / 100 / 12, n = Math.max(1, pretDuree * 12);
+    const paiementPret = r > 0 ? (pretSolde * r) / (1 - Math.pow(1 + r, -n)) : pretSolde / n;
+    const retourImpot = pretSolde * (tmi / 100);
+    const interetsAn = carteSolde * (carteTaux / 100);
+    const surplus = retourImpot - carteSolde;
+    return { paiementPret, retourImpot, interetsAn, surplus };
+  }, [pretSolde, pretTaux, pretDuree, tmi, carteSolde, carteTaux]);
+
+  const pct = (v) => v + " %";
+  const ans = (v) => v + (v > 1 ? " ans" : " an");
+  const row = (label, value, color) => (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "10px 0", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+      <span style={{ fontSize: 13, color: "rgba(255,255,255,0.6)" }}>{label}</span>
+      <span style={{ fontSize: 18, fontWeight: 700, color: color || "#fff", fontFamily: "var(--font-mono)" }}>{value}</span>
+    </div>
+  );
+
+  return (
+    <div style={{ ...glass, borderRadius: 24, padding: "2rem" }}>
+      <div style={{ marginBottom: 24 }}>
+        <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: GOLD_DIM, marginBottom: 4 }}>Bonne dette · Mauvaise dette</p>
+        <h2 style={{ fontFamily: "var(--font-urbanist)", fontSize: 20, fontWeight: 700, color: "#fff" }}>Une pierre, 3 coups</h2>
+        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginTop: 4 }}>Un prêt REER pour éliminer une carte de crédit : le retour d'impôt rembourse la mauvaise dette, et le même budget mensuel sert ensuite à payer son propre REER.</p>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+        <div style={{ ...glass, borderRadius: 18, padding: "1.5rem", border: "1px solid rgba(91,185,139,0.28)" }}>
+          <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: GREEN, padding: "3px 9px", borderRadius: 6, background: "rgba(91,185,139,0.12)" }}>Bonne dette</span>
+          <h3 style={{ fontFamily: "var(--font-urbanist)", fontSize: 22, fontWeight: 800, color: "#fff", margin: "12px 0 18px" }}>Prêt REER</h3>
+          <Slider label="Solde du prêt" value={pretSolde} min={1000} max={50000} step={500} fmtFn={fmt} onChange={setPretSolde} />
+          <Slider label="Taux d'intérêt" value={pretTaux} min={1} max={15} step={0.5} fmtFn={pct} onChange={setPretTaux} />
+          <Slider label="Durée" value={pretDuree} min={1} max={10} step={1} fmtFn={ans} onChange={setPretDuree} />
+          <Slider label="Taux marginal d'impôt" value={tmi} min={15} max={53} step={1} fmtFn={pct} onChange={setTmi} />
+          <div style={{ marginTop: 8 }}>
+            {row("Paiement mensuel", fmt(calc.paiementPret), "#fff")}
+            {row("Retour d'impôt estimé", fmt(calc.retourImpot), GREEN)}
+          </div>
+        </div>
+        <div style={{ ...glass, borderRadius: 18, padding: "1.5rem", border: "1px solid rgba(224,98,92,0.28)" }}>
+          <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: RED, padding: "3px 9px", borderRadius: 6, background: "rgba(224,98,92,0.12)" }}>Mauvaise dette</span>
+          <h3 style={{ fontFamily: "var(--font-urbanist)", fontSize: 22, fontWeight: 800, color: "#fff", margin: "12px 0 18px" }}>Carte de crédit</h3>
+          <Slider label="Solde de la carte" value={carteSolde} min={500} max={30000} step={250} fmtFn={fmt} onChange={setCarteSolde} />
+          <Slider label="Taux d'intérêt" value={carteTaux} min={5} max={30} step={1} fmtFn={pct} onChange={setCarteTaux} />
+          <Slider label="Paiement minimum / mois" value={cartePaiement} min={25} max={2000} step={25} fmtFn={fmt} onChange={setCartePaiement} />
+          <div style={{ marginTop: 8 }}>
+            {row("Intérêts payés / année", fmt(calc.interetsAn), RED)}
+            {row("Avantage fiscal", "Aucun", "rgba(255,255,255,0.5)")}
+          </div>
+        </div>
+      </div>
+      <div style={{ ...glass, borderRadius: 18, padding: "1.5rem", marginTop: 20, background: "rgba(201,160,99,0.07)", border: "1px solid rgba(201,160,99,0.25)" }}>
+        <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: GOLD, marginBottom: 14 }}>Le résultat — une pierre, 3 coups</p>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 18 }}>
+          <div>
+            <p style={{ fontSize: 13, color: RED, fontWeight: 700, marginBottom: 5 }}>1 · Dette éliminée</p>
+            <p style={{ fontSize: 12.5, color: "rgba(255,255,255,0.6)", lineHeight: 1.5 }}>{calc.surplus >= 0 ? "Le retour d'impôt de " + fmt(calc.retourImpot) + " rembourse la carte de " + fmt(carteSolde) + (calc.surplus > 0 ? " (surplus de " + fmt(calc.surplus) + ")." : ".") : "Le retour d'impôt de " + fmt(calc.retourImpot) + " réduit la carte ; il reste " + fmt(-calc.surplus) + " à éponger."}</p>
+          </div>
+          <div>
+            <p style={{ fontSize: 13, color: GREEN, fontWeight: 700, marginBottom: 5 }}>2 · Épargne bâtie</p>
+            <p style={{ fontSize: 12.5, color: "rgba(255,255,255,0.6)", lineHeight: 1.5 }}>{fmt(pretSolde)} travaillent désormais dans le REER, à l'abri de l'impôt.</p>
+          </div>
+          <div>
+            <p style={{ fontSize: 13, color: GOLD, fontWeight: 700, marginBottom: 5 }}>3 · Même budget</p>
+            <p style={{ fontSize: 12.5, color: "rgba(255,255,255,0.6)", lineHeight: 1.5 }}>Le {fmt(cartePaiement)}/mois de la carte sert maintenant à payer le prêt REER ({fmt(calc.paiementPret)}/mois).</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AdvancedMode() {
   const { data: profiles = [] } = useQuery({ queryKey: ["financialProfiles"], queryFn: () => base44.entities.FinancialProfile.list() });
   const { data: debts = [] } = useQuery({ queryKey: ["debts"], queryFn: () => base44.entities.Debt.list() });
@@ -319,6 +400,7 @@ export default function AdvancedMode() {
   const tabs = [
     { key: "scenarios", label: "Scénarios What-If",     icon: <GitBranch  style={{ width: 14, height: 14 }} /> },
     { key: "reer",      label: "Prêt REER levier",      icon: <TrendingUp style={{ width: 14, height: 14 }} /> },
+    { key: "pierre", label: "Une pierre, 3 coups", icon: <Sliders style={{ width: 14, height: 14 }} /> },
   ];
 
   return (
@@ -392,6 +474,9 @@ export default function AdvancedMode() {
           {activeTab === "reer" && (
             <ReerLevierSimulator />
           )}
+
+          {/* Une pierre, 3 coups */}
+          {activeTab === "pierre" && <PierreTroisCoups />}
 
         </motion.div>
       </div>
