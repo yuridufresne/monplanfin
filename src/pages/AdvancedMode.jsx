@@ -298,7 +298,7 @@ export default function AdvancedMode() {
   const { data: profiles = [] } = useQuery({ queryKey: ["financialProfiles"], queryFn: () => base44.entities.FinancialProfile.list() });
   const { data: debts = [] } = useQuery({ queryKey: ["debts"], queryFn: () => base44.entities.Debt.list() });
 
-  const [activeTab, setActiveTab] = useState("pierre");
+  const [activeTab, setActiveTab] = useState("scenarios");
 
   // Paramètres globaux par défaut
   const [calcParams, setCalcParams] = useState({
