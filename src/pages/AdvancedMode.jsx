@@ -213,6 +213,60 @@ function GlobalParams({ calcParams, setCalcParams }) {
 }
 
 // ── Page principale ───────────────────────────────────────────────────────────
+function FlowAnim({ refund, carteSolde }) {
+  const remaining = Math.max(0, carteSolde - refund);
+  const paid = remaining === 0;
+  const surplus = refund - carteSolde;
+  const [bal, setBal] = React.useState(carteSolde);
+  const [play, setPlay] = React.useState(0);
+  const [stamped, setStamped] = React.useState(false);
+  React.useEffect(() => { setPlay((p) => p + 1); }, [refund, carteSolde]);
+  React.useEffect(() => {
+    setStamped(false);
+    let raf, start = null;
+    const from = carteSolde, to = remaining, dur = 1500;
+    const begin = (ts) => {
+      if (start === null) start = ts;
+      const t = Math.min((ts - start) / dur, 1);
+      setBal(Math.round((from + (to - from) * t) / 10) * 10);
+      if (t < 1) { raf = requestAnimationFrame(begin); }
+      else { setBal(to); if (paid) setTimeout(() => setStamped(true), 150); }
+    };
+    const tm = setTimeout(() => { raf = requestAnimationFrame(begin); }, 600);
+    return () => { clearTimeout(tm); if (raf) cancelAnimationFrame(raf); };
+  }, [play]);
+  return (
+    <div style={{ ...glass, borderRadius: 18, padding: "1.25rem 1.5rem", marginBottom: 20 }}>
+      <style>{"@keyframes ptcFly{0%{left:0;opacity:0}12%{opacity:1}88%{opacity:1}100%{left:100%;opacity:0}}"}</style>
+      <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: GOLD_DIM, marginBottom: 14 }}>Le retour d'impôt efface la carte</p>
+      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        <div style={{ flex: "0 0 150px", textAlign: "center" }}>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginBottom: 8 }}>Retour d'impôt REER</div>
+          <div style={{ background: "rgba(91,185,139,0.12)", border: "1px solid rgba(91,185,139,0.4)", borderRadius: 12, padding: "12px 8px", fontFamily: "var(--font-mono)", fontSize: 22, fontWeight: 700, color: "#5BB98B" }}>{fmt(refund)}</div>
+        </div>
+        <div key={play} style={{ flex: 1, position: "relative", height: 54 }}>
+          <div style={{ position: "absolute", top: "50%", left: 0, right: 0, height: 2, background: "rgba(255,255,255,0.1)" }} />
+          {[0, 1, 2, 3].map((k) => (
+            <div key={k} style={{ position: "absolute", top: "50%", marginTop: -7, left: 0, width: 14, height: 14, borderRadius: "50%", background: "#5BB98B", opacity: 0, animation: "ptcFly 1.1s ease-in forwards", animationDelay: (0.3 + k * 0.22) + "s" }} />
+          ))}
+        </div>
+        <div style={{ flex: "0 0 160px", textAlign: "center" }}>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginBottom: 8 }}>Carte de crédit</div>
+          <div style={{ position: "relative", overflow: "hidden", background: "#1C2029", border: "1px solid rgba(224,98,92,0.35)", borderRadius: 12, padding: "12px 8px" }}>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 22, fontWeight: 700, color: "#E0625C" }}>{fmt(bal)}</div>
+            {stamped && (
+              <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "#1C2029", borderRadius: 12 }}>
+                <div style={{ color: "#5BB98B", fontSize: 16, fontWeight: 700 }}>✓ PAYÉE</div>
+                {surplus > 0 && <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 11, marginTop: 2 }}>surplus +{fmt(surplus)}</div>}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PierreTroisCoups() {
   const GREEN = "#5BB98B", RED = "#E0625C";
   const [pretSolde, setPretSolde] = useState(15000);
@@ -248,6 +302,7 @@ function PierreTroisCoups() {
         <h2 style={{ fontFamily: "var(--font-urbanist)", fontSize: 20, fontWeight: 700, color: "#fff" }}>Une pierre, 3 coups</h2>
         <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginTop: 4 }}>Un prêt REER pour éliminer une carte de crédit : le retour d'impôt rembourse la mauvaise dette, et le même budget mensuel sert ensuite à payer son propre REER.</p>
       </div>
+      <FlowAnim refund={calc.retourImpot} carteSolde={carteSolde} />
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
         <div style={{ ...glass, borderRadius: 18, padding: "1.5rem", border: "1px solid rgba(91,185,139,0.28)" }}>
           <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: GREEN, padding: "3px 9px", borderRadius: 6, background: "rgba(91,185,139,0.12)" }}>Bonne dette</span>
