@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowLeft, Shield } from "lucide-react";
+import { EMAIL_CONFIDENTIALITE, RPRP_NOM } from "@/lib/constants";
 
 /**
  * src/pages/Confidentialite.jsx
@@ -80,9 +81,8 @@ export default function Confidentialite() {
           </p>
           <div style={highlight}>
             <p style={{ ...paragraph, marginBottom: 4, fontSize: 12 }}><strong style={strong}>RPRP — MonPlanFin</strong></p>
-            <p style={{ ...paragraph, marginBottom: 4, fontSize: 12 }}>Nom : [À COMPLÉTER — nom du RPRP]</p>
-            <p style={{ ...paragraph, marginBottom: 4, fontSize: 12 }}>Courriel : [À COMPLÉTER — courriel dédié, ex. confidentialite@monplanfin.ca]</p>
-            <p style={{ ...paragraph, marginBottom: 0, fontSize: 12 }}>Adresse postale : [À COMPLÉTER]</p>
+            <p style={{ ...paragraph, marginBottom: 4, fontSize: 12 }}>Nom : {RPRP_NOM}</p>
+            <p style={{ ...paragraph, marginBottom: 4, fontSize: 12 }}>Courriel : {EMAIL_CONFIDENTIALITE}</p>
           </div>
         </Section>
 
