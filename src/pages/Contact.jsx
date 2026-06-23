@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { ArrowLeft, Mail, Phone, MapPin, Shield, Send, Check } from "lucide-react";
+import { EMAIL_CONTACT, EMAIL_CONFIDENTIALITE } from "@/lib/constants";
 
 /**
  * src/pages/Contact.jsx
@@ -66,9 +67,8 @@ export default function Contact() {
 
         {/* ─── Coordonnées directes ─── */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12, marginBottom: 32 }}>
-          <Coord icon={<Mail size={16} />} titre="Courriel général" valeur="[À COMPLÉTER]" sub="Réponse sous 48 h ouvrables" color="#6B8ED6" />
-          <Coord icon={<Shield size={16} />} titre="RPRP (Loi 25)" valeur="[À COMPLÉTER]" sub="Demandes de vie privée" color="#5BC4A0" />
-          <Coord icon={<Phone size={16} />} titre="Téléphone" valeur="[À COMPLÉTER]" sub="Lun-ven 9 h - 17 h" color="#C9A063" />
+          <Coord icon={<Mail size={16} />} titre="Courriel général" valeur={EMAIL_CONTACT} sub="Réponse sous 48 h ouvrables" color="#6B8ED6" />
+          <Coord icon={<Shield size={16} />} titre="RPRP (Loi 25)" valeur={EMAIL_CONFIDENTIALITE} sub="Demandes de vie privée" color="#5BC4A0" />
         </div>
 
         {/* ─── Formulaire ou confirmation ─── */}
@@ -158,20 +158,6 @@ export default function Contact() {
             </form>
           </div>
         )}
-
-        {/* ─── Section adresse ─── */}
-        <div style={{ marginTop: 32, padding: "16px 20px", borderRadius: 12, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
-          <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-            <MapPin size={18} color="rgba(255,255,255,0.4)" style={{ marginTop: 2 }} />
-            <div>
-              <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: 4 }}>Adresse postale</p>
-              <p style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", lineHeight: 1.7 }}>
-                [À COMPLÉTER — Adresse de votre bureau ou cabinet]<br/>
-                Québec, Canada
-              </p>
-            </div>
-          </div>
-        </div>
 
       </div>
     </div>
