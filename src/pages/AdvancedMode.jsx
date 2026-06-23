@@ -535,7 +535,7 @@ export default function AdvancedMode() {
       rendAvant: calcParams.rendAvant,
       rendPend: calcParams.rendPend,
       inflation: calcParams.inflation,
-      nifDashboard: Math.round((plWI.kpis && plWI.kpis.nif) || 0),
+      nifDashboard: Math.round((plWI.kpis && plWI.kpis.nif_nominal) || 0),
     };
   }, [profiles, calcParams]);
 
