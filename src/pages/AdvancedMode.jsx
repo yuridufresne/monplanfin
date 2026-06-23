@@ -87,7 +87,15 @@ function WhatIfScenario({ params, profiles }) {
   const set = (key, val) => setLocalParams(p => ({ ...p, [key]: val }));
   const garantiRRQSV = (p) => (Number(p.rrqBase65) || 0) * facteurRRQ(p.ageDebutRRQ) + (Number(p.svBase65) || 0) * facteurPSV(p.ageDebutPSV) + (Number(p.srgFoyer) || 0);
 
-  const nif = useMemo(() => calcNIF({
+  const rawBaseNif = useMemo(() => calcNIF({
+    ageActuel: params.ageActuel, ageRetraite: params.ageRetraite, esperanceVie: params.esperanceVie,
+    revenuDesireAuj: params.revenuDesireAuj, rendAvant: params.rendAvant, rendPend: params.rendPend,
+    revenuGarantiAuj: garantiRRQSV(params), pensionAnnuelle: params.pensionAnnuelle, pensionIndexee: params.pensionIndexee, inflation: params.inflation,
+  }), [params]);
+  const cal = (params.nifDashboard && rawBaseNif) ? params.nifDashboard / rawBaseNif : 1;
+  const baseNif = Math.round(params.nifDashboard || rawBaseNif);
+
+  const nif = useMemo(() => Math.round(calcNIF({
     ageActuel: localParams.ageActuel,
     ageRetraite: localParams.ageRetraite,
     esperanceVie: localParams.esperanceVie,
@@ -96,7 +104,7 @@ function WhatIfScenario({ params, profiles }) {
     rendPend: localParams.rendPend,
     revenuGarantiAuj: garantiRRQSV(localParams), pensionAnnuelle: localParams.pensionAnnuelle, pensionIndexee: localParams.pensionIndexee,
     inflation: localParams.inflation,
-  }), [localParams]);
+  }) * cal), [localParams, cal]);
 
   const pmt = useMemo(() => calcPMT({
     nif,
@@ -115,11 +123,6 @@ function WhatIfScenario({ params, profiles }) {
   const manque = Math.max(0, nif - capitalProjecte);
   const estAtteint = manque === 0;
 
-  const baseNif = useMemo(() => calcNIF({
-    ageActuel: params.ageActuel, ageRetraite: params.ageRetraite, esperanceVie: params.esperanceVie,
-    revenuDesireAuj: params.revenuDesireAuj, rendAvant: params.rendAvant, rendPend: params.rendPend,
-    revenuGarantiAuj: garantiRRQSV(params), pensionAnnuelle: params.pensionAnnuelle, pensionIndexee: params.pensionIndexee, inflation: params.inflation,
-  }), [params]);
 
   const delta = nif - baseNif;
 
@@ -532,6 +535,7 @@ export default function AdvancedMode() {
       rendAvant: calcParams.rendAvant,
       rendPend: calcParams.rendPend,
       inflation: calcParams.inflation,
+      nifDashboard: Math.round((plWI.kpis && plWI.kpis.nif) || 0),
     };
   }, [profiles, calcParams]);
 
