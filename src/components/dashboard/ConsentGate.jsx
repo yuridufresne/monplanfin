@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { Shield, Check, Lock, Eye, EyeOff } from "lucide-react";
 import { EMAIL_CONTACT, EMAIL_CONFIDENTIALITE, EXPLOITANT, RPRP_NOM } from "@/lib/constants";
 
-const CONSENT_VERSION = "2.1";
+const CONSENT_VERSION = "2.2";
 const CONSENT_TEXT_CURRENT = `CONSENTEMENT À LA COLLECTE, L'UTILISATION ET LA COMMUNICATION DE VOS RENSEIGNEMENTS PERSONNELS — MonPlanFin
 
 ═══════════════════════════════════════════════════
