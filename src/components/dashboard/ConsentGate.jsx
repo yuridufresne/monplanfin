@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Shield, Check, Lock, Eye, EyeOff } from "lucide-react";
+import { EMAIL_CONTACT, EMAIL_CONFIDENTIALITE, EXPLOITANT, RPRP_NOM } from "@/lib/constants";
 
 const CONSENT_VERSION = "2.1";
 const CONSENT_TEXT_CURRENT = `CONSENTEMENT À LA COLLECTE, L'UTILISATION ET LA COMMUNICATION DE VOS RENSEIGNEMENTS PERSONNELS — MonPlanFin
@@ -13,15 +14,14 @@ MonPlanFin (« MonPlanFin », « la Plateforme », « nous », « notre ») est 
 
 Le responsable du traitement de vos renseignements personnels au sens de la Loi sur la protection des renseignements personnels dans le secteur privé (RLRQ, c. P-39.1, communément appelée « Loi 25 ») est :
 
-Yuri Dufresne, conseiller en sécurité financière
-Cabinet : [À COMPLÉTER — nom du cabinet]
-Adresse : [À COMPLÉTER]
+${RPRP_NOM}, conseiller en sécurité financière
+Exploitant : ${EXPLOITANT}
 Site web : monplanfin.ca
-Courriel général : contact@monplanfin.ca
+Courriel général : ${EMAIL_CONTACT}
 
 Personne responsable de la protection des renseignements personnels (RPRP) :
-[À COMPLÉTER — Nom]
-Courriel : confidentialite@monplanfin.ca
+${RPRP_NOM}
+Courriel : ${EMAIL_CONFIDENTIALITE}
 
 ═══════════════════════════════════════════════════
 
@@ -147,7 +147,7 @@ b) Les professionnels partenaires à vous contacter par téléphone, courriel, m
 
 Vous pouvez en tout temps gérer vos préférences :
 - Via les liens de désabonnement dans les courriels (conformément à la LCAP / C-28)
-- En contactant confidentialite@monplanfin.ca
+- En contactant ${EMAIL_CONFIDENTIALITE}
 
 ═══════════════════════════════════════════════════
 
@@ -182,7 +182,7 @@ e) Droit de retirer votre consentement
 f) Droit d'être informé(e) de la prise de décision automatisée
 g) Droit de porter plainte auprès de la CAI
 
-Pour exercer ces droits : confidentialite@monplanfin.ca
+Pour exercer ces droits : ${EMAIL_CONFIDENTIALITE}
 Délai de réponse : 30 jours conformément à la Loi 25.
 
 ═══════════════════════════════════════════════════
@@ -246,7 +246,7 @@ Aucun droit d'utilisation, reproduction, modification, distribution ou rétro-in
 
 Certains résultats (NIF, qualification immobilière, besoin d'assurance, etc.) sont produits par calculs automatisés. Ces résultats sont INFORMATIFS UNIQUEMENT et ne constituent pas une décision finale. Toute décision réelle sera prise par un professionnel partenaire après analyse complète et personnalisée.
 
-Vous pouvez demander des explications ou contester un résultat à confidentialite@monplanfin.ca.
+Vous pouvez demander des explications ou contester un résultat à ${EMAIL_CONFIDENTIALITE}.
 
 ═══════════════════════════════════════════════════
 
@@ -260,7 +260,7 @@ MonPlanFin peut modifier les modalités à tout moment. En cas de modification s
 
 Vous pouvez retirer votre consentement à tout moment :
 a) Via les paramètres de votre compte
-b) Par courriel à confidentialite@monplanfin.ca
+b) Par courriel à ${EMAIL_CONFIDENTIALITE}
 
 La révocation prend effet dès sa réception. Les traitements antérieurs demeurent valides. Certains renseignements peuvent être conservés conformément à la section 7.
 
@@ -500,7 +500,7 @@ export default function ConsentGate({ children, userEmail, userName }) {
 
         <p style={{ marginTop: 14, fontSize: 10.5, color: "rgba(255,255,255,0.4)", textAlign: "center", lineHeight: 1.5 }}>
           <Lock size={9} style={{ display: "inline", verticalAlign: "middle", marginRight: 4 }} />
-          Conforme Loi 25 · Révocable en tout temps · confidentialite@monplanfin.ca
+          Conforme Loi 25 · Révocable en tout temps · ${EMAIL_CONFIDENTIALITE}
         </p>
       </div>
     </div>
