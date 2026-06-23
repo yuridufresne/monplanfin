@@ -443,9 +443,9 @@ export default function AdvancedMode() {
 
   // Paramètres globaux par défaut
   const [calcParams, setCalcParams] = useState({
-    inflation: IQPF.INFLATION * 100,
-    rendAvant: IQPF.REND_ACCUM * 100,
-    rendPend: IQPF.REND_DECAISSE * 100,
+    inflation: Math.round(IQPF.INFLATION * 10000) / 100,
+    rendAvant: Math.round(IQPF.REND_ACCUM * 10000) / 100,
+    rendPend: Math.round(IQPF.REND_DECAISSE * 10000) / 100,
     tauxMarginal: 47.5,
     ageRetraite: 65,
     esperanceVie: IQPF.ESP_VIE,
