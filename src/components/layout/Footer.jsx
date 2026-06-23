@@ -14,6 +14,7 @@ const links = {
   Légal: [
     { label: "Conditions d'utilisation", path: "/conditions" },
     { label: "Politique de confidentialité", path: "/confidentialite" },
+    { label: "Méthodologie & sources", path: "/methodologie" },
     { label: "Nous joindre", path: "/contact" },
   ],
 };
