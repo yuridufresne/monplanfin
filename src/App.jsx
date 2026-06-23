@@ -19,6 +19,7 @@ import ProtectionAssurance from '@/pages/ProtectionAssurance';
 import Immobilier from '@/pages/Immobilier';
 import Conditions from '@/pages/Conditions';
 import Confidentialite from '@/pages/Confidentialite';
+import Methodologie from "@/pages/Methodologie";
 import Contact from '@/pages/Contact';
 import AdminDossiers from '@/pages/AdminDossiers';
 import AdminFeedback from '@/pages/AdminFeedback';
@@ -110,6 +111,7 @@ const AuthenticatedApp = () => {
         <Route path="/immobilier" element={<Immobilier />} />
         <Route path="/conditions" element={<Conditions />} />
         <Route path="/confidentialite" element={<Confidentialite />} />
+        <Route path="/methodologie" element={<Methodologie />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/admin/dossiers" element={<AdminDossiers />} />
         <Route path="/admin/feedback" element={<AdminFeedback />} />
