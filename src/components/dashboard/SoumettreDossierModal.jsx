@@ -4,7 +4,7 @@ import { X, Check, Send, Shield, Clock, Phone, Mail, MessageSquare, Video } from
 
 /**
  * src/components/dashboard/SoumettreDossierModal.jsx
- * Modal de soumission du dossier financier au cabinet.
+ * Modal de soumission du dossier financier à MonPlanFin et au conseiller partenaire assigné.
  * Crée un LeadDossier dans Base44 avec snapshot complet du profil.
  */
 
@@ -164,7 +164,7 @@ export default function SoumettreDossierModal({ onClose, profiles, user }) {
               Merci {clientNom.split(" ")[0]} !
             </p>
             <p style={{ fontSize: 13.5, color: "rgba(255,255,255,0.6)", maxWidth: 480, margin: "0 auto 24px", lineHeight: 1.7 }}>
-              Votre dossier a été transmis. Un conseiller du cabinet va l'analyser et vous contacter dans les meilleurs délais selon votre préférence ({MOMENTS.find(m => m.id === form.meilleur_moment_contact)?.label}).
+              Votre dossier a été transmis. Un conseiller partenaire accrédité va l'analyser et vous contacter dans les meilleurs délais selon votre préférence ({MOMENTS.find(m => m.id === form.meilleur_moment_contact)?.label}).
             </p>
             <button onClick={onClose} style={{
               padding: "10px 26px", borderRadius: 10, border: "none",
@@ -298,7 +298,7 @@ export default function SoumettreDossierModal({ onClose, profiles, user }) {
                     Consentement à la transmission de mes données
                   </div>
                   <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.6)", lineHeight: 1.6 }}>
-                    En cochant cette case, je consens à ce que mon profil financier complet (revenus, dettes, patrimoine, etc.) soit transmis au cabinet et à un conseiller assigné, dans le but de me proposer des services personnalisés. Je peux retirer ce consentement en tout temps via la <a href="/contact" style={{ color: "#C9A063", textDecoration: "underline" }}>page Nous joindre</a>.
+                    En cochant cette case, je consens à ce que mon profil financier complet (revenus, dettes, patrimoine, etc.) soit transmis à MonPlanFin et au conseiller partenaire assigné, dans le but de me proposer des services personnalisés. Je peux retirer ce consentement en tout temps via la <a href="/contact" style={{ color: "#C9A063", textDecoration: "underline" }}>page Nous joindre</a>.
                   </div>
                 </div>
               </label>
