@@ -294,7 +294,7 @@ function ComparaisonAvoirNet({ carteSolde, carteTaux, pretSolde, pretTaux, pretD
       } else { reerB += M; }
       if (i % 12 === 0) data.push({ annee: i / 12, strategie: Math.round(reerA - loanA), minimum: Math.round(reerB - cardB) });
     }
-    return { data, netA: data[data.length - 1].strategie, netB: data[data.length - 1].minimum, cardInt: Math.round(cardInt), loanInt: Math.round(M * lm - pretSolde), ansCarte: monthsCard / 12 };
+    return { data, M, netA: data[data.length - 1].strategie, netB: data[data.length - 1].minimum, cardInt: Math.round(cardInt), loanInt: Math.round(M * lm - pretSolde), ansCarte: monthsCard / 12 };
   }, [carteSolde, carteTaux, pretSolde, pretTaux, pretDuree, tmi, rendement, horizon]);
   const ecart = sim.netA - sim.netB;
   const miniCard = (label, value, color, bdr) => (
@@ -305,19 +305,29 @@ function ComparaisonAvoirNet({ carteSolde, carteTaux, pretSolde, pretTaux, pretD
   );
   return (
     <div style={{ ...glass, borderRadius: 18, padding: "1.5rem", marginTop: 20 }}>
-      <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: GOLD_DIM, marginBottom: 4 }}>Comparaison sur le long terme</p>
-      <h3 style={{ fontFamily: "var(--font-urbanist)", fontSize: 18, fontWeight: 700, color: "#fff", marginBottom: 4 }}>Avoir net : stratégie vs minimum 5 %</h3>
-      <p style={{ fontSize: 12.5, color: "rgba(255,255,255,0.4)", marginBottom: 18 }}>Même budget des deux côtés. Sans stratégie : paiement minimum légal de 5 % du solde, le reste investi.</p>
+      <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: GOLD_DIM, marginBottom: 6 }}>La stratégie en vaut-elle la peine ?</p>
+      <h3 style={{ fontFamily: "var(--font-urbanist)", fontSize: 19, fontWeight: 700, color: "#fff", marginBottom: 6 }}>Deux personnes, même budget. Qui finit plus riche ?</h3>
+      <p style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginBottom: 18, lineHeight: 1.55 }}>On compare deux clients qui investissent <b style={{ color: "#fff", fontWeight: 500 }}>{fmt(sim.M)}/mois</b> — exactement le même montant. La seule différence : ce qu'ils font avec leur carte de crédit de {fmt(carteSolde)} à {carteTaux} %.</p>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 20 }}>
+        <div style={{ background: "#1C2029", border: "1px solid rgba(201,160,99,0.3)", borderRadius: 12, padding: 14 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: GOLD, marginBottom: 6 }}>Personne A — la stratégie</div>
+          <p style={{ fontSize: 12.5, color: "rgba(255,255,255,0.6)", margin: 0, lineHeight: 1.55 }}>Prend un prêt REER. Le retour d'impôt <b style={{ color: "#fff", fontWeight: 500 }}>efface la carte aujourd'hui</b>. Son budget rembourse le prêt (6 %), puis investit.</p>
+        </div>
+        <div style={{ background: "#1C2029", border: "1px solid rgba(224,98,92,0.3)", borderRadius: 12, padding: 14 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: RED, marginBottom: 6 }}>Personne B — sans stratégie</div>
+          <p style={{ fontSize: 12.5, color: "rgba(255,255,255,0.6)", margin: 0, lineHeight: 1.55 }}>Garde sa carte, paie le <b style={{ color: "#fff", fontWeight: 500 }}>minimum légal de 5 %</b>. La carte traîne {sim.ansCarte.toFixed(1)} ans à {carteTaux} %. Elle investit le reste de son budget.</p>
+        </div>
+      </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 6 }}>
         <Slider label="Rendement du REER" value={rendement} min={3} max={9} step={0.5} fmtFn={(v) => v + " %"} onChange={setRendement} />
         <Slider label="Horizon de comparaison" value={horizon} min={5} max={30} step={1} fmtFn={(v) => v + " ans"} onChange={setHorizon} />
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 16 }}>
-        {miniCard("Avoir net — Stratégie", fmt(sim.netA), GOLD, "rgba(201,160,99,0.3)")}
-        {miniCard("Avoir net — Minimum 5 %", fmt(sim.netB), RED, "rgba(224,98,92,0.3)")}
-        {miniCard("Écart en faveur", (ecart >= 0 ? "+" : "") + fmt(ecart), GREEN, "rgba(91,185,139,0.35)")}
+        {miniCard("Avoir net dans " + horizon + " ans — A", fmt(sim.netA), GOLD, "rgba(201,160,99,0.3)")}
+        {miniCard("Avoir net dans " + horizon + " ans — B", fmt(sim.netB), RED, "rgba(224,98,92,0.3)")}
+        {miniCard("Différence", "+" + fmt(ecart), GREEN, "rgba(91,185,139,0.35)")}
       </div>
-      <div style={{ height: 240, marginBottom: 12 }}>
+      <div style={{ height: 240, marginBottom: 16 }}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={sim.data} margin={{ top: 6, right: 12, left: 0, bottom: 4 }}>
             <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
@@ -325,12 +335,16 @@ function ComparaisonAvoirNet({ carteSolde, carteTaux, pretSolde, pretTaux, pretD
             <YAxis stroke="rgba(255,255,255,0.4)" tick={{ fontSize: 11 }} tickFormatter={(v) => Math.round(v / 1000) + "k"} />
             <Tooltip formatter={(v) => fmt(v)} contentStyle={{ background: "#1C2029", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, fontSize: 12 }} labelStyle={{ color: "#fff" }} labelFormatter={(l) => "Année " + l} />
             <Legend wrapperStyle={{ fontSize: 12 }} />
-            <Line type="monotone" dataKey="strategie" name="Stratégie REER" stroke={GOLD} strokeWidth={2} dot={false} />
-            <Line type="monotone" dataKey="minimum" name="Minimum 5 %" stroke={RED} strokeWidth={2} dot={false} />
+            <Line type="monotone" dataKey="strategie" name="A — Stratégie" stroke={GOLD} strokeWidth={2} dot={false} />
+            <Line type="monotone" dataKey="minimum" name="B — Minimum 5 %" stroke={RED} strokeWidth={2} dot={false} />
           </LineChart>
         </ResponsiveContainer>
       </div>
-      <p style={{ fontSize: 11.5, color: "rgba(255,255,255,0.4)", lineHeight: 1.5, margin: 0 }}>Sans stratégie, la carte met {sim.ansCarte.toFixed(1)} ans à se rembourser au minimum 5 % et coûte {fmt(sim.cardInt)} d'intérêts. La stratégie paie {fmt(sim.loanInt)} d'intérêts de prêt mais fait travailler {fmt(pretSolde)} dès le départ. (REER avant impôt au décaissement.)</p>
+      <div style={{ background: "rgba(91,185,139,0.08)", border: "1px solid rgba(91,185,139,0.28)", borderRadius: 12, padding: "14px 16px" }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: GREEN, marginBottom: 6 }}>Ce que ça veut dire</div>
+        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.75)", margin: 0, lineHeight: 1.6 }}>Pour le <b style={{ color: "#fff", fontWeight: 500 }}>même budget</b>, la stratégie laisse <b style={{ color: GREEN, fontWeight: 500 }}>{fmt(ecart)} de plus</b> après {horizon} ans. Pourquoi ? On élimine le 20 % tout de suite (au lieu de le payer {sim.ansCarte.toFixed(1)} ans, soit {fmt(sim.cardInt)} d'intérêts), et les {fmt(pretSolde)} du REER travaillent dès aujourd'hui — même après les {fmt(sim.loanInt)} d'intérêts du prêt à 6 %.</p>
+      </div>
+      <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.28)", margin: "10px 0 0", lineHeight: 1.45 }}>Avoir net = REER accumulé moins la dette qui reste. REER avant impôt au décaissement.</p>
     </div>
   );
 }
