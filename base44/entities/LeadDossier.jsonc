@@ -75,10 +75,15 @@
       "type": "string"
     },
     "notes_internes": {
-      "description": "Notes du cabinet (jamais visibles au client)",
+      "description": "Notes internes (jamais visibles au client)",
       "type": "string",
       "rls": {
         "read": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "write": {
           "user_condition": {
             "role": "admin"
           }
@@ -111,6 +116,226 @@
         "ferme_perdu"
       ],
       "type": "string"
+    },
+    "agent_assigne_courriel": {
+      "description": "Courriel de l'agent \u00e0 qui le dossier est assign\u00e9 (vide = non assign\u00e9). Utilis\u00e9 par la RLS pour donner acc\u00e8s \u00e0 l'agent.",
+      "format": "email",
+      "type": "string",
+      "rls": {
+        "write": {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "data.type_compte": "directeur"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "agent_assigne_nom": {
+      "description": "Nom de l'agent assign\u00e9 (snapshot pour affichage)",
+      "type": "string",
+      "rls": {
+        "write": {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "data.type_compte": "directeur"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "date_assignation": {
+      "description": "Horodatage de l'assignation du dossier \u00e0 l'agent",
+      "format": "date-time",
+      "type": "string",
+      "rls": {
+        "write": {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "data.type_compte": "directeur"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "assigne_par_courriel": {
+      "description": "Courriel de l'admin/directeur qui a effectu\u00e9 l'assignation (tra\u00e7abilit\u00e9)",
+      "format": "email",
+      "type": "string",
+      "rls": {
+        "write": {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "data.type_compte": "directeur"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "historique": {
+      "description": "Journal horodat\u00e9 des \u00e9v\u00e9nements du dossier : assignations, transferts, changements de statut, notes",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "assignation",
+              "transfert",
+              "statut",
+              "note"
+            ]
+          },
+          "de": {
+            "type": "string",
+            "description": "Ancienne valeur (statut ou agent)"
+          },
+          "a": {
+            "type": "string",
+            "description": "Nouvelle valeur (statut ou agent)"
+          },
+          "note": {
+            "type": "string",
+            "description": "Texte de la note (type=note)"
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "par": {
+            "type": "string",
+            "description": "Courriel de l'auteur"
+          }
+        }
+      },
+      "rls": {
+        "write": {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "data.type_compte": "agent"
+              }
+            },
+            {
+              "user_condition": {
+                "data.type_compte": "directeur"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "derniere_activite_agent": {
+      "description": "Horodatage de la derni\u00e8re action de l'agent sur ce dossier (statut ou note) \u2014 sert au calcul d'urgence 24 h",
+      "format": "date-time",
+      "type": "string",
+      "rls": {
+        "write": {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "data.type_compte": "agent"
+              }
+            },
+            {
+              "user_condition": {
+                "data.type_compte": "directeur"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "transfert_en_attente": {
+      "default": false,
+      "description": "True quand le dossier vient d'\u00eatre r\u00e9assign\u00e9 \u00e0 un autre agent ; repasse \u00e0 false \u00e0 la premi\u00e8re action du nouvel agent",
+      "type": "boolean",
+      "rls": {
+        "write": {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "data.type_compte": "agent"
+              }
+            },
+            {
+              "user_condition": {
+                "data.type_compte": "directeur"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "date_premier_contact": {
+      "description": "Horodatage du premier passage au statut contact\u00e9 (tracker)",
+      "format": "date-time",
+      "type": "string",
+      "rls": {
+        "write": {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "data.type_compte": "agent"
+              }
+            },
+            {
+              "user_condition": {
+                "data.type_compte": "directeur"
+              }
+            }
+          ]
+        }
+      }
     }
   },
   "required": [
@@ -137,6 +362,9 @@
           "user_condition": {
             "role": "admin"
           }
+        },
+        {
+          "data.agent_assigne_courriel": "{{user.email}}"
         }
       ]
     },
@@ -149,6 +377,9 @@
           "user_condition": {
             "role": "admin"
           }
+        },
+        {
+          "data.agent_assigne_courriel": "{{user.email}}"
         }
       ]
     }
