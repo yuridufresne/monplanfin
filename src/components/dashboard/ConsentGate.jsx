@@ -14,7 +14,7 @@ MonPlanFin (« MonPlanFin », « la Plateforme », « nous », « notre ») est 
 
 Le responsable du traitement de vos renseignements personnels au sens de la Loi sur la protection des renseignements personnels dans le secteur privé (RLRQ, c. P-39.1, communément appelée « Loi 25 ») est :
 
-${RPRP_NOM}, conseiller en sécurité financière
+${RPRP_NOM}
 Exploitant : ${EXPLOITANT}
 Site web : monplanfin.ca
 Courriel général : ${EMAIL_CONTACT}
