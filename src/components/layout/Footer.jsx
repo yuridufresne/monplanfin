@@ -72,7 +72,7 @@ export default function Footer() {
               <span style={{ fontFamily: "var(--font-urbanist)", fontWeight: 700, fontSize: 14, color: "#fff", letterSpacing: "-0.02em" }}>MonPlanFin</span>
             </div>
             <p style={{ fontSize: 12.5, fontWeight: 300, lineHeight: 1.7, color: "rgba(148,163,184,0.55)" }}>
-              Planification financière personnelle, conçue pour le Québec.
+              Estimation financière conçue pour le Québec.
             </p>
           </div>
 
