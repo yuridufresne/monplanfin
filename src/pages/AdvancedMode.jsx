@@ -6,6 +6,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, TrendingUp, Sliders, GitBranch } from "lucide-react";
 import ReerLevierSimulator from "@/components/dashboard/ReerLevierSimulator";
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 
 const fmt = (v) =>
   new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v || 0);
@@ -267,6 +268,73 @@ function FlowAnim({ refund, carteSolde }) {
   );
 }
 
+function ComparaisonAvoirNet({ carteSolde, carteTaux, pretSolde, pretTaux, pretDuree, tmi }) {
+  const GREEN = "#5BB98B", RED = "#E0625C";
+  const [rendement, setRendement] = React.useState(6);
+  const [horizon, setHorizon] = React.useState(20);
+  const sim = React.useMemo(() => {
+    const rm = rendement / 100 / 12, N = horizon * 12, lm = Math.max(1, pretDuree * 12), lr = pretTaux / 100 / 12, crm = carteTaux / 100 / 12;
+    const pmtfn = (P, i, n) => (i > 0 ? (P * i) / (1 - Math.pow(1 + i, -n)) : P / n);
+    const M = pmtfn(pretSolde, lr, lm);
+    const refund = pretSolde * (tmi / 100);
+    const surplus = refund - carteSolde;
+    let reerA = pretSolde + (surplus > 0 ? surplus : 0), loanA = pretSolde;
+    let reerB = 0, cardB = carteSolde, cardInt = 0, monthsCard = 0;
+    const data = [{ annee: 0, strategie: Math.round(surplus > 0 ? surplus : (refund - carteSolde)), minimum: Math.round(-carteSolde) }];
+    for (let i = 1; i <= N; i++) {
+      reerA *= (1 + rm);
+      if (i <= lm) { loanA = loanA * (1 + lr) - M; if (loanA < 0) loanA = 0; } else { reerA += M; }
+      reerB *= (1 + rm);
+      if (cardB > 0) {
+        const it = cardB * crm; cardInt += it; cardB += it;
+        const minPay = Math.max(0.05 * cardB, 10);
+        const pay = Math.min(minPay, M, cardB); cardB -= pay;
+        const left = M - pay; if (left > 0) reerB += left;
+        monthsCard = i;
+      } else { reerB += M; }
+      if (i % 12 === 0) data.push({ annee: i / 12, strategie: Math.round(reerA - loanA), minimum: Math.round(reerB - cardB) });
+    }
+    return { data, netA: data[data.length - 1].strategie, netB: data[data.length - 1].minimum, cardInt: Math.round(cardInt), loanInt: Math.round(M * lm - pretSolde), ansCarte: monthsCard / 12 };
+  }, [carteSolde, carteTaux, pretSolde, pretTaux, pretDuree, tmi, rendement, horizon]);
+  const ecart = sim.netA - sim.netB;
+  const miniCard = (label, value, color, bdr) => (
+    <div style={{ background: "#1C2029", borderRadius: 10, padding: 12, border: "1px solid " + bdr }}>
+      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>{label}</div>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: 20, fontWeight: 700, color: color }}>{value}</div>
+    </div>
+  );
+  return (
+    <div style={{ ...glass, borderRadius: 18, padding: "1.5rem", marginTop: 20 }}>
+      <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: GOLD_DIM, marginBottom: 4 }}>Comparaison sur le long terme</p>
+      <h3 style={{ fontFamily: "var(--font-urbanist)", fontSize: 18, fontWeight: 700, color: "#fff", marginBottom: 4 }}>Avoir net : stratégie vs minimum 5 %</h3>
+      <p style={{ fontSize: 12.5, color: "rgba(255,255,255,0.4)", marginBottom: 18 }}>Même budget des deux côtés. Sans stratégie : paiement minimum légal de 5 % du solde, le reste investi.</p>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 6 }}>
+        <Slider label="Rendement du REER" value={rendement} min={3} max={9} step={0.5} fmtFn={(v) => v + " %"} onChange={setRendement} />
+        <Slider label="Horizon de comparaison" value={horizon} min={5} max={30} step={1} fmtFn={(v) => v + " ans"} onChange={setHorizon} />
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 16 }}>
+        {miniCard("Avoir net — Stratégie", fmt(sim.netA), GOLD, "rgba(201,160,99,0.3)")}
+        {miniCard("Avoir net — Minimum 5 %", fmt(sim.netB), RED, "rgba(224,98,92,0.3)")}
+        {miniCard("Écart en faveur", (ecart >= 0 ? "+" : "") + fmt(ecart), GREEN, "rgba(91,185,139,0.35)")}
+      </div>
+      <div style={{ height: 240, marginBottom: 12 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={sim.data} margin={{ top: 6, right: 12, left: 0, bottom: 4 }}>
+            <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
+            <XAxis dataKey="annee" stroke="rgba(255,255,255,0.4)" tick={{ fontSize: 11 }} />
+            <YAxis stroke="rgba(255,255,255,0.4)" tick={{ fontSize: 11 }} tickFormatter={(v) => Math.round(v / 1000) + "k"} />
+            <Tooltip formatter={(v) => fmt(v)} contentStyle={{ background: "#1C2029", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, fontSize: 12 }} labelStyle={{ color: "#fff" }} labelFormatter={(l) => "Année " + l} />
+            <Legend wrapperStyle={{ fontSize: 12 }} />
+            <Line type="monotone" dataKey="strategie" name="Stratégie REER" stroke={GOLD} strokeWidth={2} dot={false} />
+            <Line type="monotone" dataKey="minimum" name="Minimum 5 %" stroke={RED} strokeWidth={2} dot={false} />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+      <p style={{ fontSize: 11.5, color: "rgba(255,255,255,0.4)", lineHeight: 1.5, margin: 0 }}>Sans stratégie, la carte met {sim.ansCarte.toFixed(1)} ans à se rembourser au minimum 5 % et coûte {fmt(sim.cardInt)} d'intérêts. La stratégie paie {fmt(sim.loanInt)} d'intérêts de prêt mais fait travailler {fmt(pretSolde)} dès le départ. (REER avant impôt au décaissement.)</p>
+    </div>
+  );
+}
+
 function PierreTroisCoups() {
   const GREEN = "#5BB98B", RED = "#E0625C";
   const [pretSolde, setPretSolde] = useState(15000);
@@ -345,6 +413,7 @@ function PierreTroisCoups() {
           </div>
         </div>
       </div>
+      <ComparaisonAvoirNet carteSolde={carteSolde} carteTaux={carteTaux} pretSolde={pretSolde} pretTaux={pretTaux} pretDuree={pretDuree} tmi={tmi} />
     </div>
   );
 }
