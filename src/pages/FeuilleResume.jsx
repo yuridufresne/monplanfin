@@ -493,9 +493,16 @@ export default function FeuilleResume() {
     return amount;
   }
 
-  const depensesMensuelles = budgetEntries
-    .filter(e => e.type === "depense")
+  // Service de la dette depuis l'ABF (hypotheque <- section immobilier, prets <- section dettes). Exclut les lignes (ABF) du budget pour eviter le double comptage.
+  const _srcHypo = (immoABF.hypotheques && immoABF.hypotheques.length) ? immoABF : dettesABF;
+  const _srcHypoConj = enCouple ? ((immoABF.conjoint && immoABF.conjoint.hypotheques && immoABF.conjoint.hypotheques.length) ? immoABF.conjoint : (dettesABF.conjoint || {})) : {};
+  const serviceDetteABF =
+    [...(_srcHypo.hypotheques || []), ...(_srcHypoConj.hypotheques || [])].reduce((s, h) => s + (parseFloat(h.paiement_mensuel) || 0), 0)
+    + [...(dettesABF.dettes || []), ...((enCouple ? (dettesABF.conjoint && dettesABF.conjoint.dettes) : []) || [])].reduce((s, d) => s + (parseFloat(d.paiement_min) || 0), 0);
+  const depensesVie = budgetEntries
+    .filter(e => e.type === "depense" && !/\(ABF\)/i.test(e.label || ""))
     .reduce((s, e) => s + toMonthly(parseFloat(e.amount) || 0, e.frequency), 0);
+  const depensesMensuelles = depensesVie + serviceDetteABF;
 
   const categoriesDepenses = Object.entries(
     budgetEntries.filter(e => e.type === "depense").reduce((acc, e) => {
