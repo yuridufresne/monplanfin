@@ -33,7 +33,7 @@ const SECTIONS = [
     title: "3. Transport et Mobilité",
     color: "#E0B44B",
     rows: [
-      { label: "Paiements véhicule (financement/loc.)", category: "transport",        type: "depense" },
+      { label: "Location de véhicule (bail seulement)", category: "transport",        type: "depense" },
       { label: "Essence ou recharge électrique",        category: "transport",        type: "depense" },
       { label: "Assurance automobile",                  category: "assurances",       type: "depense" },
       { label: "Immatriculation / permis",              category: "transport",        type: "depense" },
@@ -272,7 +272,10 @@ export default function BudgetGrid({ onClose, onSaved }) {
       const dettesProfile = profiles.find(p => p.section === "dettes");
       if (dettesProfile) {
         const d = unwrap(dettesProfile.data);
-        const hypos = [...(d.hypotheques || []), ...((d.conjoint?.hypotheques) || [])];
+        const immoProfile = profiles.find(p => p.section === 'immobilier');
+        const iD = immoProfile ? unwrap(immoProfile.data) : {};
+        const hyposSrc = (iD.hypotheques && iD.hypotheques.length) ? iD : d;
+        const hypos = [...(hyposSrc.hypotheques || []), ...((hyposSrc.conjoint?.hypotheques) || [])];
         const totalHypo = hypos.reduce((s, h) => s + (parseFloat(h.paiement_mensuel) || 0), 0);
         if (totalHypo > 0) prefill["Paiement hypothécaire principal (ABF)"] = totalHypo.toFixed(0);
 
