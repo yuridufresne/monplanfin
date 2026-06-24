@@ -251,6 +251,7 @@ export default function FeuilleResume() {
   const profil        = bySection.profil_personnel || {};
   const revenuABF     = bySection.revenu           || {};
   const dettesABF     = bySection.dettes           || {};
+  const immoABF       = bySection.immobilier      || {};
   const retraiteABF   = bySection.retraite         || {};
   const fondsABF      = bySection.fonds_urgence    || {};
   const allocationsABF= bySection.allocations      || {};
@@ -510,9 +511,10 @@ export default function FeuilleResume() {
   // ── Dettes ────────────────────────────────────────────────────────────
   // Agréger dettes du principal + conjoint
   const dettesABFConjoint = enCouple ? (dettesABF.conjoint || {}) : {};
-  const hypotheques = dettesABF.hypotheques || [];
+  const immoABFConjoint = enCouple ? (immoABF.conjoint || {}) : {};
+  const hypotheques = (immoABF.hypotheques && immoABF.hypotheques.length ? immoABF.hypotheques : (dettesABF.hypotheques || [])) || [];
   const autresDettes = dettesABF.dettes || [];
-  const hypothequesConjoint = dettesABFConjoint.hypotheques || [];
+  const hypothequesConjoint = (immoABFConjoint.hypotheques && immoABFConjoint.hypotheques.length ? immoABFConjoint.hypotheques : (dettesABFConjoint.hypotheques || [])) || [];
   const autresDettesConjoint = dettesABFConjoint.dettes || [];
   const pension = (dettesABF.a_pension === "oui" ? parseFloat(dettesABF.pension_mensuelle) || 0 : 0)
                 + (dettesABFConjoint.a_pension === "oui" ? parseFloat(dettesABFConjoint.pension_mensuelle) || 0 : 0);
