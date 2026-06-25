@@ -26,11 +26,15 @@ export function calcRevenuDisponible(profiles) {
   const impotSaisiAnnuel = (emplois) => (emplois || []).reduce((s, e) => s + (parseFloat(e.impot_saisi) || 0) * (((e.impot_freq || "mensuel") === "annuel") ? 1 : 12), 0);
   const saisiP1 = impotSaisiAnnuel(rev.emplois);
   const saisiP2 = impotSaisiAnnuel(rev.conjoint?.emplois);
+  // Autres retenues sur la paie saisies par le client (syndicat, régime de retraite, vacances retenues…)
+  const autresRetenuesAnnuel = (emplois) => (emplois || []).reduce((s, e) => s + (parseFloat(e.autres_retenues) || 0) * (((e.autres_retenues_freq || "mensuel") === "annuel") ? 1 : 12), 0);
+  const retP1 = autresRetenuesAnnuel(rev.emplois);
+  const retP2 = autresRetenuesAnnuel(rev.conjoint?.emplois);
   // Vue liquidités mensuelles : pas de déduction REER ici — l’économie d’impôt REER arrive au remboursement, pas sur la paie.
   const p1c = calcNetPersonne(brutP1, 0);
   const p2c = calcNetPersonne(brutP2, 0);
-  const p1 = { net: saisiP1 > 0 ? Math.max(brutP1 - saisiP1, 0) : p1c.net, rfnr: p1c.rfnr };
-  const p2 = { net: saisiP2 > 0 ? Math.max(brutP2 - saisiP2, 0) : p2c.net, rfnr: p2c.rfnr };
+  const p1 = { net: Math.max((saisiP1 > 0 ? Math.max(brutP1 - saisiP1, 0) : p1c.net) - retP1, 0), rfnr: p1c.rfnr };
+  const p2 = { net: Math.max((saisiP2 > 0 ? Math.max(brutP2 - saisiP2, 0) : p2c.net) - retP2, 0), rfnr: p2c.rfnr };
   const rfnrFamilial = p1.rfnr + p2.rfnr;
   const alloc = unwrap(profiles.find(p => p.section === "allocations")?.data || {});
   let allocMensuel = 0;
