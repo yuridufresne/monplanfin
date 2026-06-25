@@ -406,12 +406,13 @@ export default function Dashboard() {
   const celiSolde    = [...(comptes.celi    || []), ...(comptesConj.celi    || [])].reduce((s, c) => s + (parseFloat(c.solde) || 0), 0);
   const reee         = [...(comptes.reee    || []), ...(comptesConj.reee    || [])].reduce((s, c) => s + (parseFloat(c.solde) || 0), 0);
   const criSolde = [...(comptes.cri_lira || []), ...(comptesConj.cri_lira || [])].reduce((s, c) => s + (parseFloat(c.solde) || 0), 0);
-  const frvSolde     = [...(comptes.frv     || []), ...(comptesConj.frv     || [])].reduce((s, c) => s + (parseFloat(c.solde) || 0), 0);
   const celiappSolde = [...(comptes.celiapp || []), ...(comptesConj.celiapp || [])].reduce((s, c) => s + (parseFloat(c.solde) || 0), 0);
   const ftqSolde = [...(comptes.ftq_csn || []), ...(comptesConj.ftq_csn || [])].reduce((s, c) => s + (parseFloat(c.solde) || 0), 0);
   const cryptoSolde = [...(comptes.crypto || []), ...(comptesConj.crypto || [])].reduce((s, c) => s + (parseFloat(c.solde) || 0), 0);
   const compteNonEnrSolde = [...(comptes.compte_non_enregistre || []), ...(comptesConj.compte_non_enregistre || [])].reduce((s, c) => s + (parseFloat(c.solde) || 0), 0);
-  const totalAssets = investmentAssets + realEstateAssets + reerSolde + celiSolde + reee + criSolde + frvSolde + celiappSolde + ftqSolde + cryptoSolde + compteNonEnrSolde;
+  // Somme des comptes affiches dans la carte Placements & epargne (hors placements/immobilier)
+  const comptesSoldeTotal = reerSolde + celiSolde + reee + criSolde + celiappSolde + ftqSolde + cryptoSolde + compteNonEnrSolde;
+  const totalAssets = investmentAssets + realEstateAssets + comptesSoldeTotal;
 
   // Dettes depuis ABF (source principale) — fallback vers entité Debt
   const dettesABFConjoint = enCouple ? (dettesABF.conjoint || {}) : {};
@@ -454,10 +455,12 @@ export default function Dashboard() {
   const reerCot    = [...(comptes.reer    || []), ...(comptesConj.reer    || [])].reduce((s, c) => s + (parseFloat(c.cotisation_mensuelle) || 0), 0);
   const celiCot    = [...(comptes.celi    || []), ...(comptesConj.celi    || [])].reduce((s, c) => s + (parseFloat(c.cotisation_mensuelle) || 0), 0);
   const reee_cot   = [...(comptes.reee    || []), ...(comptesConj.reee    || [])].reduce((s, c) => s + (parseFloat(c.cotisation_mensuelle) || 0), 0);
-  const criCot     = [...(comptes.cri     || []), ...(comptesConj.cri     || [])].reduce((s, c) => s + (parseFloat(c.cotisation_mensuelle) || 0), 0);
-  const frvCot     = [...(comptes.frv     || []), ...(comptesConj.frv     || [])].reduce((s, c) => s + (parseFloat(c.cotisation_mensuelle) || 0), 0);
+  const criCot     = [...(comptes.cri_lira     || []), ...(comptesConj.cri_lira     || [])].reduce((s, c) => s + (parseFloat(c.cotisation_mensuelle) || 0), 0);
   const celiappCot = [...(comptes.celiapp || []), ...(comptesConj.celiapp || [])].reduce((s, c) => s + (parseFloat(c.cotisation_mensuelle) || 0), 0);
-  const totalCotMensuelle = reerCot + celiCot + reee_cot + criCot + frvCot + celiappCot;
+  const ftqCot     = [...(comptes.ftq_csn || []), ...(comptesConj.ftq_csn || [])].reduce((s, c) => s + (parseFloat(c.cotisation_mensuelle) || 0), 0);
+  const cryptoCot  = [...(comptes.crypto || []), ...(comptesConj.crypto || [])].reduce((s, c) => s + (parseFloat(c.cotisation_mensuelle) || 0), 0);
+  const compteNonEnrCot = [...(comptes.compte_non_enregistre || []), ...(comptesConj.compte_non_enregistre || [])].reduce((s, c) => s + (parseFloat(c.cotisation_mensuelle) || 0), 0);
+  const totalCotMensuelle = reerCot + celiCot + reee_cot + criCot + celiappCot + ftqCot + cryptoCot + compteNonEnrCot;
 
   // ── Assurances / protection ────────────────────────────────────────────────
   const assuranceABF = bySection.assurance || {};
@@ -787,8 +790,7 @@ export default function Dashboard() {
                       {reerSolde    > 0 && <Row left="REER"     right={fmt(reerSolde)}    sub={reerCot    > 0 ? `+${fmt(reerCot)}/mois`    : undefined} dot="#C9A063" />}
                       {celiSolde    > 0 && <Row left="CELI"     right={fmt(celiSolde)}    sub={celiCot    > 0 ? `+${fmt(celiCot)}/mois`    : undefined} dot="#5BC4A0" />}
                       {reee         > 0 && <Row left="REEE"     right={fmt(reee)}          sub={reee_cot   > 0 ? `+${fmt(reee_cot)}/mois · SCEE+IQEE` : "SCEE+IQEE"} dot="#A87DD3" />}
-                      {criSolde     > 0 && <Row left="CRI"      right={fmt(criSolde)}      sub={criCot     > 0 ? `+${fmt(criCot)}/mois`     : undefined} dot="#6B8ED6" />}
-                      {frvSolde     > 0 && <Row left="FRV"      right={fmt(frvSolde)}      sub={frvCot     > 0 ? `+${fmt(frvCot)}/mois`     : undefined} dot="#60A5FA" />}
+                      {criSolde     > 0 && <Row left="CRI / LIRA"      right={fmt(criSolde)}      sub={criCot     > 0 ? `+${fmt(criCot)}/mois`     : undefined} dot="#6B8ED6" />}
                       {celiappSolde > 0 && <Row left="CELIAPP"  right={fmt(celiappSolde)}  sub={celiappCot > 0 ? `+${fmt(celiappCot)}/mois` : undefined} dot="#F8A332" />}
                       {ftqSolde > 0 && <Row left="FTQ / CSN" right={fmt(ftqSolde)} dot="#E0625C" />}
                       {cryptoSolde > 0 && <Row left="Crypto" right={fmt(cryptoSolde)} dot="#F59E0B" />}
@@ -796,16 +798,16 @@ export default function Dashboard() {
                       {investments.length > 0 && (
                         <Row left={`Placements (${investments.length})`} right={fmt(investmentAssets)} dot="#EAB308" />
                       )}
-                      {reerSolde === 0 && celiSolde === 0 && reee === 0 && criSolde === 0 && frvSolde === 0 && celiappSolde === 0 && investments.length === 0 && (
+                      {comptesSoldeTotal === 0 && investments.length === 0 && (
                         <p style={{ ...MUTED, padding: "12px 0" }}>Aucun compte enregistré</p>
                       )}
-                      {(reerSolde + celiSolde + reee + criSolde + frvSolde + celiappSolde + investmentAssets) > 0 && (
+                      {(comptesSoldeTotal + investmentAssets) > 0 && (
                         <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 8, marginTop: 4, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
                           <div>
                             <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", fontWeight: 600 }}>Total</p>
                             {totalCotMensuelle > 0 && <p style={{ ...MUTED }}>{fmt(totalCotMensuelle)}/mois</p>}
                           </div>
-                          <p style={{ fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 800, color: "#5BC4A0" }}>{fmt(reerSolde + celiSolde + reee + criSolde + frvSolde + celiappSolde + investmentAssets)}</p>
+                          <p style={{ fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 800, color: "#5BC4A0" }}>{fmt(comptesSoldeTotal + investmentAssets)}</p>
                         </div>
                       )}
                     </>
