@@ -602,6 +602,25 @@ function RevenuPanel({ data, setData, ecran }) {
                         </button>
                       </div>
                     </Field>
+                    <Field
+                      label={<span>Autres retenues sur la paie ($)</span>}
+                      hint={"Retenues non comptées ailleurs : syndicat, régime de retraite, vacances retenues. (N'incluez PAS pension alimentaire ni FTQ/CSN — déjà saisis ailleurs.)"}
+                    >
+                      <div className="flex gap-2">
+                        <input type="number" value={e.autres_retenues || ""} onChange={ev => updateEmploi(i, "autres_retenues", ev.target.value)} placeholder="ex : syndicat, régime de retraite, vacances"
+                          className="w-full px-4 py-2.5 rounded-xl text-[13px] outline-none transition-all placeholder:italic placeholder:text-white/40"
+                          style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff" }} />
+                        <button type="button" onClick={() => updateEmploi(i, "autres_retenues_freq", (e.autres_retenues_freq || "mensuel") === "mensuel" ? "annuel" : "mensuel")}
+                          className="shrink-0 rounded-xl text-[11px] font-bold transition-all"
+                          style={{ width: "70px", padding: "10px 12px", textAlign: "center",
+                            ...((e.autres_retenues_freq || "mensuel") === "annuel"
+                              ? { background: "rgba(201,160,99,0.2)", color: "#C9A063", border: "1px solid rgba(201,160,99,0.35)" }
+                              : { background: "rgba(255,255,255,0.05)", color: "#94A3B8", border: "1px solid rgba(255,255,255,0.1)" })
+                          }}>
+                          {(e.autres_retenues_freq || "mensuel") === "annuel" ? "annuel" : "mensuel"}
+                        </button>
+                      </div>
+                    </Field>
                     {e.type === "autonome" && (
                       <Field label="TPS/TVQ inscrit ?" hint="Obligatoire si revenus > 30 000$/an">
                         <RadioGroup value={e.tps_tvq} onChange={v => updateEmploi(i, "tps_tvq", v)} options={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]} />
