@@ -136,3 +136,48 @@ export function calcValeurNette(profiles, { investmentsTotal = 0, debtsTotal = n
     epargneActifs, immoValeur, fondsUrgence, hypoSolde, dettesProfils,
   };
 }
+
+
+// Depenses mensuelles (SSOT) -- conversion frequence -> montant mensuel (partagee).
+export function toMensuel(amount, freq) {
+  const a = parseFloat(amount) || 0;
+  if (freq === "annuel") return a / 12;
+  if (freq === "hebdomadaire") return a * 52 / 12;
+  if (freq === "bimensuel") return a * 2;
+  return a;
+}
+
+// Paiement mensuel hypotheque : champ saisi, sinon auto-calcul (solde/taux/amortissement).
+function _paiementHypo(h) {
+  let pay = parseFloat(h.paiement_mensuel) || 0;
+  if (!pay) {
+    const solde = parseFloat(h.solde) || 0;
+    const r = (parseFloat(h.taux) || 0) / 100 / 12;
+    const n = (parseFloat(h.amortissement_restant) || 0) * 12;
+    if (solde > 0 && n > 0) pay = r > 0 ? (solde * r) / (1 - Math.pow(1 + r, -n)) : solde / n;
+  }
+  return pay;
+}
+
+// Depenses mensuelles totales (SSOT) = depenses de vie (hors impots et lignes (ABF)) + service dette.
+export function calcDepensesMensuelles(budgetEntries = [], profiles = []) {
+  const get = (sec) => unwrap((profiles || []).find(p => p && p.section === sec) && (profiles || []).find(p => p && p.section === sec).data || {});
+  const immo = get("immobilier");
+  const dettesSec = get("dettes");
+
+  const depensesVie = (budgetEntries || [])
+    .filter(e => e && e.type === "depense"
+      && !/\(ABF\)/i.test(e.label || "")
+      && !/Imp[oô]ts? \(retenues/i.test(e.label || ""))
+    .reduce((s, e) => s + toMensuel(e.amount, e.frequency), 0);
+
+  const immoB = immo.conjoint || {};
+  const dettesB = dettesSec.conjoint || {};
+  const hyposA = (immo.hypotheques && immo.hypotheques.length) ? immo.hypotheques : (dettesSec.hypotheques || []);
+  const hyposB = (immoB.hypotheques && immoB.hypotheques.length) ? immoB.hypotheques : (dettesB.hypotheques || []);
+  const serviceHypo = [...hyposA, ...hyposB].reduce((s, h) => s + _paiementHypo(h), 0);
+  const servicePrets = [...(dettesSec.dettes || []), ...(dettesB.dettes || [])].reduce((s, d) => s + (parseFloat(d.paiement_min) || 0), 0);
+  const serviceDette = serviceHypo + servicePrets;
+
+  return { depensesVie, serviceDette, total: depensesVie + serviceDette };
+}
