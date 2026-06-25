@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
+import { useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronRight, ChevronLeft, Check, User, TrendingDown, Shield, GraduationCap, Target, AlertTriangle, DollarSign, BarChart3, Wallet, Baby, Home, Briefcase, FileSignature, Rocket, Sparkles, Plus, LifeBuoy, Armchair, Heart, HeartHandshake, Handshake, UserMinus, Scale, Flower2 } from "lucide-react";
 import InfoTooltip from "@/components/ui/InfoTooltip";
@@ -1687,6 +1688,7 @@ const INTROS = {
 };
 
 export default function FinancialAnalysis() {
+  const queryClient = useQueryClient();
   const [currentStep, setCurrentStep] = useState(0);
   const [stepData, setStepData] = useState({});
   const [completedSteps, setCompletedSteps] = useState(new Set());
@@ -1726,6 +1728,7 @@ export default function FinancialAnalysis() {
         } else {
           await base44.entities.FinancialProfile.create({ section: step.key, data: stepData[step.key] || {}, completed: false, ...champsConseiller });
         }
+        queryClient.invalidateQueries({ queryKey: ["financialProfiles"] });
         setAutoSaveStatus('saved');
         setTimeout(() => setAutoSaveStatus('idle'), 2000);
       } catch(e) {
@@ -1745,6 +1748,8 @@ export default function FinancialAnalysis() {
       } else {
         await base44.entities.FinancialProfile.create({ section: step.key, data: stepData[step.key] || {}, completed: true, ...champsConseiller });
       }
+      // P2 -- invalider le cache pour que le dashboard reflete les donnees fraiches
+      queryClient.invalidateQueries({ queryKey: ["financialProfiles"] });
       setCompletedSteps(prev => new Set([...prev, step.key]));
       setInsight(getInsightForSection(step.key, stepData));
       if (currentStep < STEPS.length - 1) setCurrentStep(c => c + 1);
