@@ -47,7 +47,7 @@ export function calcRevenuDisponible(profiles) {
     });
     allocMensuel = calcAllocations({ rfnr: rfnrFamilial, nbMoins6, nb6_17, monoparental: alloc.situation_familiale === "monoparental" }).mensuel;
   }
-  return { revenuNetMensuel: Math.round((p1.net + p2.net) / 12), allocMensuel: Math.round(allocMensuel), totalMensuel: Math.round((p1.net + p2.net) / 12 + allocMensuel), rfnrFamilial };
+  return { revenuNetMensuel: Math.round((p1.net + p2.net) / 12), allocMensuel: Math.round(allocMensuel), totalMensuel: Math.round((p1.net + p2.net) / 12 + allocMensuel), rfnrFamilial, rfnrP1: p1.rfnr, rfnrP2: p2.rfnr };
 }
 
 // ── Sélecteur partagé : comptes d'épargne (clés ABF correctes, jeu unique) ──
@@ -84,4 +84,55 @@ export function calcEpargne(profiles) {
     };
   });
   return { soldeFoyer: soldeA + soldeB, cotFoyer: cotA + cotB, soldeA, soldeB, cotA, cotB, parCompte };
+}
+
+
+// Valeur nette (SSOT) -- definition unique : portrait ABF / feuille de resume / dashboard.
+// ACTIFS  : tous les comptes (7 + REEE) + fond de pension (solde) + immobilier
+//           (valeur marchande, ou prix d'achat, ou a defaut le solde hypothecaire)
+//           + fonds d'urgence + placements (entite, via investmentsTotal).
+// PASSIFS : dettes + hypotheques (depuis les profils), ou debtsTotal si fourni.
+const COMPTES_ACTIFS = [...COMPTES_EPARGNE, "reee"];
+
+export function calcValeurNette(profiles, { investmentsTotal = 0, debtsTotal = null } = {}) {
+  const get = (sec) => {
+    const found = (profiles || []).find(p => p && p.section === sec);
+    return unwrap(found && found.data || {});
+  };
+  const ret = get("retraite");
+  const retB = ret.conjoint || {};
+  const immo = get("immobilier");
+  const dettesSec = get("dettes");
+  const fonds = get("fonds_urgence");
+
+  const sumField = (arr, ff) => (arr || []).reduce((s, c) => s + (parseFloat(c[ff]) || 0), 0);
+  const sumComptesActifs = (comptes) => COMPTES_ACTIFS.reduce((s, k) => s + sumField(comptes && comptes[k], "solde"), 0);
+
+  const epargneActifs =
+    sumComptesActifs(ret.comptes) + sumComptesActifs(retB.comptes) +
+    (parseFloat(ret.fond_pension && ret.fond_pension.solde) || 0) +
+    (parseFloat(retB.fond_pension && retB.fond_pension.solde) || 0);
+
+  const immoB = immo.conjoint || {};
+  const dettesB = dettesSec.conjoint || {};
+  const hyposA = (immo.hypotheques && immo.hypotheques.length) ? immo.hypotheques : (dettesSec.hypotheques || []);
+  const hyposB = (immoB.hypotheques && immoB.hypotheques.length) ? immoB.hypotheques : (dettesB.hypotheques || []);
+  const toutesHypos = [...hyposA, ...hyposB];
+  const immoValeur = toutesHypos.reduce((s, h) => {
+    const valRef = parseFloat(h.valeur_marchande) || parseFloat(h.prix_achat) || 0;
+    const soldeH = parseFloat(h.solde) || 0;
+    return s + (valRef > 0 ? valRef : soldeH);
+  }, 0);
+  const hypoSolde = sumField(toutesHypos, "solde");
+
+  const fondsUrgence = parseFloat(fonds.montant_fonds) || 0;
+  const dettesProfils = sumField(dettesSec.dettes, "solde") + sumField((dettesSec.conjoint || {}).dettes, "solde");
+
+  const totalActifs = epargneActifs + immoValeur + fondsUrgence + (parseFloat(investmentsTotal) || 0);
+  const totalPassifs = debtsTotal != null ? (parseFloat(debtsTotal) || 0) : (dettesProfils + hypoSolde);
+
+  return {
+    totalActifs, totalPassifs, valeurNette: totalActifs - totalPassifs,
+    epargneActifs, immoValeur, fondsUrgence, hypoSolde, dettesProfils,
+  };
 }
