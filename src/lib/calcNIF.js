@@ -260,7 +260,7 @@ export function calcNIFFromProfiles(profiles) {
 
   // ── Épargne ──────────────────────────────────────────────────────────────────
   // REEE exclu — épargne-études, pas capital de retraite
-  const COMPTES_RETRAITE = ['reer', 'celi', 'cri', 'frv', 'celiapp', 'non_enregistre'];
+  const COMPTES_RETRAITE = ["reer", "celi", "celiapp", "cri_lira", "ftq_csn", "compte_non_enregistre", "crypto"]; // aligné sur clientPayload + clés ABF correctes
 
   const sumEpargne = (ret) => {
     const c = ret.comptes || {};
