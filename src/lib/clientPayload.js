@@ -70,7 +70,13 @@ function sumC(comptes = {}, type, field) {
   return (comptes[type] || []).reduce((s, c) => s + (parseFloat(c[field]) || 0), 0);
 }
 
-function readEpargne(comptes = {}) {
+function readEpargne(ret = {}) {
+  const comptes = ret.comptes || {};
+  const fp = ret.fond_pension || {};
+  // « selon les champs remplis » : si prestation (DB) → revenu garanti ailleurs; sinon solde (DC) → capital ici
+  const fpEstDB = (parseFloat(fp.prestation_mensuelle ?? fp.rente_mensuelle_estimee ?? 0) || 0) > 0;
+  const fpSolde = fpEstDB ? 0 : (parseFloat(fp.solde) || 0);
+  const fpCot = fpEstDB ? 0 : ((parseFloat(fp.cotisation_salariale) || 0) + (parseFloat(fp.cotisation_patronale) || 0));
   return {
     soldeReer: sumC(comptes, 'reer', 'solde'),
     cotReer: sumC(comptes, 'reer', 'cotisation_mensuelle'),
@@ -79,8 +85,8 @@ function readEpargne(comptes = {}) {
     soldeCri: sumC(comptes, 'cri', 'solde'),
     soldeFrv: sumC(comptes, "frv", "solde"),
     // Capital retraite = tous les comptes SAUF REEE (études) — décision planificateur
-    soldeRetraite: ["reer", "celi", "celiapp", "cri_lira", "ftq_csn", "compte_non_enregistre", "crypto"].reduce((s, k) => s + sumC(comptes, k, "solde"), 0),
-    cotRetraite: ["reer", "celi", "celiapp", "cri_lira", "ftq_csn", "compte_non_enregistre", "crypto"].reduce((s, k) => s + sumC(comptes, k, "cotisation_mensuelle"), 0),
+    soldeRetraite: ["reer", "celi", "celiapp", "cri_lira", "ftq_csn", "compte_non_enregistre", "crypto"].reduce((s, k) => s + sumC(comptes, k, "solde"), 0) + fpSolde,
+    cotRetraite: ["reer", "celi", "celiapp", "cri_lira", "ftq_csn", "compte_non_enregistre", "crypto"].reduce((s, k) => s + sumC(comptes, k, "cotisation_mensuelle"), 0) + fpCot,
     comptes: {
       reer: comptes.reer || [], celi: comptes.celi || [], reee: comptes.reee || [],
       cri: comptes.cri || [], frv: comptes.frv || [], celiapp: comptes.celiapp || [],
@@ -141,7 +147,7 @@ function calculDroitsCELI(dob, soldeCeli = 0, anneeRef = 2026) {
 }
 
 function readPersonne(ret = {}, profil = {}, salaireAnnuel = 0) {
-  const ep = readEpargne(ret.comptes);
+  const ep = readEpargne(ret);
   const ageActuel = calcAge(profil.date_naissance || profil.dob);
   const ageRetraite = parseInt(ret.age_retraite) || 65;
   const ageDebutRRQ = parseInt(ret.age_debut_rrq) || ageRetraite || 65;
