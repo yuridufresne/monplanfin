@@ -1115,7 +1115,7 @@ function DettesPanel({ data, setData }) {
   const f = (k) => (v) => setData(p => ({ ...p, [k]: v }));
   const dettes = data.dettes || [];
   const updateDette = (i, k, v) => setData(p => ({ ...p, dettes: dettes.map((d, idx) => idx === i ? { ...d, [k]: v } : d) }));
-  const addDette = () => setData(p => ({ ...p, dettes: [...dettes, { type: "", solde: "", taux: "", paiement_min: "" }] }));
+  const addDette = () => setData(p => ({ ...p, dettes: [...dettes, { nom: "", type: "", solde: "", taux: "", paiement_min: "" }] }));
   const removeDette = (i) => setData(p => ({ ...p, dettes: dettes.filter((_, idx) => idx !== i) }));
   const totalDettes = dettes.reduce((s, d) => s + (parseFloat(d.solde) || 0), 0);
 
@@ -1174,7 +1174,8 @@ function DettesPanel({ data, setData }) {
             {dettes.map((d, i) => (
               <div key={i} className="rounded-xl p-4 relative" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
                 <button onClick={() => removeDette(i)} className="absolute top-3 right-3 text-[11px]" style={{ color: "rgba(248,113,113,0.7)" }}>✕</button>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                  <Field label="Nom (ex: Visa 1, Auto)"><Input value={d.nom} onChange={v => updateDette(i, "nom", v)} placeholder="Visa 1" /></Field>
                   <Field label="Type de dette"><Select value={d.type} onChange={v => updateDette(i, "type", v)} options={DEBT_TYPES_ABF} placeholder="Choisir le type…" /></Field>
                   <Field label="Solde ($)"><Input value={d.solde} onChange={v => updateDette(i, "solde", v)} type="number" /></Field>
                   <Field label="Taux (%)"><Input value={d.taux} onChange={v => updateDette(i, "taux", v)} type="number" /></Field>
