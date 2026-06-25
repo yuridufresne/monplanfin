@@ -82,14 +82,14 @@ function readEpargne(ret = {}) {
     cotReer: sumC(comptes, 'reer', 'cotisation_mensuelle'),
     soldeCeli: sumC(comptes, 'celi', 'solde'),
     cotCeli: sumC(comptes, 'celi', 'cotisation_mensuelle'),
-    soldeCri: sumC(comptes, 'cri', 'solde'),
-    soldeFrv: sumC(comptes, "frv", "solde"),
+    soldeCri: sumC(comptes, 'cri_lira', 'solde'),
     // Capital retraite = tous les comptes SAUF REEE (études) — décision planificateur
     soldeRetraite: ["reer", "celi", "celiapp", "cri_lira", "ftq_csn", "compte_non_enregistre", "crypto"].reduce((s, k) => s + sumC(comptes, k, "solde"), 0) + fpSolde,
     cotRetraite: ["reer", "celi", "celiapp", "cri_lira", "ftq_csn", "compte_non_enregistre", "crypto"].reduce((s, k) => s + sumC(comptes, k, "cotisation_mensuelle"), 0) + fpCot,
     comptes: {
-      reer: comptes.reer || [], celi: comptes.celi || [], reee: comptes.reee || [],
-      cri: comptes.cri || [], frv: comptes.frv || [], celiapp: comptes.celiapp || [],
+      reer: comptes.reer || [], celi: comptes.celi || [], celiapp: comptes.celiapp || [],
+      reee: comptes.reee || [], cri_lira: comptes.cri_lira || [], ftq_csn: comptes.ftq_csn || [],
+      compte_non_enregistre: comptes.compte_non_enregistre || [], crypto: comptes.crypto || [],
     },
   };
 }
