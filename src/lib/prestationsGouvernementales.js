@@ -7,7 +7,7 @@
 
 export const PRESTATIONS_2026 = {
   psv: {
-    mensuel65:          713.34,   // Taux officiel Q1-2026 (Source: Service Canada)
+    mensuel65:          740.09,   // Taux officiel Q1-2026 (Source: Service Canada)
     bonifParMois:       0.006,    // +0.6%/mois de report 65→70 ans
     bonifMax:           0.36,     // Bonification max à 70 ans (+36%)
     clawbackSeuil:      90997,
@@ -15,7 +15,7 @@ export const PRESTATIONS_2026 = {
     indexationAnnuelle: 0.025,
   },
   rrq: {
-    renteMax65:         1364.60,  // Rente max 2026 (Source: Retraite Québec)
+    renteMax65:         1507.65,  // Rente max 2026 (Source: Retraite Québec)
     reductParMois:      0.006,    // -0.6%/mois avant 65 ans
     bonifParMois:       0.007,    // +0.7%/mois après 65 ans
     reductMax:          0.36,
