@@ -16,13 +16,12 @@
  * 3. calcNIFFromProfiles() → orchestrateur qui lit les profils ABF et appelle les deux fonctions
  */
 
-import { getRevenusGarantisABF, indexerRevenusGarantis, PRESTATIONS_2026 } from '@/lib/prestationsGouvernementales';
-import { buildPayload, nifMoyenne, calculRRQ } from '@/lib/clientPayload';
+import { indexerRevenusGarantis } from '@/lib/prestationsGouvernementales';
+import { buildPayload, nifMoyenne } from '@/lib/clientPayload';
 
 export const RENDEMENT_ACCUM   = 0.07;
 export const RENDEMENT_DECAISS = 0.05;
 export const INFLATION         = 0.023;
-const PSV_MENSUEL       = PRESTATIONS_2026.psv.mensuel65; // 713.34 $/mois — source unique
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FONCTION 1 : Calculer le NIF (valeur FIXE — ne change pas avec l'épargne)
@@ -214,12 +213,6 @@ export function calcNIFFromProfiles(profiles) {
   // Priorité : montant mensuel saisi dans l'ABF
   const montantMensuelSaisi = parseFloat(retraite.revenu_retraite_mensuel) || 0;
 
-  // ── Revenus garantis (RRQ × 12 car stockés en $/mois dans l'ABF) ─────────────
-  const retCj = retraite.conjoint || {};
-  const svA   = (parseFloat(retraite.sv)  || PSV_MENSUEL) * 12;
-  const rrqA  = (parseFloat(retraite.rrq) || 0)           * 12;
-  const svB   = inclureConj ? (parseFloat(retCj.sv)  || PSV_MENSUEL) * 12 : 0;
-  const rrqB  = inclureConj ? (parseFloat(retCj.rrq) || 0)           * 12 : 0;
 
   // -- Revenus garantis : SOURCE UNIQUE = buildPayload (clientPayload, chiffres 2026)
   // Meme decomposition RRQ/PSV/pension que la carte NIF -> aucun doublon de moteur.
