@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { calcRevenuDisponible, calcEpargne } from "@/lib/calcRevenuNet";
+import { calcRevenuDisponible, calcValeurNette } from "@/lib/calcRevenuNet";
 
 /**
  * PortraitLive — portrait financier en direct (panneau latéral de l'ABF).
@@ -65,19 +65,18 @@ export default function PortraitLive({ sections = {}, sectionsCompletees = 0, to
       (enCouple ? sum(revenu.conjoint?.sidehustles, sh => sh.revenu_mensuel_moyen) * 12 : 0);
     const netMensuel = calcRevenuDisponible([{ section: "revenu", data: revenu }, { section: "retraite", data: retraite }]).revenuNetMensuel;
 
-    // Epargne capital = source unique calcEpargne (7 comptes hors REEE + fond pension DC)
-    const epargne = calcEpargne([{ section: "retraite", data: retraite }]).soldeFoyer;
-
-    const hypos = immo.hypotheques || [];
-    const immoValeur = sum(hypos, h => h.valeur_marchande || h.prix_achat);
-    const hypoSolde  = sum(hypos, h => h.solde);
-
-    const dettesTotal = sum(dettesSec.dettes, d => d.solde)
-      + (enCouple ? sum(dettesSec.conjoint?.dettes, d => d.solde) : 0)
-      + hypoSolde;
-
-    const fondsUrgence = parseFloat(fonds.montant_fonds) || 0;
-    const valeurNette = epargne + immoValeur + fondsUrgence - dettesTotal;
+    // Valeur nette = source unique calcValeurNette (meme definition que la feuille de resume)
+    const vn = calcValeurNette([
+      { section: "retraite", data: retraite },
+      { section: "immobilier", data: immo },
+      { section: "dettes", data: dettesSec },
+      { section: "fonds_urgence", data: fonds },
+    ]);
+    const epargne = vn.epargneActifs;
+    const immoValeur = vn.immoValeur;
+    const fondsUrgence = vn.fondsUrgence;
+    const dettesTotal = vn.totalPassifs;
+    const valeurNette = vn.valeurNette;
     const aDesDonnees = brut > 0 || epargne > 0 || dettesTotal > 0 || fondsUrgence > 0 || immoValeur > 0;
 
     return { brut, netMensuel, epargne, immoValeur, dettesTotal, fondsUrgence, valeurNette, aDesDonnees };
