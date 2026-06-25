@@ -405,10 +405,13 @@ export default function Dashboard() {
   const reerSolde    = [...(comptes.reer    || []), ...(comptesConj.reer    || [])].reduce((s, c) => s + (parseFloat(c.solde) || 0), 0);
   const celiSolde    = [...(comptes.celi    || []), ...(comptesConj.celi    || [])].reduce((s, c) => s + (parseFloat(c.solde) || 0), 0);
   const reee         = [...(comptes.reee    || []), ...(comptesConj.reee    || [])].reduce((s, c) => s + (parseFloat(c.solde) || 0), 0);
-  const criSolde     = [...(comptes.cri     || []), ...(comptesConj.cri     || [])].reduce((s, c) => s + (parseFloat(c.solde) || 0), 0);
+  const criSolde = [...(comptes.cri_lira || []), ...(comptesConj.cri_lira || [])].reduce((s, c) => s + (parseFloat(c.solde) || 0), 0);
   const frvSolde     = [...(comptes.frv     || []), ...(comptesConj.frv     || [])].reduce((s, c) => s + (parseFloat(c.solde) || 0), 0);
   const celiappSolde = [...(comptes.celiapp || []), ...(comptesConj.celiapp || [])].reduce((s, c) => s + (parseFloat(c.solde) || 0), 0);
-  const totalAssets = investmentAssets + realEstateAssets + reerSolde + celiSolde + reee + criSolde + frvSolde + celiappSolde;
+  const ftqSolde = [...(comptes.ftq_csn || []), ...(comptesConj.ftq_csn || [])].reduce((s, c) => s + (parseFloat(c.solde) || 0), 0);
+  const cryptoSolde = [...(comptes.crypto || []), ...(comptesConj.crypto || [])].reduce((s, c) => s + (parseFloat(c.solde) || 0), 0);
+  const compteNonEnrSolde = [...(comptes.compte_non_enregistre || []), ...(comptesConj.compte_non_enregistre || [])].reduce((s, c) => s + (parseFloat(c.solde) || 0), 0);
+  const totalAssets = investmentAssets + realEstateAssets + reerSolde + celiSolde + reee + criSolde + frvSolde + celiappSolde + ftqSolde + cryptoSolde + compteNonEnrSolde;
 
   // Dettes depuis ABF (source principale) — fallback vers entité Debt
   const dettesABFConjoint = enCouple ? (dettesABF.conjoint || {}) : {};
@@ -787,6 +790,9 @@ export default function Dashboard() {
                       {criSolde     > 0 && <Row left="CRI"      right={fmt(criSolde)}      sub={criCot     > 0 ? `+${fmt(criCot)}/mois`     : undefined} dot="#6B8ED6" />}
                       {frvSolde     > 0 && <Row left="FRV"      right={fmt(frvSolde)}      sub={frvCot     > 0 ? `+${fmt(frvCot)}/mois`     : undefined} dot="#60A5FA" />}
                       {celiappSolde > 0 && <Row left="CELIAPP"  right={fmt(celiappSolde)}  sub={celiappCot > 0 ? `+${fmt(celiappCot)}/mois` : undefined} dot="#F8A332" />}
+                      {ftqSolde > 0 && <Row left="FTQ / CSN" right={fmt(ftqSolde)} dot="#E0625C" />}
+                      {cryptoSolde > 0 && <Row left="Crypto" right={fmt(cryptoSolde)} dot="#F59E0B" />}
+                      {compteNonEnrSolde > 0 && <Row left="Non enregistré" right={fmt(compteNonEnrSolde)} dot="#94A3B8" />}
                       {investments.length > 0 && (
                         <Row left={`Placements (${investments.length})`} right={fmt(investmentAssets)} dot="#EAB308" />
                       )}
