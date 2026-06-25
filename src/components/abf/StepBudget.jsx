@@ -102,7 +102,27 @@ export default function StepBudget() {
 
   // Vue brute : tous les postes sont des dépenses (impôts inclus pour vue pédagogique)
   const revenus = entries.filter(e => e.type === "revenu");
-  const depenses = entries.filter(e => e.type === "depense");
+
+  // Dépenses ABF injectées (hypothèque) — calculées depuis la section Immobilier, jamais manquantes
+  const abfDepenses = useMemo(() => {
+    const bySection = {};
+    profiles.forEach(p => { bySection[p?.section || p?.data?.section] = p?.data || {}; });
+    const rows = [];
+    const immo = bySection["immobilier"] || {};
+    const hypos = [...(immo.hypotheques || []), ...((immo.conjoint && immo.conjoint.hypotheques) || [])];
+    hypos.forEach((h, i) => {
+      let pay = parseFloat(h.paiement_mensuel) || 0;
+      if (!pay) {
+        const solde = parseFloat(h.solde) || 0;
+        const r = (parseFloat(h.taux) || 0) / 100 / 12;
+        const n = (parseFloat(h.amortissement_restant) || 0) * 12;
+        if (solde > 0 && n > 0) pay = r > 0 ? (solde * r) / (1 - Math.pow(1 + r, -n)) : solde / n;
+      }
+      if (pay > 0) rows.push({ id: "abf-hypo-" + i, label: "Hypothèque — " + (h.adresse || h.usage || "résidence"), amount: Math.round(pay), frequency: "mensuel", category: "logement", source: "abf", type: "depense" });
+    });
+    return rows;
+  }, [profiles]);
+  const depenses = [...entries.filter(e => e.type === "depense"), ...abfDepenses];
   const impotInfo = entries.find(e => e.label === "Impôts (retenues à la source)");
   const totalDep = depenses.reduce((s, e) => s + toMonthly(e.amount, e.frequency), 0);
   const balance = totalRev - totalDep;
