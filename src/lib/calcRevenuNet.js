@@ -49,3 +49,30 @@ export function calcRevenuDisponible(profiles) {
   }
   return { revenuNetMensuel: Math.round((p1.net + p2.net) / 12), allocMensuel: Math.round(allocMensuel), totalMensuel: Math.round((p1.net + p2.net) / 12 + allocMensuel), rfnrFamilial };
 }
+
+// ── Sélecteur partagé : comptes d'épargne (clés ABF correctes, jeu unique) ──
+// REEE exclu (études). Une seule définition pour budget / valeur nette / NIF / dashboard.
+export const COMPTES_EPARGNE = ["reer", "celi", "celiapp", "cri_lira", "ftq_csn", "compte_non_enregistre", "crypto"];
+
+function _sumComptesField(comptes, keys, field) {
+  return (keys || []).reduce((s, k) => s + ((comptes && comptes[k] || []).reduce((a, c) => a + (parseFloat(c[field]) || 0), 0)), 0);
+}
+
+// Soldes + cotisations d'épargne, foyer + par personne + par compte.
+export function calcEpargne(profiles) {
+  const ret = unwrap((profiles || []).find(p => p && p.section === "retraite") && (profiles || []).find(p => p && p.section === "retraite").data || {});
+  const cA = ret.comptes || {};
+  const cB = (ret.conjoint || {}).comptes || {};
+  const soldeA = _sumComptesField(cA, COMPTES_EPARGNE, "solde");
+  const soldeB = _sumComptesField(cB, COMPTES_EPARGNE, "solde");
+  const cotA = _sumComptesField(cA, COMPTES_EPARGNE, "cotisation_mensuelle");
+  const cotB = _sumComptesField(cB, COMPTES_EPARGNE, "cotisation_mensuelle");
+  const parCompte = {};
+  COMPTES_EPARGNE.forEach((k) => {
+    parCompte[k] = {
+      solde: _sumComptesField(cA, [k], "solde") + _sumComptesField(cB, [k], "solde"),
+      cotisation: _sumComptesField(cA, [k], "cotisation_mensuelle") + _sumComptesField(cB, [k], "cotisation_mensuelle"),
+    };
+  });
+  return { soldeFoyer: soldeA + soldeB, cotFoyer: cotA + cotB, soldeA, soldeB, cotA, cotB, parCompte };
+}
