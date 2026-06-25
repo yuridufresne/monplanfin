@@ -98,7 +98,13 @@ const SECTIONS = [
       { label: "Intérêts cartes de crédit / marge",     category: "dettes",           type: "depense" },
       { label: "Remboursement prêt personnel/étudiant", category: "dettes",           type: "depense" },
 
-      { label: "Paiements dettes (ABF)",                category: "dettes",           type: "depense", abfReadOnly: true },
+      { label: "Carte de crédit (ABF)", category: "dettes", type: "depense", abfReadOnly: true, hideIfEmpty: true },
+      { label: "Marge de crédit (ABF)", category: "dettes", type: "depense", abfReadOnly: true, hideIfEmpty: true },
+      { label: "Prêt auto (ABF)", category: "dettes", type: "depense", abfReadOnly: true, hideIfEmpty: true },
+      { label: "Prêt étudiant (ABF)", category: "dettes", type: "depense", abfReadOnly: true, hideIfEmpty: true },
+      { label: "Prêt personnel (ABF)", category: "dettes", type: "depense", abfReadOnly: true, hideIfEmpty: true },
+      { label: "Prêt REER (ABF)", category: "dettes", type: "depense", abfReadOnly: true, hideIfEmpty: true },
+      { label: "Autre dette (ABF)", category: "dettes", type: "depense", abfReadOnly: true, hideIfEmpty: true },
     ],
   },
   {
@@ -157,6 +163,7 @@ function Section({ section, values, freqs, onChange, onFreqToggle, open, onToggl
           {section.rows.map(r => {
             const isAnnuel = freqs[r.label] === "annuel";
             const isReadOnly = !!r.abfReadOnly;
+            if (r.hideIfEmpty && !values[r.label]) return null;
             return (
               <div key={r.label} style={{ display: "flex", alignItems: "center", gap: 10, paddingTop: 8, paddingBottom: 8, borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
                 <p style={{ flex: 1, fontSize: 13, color: isReadOnly ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.75)" }}>{r.label}</p>
@@ -280,8 +287,10 @@ export default function BudgetGrid({ onClose, onSaved }) {
         if (totalHypo > 0) prefill["Paiement hypothécaire principal (ABF)"] = totalHypo.toFixed(0);
 
         const autresDettes = [...(d.dettes || []), ...((d.conjoint?.dettes) || [])];
-        const totalDettes = autresDettes.reduce((s, dt) => s + (parseFloat(dt.paiement_min) || 0), 0);
-        if (totalDettes > 0) prefill["Paiements dettes (ABF)"] = totalDettes.toFixed(0);
+        const DETTE_LABEL = { "Carte de crédit": "Carte de crédit (ABF)", "Marge de crédit": "Marge de crédit (ABF)", "Prêt auto": "Prêt auto (ABF)", "Prêt étudiant": "Prêt étudiant (ABF)", "Prêt personnel": "Prêt personnel (ABF)", "Prêt REER (RAP / levier)": "Prêt REER (ABF)" };
+        const parType = {};
+        autresDettes.forEach(dt => { const lb = DETTE_LABEL[dt.type] || "Autre dette (ABF)"; parType[lb] = (parType[lb] || 0) + (parseFloat(dt.paiement_min) || 0); });
+        Object.entries(parType).forEach(([lb, amt]) => { if (amt > 0) prefill[lb] = amt.toFixed(0); });
       }
 
       // ── ABF : Comptes d'épargne (retraite.comptes) ───────────────────────
