@@ -1,5 +1,6 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { calcRevenuDisponible } from "@/lib/calcRevenuNet";
 
 /**
  * InsightsABF — insights instantanés affichés à la complétion d'une section.
@@ -205,7 +206,7 @@ export function getInsightForSection(sectionId, S = {}) {
     case "fonds_urgence": {
       const montant = parseFloat((S.fonds_urgence || {}).montant_fonds) || 0;
       if (brutFoyer <= 0) return null;
-      const netM = brutFoyer * (1 - tauxEffectifApprox(enCouple ? brutFoyer / 2 : brutFoyer)) / 12;
+      const netM = calcRevenuDisponible([{ section: "revenu", data: S.revenu || {} }, { section: "retraite", data: S.retraite || {} }]).revenuNetMensuel;
       const mois = netM > 0 ? montant / (netM * 0.8) : 0;
       const ok = mois >= 3;
       return {
