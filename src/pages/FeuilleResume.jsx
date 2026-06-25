@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import { calcAllocations } from "@/lib/allocations2026";
-import { calcRevenuDisponible } from "@/lib/calcRevenuNet";
+import { calcRevenuDisponible, calcValeurNette } from "@/lib/calcRevenuNet";
 
 // ── Formatters ──────────────────────────────────────────────────────────────
 const fmt = (v) => new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v || 0);
@@ -393,7 +393,7 @@ export default function FeuilleResume() {
   // ── RÈGLE 2 : RFNR = somme des revenus nets INDIVIDUELS ──────────────
   // Le RFNR pour les allocations familiales utilise les vrais revenus nets calculés
   // pour chaque personne séparément, puis additionnés.
-  const rfnrCalcule = p1.imposable + p2.imposable;
+  const rfnrCalcule = _dispoReel.rfnrFamilial;
 
   // ── RÈGLE 4 : Opportunités d'optimisation fiscale conjugale ──────────
   const optimisations = enCouple ? (() => {
@@ -691,11 +691,25 @@ export default function FeuilleResume() {
     }
   });
 
+  // Fonds d'urgence -- actif liquide, compte dans la valeur nette (etait omis auparavant)
+  const _montantFondsActif = parseFloat(fondsABF.montant_fonds) || 0;
+  if (_montantFondsActif > 0) {
+    lignesActifs.push({
+      type: "Fonds d'urgence",
+      institution: fondsABF.institution || "—",
+      solde: _montantFondsActif,
+      cotisation: parseFloat(fondsABF.cotisation_fonds) || 0,
+      rendement: 2,
+      subventions: "—",
+    });
+  }
+
   const totalActifs = lignesActifs.reduce((s, a) => s + a.solde, 0);
   const totalCotisationsActifs = lignesActifs.reduce((s, a) => s + a.cotisation, 0);
 
   // ── Valeur Nette ─────────────────────────────────────────────────────
-  const valeurNette = totalActifs - totalSoldeDettes;
+  const _investTotal = investments.reduce((s, inv) => s + (parseFloat(inv.current_value) || parseFloat(inv.quantity) * parseFloat(inv.purchase_price) || 0), 0);
+  const valeurNette = calcValeurNette(profiles, { investmentsTotal: _investTotal, debtsTotal: totalSoldeDettes }).valeurNette;
 
   // ── Fonds d'urgence ───────────────────────────────────────────────────
   const montantFonds = parseFloat(fondsABF.montant_fonds) || 0;
