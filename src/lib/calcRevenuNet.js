@@ -19,23 +19,35 @@ export function calcNetPersonne(brut, reerAnnuel = 0) {
 
 export function calcRevenuDisponible(profiles) {
   const rev = unwrap(profiles.find(p => p.section === "revenu")?.data || {});
-  const retraite = unwrap(profiles.find(p => p.section === "retraite")?.data || {});
-  const brutP1 = (rev.emplois || []).reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0), 0);
-  const brutP2 = (rev.conjoint?.emplois || []).reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0), 0);
-  // Impôt réellement retenu (saisi par le client) — prioritaire sur le calcul théorique.
-  const impotSaisiAnnuel = (emplois) => (emplois || []).reduce((s, e) => s + (parseFloat(e.impot_saisi) || 0) * (((e.impot_freq || "mensuel") === "annuel") ? 1 : 12), 0);
-  const saisiP1 = impotSaisiAnnuel(rev.emplois);
-  const saisiP2 = impotSaisiAnnuel(rev.conjoint?.emplois);
-  // Autres retenues sur la paie saisies par le client (syndicat, régime de retraite, vacances retenues…)
-  const autresRetenuesAnnuel = (emplois) => (emplois || []).reduce((s, e) => s + (parseFloat(e.autres_retenues) || 0) * (((e.autres_retenues_freq || "mensuel") === "annuel") ? 1 : 12), 0);
-  const retP1 = autresRetenuesAnnuel(rev.emplois);
-  const retP2 = autresRetenuesAnnuel(rev.conjoint?.emplois);
-  // Vue liquidités mensuelles : pas de déduction REER ici — l’économie d’impôt REER arrive au remboursement, pas sur la paie.
-  const p1c = calcNetPersonne(brutP1, 0);
-  const p2c = calcNetPersonne(brutP2, 0);
-  const p1 = { net: Math.max((saisiP1 > 0 ? Math.max(brutP1 - saisiP1, 0) : p1c.net) - retP1, 0), rfnr: p1c.rfnr };
-  const p2 = { net: Math.max((saisiP2 > 0 ? Math.max(brutP2 - saisiP2, 0) : p2c.net) - retP2, 0), rfnr: p2c.rfnr };
+  const freqAnnuel = (val, freq) => (parseFloat(val) || 0) * (((freq || "mensuel") === "annuel") ? 1 : 12);
+  // Revenu net d'une personne selon son statut principal (P7) -- un seul statut actif a la fois :
+  //  - travail / etudes / foyer : emplois (impot saisi prioritaire, sinon moteur fiscal) - autres retenues
+  //  - chomage  : prestations d'assurance-emploi (imposables)
+  //  - retraite : RRQ + PSV + pensions actuels (imposables)
+  //  + bourses d'etudes : non imposables -> ajoutees au net, hors RFNR.
+  // Vue liquidites mensuelles : pas de deduction REER ici.
+  const netPersonne = (d) => {
+    if (!d || typeof d !== "object") return { net: 0, rfnr: 0 };
+    const statut = d.statut_principal || "travail";
+    let taxableBrut = 0, saisi = 0, retenues = 0;
+    if (statut === "chomage") {
+      taxableBrut = (parseFloat(d.prestations_ae_mensuel) || 0) * 12;
+    } else if (statut === "retraite") {
+      taxableBrut = ((parseFloat(d.rrq_actuel_mensuel) || 0) + (parseFloat(d.psv_actuel_mensuel) || 0) + (parseFloat(d.pensions_actuel_mensuel) || 0)) * 12;
+    } else {
+      taxableBrut = (d.emplois || []).reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0), 0);
+      saisi = (d.emplois || []).reduce((s, e) => s + freqAnnuel(e.impot_saisi, e.impot_freq), 0);
+      retenues = (d.emplois || []).reduce((s, e) => s + freqAnnuel(e.autres_retenues, e.autres_retenues_freq), 0);
+    }
+    const c = calcNetPersonne(taxableBrut, 0);
+    const boursesNonImp = statut === "etudes" ? (parseFloat(d.bourses_annuel) || 0) : 0;
+    const net = Math.max((saisi > 0 ? Math.max(taxableBrut - saisi, 0) : c.net) - retenues, 0) + boursesNonImp;
+    return { net, rfnr: c.rfnr, saisi };
+  };
+  const p1 = netPersonne(rev);
+  const p2 = netPersonne(rev.conjoint);
   const rfnrFamilial = p1.rfnr + p2.rfnr;
+  const impotSaisiFamilial = p1.saisi + p2.saisi;
   const alloc = unwrap(profiles.find(p => p.section === "allocations")?.data || {});
   let allocMensuel = 0;
   if (alloc.a_enfants === true) {
@@ -47,7 +59,7 @@ export function calcRevenuDisponible(profiles) {
     });
     allocMensuel = calcAllocations({ rfnr: rfnrFamilial, nbMoins6, nb6_17, monoparental: alloc.situation_familiale === "monoparental" }).mensuel;
   }
-  return { revenuNetMensuel: Math.round((p1.net + p2.net) / 12), allocMensuel: Math.round(allocMensuel), totalMensuel: Math.round((p1.net + p2.net) / 12 + allocMensuel), rfnrFamilial, rfnrP1: p1.rfnr, rfnrP2: p2.rfnr };
+  return { revenuNetMensuel: Math.round((p1.net + p2.net) / 12), allocMensuel: Math.round(allocMensuel), totalMensuel: Math.round((p1.net + p2.net) / 12 + allocMensuel), rfnrFamilial, rfnrP1: p1.rfnr, rfnrP2: p2.rfnr, impotSaisiFamilial };
 }
 
 // ── Sélecteur partagé : comptes d'épargne (clés ABF correctes, jeu unique) ──
