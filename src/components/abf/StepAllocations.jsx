@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
 import { calcAllocations } from "@/lib/allocations2026";
+import { calcRevenuDisponible } from "@/lib/calcRevenuNet";
 
 function Field({ label, hint, children }) {
   return (
@@ -84,22 +85,12 @@ export default function StepAllocations({ data, setData, stepData }) {
 
   // ── RFNR auto depuis l'étape Revenu ──────────────────────────────────
   const revenuABF = stepData?.revenu || {};
-  const calcRevenuBrut = (rev) => {
-    const emplois = rev.emplois || [];
-    const sides   = rev.sidehustles || [];
-    return emplois.reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0), 0)
-         + sides.reduce((s, sh) => s + (parseFloat(sh.revenu_mensuel_moyen) || 0) * 12, 0);
-  };
-  // Revenu net estimé = brut − 30% (estimation fiscale simplifiée pour pré-remplissage)
-  const rfnrAutoP1 = useMemo(() => {
-    const brut = calcRevenuBrut(revenuABF);
-    return brut > 0 ? Math.round(brut * 0.70) : 0;
-  }, [revenuABF]);
-  const rfnrAutoP2 = useMemo(() => {
-    const conjointRev = revenuABF.conjoint || {};
-    const brut = calcRevenuBrut(conjointRev);
-    return brut > 0 ? Math.round(brut * 0.70) : 0;
-  }, [revenuABF]);
+  const _dispo = useMemo(
+    () => calcRevenuDisponible([{ section: "revenu", data: revenuABF }]),
+    [revenuABF]
+  );
+  const rfnrAutoP1 = Math.round(_dispo.rfnrP1 || 0);
+  const rfnrAutoP2 = Math.round(_dispo.rfnrP2 || 0);
 
   // Si l'utilisateur n'a pas encore saisi de valeur manuelle, on utilise l'auto
   const rfnrP1 = data.rfnr_different === true
