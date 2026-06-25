@@ -102,15 +102,6 @@ const SECTIONS = [
     rows: [
       { label: "Frais bancaires mensuels",              category: "dettes",           type: "depense" },
       { label: "Intérêts cartes de crédit / marge",     category: "dettes",           type: "depense" },
-      { label: "Remboursement prêt personnel/étudiant", category: "dettes",           type: "depense" },
-
-      { label: "Carte de crédit (ABF)", category: "dettes", type: "depense", abfReadOnly: true, hideIfEmpty: true },
-      { label: "Marge de crédit (ABF)", category: "dettes", type: "depense", abfReadOnly: true, hideIfEmpty: true },
-      { label: "Prêt auto (ABF)", category: "dettes", type: "depense", abfReadOnly: true, hideIfEmpty: true },
-      { label: "Prêt étudiant (ABF)", category: "dettes", type: "depense", abfReadOnly: true, hideIfEmpty: true },
-      { label: "Prêt personnel (ABF)", category: "dettes", type: "depense", abfReadOnly: true, hideIfEmpty: true },
-      { label: "Prêt REER (ABF)", category: "dettes", type: "depense", abfReadOnly: true, hideIfEmpty: true },
-      { label: "Autre dette (ABF)", category: "dettes", type: "depense", abfReadOnly: true, hideIfEmpty: true },
     ],
   },
   {
@@ -212,6 +203,7 @@ function Section({ section, values, freqs, onChange, onFreqToggle, open, onToggl
 export default function BudgetGrid({ onClose, onSaved }) {
   const qc = useQueryClient();
   const [values, setValues] = useState({});
+  const [debtRows, setDebtRows] = useState([]);
   const [freqs, setFreqs] = useState({});
   const [existingEntries, setExistingEntries] = useState([]); // entrées déjà en BD
   const [saving, setSaving] = useState(false);
@@ -293,10 +285,18 @@ export default function BudgetGrid({ onClose, onSaved }) {
         if (totalHypo > 0) prefill["Paiement hypothécaire principal (ABF)"] = totalHypo.toFixed(0);
 
         const autresDettes = [...(d.dettes || []), ...((d.conjoint?.dettes) || [])];
-        const DETTE_LABEL = { "Carte de crédit": "Carte de crédit (ABF)", "Marge de crédit": "Marge de crédit (ABF)", "Prêt auto": "Prêt auto (ABF)", "Prêt étudiant": "Prêt étudiant (ABF)", "Prêt personnel": "Prêt personnel (ABF)", "Prêt REER (RAP / levier)": "Prêt REER (ABF)" };
-        const parType = {};
-        autresDettes.forEach(dt => { const lb = DETTE_LABEL[dt.type] || "Autre dette (ABF)"; parType[lb] = (parType[lb] || 0) + (parseFloat(dt.paiement_min) || 0); });
-        Object.entries(parType).forEach(([lb, amt]) => { if (amt > 0) prefill[lb] = amt.toFixed(0); });
+        const _counts = {};
+        const _debtRows = [];
+        autresDettes.forEach((dt, i) => {
+          const base = (dt.nom && String(dt.nom).trim()) || dt.type || ("Dette " + (i + 1));
+          _counts[base] = (_counts[base] || 0) + 1;
+          const lbl = base + (_counts[base] > 1 ? " " + _counts[base] : "") + " (ABF)";
+          _debtRows.push({ label: lbl, category: "dettes", type: "depense", abfReadOnly: true });
+          const pay = parseFloat(dt.paiement_min) || 0;
+          if (pay > 0) prefill[lbl] = pay.toFixed(0);
+        });
+        setDebtRows(_debtRows);
+        if (_debtRows.length) setOpenSections(prev => ({ ...prev, 8: true }));
       }
 
       // ── ABF : Comptes d'épargne (retraite.comptes) ───────────────────────
@@ -355,7 +355,8 @@ export default function BudgetGrid({ onClose, onSaved }) {
   const set = (key, val) => setValues(p => ({ ...p, [key]: val }));
   const toggleFreq = (key) => setFreqs(p => ({ ...p, [key]: p[key] === "annuel" ? "mensuel" : "annuel" }));
 
-  const allRows = SECTIONS.flatMap(s => s.rows);
+  const sectionsToRender = SECTIONS.map(s => s.title === "9. Dettes et remboursements" ? { ...s, rows: [...s.rows, ...debtRows] } : s);
+  const allRows = sectionsToRender.flatMap(s => s.rows);
   const monthlyAmount = (r) => {
     const v = parseFloat(values[r.label]) || 0;
     return freqs[r.label] === "annuel" ? v / 12 : v;
@@ -368,7 +369,7 @@ export default function BudgetGrid({ onClose, onSaved }) {
     setSaving(true);
 
     const entries = allRows
-      .filter(r => parseFloat(values[r.label]) > 0)
+      .filter(r => !r.abfReadOnly && parseFloat(values[r.label]) > 0)
       .map(r => ({
         category: r.category,
         label: r.label,
@@ -451,7 +452,7 @@ export default function BudgetGrid({ onClose, onSaved }) {
 
         {/* Sections */}
         <div className="overflow-y-auto flex-1 px-6 py-4">
-          {SECTIONS.map((section, i) => (
+          {sectionsToRender.map((section, i) => (
             <Section key={i} section={section} values={values} freqs={freqs} onChange={set} onFreqToggle={toggleFreq} open={!!openSections[i]} onToggle={() => toggleSection(i)} />
           ))}
         </div>
