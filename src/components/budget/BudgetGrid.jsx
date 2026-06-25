@@ -89,11 +89,17 @@ const SECTIONS = [
     ],
   },
   {
-    title: "8. Protections et Obligations Financières",
+    title: "8. Assurances et protections",
     color: "#f87171",
     rows: [
-      { label: "Assurance vie",                         category: "assurances",       type: "depense" },
-      { label: "Assurance invalidité / maladie grave",  category: "assurances",       type: "depense" },
+      { label: "Assurance vie", category: "assurances", type: "depense" },
+      { label: "Assurance invalidité / maladie grave", category: "assurances", type: "depense" },
+    ],
+  },
+  {
+    title: "9. Dettes et remboursements",
+    color: "#f87171",
+    rows: [
       { label: "Frais bancaires mensuels",              category: "dettes",           type: "depense" },
       { label: "Intérêts cartes de crédit / marge",     category: "dettes",           type: "depense" },
       { label: "Remboursement prêt personnel/étudiant", category: "dettes",           type: "depense" },
@@ -108,7 +114,7 @@ const SECTIONS = [
     ],
   },
   {
-    title: "9. Épargne et Investissements",
+    title: "10. Épargne et Investissements",
     color: "#7DC46B",
     rows: [
       { label: "Fonds d'urgence (CÉAH)",                category: "epargne",          type: "depense" },
@@ -120,7 +126,7 @@ const SECTIONS = [
     ],
   },
   {
-    title: "10. Impôts & Obligations légales",
+    title: "11. Impôts & Obligations légales",
     color: "#f59e0b",
     rows: [
       { label: "Impôts (retenues à la source)",         category: "divers",           type: "depense", abfReadOnly: true },
