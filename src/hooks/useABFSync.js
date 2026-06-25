@@ -65,36 +65,46 @@ export async function syncABFToEntities() {
     const autresDettes = dettesData.dettes || [];
     const hypotheques = dettesData.hypotheques || [];
 
+    // P1 : reconciliation create / update / delete. Seules les dettes source:"abf" sont supprimables.
+    const desired = new Map();
     for (const d of autresDettes) {
       if (!d.solde || parseFloat(d.solde) <= 0) continue;
       const name = d.type || "Dette";
-      const existing = await base44.entities.Debt.filter({ name });
-      if (existing.length === 0) {
-        await base44.entities.Debt.create({
-          name,
-          type: "autre",
-          balance: parseFloat(d.solde) || 0,
-          interest_rate: parseFloat(d.taux) || 0,
-          minimum_payment: parseFloat(d.paiement_min) || 0,
-          monthly_payment: parseFloat(d.paiement_min) || 0,
-        });
-      }
+      desired.set(name, {
+        name, type: "autre",
+        balance: parseFloat(d.solde) || 0,
+        interest_rate: parseFloat(d.taux) || 0,
+        minimum_payment: parseFloat(d.paiement_min) || 0,
+        monthly_payment: parseFloat(d.paiement_min) || 0,
+        source: "abf",
+      });
     }
-
     for (const h of hypotheques) {
       if (!h.solde || parseFloat(h.solde) <= 0) continue;
       const name = h.adresse || "Hypothèque";
-      const existing = await base44.entities.Debt.filter({ name });
+      desired.set(name, {
+        name, type: "hypotheque",
+        balance: parseFloat(h.solde) || 0,
+        interest_rate: parseFloat(h.taux) || 0,
+        minimum_payment: parseFloat(h.paiement_mensuel) || 0,
+        monthly_payment: parseFloat(h.paiement_mensuel) || 0,
+        original_amount: parseFloat(h.prix_achat) || 0,
+        source: "abf",
+      });
+    }
+
+    const allDebts = await base44.entities.Debt.list();
+    for (const [name, payload] of desired) {
+      const existing = allDebts.filter(x => x.name === name);
       if (existing.length === 0) {
-        await base44.entities.Debt.create({
-          name,
-          type: "hypotheque",
-          balance: parseFloat(h.solde) || 0,
-          interest_rate: parseFloat(h.taux) || 0,
-          minimum_payment: parseFloat(h.paiement_mensuel) || 0,
-          monthly_payment: parseFloat(h.paiement_mensuel) || 0,
-          original_amount: parseFloat(h.prix_achat) || 0,
-        });
+        await base44.entities.Debt.create(payload);
+      } else {
+        await base44.entities.Debt.update(existing[0].id, payload);
+      }
+    }
+    for (const x of allDebts) {
+      if (x.source === "abf" && !desired.has(x.name)) {
+        await base44.entities.Debt.delete(x.id);
       }
     }
   }
