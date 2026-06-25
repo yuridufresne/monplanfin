@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import { calcAllocations } from "@/lib/allocations2026";
-import { calcRevenuDisponible, calcValeurNette } from "@/lib/calcRevenuNet";
+import { calcRevenuDisponible, calcValeurNette, calcDepensesMensuelles } from "@/lib/calcRevenuNet";
 
 // ── Formatters ──────────────────────────────────────────────────────────────
 const fmt = (v) => new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v || 0);
@@ -496,16 +496,8 @@ export default function FeuilleResume() {
     return amount;
   }
 
-  // Service de la dette depuis l'ABF (hypotheque <- section immobilier, prets <- section dettes). Exclut les lignes (ABF) du budget pour eviter le double comptage.
-  const _srcHypo = (immoABF.hypotheques && immoABF.hypotheques.length) ? immoABF : dettesABF;
-  const _srcHypoConj = enCouple ? ((immoABF.conjoint && immoABF.conjoint.hypotheques && immoABF.conjoint.hypotheques.length) ? immoABF.conjoint : (dettesABF.conjoint || {})) : {};
-  const serviceDetteABF =
-    [...(_srcHypo.hypotheques || []), ...(_srcHypoConj.hypotheques || [])].reduce((s, h) => s + (parseFloat(h.paiement_mensuel) || 0), 0)
-    + [...(dettesABF.dettes || []), ...((enCouple ? (dettesABF.conjoint && dettesABF.conjoint.dettes) : []) || [])].reduce((s, d) => s + (parseFloat(d.paiement_min) || 0), 0);
-  const depensesVie = budgetEntries
-    .filter(e => e.type === "depense" && !/\(ABF\)/i.test(e.label || "") && !/Imp[oô]ts? \(retenues/i.test(e.label || ""))
-    .reduce((s, e) => s + toMonthly(parseFloat(e.amount) || 0, e.frequency), 0);
-  const depensesMensuelles = depensesVie + serviceDetteABF;
+  // Depenses mensuelles = source unique calcDepensesMensuelles (concorde avec le dashboard).
+  const depensesMensuelles = calcDepensesMensuelles(budgetEntries, profiles).total;
 
   const categoriesDepenses = Object.entries(
     budgetEntries.filter(e => e.type === "depense").reduce((acc, e) => {
