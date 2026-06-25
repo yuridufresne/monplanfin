@@ -37,7 +37,7 @@ function Field({ label, children, hint }) {
 function Input({ value, onChange, type = "text", placeholder }) {
   return (
     <input type={type} value={value || ""} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-      className="w-full px-4 py-2.5 rounded-xl text-[13px] outline-none transition-all"
+      className="w-full px-4 py-2.5 rounded-xl text-[13px] outline-none transition-all placeholder:italic placeholder:text-white/40"
       style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff", transition: "all .2s ease" }} onFocus={(e) => { e.target.style.border = "1px solid rgba(201,160,99,0.7)"; e.target.style.boxShadow = "0 0 0 3px rgba(201,160,99,0.15)"; e.target.style.background = "rgba(201,160,99,0.05)"; }} onBlur={(e) => { e.target.style.border = "1px solid rgba(255,255,255,0.1)"; e.target.style.boxShadow = "none"; e.target.style.background = "rgba(255,255,255,0.05)"; }} />
   );
 }
@@ -47,7 +47,7 @@ const DEBT_TYPES_ABF = ["Carte de crédit", "Marge de crédit", "Prêt auto", "P
 function Select({ value, onChange, options, placeholder }) {
   return (
     <select value={value || ""} onChange={e => onChange(e.target.value)}
-      className="w-full px-4 py-2.5 rounded-xl text-[13px] outline-none transition-all"
+      className="w-full px-4 py-2.5 rounded-xl text-[13px] outline-none transition-all placeholder:italic placeholder:text-white/40"
       style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff", transition: "all .2s ease" }}
       onFocus={(e) => { e.target.style.border = "1px solid rgba(201,160,99,0.7)"; e.target.style.boxShadow = "0 0 0 3px rgba(201,160,99,0.15)"; }}
       onBlur={(e) => { e.target.style.border = "1px solid rgba(255,255,255,0.1)"; e.target.style.boxShadow = "none"; }}>
@@ -151,13 +151,13 @@ function StepProfilPersonnel({ data, setData }) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {visP(0) && (<>
         <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Field label="Prénom"><Input value={prenomAff} onChange={majNom("prenom")} placeholder="Jean" /></Field>
+          <Field label="Prénom"><Input value={prenomAff} onChange={majNom("prenom")} placeholder="ex : Jean" /></Field>
           <Field label="Deuxième prénom (optionnel)"><Input value={secondAff} onChange={majNom("second_prenom")} placeholder="—" /></Field>
-          <Field label="Nom de famille"><Input value={nomFamAff} onChange={majNom("nom_famille")} placeholder="Tremblay" /></Field>
+          <Field label="Nom de famille"><Input value={nomFamAff} onChange={majNom("nom_famille")} placeholder="ex : Tremblay" /></Field>
         </div>
         <Field label="Date de naissance"><ChampDateNaissance value={data.dob} onChange={f("dob")} /></Field>
-        <Field label="Courriel"><Input value={data.email} onChange={f("email")} placeholder="jean@exemple.com" /></Field>
-        <Field label="Téléphone cellulaire"><Input value={data.cell} onChange={f("cell")} placeholder="514-555-0000" /></Field>
+        <Field label="Courriel"><Input value={data.email} onChange={f("email")} placeholder="ex : jean@exemple.com" /></Field>
+        <Field label="Téléphone cellulaire"><Input value={data.cell} onChange={f("cell")} placeholder="ex : 514-555-0000" /></Field>
         </>)}
         {visP(1) && (<>
         <div className="md:col-span-2">
@@ -182,13 +182,13 @@ function StepProfilPersonnel({ data, setData }) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Field label="Prénom"><Input value={prenomAffC} onChange={majNomC("prenom")} placeholder="Marie" /></Field>
+              <Field label="Prénom"><Input value={prenomAffC} onChange={majNomC("prenom")} placeholder="ex : Marie" /></Field>
               <Field label="Deuxième prénom (optionnel)"><Input value={secondAffC} onChange={majNomC("second_prenom")} placeholder="—" /></Field>
-              <Field label="Nom de famille"><Input value={nomFamAffC} onChange={majNomC("nom_famille")} placeholder="Tremblay" /></Field>
+              <Field label="Nom de famille"><Input value={nomFamAffC} onChange={majNomC("nom_famille")} placeholder="ex : Tremblay" /></Field>
             </div>
             <Field label="Date de naissance"><ChampDateNaissance value={conjoint.dob} onChange={fc("dob")} /></Field>
-            <Field label="Courriel"><Input value={conjoint.email} onChange={fc("email")} placeholder="marie@exemple.com" /></Field>
-            <Field label="Téléphone"><Input value={conjoint.cell} onChange={fc("cell")} placeholder="514-555-0001" /></Field>
+            <Field label="Courriel"><Input value={conjoint.email} onChange={fc("email")} placeholder="ex : marie@exemple.com" /></Field>
+            <Field label="Téléphone"><Input value={conjoint.cell} onChange={fc("cell")} placeholder="ex : 514-555-0001" /></Field>
           </div>
 
           <div className="space-y-2">
@@ -377,7 +377,7 @@ function ChampRevenuHero({ value, onChange }) {
           inputMode="numeric"
           value={value || ""}
           onChange={e => onChange(e.target.value)}
-          placeholder="85 000"
+          placeholder="ex : 85 000"
           aria-label="Revenu brut annuel en dollars"
           className="w-full bg-transparent outline-none font-financial"
           style={{ fontSize: "clamp(1.6rem, 4vw, 2.1rem)", fontWeight: 800, color: "#fff", letterSpacing: "-0.02em" }}
@@ -589,7 +589,7 @@ function RevenuPanel({ data, setData, ecran }) {
                     >
                       <div className="flex gap-2">
                         <input type="number" value={e.impot_saisi || ""} onChange={ev => updateEmploi(i, "impot_saisi", ev.target.value)} placeholder="0"
-                          className="w-full px-4 py-2.5 rounded-xl text-[13px] outline-none transition-all"
+                          className="w-full px-4 py-2.5 rounded-xl text-[13px] outline-none transition-all placeholder:italic placeholder:text-white/40"
                           style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${!e.impot_modifie && e.impot_saisi ? "rgba(91,196,160,0.3)" : "rgba(255,255,255,0.1)"}`, color: "#fff" }} />
                         <button type="button" onClick={() => updateEmploi(i, "impot_freq", (e.impot_freq || "mensuel") === "mensuel" ? "annuel" : "mensuel")}
                           className="shrink-0 rounded-xl text-[11px] font-bold transition-all"
@@ -828,7 +828,7 @@ function PrestationsBlock({ data, setData, salaireActuelPanel }) {
           </div>
         ) : (
           <Field label="Rente mensuelle à 65 ans ($/mois)" hint="Montant indiqué sur votre relevé de participation (Mon Dossier RRQ), projeté à 65 ans.">
-            <Input type="number" value={data.rrq} onChange={f("rrq")} placeholder="1 500" />
+            <Input type="number" value={data.rrq} onChange={f("rrq")} placeholder="ex : 1 500" />
           </Field>
         )}
 
@@ -908,13 +908,13 @@ function RetraitePanel({ data, setData, stepData, isPrincipal = true , ecran }) 
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <Field label="Âge prévu de retraite"><Input value={data.age_retraite} onChange={f("age_retraite")} type="number" placeholder="65" /></Field>
-        <Field label="Espérance de vie visée" hint="IQPF recommande 95 ans"><Input value={data.esperance_vie} onChange={f("esperance_vie")} type="number" placeholder="95" /></Field>
+        <Field label="Âge prévu de retraite"><Input value={data.age_retraite} onChange={f("age_retraite")} type="number" placeholder="ex : 65" /></Field>
+        <Field label="Espérance de vie visée" hint="IQPF recommande 95 ans"><Input value={data.esperance_vie} onChange={f("esperance_vie")} type="number" placeholder="ex : 95" /></Field>
         <Field label="Revenu mensuel désiré à la retraite ($)" hint={brutMensuel > 0 && data.revenu_retraite_pct ? `≈ ${Math.round(data.revenu_retraite_pct)}% du revenu actuel` : undefined}>
           <Input value={data.revenu_retraite_mensuel} onChange={handleMensuelChange} type="number" placeholder={brutMensuel > 0 ? Math.round(brutMensuel * 0.8) : ""} />
         </Field>
         <Field label="% du revenu actuel" hint={brutMensuel > 0 && data.revenu_retraite_mensuel ? `≈ ${Math.round(data.revenu_retraite_mensuel).toLocaleString('fr-CA')} $/mois` : "80% recommandé"}>
-          <Input value={data.revenu_retraite_pct} onChange={handlePctChange} type="number" placeholder="80" />
+          <Input value={data.revenu_retraite_pct} onChange={handlePctChange} type="number" placeholder="ex : 80" />
         </Field>
       </div>
       </>)}
@@ -972,7 +972,7 @@ function RetraitePanel({ data, setData, stepData, isPrincipal = true , ecran }) 
                           <Input value={fondPension.prestation_mensuelle} onChange={v => setFondPension("prestation_mensuelle", v)} type="number" />
                         </Field>
                         <Field label="Âge de retraite du régime">
-                          <Input value={fondPension.age_retraite_regime} onChange={v => setFondPension("age_retraite_regime", v)} type="number" placeholder="65" />
+                          <Input value={fondPension.age_retraite_regime} onChange={v => setFondPension("age_retraite_regime", v)} type="number" placeholder="ex : 65" />
                         </Field>
                       </div>
 
@@ -1175,7 +1175,7 @@ function DettesPanel({ data, setData }) {
               <div key={i} className="rounded-xl p-4 relative" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
                 <button onClick={() => removeDette(i)} className="absolute top-3 right-3 text-[11px]" style={{ color: "rgba(248,113,113,0.7)" }}>✕</button>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                  <Field label="Nom (ex: Visa 1, Auto)"><Input value={d.nom} onChange={v => updateDette(i, "nom", v)} placeholder="Visa 1" /></Field>
+                  <Field label="Nom (ex: Visa 1, Auto)"><Input value={d.nom} onChange={v => updateDette(i, "nom", v)} placeholder="ex : Visa 1" /></Field>
                   <Field label="Type de dette"><Select value={d.type} onChange={v => updateDette(i, "type", v)} options={DEBT_TYPES_ABF} placeholder="Choisir le type…" /></Field>
                   <Field label="Solde ($)"><Input value={d.solde} onChange={v => updateDette(i, "solde", v)} type="number" /></Field>
                   <Field label="Taux (%)"><Input value={d.taux} onChange={v => updateDette(i, "taux", v)} type="number" /></Field>
@@ -1360,10 +1360,10 @@ function StepEtudes({ data, setData, stepData }) {
                     { value: "familial", label: "Familial" },
                   ]} />
                 </Field>
-                <Field label="Âge prévu début des études"><Input type="number" value={e.age_debut_etudes} onChange={v => updateEnfant(i, "age_debut_etudes", v)} placeholder="18" /></Field>
+                <Field label="Âge prévu début des études"><Input type="number" value={e.age_debut_etudes} onChange={v => updateEnfant(i, "age_debut_etudes", v)} placeholder="ex : 18" /></Field>
                 <Field label="Solde REEE actuel ($)"><Input type="number" value={e.reee_solde} onChange={v => updateEnfant(i, "reee_solde", v)} placeholder="0" /></Field>
                 <Field label="Cotisation mensuelle ($)" hint="Idéal : 208$/mois = 2 500$/an pour la SCEE max">
-                  <Input type="number" value={e.reee_cotisation_mensuelle} onChange={v => updateEnfant(i, "reee_cotisation_mensuelle", v)} placeholder="208" />
+                  <Input type="number" value={e.reee_cotisation_mensuelle} onChange={v => updateEnfant(i, "reee_cotisation_mensuelle", v)} placeholder="ex : 208" />
                 </Field>
                 <Field label="Institution financière"><Input value={e.institution} onChange={v => updateEnfant(i, "institution", v)} placeholder="ex: Desjardins, Fidelity..." /></Field>
                 <Field label="Bénéficiaire du régime déjà ouvert ?">
@@ -1473,20 +1473,20 @@ function StepImmobilier({ data, setData }) {
                     ]} />
                   </Field>
                   <Field label="Adresse / Description"><Input value={h.adresse} onChange={v => updateHypo(i, "adresse", v)} placeholder="ex: 123 rue des Érables, Montréal" /></Field>
-                  <Field label="Prix d'achat ($)"><Input type="number" value={h.prix_achat} onChange={v => updateHypo(i, "prix_achat", v)} placeholder="350 000" /></Field>
-                  <Field label="Année d'achat"><Input type="number" value={h.annee_achat} onChange={v => updateHypo(i, "annee_achat", v)} placeholder="2019" /></Field>
-                  <Field label="Valeur marchande estimée ($)" hint="Estimation actuelle"><Input type="number" value={h.valeur_marchande} onChange={v => updateHypo(i, "valeur_marchande", v)} placeholder="550 000" /></Field>
+                  <Field label="Prix d'achat ($)"><Input type="number" value={h.prix_achat} onChange={v => updateHypo(i, "prix_achat", v)} placeholder="ex : 350 000" /></Field>
+                  <Field label="Année d'achat"><Input type="number" value={h.annee_achat} onChange={v => updateHypo(i, "annee_achat", v)} placeholder="ex : 2019" /></Field>
+                  <Field label="Valeur marchande estimée ($)" hint="Estimation actuelle"><Input type="number" value={h.valeur_marchande} onChange={v => updateHypo(i, "valeur_marchande", v)} placeholder="ex : 550 000" /></Field>
                   <Field label="Date de prochain renouvellement"><Input type="date" value={h.date_renouvellement} onChange={v => updateHypo(i, "date_renouvellement", v)} /></Field>
-                  <Field label="Mise de fonds initiale (%)"><Input type="number" value={h.mise_de_fonds_pct} onChange={v => updateHypo(i, "mise_de_fonds_pct", v)} placeholder="20" /></Field>
-                  <Field label="Solde hypothécaire actuel ($)"><Input type="number" value={h.solde} onChange={v => updateHypo(i, "solde", v)} placeholder="280 000" /></Field>
-                  <Field label="Taux d'intérêt actuel (%)"><Input type="number" value={h.taux} onChange={v => updateHypo(i, "taux", v)} placeholder="5.25" /></Field>
+                  <Field label="Mise de fonds initiale (%)"><Input type="number" value={h.mise_de_fonds_pct} onChange={v => updateHypo(i, "mise_de_fonds_pct", v)} placeholder="ex : 20" /></Field>
+                  <Field label="Solde hypothécaire actuel ($)"><Input type="number" value={h.solde} onChange={v => updateHypo(i, "solde", v)} placeholder="ex : 280 000" /></Field>
+                  <Field label="Taux d'intérêt actuel (%)"><Input type="number" value={h.taux} onChange={v => updateHypo(i, "taux", v)} placeholder="ex : 5.25" /></Field>
                   <Field label="Type de taux">
                     <RadioGroup value={h.type_taux} onChange={v => updateHypo(i, "type_taux", v)} options={[{ value: "fixe", label: "Fixe" }, { value: "variable", label: "Variable" }]} />
                   </Field>
-                  <Field label="Terme restant (mois)" hint="Avant renouvellement"><Input type="number" value={h.terme_restant} onChange={v => updateHypo(i, "terme_restant", v)} placeholder="36" /></Field>
-                  <Field label="Amortissement initial (ans)"><Input type="number" value={h.amortissement_initial} onChange={v => updateHypo(i, "amortissement_initial", v)} placeholder="25" /></Field>
-                  <Field label="Amortissement restant (ans)"><Input type="number" value={h.amortissement_restant} onChange={v => updateHypo(i, "amortissement_restant", v)} placeholder="21" /></Field>
-                  <Field label="Paiement mensuel ($)"><Input type="number" value={h.paiement_mensuel} onChange={v => updateHypo(i, "paiement_mensuel", v)} placeholder="1 850" /></Field>
+                  <Field label="Terme restant (mois)" hint="Avant renouvellement"><Input type="number" value={h.terme_restant} onChange={v => updateHypo(i, "terme_restant", v)} placeholder="ex : 36" /></Field>
+                  <Field label="Amortissement initial (ans)"><Input type="number" value={h.amortissement_initial} onChange={v => updateHypo(i, "amortissement_initial", v)} placeholder="ex : 25" /></Field>
+                  <Field label="Amortissement restant (ans)"><Input type="number" value={h.amortissement_restant} onChange={v => updateHypo(i, "amortissement_restant", v)} placeholder="ex : 21" /></Field>
+                  <Field label="Paiement mensuel ($)"><Input type="number" value={h.paiement_mensuel} onChange={v => updateHypo(i, "paiement_mensuel", v)} placeholder="ex : 1 850" /></Field>
                 </div>
                 {h.solde && (h.valeur_marchande || h.prix_achat) && (
                   <div className="mt-4 rounded-lg px-4 py-2.5 flex items-center justify-between" style={{ background: "rgba(201,160,99,0.06)", border: "1px solid rgba(201,160,99,0.12)" }}>
