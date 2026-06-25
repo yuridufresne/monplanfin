@@ -59,14 +59,23 @@ function _sumComptesField(comptes, keys, field) {
 }
 
 // Soldes + cotisations d'épargne, foyer + par personne + par compte.
+function _fondPensionDC(panel, field) {
+  const fp = (panel && panel.fond_pension) || {};
+  const estDB = (parseFloat(fp.prestation_mensuelle ?? fp.rente_mensuelle_estimee ?? 0) || 0) > 0;
+  if (estDB) return 0;
+  if (field === "solde") return parseFloat(fp.solde) || 0;
+  return (parseFloat(fp.cotisation_salariale) || 0) + (parseFloat(fp.cotisation_patronale) || 0);
+}
+
 export function calcEpargne(profiles) {
   const ret = unwrap((profiles || []).find(p => p && p.section === "retraite") && (profiles || []).find(p => p && p.section === "retraite").data || {});
+  const retB = ret.conjoint || {};
   const cA = ret.comptes || {};
-  const cB = (ret.conjoint || {}).comptes || {};
-  const soldeA = _sumComptesField(cA, COMPTES_EPARGNE, "solde");
-  const soldeB = _sumComptesField(cB, COMPTES_EPARGNE, "solde");
-  const cotA = _sumComptesField(cA, COMPTES_EPARGNE, "cotisation_mensuelle");
-  const cotB = _sumComptesField(cB, COMPTES_EPARGNE, "cotisation_mensuelle");
+  const cB = retB.comptes || {};
+  const soldeA = _sumComptesField(cA, COMPTES_EPARGNE, "solde") + _fondPensionDC(ret, "solde");
+  const soldeB = _sumComptesField(cB, COMPTES_EPARGNE, "solde") + _fondPensionDC(retB, "solde");
+  const cotA = _sumComptesField(cA, COMPTES_EPARGNE, "cotisation_mensuelle") + _fondPensionDC(ret, "cotisation");
+  const cotB = _sumComptesField(cB, COMPTES_EPARGNE, "cotisation_mensuelle") + _fondPensionDC(retB, "cotisation");
   const parCompte = {};
   COMPTES_EPARGNE.forEach((k) => {
     parCompte[k] = {
