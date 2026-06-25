@@ -389,6 +389,8 @@ export default function FeuilleResume() {
   const _dispoReel = calcRevenuDisponible(profiles);
   const revenuNetMensuel = _dispoReel.revenuNetMensuel;
   const revenuNetTotal = revenuNetMensuel * 12;
+  // P9 -- impot retenu a la source vs theorique.
+  const impotRetenu = _dispoReel.impotSaisiFamilial || 0;
 
   // ── RÈGLE 2 : RFNR = somme des revenus nets INDIVIDUELS ──────────────
   // Le RFNR pour les allocations familiales utilise les vrais revenus nets calculés
@@ -852,7 +854,15 @@ export default function FeuilleResume() {
         {/* ── KPIs GLOBAUX ──────────────────────────────────────────── */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4" style={{ marginBottom: 40 }}>
           <KpiCard label="Revenu brut annuel" value={fmt(revenuBrutAnnuel)} icon={TrendingUp} color="#C9A063" />
-          <KpiCard label="Impôts totaux" value={fmt(totalImpots)} sub={`Taux effectif ${fmtPct1(txEffectif)}`} icon={FileText} color="#E07B6B" />
+          <KpiCard
+            label="Impôts totaux (théorique)"
+            value={fmt(totalImpots)}
+            sub={impotRetenu > 0
+              ? `Retenu ${fmt(impotRetenu)} · ${totalImpots - impotRetenu >= 0 ? `solde à payer ≈ ${fmt(totalImpots - impotRetenu)}` : `remb. ≈ ${fmt(impotRetenu - totalImpots)}`}`
+              : `Taux effectif ${fmtPct1(txEffectif)}`}
+            icon={FileText}
+            color="#E07B6B"
+          />
           <KpiCard
             label="Revenu disponible"
             value={fmt(revenuNetTotal + (hasEnfants ? allocMensuelEffectif * 12 : 0))}
