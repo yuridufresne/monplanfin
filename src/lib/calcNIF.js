@@ -269,7 +269,9 @@ export function calcNIFFromProfiles(profiles) {
       if (!Array.isArray(list)) return s;
       return s + list.reduce((a, x) => a + (parseFloat(x.solde) || 0), 0);
     }, 0);
-    total += parseFloat((ret.fond_pension || {}).solde) || 0;
+    const _fpE = ret.fond_pension || {};
+    const _fpDB = (parseFloat(_fpE.prestation_mensuelle ?? _fpE.rente_mensuelle_estimee ?? 0) || 0) > 0;
+    if (!_fpDB) total += parseFloat(_fpE.solde) || 0; // DC seulement (DB compté en revenu garanti)
     return total;
   };
   const sumCotis = (ret) => {
@@ -280,7 +282,8 @@ export function calcNIFFromProfiles(profiles) {
       return s + list.reduce((a, x) => a + (parseFloat(x.cotisation_mensuelle) || 0), 0);
     }, 0);
     const fp = ret.fond_pension || {};
-    total += (parseFloat(fp.cotisation_salariale) || 0) + (parseFloat(fp.cotisation_patronale) || 0);
+    const _fpDB2 = (parseFloat(fp.prestation_mensuelle ?? fp.rente_mensuelle_estimee ?? 0) || 0) > 0;
+    if (!_fpDB2) total += (parseFloat(fp.cotisation_salariale) || 0) + (parseFloat(fp.cotisation_patronale) || 0);
     return total;
   };
 
