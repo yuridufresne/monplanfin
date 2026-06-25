@@ -383,6 +383,9 @@ function ChampRevenuHero({ value, onChange }) {
           style={{ fontSize: "clamp(1.6rem, 4vw, 2.1rem)", fontWeight: 800, color: "#fff", letterSpacing: "-0.02em" }}
         />
       </div>
+      <p className="text-[11px] mt-1.5" style={{ color: "rgba(255,255,255,0.4)" }}>
+        Salaire annuel total avant impôt — <span style={{ color: "rgba(201,160,99,0.7)" }}>paie de vacances comprise</span>.
+      </p>
       <AnimatePresence>
         {showTip && (
           <motion.div
