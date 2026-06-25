@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Trash2, Edit2, TrendingUp, TrendingDown, DollarSign, LayoutGrid } from "lucide-react";
+import { Trash2, Edit2, TrendingUp, TrendingDown, DollarSign, LayoutGrid } from "lucide-react";
 import { syncBudgetRevenuToABF } from "@/hooks/useABFSync";
 import BudgetEntryForm from "@/components/budget/BudgetEntryForm";
 import BudgetGrid from "@/components/budget/BudgetGrid";
@@ -109,8 +109,13 @@ export default function StepBudget() {
     profiles.forEach(p => { bySection[p?.section || p?.data?.section] = p?.data || {}; });
     const rows = [];
     const immo = bySection["immobilier"] || {};
-    const hypos = [...(immo.hypotheques || []), ...((immo.conjoint && immo.conjoint.hypotheques) || [])];
-    hypos.forEach((h, i) => {
+    const dettesSec = bySection["dettes"] || {};
+    const immoB = immo.conjoint || {};
+    const dettesB = dettesSec.conjoint || {};
+
+    const hyposA = (immo.hypotheques && immo.hypotheques.length) ? immo.hypotheques : (dettesSec.hypotheques || []);
+    const hyposB = (immoB.hypotheques && immoB.hypotheques.length) ? immoB.hypotheques : (dettesB.hypotheques || []);
+    [...hyposA, ...hyposB].forEach((h, i) => {
       let pay = parseFloat(h.paiement_mensuel) || 0;
       if (!pay) {
         const solde = parseFloat(h.solde) || 0;
@@ -120,6 +125,12 @@ export default function StepBudget() {
       }
       if (pay > 0) rows.push({ id: "abf-hypo-" + i, label: "Hypothèque — " + (h.adresse || h.usage || "résidence"), amount: Math.round(pay), frequency: "mensuel", category: "logement", source: "abf", type: "depense" });
     });
+    // Prets / autres dettes : paiement minimum
+    [...(dettesSec.dettes || []), ...(dettesB.dettes || [])].forEach((d, i) => {
+      const pay = parseFloat(d.paiement_min) || 0;
+      if (pay > 0) rows.push({ id: "abf-dette-" + i, label: (d.nom || d.type || "Prêt") + " — remboursement", amount: Math.round(pay), frequency: "mensuel", category: "dettes", source: "abf", type: "depense" });
+    });
+
     return rows;
   }, [profiles]);
   const depenses = [...entries.filter(e => e.type === "depense"), ...abfDepenses];
