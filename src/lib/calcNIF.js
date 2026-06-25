@@ -17,7 +17,7 @@
  */
 
 import { getRevenusGarantisABF, indexerRevenusGarantis, PRESTATIONS_2026 } from '@/lib/prestationsGouvernementales';
-import { buildPayload, nifMoyenne } from '@/lib/clientPayload';
+import { buildPayload, nifMoyenne, calculRRQ } from '@/lib/clientPayload';
 
 export const RENDEMENT_ACCUM   = 0.07;
 export const RENDEMENT_DECAISS = 0.05;
@@ -222,7 +222,26 @@ export function calcNIFFromProfiles(profiles) {
   const rrqB  = inclureConj ? (parseFloat(retCj.rrq) || 0)           * 12 : 0;
 
   // ── Revenus garantis — source unique : getRevenusGarantisABF ─────────────────
-  const revenusGarantis = getRevenusGarantisABF(retraite, retraiteC, inclureConj, ageActuel, ageConjoint);
+    // RRQ estime (mode estimer) : aligne le moteur garanti sur le moteur IQPF (clientPayload)
+  const _rrqBaseEstimee = (ret, salaireAnnuel) => {
+    if (!ret || typeof ret !== 'object') return null;
+    if (String(ret.rrq_mode || '').toLowerCase() === 'specifier') return null;
+    if ((parseFloat(ret.rrq) || 0) > 0) return null;
+    const salaireMoyen = parseFloat(ret.salaire_moyen_carriere) || salaireAnnuel || 0;
+    if (salaireMoyen <= 0) return null;
+    const ageRet = parseInt(ret.age_retraite) || 65;
+    const anneesDef = Math.max(0, Math.min(40, ageRet - 25));
+    const annees = parseInt(ret.annees_cotisation_rrq) || anneesDef;
+    const ageDebut = parseInt(ret.age_debut_rrq) || ageRet || 65;
+    const r = calculRRQ({ salaireMoyen, anneesCotisation: annees, ageDebut });
+    return (r.renteBrute65 || 0) / 12;
+  };
+  const _rrqEstP1 = _rrqBaseEstimee(retraite, brutP1);
+  const _rrqEstP2 = inclureConj ? _rrqBaseEstimee(retraiteC, brutP2) : null;
+  const _retraiteRRQ  = _rrqEstP1 != null ? { ...retraite,  rrq: _rrqEstP1 } : retraite;
+  const _retraiteCRRQ = _rrqEstP2 != null ? { ...retraiteC, rrq: _rrqEstP2 } : retraiteC;
+  
+  const revenusGarantis = getRevenusGarantisABF(_retraiteRRQ, _retraiteCRRQ, inclureConj, ageActuel, ageConjoint);
 
   const rrqMensuelTotal  = revenusGarantis.p1.rrq + revenusGarantis.p2.rrq;
   const psvMensuelTotal  = revenusGarantis.p1.psv + revenusGarantis.p2.psv;
