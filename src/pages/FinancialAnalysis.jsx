@@ -42,6 +42,21 @@ function Input({ value, onChange, type = "text", placeholder }) {
   );
 }
 
+const DEBT_TYPES_ABF = ["Carte de crédit", "Marge de crédit", "Prêt auto", "Prêt étudiant", "Prêt personnel", "Prêt REER (RAP / levier)", "Autre"];
+
+function Select({ value, onChange, options, placeholder }) {
+  return (
+    <select value={value || ""} onChange={e => onChange(e.target.value)}
+      className="w-full px-4 py-2.5 rounded-xl text-[13px] outline-none transition-all"
+      style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff", transition: "all .2s ease" }}
+      onFocus={(e) => { e.target.style.border = "1px solid rgba(201,160,99,0.7)"; e.target.style.boxShadow = "0 0 0 3px rgba(201,160,99,0.15)"; }}
+      onBlur={(e) => { e.target.style.border = "1px solid rgba(255,255,255,0.1)"; e.target.style.boxShadow = "none"; }}>
+      <option value="" style={{ background: "#161b26", color: "#9AA3B0" }}>{placeholder || "Choisir…"}</option>
+      {(options || []).map((o) => <option key={o} value={o} style={{ background: "#161b26", color: "#fff" }}>{o}</option>)}
+    </select>
+  );
+}
+
 function RadioGroup({ options, value, onChange }) {
   return (
     <div className="flex flex-wrap gap-2">
@@ -1160,7 +1175,7 @@ function DettesPanel({ data, setData }) {
               <div key={i} className="rounded-xl p-4 relative" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
                 <button onClick={() => removeDette(i)} className="absolute top-3 right-3 text-[11px]" style={{ color: "rgba(248,113,113,0.7)" }}>✕</button>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <Field label="Type (ex: carte crédit)"><Input value={d.type} onChange={v => updateDette(i, "type", v)} placeholder="Carte crédit" /></Field>
+                  <Field label="Type de dette"><Select value={d.type} onChange={v => updateDette(i, "type", v)} options={DEBT_TYPES_ABF} placeholder="Choisir le type…" /></Field>
                   <Field label="Solde ($)"><Input value={d.solde} onChange={v => updateDette(i, "solde", v)} type="number" /></Field>
                   <Field label="Taux (%)"><Input value={d.taux} onChange={v => updateDette(i, "taux", v)} type="number" /></Field>
                   <Field label="Paiement min ($)"><Input value={d.paiement_min} onChange={v => updateDette(i, "paiement_min", v)} type="number" /></Field>
