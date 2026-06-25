@@ -113,7 +113,7 @@ function tauxIndexationPension(fp, inflation) {
   return inflation;
 }
 
-function calculRRQ({ salaireMoyen, anneesCotisation, ageDebut }) {
+export function calculRRQ({ salaireMoyen, anneesCotisation, ageDebut }) {
   const ratioSalaire = Math.min(1, Math.max(0, (salaireMoyen || 0) / IQPF.MGA_2026));
   const ratioAnnees = Math.min(1, Math.max(0, (anneesCotisation || 0) / 40));
   const renteBrute65 = IQPF.RRQ_MAX_65 * ratioSalaire * ratioAnnees;
