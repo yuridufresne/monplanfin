@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { IQPF, nifMoyenne, buildPayload, facteurRRQ, facteurPSV } from "@/lib/clientPayload";
+import { calcEpargne } from "@/lib/calcRevenuNet";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
@@ -484,27 +485,10 @@ export default function AdvancedMode() {
       return (sv + rrq + fp) * 12;
     };
     const revGaranti = sumGaranti(retraite) + sumGaranti(retraiteC);
-    const sumEpargne = (ret) => {
-      const c = ret.comptes || {};
-      let total = Object.values(c).reduce((s, list) => {
-        if (!Array.isArray(list)) return s;
-        return s + list.reduce((a, x) => a + (parseFloat(x.solde) || 0), 0);
-      }, 0);
-      total += parseFloat((ret.fond_pension || {}).solde) || 0;
-      return total;
-    };
-    const sumCotis = (ret) => {
-      const c = ret.comptes || {};
-      let total = Object.values(c).reduce((s, list) => {
-        if (!Array.isArray(list)) return s;
-        return s + list.reduce((a, x) => a + (parseFloat(x.cotisation_mensuelle) || 0), 0);
-      }, 0);
-      const fp = ret.fond_pension || {};
-      total += (parseFloat(fp.cotisation_salariale) || 0) + (parseFloat(fp.cotisation_patronale) || 0);
-      return total;
-    };
-    let epargne = sumEpargne(retraite) + sumEpargne(retraiteC) || 25000;
-    let cotis = sumCotis(retraite) + sumCotis(retraiteC) || 500;
+    // Epargne capital = source unique calcEpargne (7 comptes hors REEE + fond pension DC, foyer)
+    const _epWI = calcEpargne(profiles);
+    let epargne = _epWI.soldeFoyer || 25000;
+    let cotis = _epWI.cotFoyer || 500;
       const fpPartWI = (r) => (parseFloat(r && r.fond_pension && r.fond_pension.rente_mensuelle_estimee) || 0) * 12;
       const pensionAnnuelleWI = fpPartWI(retraite) + fpPartWI(retraiteC);
       const pensIdxWI = (r) => { const fp = r && r.fond_pension; return fp ? (String(fp.indexation_avant_retraite || "oui").toLowerCase() !== "non") : false; };
