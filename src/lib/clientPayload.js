@@ -216,7 +216,10 @@ function readPersonne(ret = {}, profil = {}, salaireAnnuel = 0) {
 export function lireCibleRetraite(ret, brutAnnuelFoyer) {
   ret = ret || {};
   const brut = parseFloat(brutAnnuelFoyer) || 0;
-  const mensuel = parseFloat(ret.revenu_retraite_mensuel);
+  // Cible foyer = somme des deux personnes (la conjoint etait ignoree -> cible et % sous-evalues)
+  const mensuelA = parseFloat(ret.revenu_retraite_mensuel) || 0;
+  const mensuelB = parseFloat((ret.conjoint || {}).revenu_retraite_mensuel) || 0;
+  const mensuel = mensuelA + mensuelB;
   let pctRaw = parseFloat(ret.taux_remplacement);
   if (!Number.isFinite(pctRaw) || pctRaw <= 0) pctRaw = parseFloat(ret.revenu_retraite_pct);
   let taux;
