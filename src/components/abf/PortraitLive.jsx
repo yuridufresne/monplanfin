@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { calcRevenuDisponible } from "@/lib/calcRevenuNet";
+import { calcRevenuDisponible, calcEpargne } from "@/lib/calcRevenuNet";
 
 /**
  * PortraitLive — portrait financier en direct (panneau latéral de l'ABF).
@@ -11,19 +11,6 @@ import { calcRevenuDisponible } from "@/lib/calcRevenuNet";
  */
 
 const fmt = (v) => new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(Math.round(v) || 0);
-
-const COMPTE_KEYS = ["compte_non_enregistre", "celi", "celiapp", "reer", "reee", "cri_lira", "crypto", "ftq_csn"];
-
-// Taux effectif d'imposition approximatif (Québec 2026) — estimation live
-function tauxEffectifApprox(brut) {
-  if (brut <= 0) return 0;
-  if (brut <= 25000) return 0.12;
-  if (brut <= 45000) return 0.19;
-  if (brut <= 70000) return 0.25;
-  if (brut <= 100000) return 0.30;
-  if (brut <= 150000) return 0.345;
-  return 0.40;
-}
 
 // Compteur animé (ease-out cubique)
 function useCountUp(target, duration = 750) {
@@ -70,7 +57,6 @@ export default function PortraitLive({ sections = {}, sectionsCompletees = 0, to
 
   const calc = useMemo(() => {
     const sum = (arr, f) => (arr || []).reduce((s, x) => s + (parseFloat(f(x)) || 0), 0);
-    const sumComptes = (comptes, champ) => COMPTE_KEYS.reduce((s, k) => s + sum(comptes?.[k], c => c[champ]), 0);
 
     const brut =
       sum(revenu.emplois, e => e.revenu_brut) +
@@ -79,11 +65,8 @@ export default function PortraitLive({ sections = {}, sectionsCompletees = 0, to
       (enCouple ? sum(revenu.conjoint?.sidehustles, sh => sh.revenu_mensuel_moyen) * 12 : 0);
     const netMensuel = calcRevenuDisponible([{ section: "revenu", data: revenu }, { section: "retraite", data: retraite }]).revenuNetMensuel;
 
-    const epargne =
-      sumComptes(retraite.comptes, "solde") +
-      (enCouple ? sumComptes(retraite.conjoint?.comptes, "solde") : 0) +
-      (parseFloat(retraite.fond_pension?.solde) || 0) +
-      (enCouple ? (parseFloat(retraite.conjoint?.fond_pension?.solde) || 0) : 0);
+    // Epargne capital = source unique calcEpargne (7 comptes hors REEE + fond pension DC)
+    const epargne = calcEpargne([{ section: "retraite", data: retraite }]).soldeFoyer;
 
     const hypos = immo.hypotheques || [];
     const immoValeur = sum(hypos, h => h.valeur_marchande || h.prix_achat);
