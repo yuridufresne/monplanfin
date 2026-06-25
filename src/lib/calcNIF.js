@@ -221,27 +221,20 @@ export function calcNIFFromProfiles(profiles) {
   const svB   = inclureConj ? (parseFloat(retCj.sv)  || PSV_MENSUEL) * 12 : 0;
   const rrqB  = inclureConj ? (parseFloat(retCj.rrq) || 0)           * 12 : 0;
 
-  // ── Revenus garantis — source unique : getRevenusGarantisABF ─────────────────
-    // RRQ estime (mode estimer) : aligne le moteur garanti sur le moteur IQPF (clientPayload)
-  const _rrqBaseEstimee = (ret, salaireAnnuel) => {
-    if (!ret || typeof ret !== 'object') return null;
-    if (String(ret.rrq_mode || '').toLowerCase() === 'specifier') return null;
-    if ((parseFloat(ret.rrq) || 0) > 0) return null;
-    const salaireMoyen = parseFloat(ret.salaire_moyen_carriere) || salaireAnnuel || 0;
-    if (salaireMoyen <= 0) return null;
-    const ageRet = parseInt(ret.age_retraite) || 65;
-    const anneesDef = Math.max(0, Math.min(40, ageRet - 25));
-    const annees = parseInt(ret.annees_cotisation_rrq) || anneesDef;
-    const ageDebut = parseInt(ret.age_debut_rrq) || ageRet || 65;
-    const r = calculRRQ({ salaireMoyen, anneesCotisation: annees, ageDebut });
-    return (r.renteBrute65 || 0) / 12;
+  // -- Revenus garantis : SOURCE UNIQUE = buildPayload (clientPayload, chiffres 2026)
+  // Meme decomposition RRQ/PSV/pension que la carte NIF -> aucun doublon de moteur.
+  const _payG = buildPayload(profiles);
+  const _G = (_payG && _payG.revenus_garantis) || {};
+  const revenusGarantis = {
+    p1: { rrq: (_G.rrq_a || 0) / 12, psv: (_G.sv_a || 0) / 12, pension: (_G.pension_a || 0) / 12 },
+    p2: { rrq: (_G.rrq_b || 0) / 12, psv: (_G.sv_b || 0) / 12, pension: (_G.pension_b || 0) / 12 },
+    totalAnnuel: (_G.rrq_foyer || 0) + (_G.sv_foyer || 0) + (_G.pension_foyer || 0),
+    decomposition: {
+      rrqFoyer:     _G.rrq_foyer || 0,
+      psvFoyer:     _G.sv_foyer || 0,
+      pensionFoyer: _G.pension_foyer || 0,
+    },
   };
-  const _rrqEstP1 = _rrqBaseEstimee(retraite, brutP1);
-  const _rrqEstP2 = inclureConj ? _rrqBaseEstimee(retraiteC, brutP2) : null;
-  const _retraiteRRQ  = _rrqEstP1 != null ? { ...retraite,  rrq: _rrqEstP1 } : retraite;
-  const _retraiteCRRQ = _rrqEstP2 != null ? { ...retraiteC, rrq: _rrqEstP2 } : retraiteC;
-  
-  const revenusGarantis = getRevenusGarantisABF(_retraiteRRQ, _retraiteCRRQ, inclureConj, ageActuel, ageConjoint);
 
   const rrqMensuelTotal  = revenusGarantis.p1.rrq + revenusGarantis.p2.rrq;
   const psvMensuelTotal  = revenusGarantis.p1.psv + revenusGarantis.p2.psv;
