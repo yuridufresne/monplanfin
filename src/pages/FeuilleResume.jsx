@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import { calcAllocations } from "@/lib/allocations2026";
+import { calcRevenuDisponible } from "@/lib/calcRevenuNet";
 
 // ── Formatters ──────────────────────────────────────────────────────────────
 const fmt = (v) => new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v || 0);
@@ -384,8 +385,10 @@ export default function FeuilleResume() {
   // Cotisations sociales totales foyer — incluent RRQ+RQAP+AE pour TOUS les travailleurs
   const totalCotisationsSociales = cotisTA.total;
   // Revenu net foyer = somme des revenus nets individuels (règle 1)
-  const revenuNetTotal   = p1.net + p2.net;
-  const revenuNetMensuel = revenuNetTotal / 12;
+  // Net RÉEL (respecte l'impôt saisi + autres retenues) — partagé avec le budget pour que les chiffres concordent.
+  const _dispoReel = calcRevenuDisponible(profiles);
+  const revenuNetMensuel = _dispoReel.revenuNetMensuel;
+  const revenuNetTotal = revenuNetMensuel * 12;
 
   // ── RÈGLE 2 : RFNR = somme des revenus nets INDIVIDUELS ──────────────
   // Le RFNR pour les allocations familiales utilise les vrais revenus nets calculés
@@ -500,7 +503,7 @@ export default function FeuilleResume() {
     [...(_srcHypo.hypotheques || []), ...(_srcHypoConj.hypotheques || [])].reduce((s, h) => s + (parseFloat(h.paiement_mensuel) || 0), 0)
     + [...(dettesABF.dettes || []), ...((enCouple ? (dettesABF.conjoint && dettesABF.conjoint.dettes) : []) || [])].reduce((s, d) => s + (parseFloat(d.paiement_min) || 0), 0);
   const depensesVie = budgetEntries
-    .filter(e => e.type === "depense" && !/\(ABF\)/i.test(e.label || ""))
+    .filter(e => e.type === "depense" && !/\(ABF\)/i.test(e.label || "") && !/Imp[oô]ts? \(retenues/i.test(e.label || ""))
     .reduce((s, e) => s + toMonthly(parseFloat(e.amount) || 0, e.frequency), 0);
   const depensesMensuelles = depensesVie + serviceDetteABF;
 
