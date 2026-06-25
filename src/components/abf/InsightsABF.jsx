@@ -1,6 +1,6 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { calcRevenuDisponible } from "@/lib/calcRevenuNet";
+import { calcRevenuDisponible, calcEpargne } from "@/lib/calcRevenuNet";
 
 /**
  * InsightsABF — insights instantanés affichés à la complétion d'une section.
@@ -10,8 +10,6 @@ import { calcRevenuDisponible } from "@/lib/calcRevenuNet";
 
 const fmt = (v) => new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(Math.round(v) || 0);
 
-const COMPTE_KEYS = ["compte_non_enregistre", "celi", "celiapp", "reer", "reee", "cri_lira", "crypto", "ftq_csn"];
-
 function tauxMarginalApprox(brut) {
   if (brut <= 0) return 0;
   if (brut <= 53000) return 27.5;
@@ -20,16 +18,6 @@ function tauxMarginalApprox(brut) {
   if (brut <= 180000) return 45.7;
   if (brut <= 253000) return 47.5;
   return 53.3;
-}
-
-function tauxEffectifApprox(brut) {
-  if (brut <= 0) return 0;
-  if (brut <= 25000) return 0.12;
-  if (brut <= 45000) return 0.19;
-  if (brut <= 70000) return 0.25;
-  if (brut <= 100000) return 0.30;
-  if (brut <= 150000) return 0.345;
-  return 0.40;
 }
 
 export function getInsightForSection(sectionId, S = {}) {
@@ -104,12 +92,10 @@ export function getInsightForSection(sectionId, S = {}) {
 
     case "retraite": {
       const r = S.retraite || {};
-      const comptes = r.comptes || {};
-      const comptesB = enCouple ? (r.conjoint?.comptes || {}) : {};
-      const solde = COMPTE_KEYS.reduce((s, k) => s + sum(comptes[k], c => c.solde) + sum(comptesB[k], c => c.solde), 0)
-        + (parseFloat(r.fond_pension?.solde) || 0) + (parseFloat(r.conjoint?.fond_pension?.solde) || 0);
-      const cotM = COMPTE_KEYS.reduce((s, k) => s + sum(comptes[k], c => c.cotisation_mensuelle) + sum(comptesB[k], c => c.cotisation_mensuelle), 0)
-        + (parseFloat(r.fond_pension?.cotisation_salariale) || 0) + (parseFloat(r.fond_pension?.cotisation_patronale) || 0);
+      // Epargne capital = source unique calcEpargne (7 comptes hors REEE + fond pension DC)
+      const _ep = calcEpargne([{ section: "retraite", data: r }]);
+      const solde = _ep.soldeFoyer;
+      const cotM = _ep.cotFoyer;
       if (solde <= 0 && cotM <= 0) return null;
       const age = profil.dob ? Math.floor((Date.now() - new Date(profil.dob)) / (365.25 * 24 * 3600 * 1000)) : 35;
       const ageRetraite = parseInt(r.age_retraite) || 65;
