@@ -1736,7 +1736,8 @@ export default function FinancialAnalysis() {
       }
     }, 1500);
     return () => clearTimeout(timer);
-  }, [stepData[step.key]]);
+    // moi et step.key inclus : autosave se redeclenche quand auth dispo -> pas de perte
+  }, [stepData[step.key], moi, step.key]);
 
   const saveStep = async () => {
     if (!moi) return;
@@ -1776,8 +1777,16 @@ export default function FinancialAnalysis() {
       const done = new Set();
       profiles.forEach(p => { map[p.section] = unwrapData(p.data); if (p.completed) done.add(p.section); });
       if (budgetEntries.length > 0) done.add("budget");
-      setStepData(map);
-      setCompletedSteps(done);
+      // Ne pas ecraser une section deja en cours de saisie : la DB sert de base,
+      // mais toute saisie locale non vide reste prioritaire.
+      setStepData(prev => {
+        const merged = { ...map };
+        Object.keys(prev || {}).forEach(k => {
+          if (prev[k] && typeof prev[k] === "object" && Object.keys(prev[k]).length > 0) merged[k] = prev[k];
+        });
+        return merged;
+      });
+      setCompletedSteps(prev => new Set([...prev, ...done]));
     });
   }, [moi]);
 
