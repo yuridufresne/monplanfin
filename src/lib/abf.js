@@ -24,16 +24,20 @@ export function calcAge(dateNaissance) {
   return Math.floor((Date.now()-dob.getTime())/(365.25*24*3600*1000));
 }
 
+const COMPTES_EPARGNE_ABF = ['reer','celi','celiapp','cri_lira','ftq_csn','compte_non_enregistre','crypto'];
+
 export function readEpargne(comptes={}) {
   const sum=(arr,field)=>(arr||[]).reduce((s,c)=>s+(parseFloat(c[field])||0),0);
+  const sumAll=(field)=>COMPTES_EPARGNE_ABF.reduce((s,k)=>s+sum(comptes[k],field),0);
   // REEE exclu du capital de retraite — épargne-études uniquement
   return {
     soldeReer: sum(comptes.reer,'solde'),
     cotReer:   sum(comptes.reer,'cotisation_mensuelle'),
     soldeCeli: sum(comptes.celi,'solde'),
     cotCeli:   sum(comptes.celi,'cotisation_mensuelle'),
-    soldeCri:  sum(comptes.cri,'solde'),
-    soldeFrv:  sum(comptes.frv,'solde'),
+    soldeCri:  sum(comptes.cri_lira,'solde'),
+    soldeRetraite: sumAll('solde'),
+    cotRetraite:   sumAll('cotisation_mensuelle'),
     // REEE intentionnellement exclu
   };
 }
