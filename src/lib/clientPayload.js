@@ -77,7 +77,10 @@ function readEpargne(comptes = {}) {
     soldeCeli: sumC(comptes, 'celi', 'solde'),
     cotCeli: sumC(comptes, 'celi', 'cotisation_mensuelle'),
     soldeCri: sumC(comptes, 'cri', 'solde'),
-    soldeFrv: sumC(comptes, 'frv', 'solde'),
+    soldeFrv: sumC(comptes, "frv", "solde"),
+    // Capital retraite = tous les comptes SAUF REEE (études) — décision planificateur
+    soldeRetraite: ["reer", "celi", "celiapp", "cri_lira", "ftq_csn", "compte_non_enregistre", "crypto"].reduce((s, k) => s + sumC(comptes, k, "solde"), 0),
+    cotRetraite: ["reer", "celi", "celiapp", "cri_lira", "ftq_csn", "compte_non_enregistre", "crypto"].reduce((s, k) => s + sumC(comptes, k, "cotisation_mensuelle"), 0),
     comptes: {
       reer: comptes.reer || [], celi: comptes.celi || [], reee: comptes.reee || [],
       cri: comptes.cri || [], frv: comptes.frv || [], celiapp: comptes.celiapp || [],
@@ -258,8 +261,8 @@ export function buildPayload(profiles = [], opts = {}) {
   if (pB) pB.salaire = brutB;
 
   const brutTotal = brutA + brutB;
-  const epargneTotal = pA.soldeReer + pA.soldeCeli + (pB ? pB.soldeReer + pB.soldeCeli : 0);
-  const cotTotale = pA.cotReer + pA.cotCeli + (pB ? pB.cotReer + pB.cotCeli : 0);
+  const epargneTotal = pA.soldeRetraite + (pB ? pB.soldeRetraite : 0);
+  const cotTotale = pA.cotRetraite + (pB ? pB.cotRetraite : 0);
 
   const rrqFoyer     = pA.rrqAjuste + (pB?.rrqAjuste || 0);
   const svFoyer      = pA.sv        + (pB?.sv        || 0);
@@ -330,8 +333,8 @@ export function buildPayload(profiles = [], opts = {}) {
 
   const nif = Math.round(nifMoyenne(manqueFutur, nRetrait, IQPF.REND_DECAISSE, IQPF.INFLATION).nif);
 
-  const capA = fv(pA.soldeReer + pA.soldeCeli, pA.cotReer + pA.cotCeli, REND_ACCUM_EFF, nA);
-  const capB = pB ? fv(pB.soldeReer + pB.soldeCeli, pB.cotReer + pB.cotCeli, REND_ACCUM_EFF, nB) : 0;
+  const capA = fv(pA.soldeRetraite, pA.cotRetraite, REND_ACCUM_EFF, nA);
+  const capB = pB ? fv(pB.soldeRetraite, pB.cotRetraite, REND_ACCUM_EFF, nB) : 0;
   const capitalProjecte = Math.round(capA + capB);
 
   const nifNominal = nif;
