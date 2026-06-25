@@ -7,7 +7,7 @@ import { ArrowRight, ExternalLink, Settings, Home, Send } from "lucide-react";
 import { calculerQualification } from "@/lib/moteurImmobilier";
 import { payloadDepuisABF } from "@/lib/immobilierPayload";
 import { syncABFToEntities } from "@/hooks/useABFSync";
-import { calcRevenuDisponible } from "@/lib/calcRevenuNet";
+import { calcRevenuDisponible, calcDepensesMensuelles } from "@/lib/calcRevenuNet";
 import ResetDataModal from "@/components/dashboard/ResetDataModal";
 import RetirementReport from "@/components/dashboard/RetirementReport";
 import DebtSimulator from "@/components/dashboard/DebtSimulator";
@@ -382,11 +382,8 @@ export default function Dashboard() {
   const nifBadge  = ["depasse", "atteint"].includes(statut) ? "green" : statut === "en_voie" ? "gold" : "red";
 
   // ── Budget ─────────────────────────────────────────────────────────────────
-  const toMonthly = (a, f) => f === "annuel" ? a / 12 : f === "hebdomadaire" ? a * 52 / 12 : f === "bimensuel" ? a * 2 : a;
-  // Exclure les impôts à la source (déjà déduits du revenu net via calcRevenuDisponible)
-  const totalExpenses = budgetEntries
-    .filter(e => e.type === "depense" && e.label !== "Impôts (retenues à la source)")
-    .reduce((s, e) => s + toMonthly(parseFloat(e.amount) || 0, e.frequency), 0);
+  // Depenses mensuelles = source unique calcDepensesMensuelles (concorde avec la feuille de resume).
+  const totalExpenses = useMemo(() => calcDepensesMensuelles(budgetEntries, profiles).total, [budgetEntries, profiles]);
   const dejaRetraite = (ageActuel || 0) >= (ageRetraite || 65);
   const aucunRevenu = totalRevenue <= 0 && !dejaRetraite;
   const revenuMensuelAffiche = totalRevenue > 0 ? totalRevenue : dejaRetraite ? (revGarantiAnnuel || 0) / 12 : 0;
