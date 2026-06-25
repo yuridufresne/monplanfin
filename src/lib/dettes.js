@@ -55,9 +55,9 @@ export function simuleRemboursement(dettes, budgetMensuel, strategie = "avalanch
     // 3. Appliquer le surplus à la priorité
     const actives = pool.filter(d => d.solde > 0);
     if (strategie === "avalanche") {
-      actives.sort((a, b) => b.taux - a.taux);      // Plus haut taux en premier
+      actives.sort((a, b) => (b.taux - a.taux) || (a.solde - b.solde));      // Plus haut taux en premier
     } else {
-      actives.sort((a, b) => a.solde - b.solde);     // Plus petit solde en premier
+      actives.sort((a, b) => (a.solde - b.solde) || (b.taux - a.taux));     // Plus petit solde en premier
     }
     for (const d of actives) {
       if (reste <= 0) break;
