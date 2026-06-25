@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { calcRevenuDisponible } from "@/lib/calcRevenuNet";
 
 /**
  * PortraitLive — portrait financier en direct (panneau latéral de l'ABF).
@@ -76,7 +77,7 @@ export default function PortraitLive({ sections = {}, sectionsCompletees = 0, to
       (enCouple ? sum(revenu.conjoint?.emplois, e => e.revenu_brut) : 0) +
       sum(revenu.sidehustles, sh => sh.revenu_mensuel_moyen) * 12 +
       (enCouple ? sum(revenu.conjoint?.sidehustles, sh => sh.revenu_mensuel_moyen) * 12 : 0);
-    const netMensuel = brut > 0 ? brut * (1 - tauxEffectifApprox(enCouple ? brut / 2 : brut)) / 12 : 0;
+    const netMensuel = calcRevenuDisponible([{ section: "revenu", data: revenu }, { section: "retraite", data: retraite }]).revenuNetMensuel;
 
     const epargne =
       sumComptes(retraite.comptes, "solde") +
