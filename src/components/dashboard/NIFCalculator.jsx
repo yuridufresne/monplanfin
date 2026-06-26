@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { buildPayload, IQPF } from "@/lib/clientPayload";
 
 const fmt = (v) => new Intl.NumberFormat("fr-CA",{maximumFractionDigits:0}).format(Math.round(v||0)) + " $";
@@ -77,144 +77,105 @@ export default function NIFCalculator({ profiles }) {
   const Lbl = ({children,indent}) => <div style={{...cell,background:C.cellBg,color:C.txt55,paddingLeft:indent?24:16}}>{children}</div>;
   const Num = ({children,color}) => <div style={{...cell,...num,background:C.cellBg,fontSize:13,color:color||C.txt45}}>{children}</div>;
 
+  const [mode, setMode] = useState("future");
+  const heroBig = mode === "future" ? (kpis?.nif_nominal || 0) : nifAujourdhui;
+  const heroAlt = mode === "future" ? nifAujourdhui : (kpis?.nif_nominal || 0);
+  const pct = kpis?.nif_nominal > 0 ? Math.min(100, Math.max(0, Math.round((kpis?.capital_projete || 0) / kpis.nif_nominal * 100))) : 0;
+  const subTxt = `${pA?.prenom || "Client"}${pA?.age != null ? " " + pA.age + " ans" : ""}${enCouple && pB ? " · " + pB.prenom + (pB.age != null ? " " + pB.age + " ans" : "") : ""} — 1ʳᵉ retraite en ${anneeRet}`;
+  const fmtN = (v) => fmt(v).replace(" $", "");
+  const thL = { fontFamily: "var(--font-mono)", fontSize: 10.5, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: C.txt40, textAlign: "left", padding: "0 0 9px" };
+  const thR = { ...thL, textAlign: "right", color: C.vert };
+  const tdL = { padding: "8px 0", textAlign: "left", fontSize: 13.5, borderTop: "1px solid rgba(255,255,255,0.06)", color: C.txt55 };
+  const tdR = { padding: "8px 0", textAlign: "right", fontSize: 13.5, borderTop: "1px solid rgba(255,255,255,0.06)", fontFamily: "var(--font-mono)", color: "#fff" };
+  const tdSubL = { padding: "11px 0 8px", textAlign: "left", fontSize: 14, borderTop: "1px solid rgba(255,255,255,0.14)", fontWeight: 700, color: "#fff" };
+  const tdSubR = { ...tdSubL, textAlign: "right", fontFamily: "var(--font-mono)" };
+
   return (
-    <div style={{background:"#0D1628",border:"1px solid rgba(201,160,99,0.2)",borderRadius:16,padding:"1.5rem",overflow:"hidden",boxShadow:"0 16px 48px rgba(0,0,0,0.4)"}}>
-      <style>{`
-        .nif-i{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;border:1px solid rgba(201,160,99,0.5);color:#C9A063;font-size:11px;font-style:italic;font-weight:600;cursor:help;margin-left:8px;position:relative;vertical-align:middle}
-        .nif-i:hover .nif-tip{opacity:1;visibility:visible}
-        .nif-tip{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#0A1119;border:1px solid rgba(201,160,99,0.35);border-radius:10px;padding:10px 12px;width:280px;opacity:0;visibility:hidden;transition:all .15s;z-index:99;box-shadow:0 8px 24px rgba(0,0,0,0.6);text-align:left;font-style:normal;font-weight:400}
-        .nif-tip-row{display:flex;justify-content:space-between;gap:8px;padding:3px 0;font-size:11px;border-bottom:0.5px solid rgba(255,255,255,0.08)}
-        .nif-tip-row:last-child{border-bottom:none}
-      `}</style>
+    <div style={{ background: "#0D1628", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 20, overflow: "hidden", boxShadow: "0 40px 90px -50px #000" }}>
+      <style>{`.nif-i{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;border:1px solid rgba(201,160,99,0.5);color:#C9A063;font-size:10px;font-style:italic;font-weight:600;cursor:help;margin-left:8px;position:relative;vertical-align:middle}.nif-i:hover .nif-tip{opacity:1;visibility:visible}.nif-tip{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#0A1119;border:1px solid rgba(201,160,99,0.35);border-radius:10px;padding:10px 12px;width:250px;opacity:0;visibility:hidden;transition:all .15s;z-index:99;box-shadow:0 8px 24px rgba(0,0,0,0.6);text-align:left;font-style:normal;font-weight:400}.nif-tip-row{display:flex;justify-content:space-between;gap:8px;padding:3px 0;font-size:11px}`}</style>
+      <div style={{ height: 3, background: "linear-gradient(90deg,#5BC4A0,#C9A063)" }} />
+      <div style={{ padding: "26px 28px" }}>
 
-      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:"1.25rem"}}>
-        <div style={{width:36,height:36,borderRadius:12,background:"rgba(201,160,99,0.15)",border:"1px solid rgba(201,160,99,0.3)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-          <span style={{fontSize:16}}>🎯</span>
-        </div>
-        <div>
-          <div style={{fontSize:11,fontWeight:500,letterSpacing:"0.12em",textTransform:"uppercase",color:"rgba(201,160,99,0.6)"}}>Indépendance financière</div>
-          <div style={{fontSize:18,fontWeight:500,color:"#fff"}}>Numéro d'Indépendance Financière</div>
-        </div>
-      </div>
-
-      {/* ⚠ Warning si profil incomplet */}
-      {pA?.age == null && (
-        <div style={{
-          background: "rgba(245,158,11,0.08)",
-          border: "1px solid rgba(245,158,11,0.3)",
-          borderRadius: 10,
-          padding: "10px 14px",
-          marginBottom: 12,
-          fontSize: 12.5,
-          color: "#f59e0b",
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-        }}>
-          <span style={{fontSize:14}}>⚠</span>
-          <span>
-            <strong>Date de naissance manquante</strong> — les projections utilisent un âge par défaut (38 ans). Complétez votre <a href="/analyse" style={{color:"#f59e0b",textDecoration:"underline"}}>profil personnel</a> pour des chiffres précis.
-          </span>
-        </div>
-      )}
-
-      <div style={{display:"grid",gridTemplateColumns:"1.3fr 0.9fr 1.3fr 0.9fr",gap:1,background:"rgba(255,255,255,0.06)",borderRadius:12,overflow:"hidden"}}>
-
-        {/* En-têtes colonnes */}
-        <div style={{...cell,background:C.headBg,padding:"14px 16px"}}>
-          <div style={{fontSize:13,fontWeight:500,color:"#fff"}}>Valeur réelle aujourd'hui</div>
-          <div style={{fontSize:12,color:C.txt40,marginTop:2}}>{anneeAuj} · {pA?.prenom}{pA?.age != null ? ` ${pA.age}` : ""}{pB ? ` / ${pB.prenom}${pB.age != null ? ` ${pB.age}` : ""}` : ""}</div>
-        </div>
-        <div style={{...cell,background:C.headBg,display:"flex",alignItems:"center",justifyContent:"flex-end"}}>
-          <span style={{fontSize:11,color:C.txt30,textTransform:"uppercase",letterSpacing:".05em"}}>$ auj.</span>
-        </div>
-        <div style={{...cell,background:C.headBg,padding:"14px 16px"}}>
-          <div style={{fontSize:13,fontWeight:500,color:"#fff"}}>{dejaRetraite ? "Valeur à la retraite (en cours)" : "Valeur à la 1re retraite"}</div>
-          <div style={{fontSize:12,color:C.txt40,marginTop:2}}>{dejaRetraite ? "Déjà à la retraite — capital requis maintenant" : <>{anneeRet} · {pA?.prenom} {pA?.ageRetraite}{pB?` / ${pB.prenom} ${ageRetMarie}`:""}</>}</div>
-        </div>
-        <div style={{...cell,background:C.headBg,display:"flex",alignItems:"center",justifyContent:"flex-end"}}>
-          <span style={{fontSize:11,color:C.txt30,textTransform:"uppercase",letterSpacing:".05em"}}>$ nominal</span>
-        </div>
-
-        {/* NIF hero */}
-        <div style={{gridColumn:"1 / 5",background:"linear-gradient(135deg,rgba(201,160,99,0.18),rgba(201,160,99,0.08))",borderTop:"1px solid rgba(201,160,99,0.25)",borderBottom:"1px solid rgba(201,160,99,0.25)",padding:"24px 20px",textAlign:"center"}}>
-          <div style={{fontSize:14,fontWeight:500,color:C.or}}>Numéro d'indépendance financière (sommes à accumuler)</div>
-          <div style={{fontFamily:"var(--font-mono)",fontSize:34,fontWeight:500,color:C.or,marginTop:14,lineHeight:1,textShadow:"0 0 30px rgba(201,160,99,0.4)",display:"inline-flex",alignItems:"center",justifyContent:"center"}}>
-            {fmt(kpis?.nif_nominal)}
-            <span className="nif-i">i
-              <span className="nif-tip">
-                <div style={{fontSize:11,fontWeight:500,color:"#fff",marginBottom:6}}>Hypothèses de calcul</div>
-                <div className="nif-tip-row"><span style={{color:C.txt55}}>Inflation</span><span style={{color:C.or,fontFamily:"var(--font-mono)"}}>{(IQPF.INFLATION*100).toFixed(1)} %/an</span></div>
-                <div className="nif-tip-row"><span style={{color:C.txt55}}>Indexation prestations</span><span style={{color:C.or,fontFamily:"var(--font-mono)"}}>{(IQPF.INFLATION*100).toFixed(1)} %/an</span></div>
-                <div className="nif-tip-row"><span style={{color:C.txt55}}>Rendement placements</span><span style={{color:C.or,fontFamily:"var(--font-mono)"}}>{(IQPF.REND_ACCUM*100).toFixed(1)} % / {(IQPF.REND_DECAISSE*100).toFixed(1)} %</span></div>
-              </span>
-            </span>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, marginBottom: 22, flexWrap: "wrap" }}>
+          <div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600, letterSpacing: "0.16em", textTransform: "uppercase", color: C.or }}>Numéro d'Indépendance Financière</div>
+            <div style={{ fontSize: 12, color: C.txt40, marginTop: 6 }}>{subTxt}</div>
           </div>
-          <div style={{fontSize:12,color:C.txt40,marginTop:5}}>≈ {fmt(nifAujourdhui)} en dollars d'aujourd'hui</div>
-          <div style={{height:1,background:"rgba(201,160,99,0.25)",margin:"18px auto",maxWidth:300}}></div>
-          <div style={{fontSize:13,color:C.txt55}}>Sommes additionnelles à investir pour l'atteindre</div>
-          <div style={{fontFamily:"var(--font-mono)",fontSize:22,fontWeight:500,color:C.rouge,marginTop:4}}>{fmt(kpis?.cot_supp_mens)}/mois</div>
-        </div>
-
-        {/* Revenu annuel ciblé (revenu, pas un capital) */}
-        <Lbl>Revenu annuel ciblé ({obj?.taux_remplacement_vise} % du revenu)</Lbl>
-        <Num color="#fff">{fmt(obj?.cible_annuelle)}</Num>
-        <Lbl>Revenu annuel ciblé à la retraite (indexé)</Lbl>
-        <Num color="#fff">{fmt(kpis?.cible_annuelle_idx)}</Num>
-
-        {/* Section Jean / personne A */}
-        <div style={{gridColumn:"1 / 5",background:C.orBg,padding:"8px 16px",textAlign:"center"}}>
-          <span style={{fontSize:10,fontWeight:600,padding:"2px 8px",borderRadius:4,background:"rgba(201,160,99,0.18)",color:C.or,letterSpacing:"0.05em"}}>{(pA?.prenom||"CLIENT").toUpperCase()}</span>
-          <span style={{fontSize:11,color:C.txt40,marginLeft:8}}>Revenus garantis de retraite</span>
-        </div>
-        <Lbl indent>RRQ</Lbl><Num>{fmt(gar?.rrq_a)}</Num>
-        <Lbl indent>RRQ indexé</Lbl><Num color={C.vert}>{fmt(gar?.rrq_a_idx)}</Num>
-        <Lbl indent>SV</Lbl><Num>{fmt(gar?.sv_a)}</Num>
-        <Lbl indent>SV indexée</Lbl><Num color={C.vert}>{fmt(gar?.sv_a_idx)}</Num>
-        {gar?.clawback_a_idx > 0 && <>
-          <Lbl indent>Récupération PSV (clawback)</Lbl><Num color={C.rouge}>−{fmt(gar?.clawback_a_idx)}</Num>
-        </>}
-        {gar?.pension_a > 0 && <>
-          <Lbl indent>Pension (PD)</Lbl><Num>{fmt(gar?.pension_a)}</Num>
-          <Lbl indent>{pensionFuturLabelA}</Lbl><Num color={C.vert}>{fmt(gar?.pension_a_idx)}</Num>
-        </>}
-        <Lbl indent>SRG</Lbl><Num color={gar?.srg_a>0?C.txt45:C.txt25}>{fmt(gar?.srg_a)}</Num>
-        <Lbl indent>SRG indexé</Lbl><Num color={gar?.srg_a>0?C.vert:C.txt25}>{fmt(gar?.srg_a_idx)}</Num>
-        <div style={{...cell,background:C.orBg2,paddingLeft:24,color:C.or,fontSize:12,fontWeight:500}}>Sous-total {pA?.prenom}</div>
-        <div style={{...cell,...num,background:C.orBg2,color:C.or,fontWeight:500}}>{fmt(gar?.sous_total_a)}</div>
-        <div style={{...cell,background:C.orBg2,paddingLeft:24,color:C.or,fontSize:12,fontWeight:500}}>Sous-total {pA?.prenom} indexé</div>
-        <div style={{...cell,...num,background:C.orBg2,color:C.or,fontWeight:500}}>{fmt(gar?.sous_total_a_idx)}</div>
-
-        {/* Section conjoint / personne B */}
-        {enCouple && <>
-          <div style={{gridColumn:"1 / 5",background:C.vertBg,padding:"8px 16px",textAlign:"center"}}>
-            <span style={{fontSize:10,fontWeight:600,padding:"2px 8px",borderRadius:4,background:"rgba(91,196,160,0.18)",color:C.vert,letterSpacing:"0.05em"}}>{(pB?.prenom||"CONJOINT").toUpperCase()}</span>
-            <span style={{fontSize:11,color:C.txt40,marginLeft:8}}>Revenus garantis de retraite</span>
+          <div style={{ display: "inline-flex", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 99, padding: 3 }}>
+            {[["future", "$ à la retraite"], ["today", "$ d'aujourd'hui"]].map(([m, lbl]) => (
+              <button key={m} onClick={(e) => { e.stopPropagation(); setMode(m); }} style={{ border: 0, background: mode === m ? "rgba(255,255,255,0.08)" : "transparent", color: mode === m ? "#fff" : C.txt55, fontSize: 11.5, fontWeight: 600, padding: "7px 12px", borderRadius: 99, cursor: "pointer", whiteSpace: "nowrap", transition: ".15s" }}>{lbl}</button>
+            ))}
           </div>
-          <Lbl indent>RRQ</Lbl><Num>{fmt(gar?.rrq_b)}</Num>
-          <Lbl indent>RRQ indexé</Lbl><Num color={C.vert}>{fmt(gar?.rrq_b_idx)}</Num>
-          <Lbl indent>SV</Lbl><Num>{fmt(gar?.sv_b)}</Num>
-          <Lbl indent>SV indexée</Lbl><Num color={C.vert}>{fmt(gar?.sv_b_idx)}</Num>
-          {gar?.clawback_b_idx > 0 && <>
-            <Lbl indent>Récupération PSV (clawback)</Lbl><Num color={C.rouge}>−{fmt(gar?.clawback_b_idx)}</Num>
-          </>}
-          {gar?.pension_b > 0 && <>
-            <Lbl indent>Pension (PD)</Lbl><Num>{fmt(gar?.pension_b)}</Num>
-            <Lbl indent>{pensionFuturLabelB}</Lbl><Num color={C.vert}>{fmt(gar?.pension_b_idx)}</Num>
-          </>}
-          <Lbl indent>SRG</Lbl><Num color={gar?.srg_b>0?C.txt45:C.txt25}>{fmt(gar?.srg_b)}</Num>
-          <Lbl indent>SRG indexé</Lbl><Num color={gar?.srg_b>0?C.vert:C.txt25}>{fmt(gar?.srg_b_idx)}</Num>
-          <div style={{...cell,background:C.vertBg2,paddingLeft:24,color:C.vert,fontSize:12,fontWeight:500}}>Sous-total {pB?.prenom}</div>
-          <div style={{...cell,...num,background:C.vertBg2,color:C.vert,fontWeight:500}}>{fmt(gar?.sous_total_b)}</div>
-          <div style={{...cell,background:C.vertBg2,paddingLeft:24,color:C.vert,fontSize:12,fontWeight:500}}>Sous-total {pB?.prenom} indexé</div>
-          <div style={{...cell,...num,background:C.vertBg2,color:C.vert,fontWeight:500}}>{fmt(gar?.sous_total_b_idx)}</div>
-        </>}
+        </div>
 
-        {/* Investissement actuel → capital projeté */}
-        <Lbl>Investissement actuel<br/>solde + $/m + intérêt</Lbl>
-        <div style={{...cell,...num,background:C.cellBg,color:"#fff"}}>{fmt(ep?.total_soldes)}<br/><span style={{color:C.txt40}}>+ {fmt(ep?.total_cot_mens)}/m</span></div>
-        <Lbl>Résultat à la retraite</Lbl>
-        <div style={{...cell,...num,background:C.cellBg,fontWeight:500,color:C.vert}}>{fmt(kpis?.capital_projete)}</div>
+        <div style={{ textAlign: "center", padding: "6px 0 4px" }}>
+          <div style={{ fontSize: 12.5, color: C.txt55 }}>{mode === "future" ? `Capital à accumuler d'ici votre retraite (${anneeRet})` : "Capital à accumuler — en dollars d'aujourd'hui"}</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: "clamp(40px,8vw,56px)", fontWeight: 700, letterSpacing: "-0.03em", color: C.or, lineHeight: 1.04, margin: "8px 0 6px" }}>
+            {fmtN(heroBig)} <span style={{ fontSize: "0.32em", fontWeight: 600, color: C.txt55 }}>$</span>
+            <span className="nif-i">i<span className="nif-tip">
+              <div style={{ fontSize: 11, fontWeight: 600, color: "#fff", marginBottom: 6 }}>Hypothèses</div>
+              <div className="nif-tip-row"><span style={{ color: C.txt55 }}>Inflation</span><span style={{ color: C.or, fontFamily: "var(--font-mono)" }}>{(IQPF.INFLATION * 100).toFixed(1)} %/an</span></div>
+              <div className="nif-tip-row"><span style={{ color: C.txt55 }}>Rendement</span><span style={{ color: C.or, fontFamily: "var(--font-mono)" }}>{(IQPF.REND_ACCUM * 100).toFixed(1)} % / {(IQPF.REND_DECAISSE * 100).toFixed(1)} %</span></div>
+            </span></span>
+          </div>
+          <div style={{ fontSize: 13, color: C.txt55 }}>soit <b style={{ color: "#fff", fontWeight: 600 }}>{fmt(heroAlt)}</b> en dollars {mode === "future" ? "d'aujourd'hui" : "à la retraite"}</div>
+        </div>
+
+        <div style={{ margin: "22px 0 6px" }}>
+          <div style={{ height: 10, borderRadius: 99, background: "rgba(255,255,255,0.07)", overflow: "hidden" }}>
+            <div style={{ height: "100%", width: pct + "%", borderRadius: 99, background: "linear-gradient(90deg,#5BC4A0,#3da57f)", transition: "width 1s" }} />
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 10, fontSize: 12.5, color: C.txt55 }}>
+            <span>Sur votre lancée : <b style={{ color: "#fff", fontWeight: 600 }}>{fmt(kpis?.capital_projete)}</b> projetés</span>
+            <span style={{ fontSize: 14, fontWeight: 700, color: C.vert }}>{pct} %</span>
+          </div>
+        </div>
+
+        {kpis?.cot_supp_mens > 0 && (
+        <div style={{ display: "flex", alignItems: "center", gap: 14, margin: "20px 0", padding: "14px 16px", borderRadius: 13, background: "rgba(248,113,113,0.10)", border: "1px solid rgba(248,113,113,0.3)" }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 12.5, color: C.txt55 }}>Pour combler l'écart</div>
+            <div style={{ fontSize: 11.5, color: C.txt40, marginTop: 3 }}>Investissement actuel : {fmt(ep?.total_soldes)} + {fmt(ep?.total_cot_mens)}/mois</div>
+          </div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: C.rouge, letterSpacing: "-0.02em", whiteSpace: "nowrap" }}>+{fmtN(kpis?.cot_supp_mens)} <span style={{ fontSize: "0.55em", fontWeight: 600, color: C.txt55 }}>$/mois</span></div>
+        </div>
+        )}
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 13, overflow: "hidden", marginBottom: 22 }}>
+          <div style={{ background: "rgba(255,255,255,0.03)", padding: "15px 16px" }}>
+            <div style={{ fontSize: 11.5, color: C.txt55 }}>Revenu annuel ciblé — aujourd'hui</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 20, fontWeight: 700, marginTop: 4, color: "#fff" }}>{fmt(obj?.cible_annuelle)}</div>
+            <div style={{ fontSize: 11, color: C.txt40, marginTop: 2 }}>{obj?.taux_remplacement_vise} % du revenu actuel</div>
+          </div>
+          <div style={{ background: "rgba(255,255,255,0.03)", padding: "15px 16px" }}>
+            <div style={{ fontSize: 11.5, color: C.txt55 }}>Revenu annuel ciblé — à la retraite</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 20, fontWeight: 700, marginTop: 4, color: "#fff" }}>{fmt(kpis?.cible_annuelle_idx)}</div>
+            <div style={{ fontSize: 11, color: C.txt40, marginTop: 2 }}>indexé à l'inflation</div>
+          </div>
+        </div>
+
+        <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 13, padding: "16px 18px" }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: C.txt55, marginBottom: 12 }}>Revenus garantis à la retraite (indexés)</div>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead><tr>
+              <th style={thL}>Source</th>
+              <th style={thR}>{pA?.prenom || "Client"}</th>
+              {enCouple && <th style={thR}>{pB?.prenom || "Conjoint"}</th>}
+            </tr></thead>
+            <tbody>
+              <tr><td style={tdL}>RRQ</td><td style={tdR}>{fmt(gar?.rrq_a_idx)}</td>{enCouple && <td style={tdR}>{fmt(gar?.rrq_b_idx)}</td>}</tr>
+              <tr><td style={tdL}>Sécurité de la vieillesse (SV)</td><td style={tdR}>{fmt(gar?.sv_a_idx)}</td>{enCouple && <td style={tdR}>{fmt(gar?.sv_b_idx)}</td>}</tr>
+              <tr><td style={tdL}>Régime privé (RPD)</td><td style={tdR}>{gar?.pension_a_idx > 0 ? fmt(gar?.pension_a_idx) : "—"}</td>{enCouple && <td style={tdR}>{gar?.pension_b_idx > 0 ? fmt(gar?.pension_b_idx) : "—"}</td>}</tr>
+              {(gar?.clawback_a_idx > 0 || gar?.clawback_b_idx > 0) && (
+                <tr><td style={tdL}>Récupération PSV</td><td style={{ ...tdR, color: C.rouge }}>{gar?.clawback_a_idx > 0 ? "−" + fmt(gar?.clawback_a_idx) : "—"}</td>{enCouple && <td style={{ ...tdR, color: C.rouge }}>{gar?.clawback_b_idx > 0 ? "−" + fmt(gar?.clawback_b_idx) : "—"}</td>}</tr>
+              )}
+              <tr><td style={tdL}>Supplément (SRG)</td><td style={tdR}>{fmt(gar?.srg_a_idx)}</td>{enCouple && <td style={tdR}>{fmt(gar?.srg_b_idx)}</td>}</tr>
+              <tr><td style={tdSubL}>Sous-total annuel</td><td style={tdSubR}>{fmt(gar?.sous_total_a_idx)}</td>{enCouple && <td style={tdSubR}>{fmt(gar?.sous_total_b_idx)}</td>}</tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style={{ textAlign: "center", fontSize: 11, color: C.txt40, marginTop: 18 }}>Confidentiel · MonPlanFin</div>
 
       </div>
     </div>
