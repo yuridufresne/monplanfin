@@ -103,7 +103,7 @@ export default function NIFCalculator({ profiles }) {
           </div>
           <div style={{ display: "inline-flex", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 99, padding: 3 }}>
             {[["future", "$ à la retraite"], ["today", "$ d'aujourd'hui"]].map(([m, lbl]) => (
-              <button key={m} onClick={() => setMode(m)} style={{ border: 0, background: mode === m ? "rgba(255,255,255,0.08)" : "transparent", color: mode === m ? "#fff" : C.txt55, fontSize: 11.5, fontWeight: 600, padding: "7px 12px", borderRadius: 99, cursor: "pointer", whiteSpace: "nowrap", transition: ".15s" }}>{lbl}</button>
+              <button key={m} onClick={(e) => { e.stopPropagation(); setMode(m); }} style={{ border: 0, background: mode === m ? "rgba(255,255,255,0.08)" : "transparent", color: mode === m ? "#fff" : C.txt55, fontSize: 11.5, fontWeight: 600, padding: "7px 12px", borderRadius: 99, cursor: "pointer", whiteSpace: "nowrap", transition: ".15s" }}>{lbl}</button>
             ))}
           </div>
         </div>
