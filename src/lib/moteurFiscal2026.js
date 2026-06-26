@@ -1,7 +1,7 @@
 export const ANNEE = 2026;
 
 export const PALIERS_FED = [
-  { min: 0,      max: 58523,   rate: 0.15   },
+  { min: 0,      max: 58523,   rate: 0.14   },
   { min: 58523,  max: 117045,  rate: 0.205  },
   { min: 117045, max: 181440,  rate: 0.26   },
   { min: 181440, max: 258482,  rate: 0.29   },
@@ -68,11 +68,11 @@ export function calculateFullTax({ grossIncome = 0, reerDeduction = 0, conjointN
   const imposableFed = rfnr;
   const imposableQC  = Math.max(0, rfnr - deductionTravQC);
   const mpb = getMontantBaseFed(imposableFed);
-  const conjCredit = conjointNetIncome < mpb ? (mpb - conjointNetIncome) * 0.15 : 0;
-  const medFed = Math.max(0, medicalExpenses - Math.max(imposableFed * 0.03, 2635)) * 0.15;
-  const charFed = Math.min(charitableDonations,200)*0.15 + Math.max(0,charitableDonations-200)*0.29;
+  const conjCredit = conjointNetIncome < mpb ? (mpb - conjointNetIncome) * 0.14 : 0;
+  const medFed = Math.max(0, medicalExpenses - Math.max(imposableFed * 0.03, 2635)) * 0.14;
+  const charFed = Math.min(charitableDonations,200)*0.14 + Math.max(0,charitableDonations-200)*0.29;
   const fedGross = calcImpotPaliers(imposableFed, PALIERS_FED);
-  const fedCredits = mpb*0.15 + Math.min(imposableFed,MONTANT_EMPLOI_FED)*0.15 + social.rrq*0.15 + social.rqap*0.15 + social.ae*0.15 + conjCredit + studentLoanInterest*0.15 + medFed + charFed;
+  const fedCredits = mpb*0.14 + Math.min(imposableFed,MONTANT_EMPLOI_FED)*0.14 + social.rrq*0.14 + social.rqap*0.14 + social.ae*0.14 + conjCredit + studentLoanInterest*0.14 + medFed + charFed;
   const fedAvant = Math.max(0, fedGross - fedCredits);
   const abattement = fedAvant * ABATTEMENT_QC;
   const fedFinal = Math.max(0, fedAvant - abattement);
