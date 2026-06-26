@@ -156,10 +156,10 @@ export default function NIFCalculator({ profiles }) {
           <div style={{fontFamily:"var(--font-mono)",fontSize:22,fontWeight:500,color:C.rouge,marginTop:4}}>{fmt(kpis?.cot_supp_mens)}/mois</div>
         </div>
 
-        {/* Revenu ciblé */}
-        <Lbl>Revenu ciblé {obj?.taux_remplacement_vise} % = sommes</Lbl>
+        {/* Revenu annuel ciblé (revenu, pas un capital) */}
+        <Lbl>Revenu annuel ciblé ({obj?.taux_remplacement_vise} % du revenu)</Lbl>
         <Num color="#fff">{fmt(obj?.cible_annuelle)}</Num>
-        <Lbl>Revenu ciblé {obj?.taux_remplacement_vise} % = sommes futures</Lbl>
+        <Lbl>Revenu annuel ciblé à la retraite (indexé)</Lbl>
         <Num color="#fff">{fmt(kpis?.cible_annuelle_idx)}</Num>
 
         {/* Section Jean / personne A */}
