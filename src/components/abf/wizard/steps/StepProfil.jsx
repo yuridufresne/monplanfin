@@ -1,5 +1,5 @@
 import React from "react";
-import { Field, TextInput, DateInput, PhoneInput, Select, Toggle, emailValide, telValide } from "./primitives";
+import { Field, TextInput, DateInput, PhoneInput, Select, emailValide, telValide } from "./primitives";
 
 /**
  * Étape 1 — Profil (section profil_personnel).
@@ -10,6 +10,10 @@ const ETATS = [
   { value: "marie", label: "Marié(e)" },
 ];
 const estCouple = (s) => ["marie", "conjoint", "union_civile", "conjoint_de_fait"].includes(String(s || "").toLowerCase());
+const chip = (on) =>
+  `px-3.5 py-2 rounded-xl text-[12.5px] font-semibold border transition-colors ${
+    on ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border text-muted-foreground hover:border-accent/50 hover:text-foreground"
+  }`;
 
 export default function StepProfil({ data, patch }) {
   const d = data || {};
@@ -43,29 +47,20 @@ export default function StepProfil({ data, patch }) {
         encadré par l'AMF. Aucune revente de données (Loi 25).
       </p>
 
-      <div>
-        <Field label="Avez-vous un conjoint ?">
-          {!aConjoint ? (
-            <div className="flex items-center gap-3 flex-wrap">
-              <Toggle value={false} onChange={() => {}} labels={["Oui", "Non"]} values={[true, false]} />
-              <div className="flex gap-2">
-                {ETATS.map((e) => (
-                  <button key={e.value} type="button" onClick={() => set("situation")(e.value)}
-                    className="px-3 py-2 rounded-xl text-[12.5px] font-semibold border border-border text-muted-foreground hover:border-accent/50 hover:text-foreground transition-colors">
-                    {e.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <Select value={d.situation} onChange={set("situation")} options={ETATS} />
-              <button type="button" onClick={() => set("situation")("celibataire")}
-                className="text-[12px] text-muted-foreground underline">retirer le conjoint</button>
-            </div>
+      <Field label="Avez-vous un conjoint ?">
+        <div className="flex flex-wrap items-center gap-2">
+          <button type="button" onClick={() => { if (!aConjoint) set("situation")("conjoint_de_fait"); }} className={chip(aConjoint)}>Oui</button>
+          <button type="button" onClick={() => set("situation")("celibataire")} className={chip(!aConjoint)}>Non</button>
+          {aConjoint && (
+            <>
+              <span className="mx-1 text-muted-foreground">·</span>
+              {ETATS.map((e) => (
+                <button key={e.value} type="button" onClick={() => set("situation")(e.value)} className={chip(d.situation === e.value)}>{e.label}</button>
+              ))}
+            </>
           )}
-        </Field>
-      </div>
+        </div>
+      </Field>
 
       {aConjoint && (
         <div className="rounded-xl border border-border p-4 space-y-4">
