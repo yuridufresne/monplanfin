@@ -63,7 +63,12 @@ export default function PortraitLive({ sections = {}, sectionsCompletees = 0, to
       (enCouple ? sum(revenu.conjoint?.emplois, e => e.revenu_brut) : 0) +
       sum(revenu.sidehustles, sh => sh.revenu_mensuel_moyen) * 12 +
       (enCouple ? sum(revenu.conjoint?.sidehustles, sh => sh.revenu_mensuel_moyen) * 12 : 0);
-    const netMensuel = calcRevenuDisponible([{ section: "revenu", data: revenu }, { section: "retraite", data: retraite }]).revenuNetMensuel;
+    // Revenu net mensuel = net + allocations familiales (source unique calcRevenuDisponible).
+    const netMensuel = calcRevenuDisponible([
+      { section: "revenu", data: revenu },
+      { section: "retraite", data: retraite },
+      { section: "allocations", data: sections.allocations || {} },
+    ]).totalMensuel;
 
     // Valeur nette = source unique calcValeurNette (meme definition que la feuille de resume)
     const vn = calcValeurNette([
