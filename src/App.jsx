@@ -104,8 +104,9 @@ const AuthenticatedApp = () => {
         {/* Private routes */}
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/budget" element={<Budget />} />
-        <Route path="/analyse" element={<FinancialAnalysis />} />
+        <Route path="/analyse" element={<AnalyseABF />} />
         <Route path="/analyse2" element={<AnalyseABF />} />
+        <Route path="/analyse-classique" element={<FinancialAnalysis />} />
         <Route path="/resume" element={<FeuilleResume />} />
         <Route path="/avance" element={<AdvancedMode />} />
       
