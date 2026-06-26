@@ -60,7 +60,7 @@ export function calcSubventionsREEE({ cotisationAnnuelle, revenuFamilialNet }) {
 // ── Crédit d'impôt intérêts prêt étudiant ───────────────────────────────────
 // Fédéral : 15%, Provincial QC : 20% — les deux remboursables, reportable 5 ans
 export function calcCreditPretEtudiant(interetsPaies) {
-  const creditFederal    = Math.round(interetsPaies * 0.15);
+  const creditFederal    = Math.round(interetsPaies * 0.14);
   const creditProvincial = Math.round(interetsPaies * 0.20);
   return {
     creditFederal,
