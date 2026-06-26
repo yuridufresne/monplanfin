@@ -27,7 +27,7 @@ export function getMinFERR(age, solde, ageBaseConjoint = null) {
 }
 
 function calcCreditAge(revNet, prov) {
-  if (prov === 'FED') return Math.round(Math.max(0, 8790 - Math.max(0, revNet - 44325) * 0.15) * 0.15);
+  if (prov === 'FED') return Math.round(Math.max(0, 8790 - Math.max(0, revNet - 44325) * 0.15) * 0.14);
   return Math.round(Math.max(0, 3561 - Math.max(0, revNet - 43190) * 0.1875) * 0.14);
 }
 
@@ -68,7 +68,7 @@ export function calcFractionnementPension({ revenuAdmissible, revenuTotalPrincip
 }
 
 function getTauxMarg(rev) {
-  const f = [...PALIERS_FED].reverse().find(p => rev > p.min)?.rate ?? 0.15;
+  const f = [...PALIERS_FED].reverse().find(p => rev > p.min)?.rate ?? 0.14;
   const q = [...PALIERS_QC].reverse().find(p => rev > p.min)?.rate ?? 0.14;
   return f * (1 - 0.165) + q;
 }
