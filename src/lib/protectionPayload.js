@@ -15,7 +15,7 @@ export const defaultProtectionPayload = {
   hypotheque_solde: 0,            // capital restant hypothèque
   hypotheque_annees_restantes: 25,
   dettes_autres: 0,               // marges, cartes, prêts auto
-  frais_funeraires: 50000,        // base recommandée (minimum planification)
+  frais_funeraires: 50000,        // Frais de dernier recours (funérailles + impôt terminal + coussin)
 
   // ── Revenu à remplacer ──
   salaire_brut: 0,                // $/an
