@@ -510,11 +510,18 @@ function CalcLouerAcheter() {
   const capital = prix - mise;
   const rM = taux / 12, nM = amort * 12;
   const paimt = capital > 0 ? capital * rM / (1 - Math.pow(1 + rM, -nM)) : 0;
-  let solde = capital, locW = mise;
+  let solde = capital, locW = mise, ownInvest = 0;
   const mois = annees * 12;
-  for (let i = 0; i < mois; i++) { const it = solde * rM; solde = Math.max(0, solde - (paimt - it)); const coutPoss = paimt + prix * fraisAn / 12; const diff = coutPoss - loyer; locW = locW * (1 + rPlace / 12) + Math.max(0, diff); }
+  for (let i = 0; i < mois; i++) {
+    const it = solde * rM; solde = Math.max(0, solde - (paimt - it));
+    const coutPoss = paimt + prix * fraisAn / 12; const diff = coutPoss - loyer;
+    // Symetrie : le locataire investit le surplus quand posseder coute plus cher,
+    // l'acheteur investit le surplus quand louer coute plus cher.
+    locW = locW * (1 + rPlace / 12) + Math.max(0, diff);
+    ownInvest = ownInvest * (1 + rPlace / 12) + Math.max(0, -diff);
+  }
   const valMaison = prix * Math.pow(1 + appr / 100, annees);
-  const equity = valMaison - solde;
+  const equity = valMaison - solde + ownInvest;
   const achatGagne = equity >= locW;
   return (
     <div style={CARD_C}>
