@@ -16,7 +16,7 @@ const fmtPct1 = (v) => `${(v || 0).toFixed(1)} %`;
 
 // ── Paliers fiscaux 2026 (taux plein dès le 1er dollar) ──────────────────
 const PALIERS_FED = [
-  { min: 0,      max: 58523,   rate: 0.15 },
+  { min: 0,      max: 58523,   rate: 0.14 },
   { min: 58523,  max: 117045,  rate: 0.205 },
   { min: 117045, max: 181440,  rate: 0.26 },
   { min: 181440, max: 258482,  rate: 0.29 },
@@ -36,7 +36,7 @@ function calcCreditFederal(revenuImposable) {
     montantBase = 16452 - ((revenuImposable - 181440) * (1623 / 77042));
     montantBase = Math.max(14829, Math.min(16452, montantBase));
   }
-  return montantBase * 0.15;
+  return montantBase * 0.14;
 }
 const CREDIT_QC = 18952 * 0.14; // fixe, pas de réduction selon le revenu
 
@@ -306,8 +306,8 @@ export default function FeuilleResume() {
     const impFedBrut = calcImpotPaliers(imposable, PALIERS_FED);
     const credFed = calcCreditFederal(imposable);
     // Crédit de base fédéral inutilisé → disponible pour transfert au conjoint (Règle 3)
-    const creditBaseFedUtilise = Math.min(imposable * 0.15, calcCreditFederal(imposable));
-    const creditBaseFedInutilise = Math.max(0, 16452 * 0.15 - creditBaseFedUtilise);
+    const creditBaseFedUtilise = Math.min(imposable * 0.14, calcCreditFederal(imposable));
+    const creditBaseFedInutilise = Math.max(0, 16452 * 0.14 - creditBaseFedUtilise);
     const impFed = Math.max(0, (impFedBrut - credFed) * (1 - 0.165));
 
     const impQcBrut = calcImpotPaliers(imposable, PALIERS_QC);
@@ -340,7 +340,7 @@ export default function FeuilleResume() {
   // Si un conjoint gagne moins que le montant de base, la portion inutilisée
   // peut être transférée au conjoint à revenu plus élevé.
   const [pHaut, pBas] = p1.imposable >= p2.imposable ? [p1, p2] : [p2, p1];
-  const creditTransfereFed = enCouple ? Math.min(pBas.creditBaseFedInutilise, calcImpotPaliers(pHaut.imposable, PALIERS_FED) * 0.15) : 0;
+  const creditTransfereFed = enCouple ? Math.min(pBas.creditBaseFedInutilise, calcImpotPaliers(pHaut.imposable, PALIERS_FED) * 0.14) : 0;
   const creditTransfereQc  = enCouple ? Math.min(pBas.creditQcInutilise, calcImpotPaliers(pHaut.imposable, PALIERS_QC) * 0.14) : 0;
   // Appliquer le transfert sur le conjoint à haut revenu
   const impFedHautApresTransfert = Math.max(0, pHaut.impFed - creditTransfereFed * (1 - 0.165));
