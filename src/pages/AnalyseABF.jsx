@@ -30,42 +30,9 @@ const STEP_COMPONENTS = {
   fonds_urgence: StepUrgence,
 };
 
-// Thème scopé au wizard : reprend la palette EXACTE du prototype Open Design
-// (abf-intake.html). En redéfinissant les variables du thème app sur ce conteneur,
-// toutes les classes Tailwind (bg-card, text-accent, text-success…) adoptent le
-// look « premium » sans réécrire les composants. Sombre par défaut, .abf-clair = variante claire.
-const ABF_STYLE = `
-.abf-root{
-  --background:222 42% 6%; --card:222 34% 10%; --popover:222 34% 10%;
-  --foreground:220 20% 95%; --card-foreground:220 20% 95%; --popover-foreground:220 20% 95%;
-  --muted:222 32% 14%; --muted-foreground:220 14% 64%;
-  --secondary:222 30% 13%; --secondary-foreground:220 20% 95%;
-  --accent:40 62% 62%; --accent-foreground:222 42% 8%; --accent-light:40 40% 18%;
-  --success:158 56% 56%; --success-foreground:222 42% 8%;
-  --destructive:8 72% 64%; --destructive-foreground:222 42% 8%;
-  --primary:40 62% 62%; --primary-foreground:222 42% 8%;
-  --border:222 18% 22%; --border-subtle:222 18% 15%; --input:222 32% 14%; --ring:40 62% 62%;
-  background:radial-gradient(120% 70% at 50% -10%, hsl(222 38% 9%), hsl(222 42% 6%) 55%);
-  color:hsl(var(--foreground));
-}
-.abf-root.abf-clair{
-  --background:38 30% 97%; --card:0 0% 100%; --popover:0 0% 100%;
-  --foreground:222 39% 11%; --card-foreground:222 39% 11%; --popover-foreground:222 39% 11%;
-  --muted:36 22% 94%; --muted-foreground:220 10% 45%;
-  --secondary:36 22% 95%; --secondary-foreground:222 39% 11%;
-  --accent:38 58% 46%; --accent-foreground:0 0% 100%; --accent-light:38 75% 92%;
-  --success:158 60% 36%; --success-foreground:0 0% 100%;
-  --destructive:0 72% 48%; --destructive-foreground:0 0% 100%;
-  --primary:222 47% 12%; --primary-foreground:0 0% 100%;
-  --border:36 18% 86%; --border-subtle:36 20% 91%; --input:0 0% 100%; --ring:38 58% 46%;
-  background:radial-gradient(120% 70% at 50% -10%, hsl(38 40% 98%), hsl(36 28% 95%) 55%);
-}
-.abf-card{box-shadow:0 40px 90px -50px rgba(0,0,0,.6)}
-.abf-root.abf-clair .abf-card{box-shadow:0 24px 60px -40px rgba(40,40,60,.25)}
-`;
-
 /**
  * src/pages/AnalyseABF.jsx — Parcours ABF refondu (11 étapes / 3 phases).
+ * Le thème visuel (palette du prototype Open Design) est dans src/index.css (.abf-root).
  * PHASE 1 : chrome + navigation + bandeau portrait live + cohérence conjoint +
  * écran final. Le contenu détaillé de chaque étape arrive aux phases suivantes
  * et se branchera sur les moteurs existants (aucun calcul nouveau).
@@ -210,7 +177,6 @@ export default function AnalyseABF() {
 
   return (
     <div className={`abf-root min-h-screen text-foreground ${dark ? "" : "abf-clair"}`}>
-      <style>{ABF_STYLE}</style>
       {/* En-tête + portrait collant */}
       <header className="border-b border-border-subtle bg-card/80 backdrop-blur">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
