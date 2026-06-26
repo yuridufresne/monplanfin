@@ -56,8 +56,8 @@ export default function PortraitBandeau({ stepData = {}, pctComplet = 0 }) {
   const pct = Math.max(0, Math.min(100, Math.round(pctComplet)));
 
   return (
-    <div className="sticky top-0 z-20 -mx-4 md:mx-0 border-b border-border-subtle bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
-      <div className="max-w-6xl mx-auto px-4 py-2">
+    <div className="rounded-xl border border-border bg-card">
+      <div className="px-2 py-1.5">
         <div className="flex items-stretch gap-1 overflow-x-auto divide-x divide-border-subtle">
           <Cellule label="Revenu net / mois" valeur={fmtMontant(d.net)} vide={d.net <= 0} ton="accent"
             sous={d.alloc > 0 ? `+ incl. allocation ${fmtMontant(d.alloc)}` : undefined} />

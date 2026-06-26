@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Check, Target, Moon, Sun } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check, Moon, Sun } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import PortraitBandeau from "@/components/abf/wizard/PortraitBandeau";
-import { PHASES, STEPS, TOTAL_STEPS, phaseOf, aConjoint } from "@/components/abf/wizard/abfWizardModel";
+import Logo from "@/components/abf/wizard/Logo";
+import { PHASES, STEPS, TOTAL_STEPS, TITRES, phaseOf, aConjoint } from "@/components/abf/wizard/abfWizardModel";
 import StepProfil from "@/components/abf/wizard/steps/StepProfil";
 import StepRevenu from "@/components/abf/wizard/steps/StepRevenu";
 import StepAllocations from "@/components/abf/wizard/steps/StepAllocations";
@@ -52,18 +53,6 @@ function StepPlaceholder({ step }) {
   );
 }
 
-function Logo() {
-  return (
-    <div className="flex items-center gap-2.5">
-      <span className="grid place-items-center w-8 h-8 rounded-lg bg-primary text-primary-foreground">
-        <Target className="w-5 h-5" strokeWidth={2.2} />
-      </span>
-      <span className="text-[17px] font-bold tracking-tight text-foreground">
-        Mon<span className="text-accent">Plan</span>Fin
-      </span>
-    </div>
-  );
-}
 
 export default function AnalyseABF() {
   const [stepData, setStepData] = useState({});
@@ -154,49 +143,46 @@ export default function AnalyseABF() {
     setStepData((prev) => ({ ...prev, [sectionKey]: { ...(prev[sectionKey] || {}), ...patch } }));
   }, []);
 
-  const Nav = ({ top }) => (
-    <div className={`flex items-center gap-3 ${top ? "pb-4 mb-4 border-b border-border-subtle" : "pt-4 mt-4 border-t border-border-subtle"}`}>
-      <button
-        onClick={() => go(current - 1)}
-        disabled={current === 1}
-        className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[13px] font-semibold border border-border text-foreground disabled:opacity-40 disabled:pointer-events-none hover:border-accent/40 transition-colors"
-      >
-        <ChevronLeft className="w-4 h-4" /> Précédent
-      </button>
-      <span className="ml-auto text-[11px] text-muted-foreground hidden sm:inline">
-        Étape {current} / {TOTAL_STEPS}
-      </span>
-      <button
-        onClick={onNext}
-        className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-[13px] font-semibold bg-primary text-primary-foreground hover:brightness-110 transition"
-      >
-        {current === TOTAL_STEPS ? <>Terminer <Check className="w-4 h-4" /></> : <>Suivant <ChevronRight className="w-4 h-4" /></>}
-      </button>
-    </div>
+  const prevBtn = (
+    <button onClick={() => go(current - 1)} disabled={current === 1}
+      className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[13px] font-semibold border border-border text-foreground disabled:opacity-40 disabled:pointer-events-none hover:border-accent/40 transition-colors">
+      <ChevronLeft className="w-4 h-4" /> Précédent
+    </button>
   );
+  const nextBtn = (
+    <button onClick={onNext}
+      className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-[13px] font-semibold bg-primary text-primary-foreground hover:brightness-110 transition">
+      {current === TOTAL_STEPS ? <>Terminer <Check className="w-4 h-4" /></> : <>Suivant <ChevronRight className="w-4 h-4" /></>}
+    </button>
+  );
+  const badgeEnregistre = (
+    <span className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold text-success bg-success/10 px-3 py-1.5 rounded-full">
+      {saveStatus === "saving" ? "Enregistrement…" : <><Check className="w-3.5 h-3.5" /> Enregistré</>}
+    </span>
+  );
+
+  const T = TITRES[step.key] || { h1: step.label, sous: "", h2: step.label, lead: "" };
 
   return (
     <div className={`abf-root min-h-screen text-foreground ${dark ? "" : "abf-clair"}`}>
-      {/* En-tête + portrait collant */}
-      <header className="border-b border-border-subtle bg-card/80 backdrop-blur">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div className="max-w-5xl mx-auto px-4 md:px-6 py-7 pb-16">
+        {/* En-tête : logo + bascule thème */}
+        <div className="flex items-center justify-between mb-5">
           <Logo />
-          <div className="flex items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
-              {saveStatus === "saving" ? "Enregistrement…"
-                : <span className="inline-flex items-center gap-1.5 text-success"><Check className="w-3.5 h-3.5" /> Enregistré</span>}
-            </span>
-            <button onClick={toggleTheme} aria-label="Thème" className="w-8 h-8 grid place-items-center rounded-lg border border-border text-muted-foreground hover:text-foreground">
-              {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </button>
-          </div>
+          <button onClick={toggleTheme} aria-label="Basculer le thème" className="w-9 h-9 grid place-items-center rounded-lg border border-border text-muted-foreground hover:text-foreground hover:border-accent/40 transition-colors">
+            {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
         </div>
-      </header>
-      <PortraitBandeau stepData={stepData} pctComplet={pctComplet} />
 
-      <main className="max-w-6xl mx-auto px-4 py-6">
+        {/* Eyebrow + titre de page (par étape) */}
+        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent font-mono mb-2">
+          Estimation de besoins financiers · Québec 2026
+        </div>
+        <h1 className="text-[26px] md:text-[30px] font-bold tracking-tight leading-tight">{T.h1}</h1>
+        <p className="text-muted-foreground text-[13.5px] mt-1">{T.sous}</p>
+
         {/* Barre de phases */}
-        <div className="grid grid-cols-3 gap-2 mb-4">
+        <div className="grid grid-cols-3 gap-2.5 mt-6 mb-2.5">
           {PHASES.map((ph) => {
             const p = phaseOf(current);
             const active = ph.id === p, doneP = ph.id < p;
@@ -234,8 +220,13 @@ export default function AnalyseABF() {
           })}
         </div>
 
+        {/* Bandeau portrait financier (entre chips et carte) */}
+        <div className="mb-4">
+          <PortraitBandeau stepData={stepData} pctComplet={pctComplet} />
+        </div>
+
         {/* Carte de l'étape courante OU écran final */}
-        <div ref={cardRef} className="abf-card rounded-2xl border border-border bg-card p-5 md:p-6">
+        <div ref={cardRef} className="abf-card rounded-2xl border border-border bg-card p-5 md:p-7">
           {done ? (
             <div className="text-center py-10">
               <span className="grid place-items-center mx-auto w-14 h-14 rounded-full bg-success/15 text-success mb-4">
@@ -245,10 +236,7 @@ export default function AnalyseABF() {
               <p className="text-sm text-muted-foreground max-w-md mx-auto mb-6">
                 Un conseiller en sécurité financière encadré par l'AMF le révisera et vous joindra par courriel ou téléphone.
               </p>
-              <button
-                onClick={() => { /* Soumission réelle : Phase ultérieure (persistance + entité dossier) */ }}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:brightness-110 transition"
-              >
+              <button className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:brightness-110 transition">
                 Soumettre mon dossier
               </button>
               <div className="mt-4">
@@ -257,14 +245,16 @@ export default function AnalyseABF() {
             </div>
           ) : (
             <>
-              <Nav top />
-              <div className="mb-2">
-                <h1 className="text-lg md:text-xl font-bold">{step.label}</h1>
-                <p className="text-[12px] text-muted-foreground">
-                  {step.phase === 1 ? "Faisons connaissance." : step.phase === 2 ? "Vos finances, sans jugement." : "Là où vous voulez aller."}
-                  {enCouple && step.n === 1 ? " · foyer avec conjoint(e)" : ""}
-                </p>
+              {/* Haut de carte : badge Enregistré + navigation */}
+              <div className="flex items-center gap-3 pb-4 mb-5 border-b border-border-subtle">
+                {badgeEnregistre}
+                <div className="ml-auto flex items-center gap-2">{prevBtn}{nextBtn}</div>
               </div>
+
+              {/* Titre + intro de l'étape (canoniques) */}
+              <h2 className="text-[21px] font-bold tracking-tight">{T.h2}</h2>
+              <p className="text-muted-foreground text-[13.5px] mt-1.5 mb-6 max-w-[54ch]">{T.lead}</p>
+
               {(() => {
                 const StepComp = STEP_COMPONENTS[step.key] || StepPlaceholder;
                 return (
@@ -276,11 +266,17 @@ export default function AnalyseABF() {
                   />
                 );
               })()}
-              <Nav />
+
+              {/* Bas de carte : navigation + reprendre plus tard */}
+              <div className="flex items-center gap-2 pt-5 mt-7 border-t border-border-subtle">
+                {prevBtn}{nextBtn}
+                <span className="ml-auto text-[11px] text-muted-foreground hidden sm:inline mr-2">Étape {current} / {TOTAL_STEPS}</span>
+                <button onClick={() => { window.location.href = "/dashboard"; }} className="text-[12.5px] text-muted-foreground underline hover:text-foreground">Reprendre plus tard</button>
+              </div>
             </>
           )}
         </div>
-      </main>
+      </div>
     </div>
   );
 }
