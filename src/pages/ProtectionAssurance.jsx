@@ -2,9 +2,9 @@ import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Link } from "react-router-dom";
-import { calculerRecommandations, primeAvenantEnfant } from "@/lib/moteurProtection";
+import { calculerRecommandations } from "@/lib/moteurProtection";
 import { defaultProtectionPayload } from "@/lib/protectionPayload";
-import { AlertTriangle, Layers, TrendingDown, Users, User, Baby } from "lucide-react";
+import { AlertTriangle, Layers, Users, User, Baby } from "lucide-react";
 
 /**
  * src/pages/ProtectionAssurance.jsx
@@ -118,8 +118,6 @@ export default function ProtectionAssurance() {
     mode === "couple" ? { ...payloadB, cout_etudes_par_enfant: (payloadB.cout_etudes_par_enfant || 60000) / 2 } : payloadB
   ), [payloadB, mode]);
 
-  const primeAvenant = avenantActif ? primeAvenantEnfant(avenantMontant) : 0;
-
   const S = {
     card: { background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 16 },
     input: { background: "#080d18", border: "1px solid rgba(255,255,255,.12)", borderRadius: 8, padding: "8px 12px", fontSize: 13, fontWeight: 600, color: "#fff", width: "100%", outline: "none" },
@@ -181,7 +179,7 @@ export default function ProtectionAssurance() {
                 <span style={{ fontFamily: "ui-monospace,monospace", fontSize: 14, fontWeight: 700, color: COL.celi, minWidth: 70 }}>{fmt(avenantMontant)}</span>
               </div>
               <div style={{ fontSize: 12, color: COL.dim }}>
-                Forfait <b style={{ color: COL.celi }}>{fmt(primeAvenant)}/mois</b> · tous les enfants · convertible sans examen
+                Couvre <b style={{ color: COL.celi }}>tous les enfants</b> · présents et futurs · convertible sans examen
               </div>
             </>
           )}
@@ -207,20 +205,20 @@ export default function ProtectionAssurance() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14, marginBottom: 18 }}>
             {recoA.paliers.map((pa, i) => (
               <CarteCouple key={pa.id} palierA={pa} palierB={recoB.paliers[i]} nomA={nomA} nomB={nomB}
-                avenant={avenantActif ? { montant: avenantMontant, prime: primeAvenant } : null} S={S} />
+                avenant={avenantActif ? { montant: avenantMontant } : null} S={S} />
             ))}
           </div>
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14, marginBottom: 18 }}>
             {(mode === "A" ? recoA : recoB).paliers.map(p => (
-              <CartePalier key={p.id} palier={p} avenant={avenantActif ? { montant: avenantMontant, prime: primeAvenant } : null} S={S} />
+              <CartePalier key={p.id} palier={p} avenant={avenantActif ? { montant: avenantMontant } : null} S={S} />
             ))}
           </div>
         )}
 
         {/* ─── Disclaimer ─── */}
         <p style={{ fontSize: 11, color: "rgba(255,255,255,.25)", marginTop: 18, lineHeight: 1.7 }}>
-          Estimations basées sur les tarifs publics 2026 des principaux assureurs canadiens (Manulife, Sun Life, Canada Life, iA, Empire Life, Desjardins). À titre indicatif. La prime réelle dépend de l'évaluation médicale, de l'historique familial, du mode de vie et de l'assureur. En mode couple, l'hypothèque est assurée sur la tête de celui qui la porte et les études sont réparties entre les parents. Consultez un courtier d'assurance autonome pour un devis ferme (ex. : <span style={{ color: COL.gold }}>term4sale.ca</span>).
+          Estimation du <b style={{ color: "rgba(255,255,255,.4)" }}>capital d'assurance vie requis</b> selon l'approche des besoins (dettes, hypothèque, remplacement de revenu net, études, frais de dernier recours), nette de l'épargne et de l'assurance déjà en vigueur. À titre indicatif — le besoin réel dépend de votre situation complète. En mode couple, chaque conjoint est assuré séparément pour ses propres responsabilités (le survivant est libéré au premier décès). Pour le coût d'une police et un devis ferme, consultez un courtier d'assurance autonome (ex. : <span style={{ color: COL.gold }}>term4sale.ca</span>).
         </p>
       </div>
     </div>
@@ -278,9 +276,8 @@ function BandeauPermanente({ perm }) {
         <div style={{ fontSize: 14, fontWeight: 700, color: COL.amber, marginBottom: 4 }}>Évaluer une assurance permanente (T100)</div>
         <div style={{ fontSize: 12.5, color: "rgba(255,255,255,.65)", lineHeight: 1.6, marginBottom: 8 }}>{perm.raison}</div>
         <div style={{ fontSize: 12, color: "#fff" }}>
-          Couverture suggérée : <b style={{ color: COL.amber }}>{fmt(perm.couverture)}</b> ·
-          Prime T100 estimée : <b style={{ color: COL.amber }}>{fmt(perm.prime)}/mois</b>
-          {perm.primeT20Comparaison && <span style={{ color: COL.dim }}> (vs T20 = {fmt(perm.primeT20Comparaison)}/mois, ratio {perm.ratioCout}%)</span>}
+          Couverture permanente suggérée : <b style={{ color: COL.amber }}>{fmt(perm.couverture)}</b>
+          <span style={{ color: COL.dim }}> · couvre frais de dernier recours + impôt successoral du FERR</span>
         </div>
       </div>
     </div>
@@ -290,7 +287,6 @@ function BandeauPermanente({ perm }) {
 function CartePalier({ palier, avenant, S }) {
   const win = palier.recommandee;
   const mt = palier.multiTerm;
-  const primeTotale = (mt ? mt.primeInitiale : (palier.prime || 0)) + (avenant ? avenant.prime : 0);
   return (
     <div style={{
       ...S.card, padding: "20px 18px 20px", position: "relative",
@@ -314,8 +310,7 @@ function CartePalier({ palier, avenant, S }) {
         <div style={{ borderTop: "1px solid rgba(255,255,255,.06)", paddingTop: 12, marginBottom: 4 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
             <Layers size={13} color={COL.celi} />
-            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: COL.celi }}>Stratégie {mt.couches.length > 1 ? `${mt.couches.length} termes` : "1 terme"}</span>
-            {mt.economiePct > 0 && <span style={{ marginLeft: "auto", fontSize: 9, fontWeight: 700, padding: "2px 7px", borderRadius: 5, background: "rgba(91,196,160,.15)", border: "1px solid rgba(91,196,160,.3)", color: COL.celi, display: "inline-flex", alignItems: "center", gap: 3 }}><TrendingDown size={10} /> −{mt.economiePct}%</span>}
+            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: COL.celi }}>Structure {mt.couches.length > 1 ? `${mt.couches.length} termes` : "1 terme"}</span>
           </div>
           {mt.couches.map((c, i) => (
             <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: i < mt.couches.length - 1 ? "1px solid rgba(255,255,255,.04)" : "none" }}>
@@ -324,7 +319,7 @@ function CartePalier({ palier, avenant, S }) {
                 <div style={{ fontFamily: "ui-monospace,monospace", fontSize: 13, fontWeight: 600, color: "#fff" }}>{fmtk(c.couverture)}</div>
                 <div style={{ fontSize: 10, color: COL.dim, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.raison}</div>
               </div>
-              <div style={{ fontFamily: "ui-monospace,monospace", fontSize: 12, fontWeight: 600, color: COL.celi, flexShrink: 0 }}>{c.prime ? `${fmt(c.prime)}/m` : "—"}</div>
+              <div style={{ fontFamily: "ui-monospace,monospace", fontSize: 11, fontWeight: 600, color: COL.dim, flexShrink: 0 }}>{c.expireAns ? `${c.expireAns} ans` : ""}</div>
             </div>
           ))}
           {avenant && (
@@ -334,25 +329,12 @@ function CartePalier({ palier, avenant, S }) {
                 <div style={{ fontFamily: "ui-monospace,monospace", fontSize: 13, fontWeight: 600, color: COL.celi }}>{fmtk(avenant.montant)}</div>
                 <div style={{ fontSize: 10, color: COL.dim }}>Avenant enfant</div>
               </div>
-              <div style={{ fontFamily: "ui-monospace,monospace", fontSize: 12, fontWeight: 600, color: COL.celi, flexShrink: 0 }}>{fmt(avenant.prime)}/m</div>
             </div>
           )}
-          <div style={{ marginTop: 10, padding: "10px 12px", borderRadius: 10, background: "rgba(91,196,160,.06)", border: "1px solid rgba(91,196,160,.18)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-              <span style={{ fontSize: 11, color: COL.dim }}>Prime de départ</span>
-              <span style={{ fontFamily: "ui-monospace,monospace", fontSize: 15, fontWeight: 700, color: COL.celi }}>{fmt(primeTotale)}/mois</span>
-            </div>
-            {mt.economie > 0 && (
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 4 }}>
-                <span style={{ fontSize: 10.5, color: COL.dim }}>Économie sur {mt.dureeMax} ans</span>
-                <span style={{ fontFamily: "ui-monospace,monospace", fontSize: 11.5, fontWeight: 600, color: COL.celi }}>{fmt(mt.economie)}</span>
-              </div>
-            )}
-          </div>
         </div>
       )}
       <div style={{ marginTop: "auto", paddingTop: 10, fontSize: 10.5, color: "rgba(255,255,255,.3)" }}>
-        Alternative simple : 1 seule police {palier.duree} {palier.prime ? `≈ ${fmt(palier.prime)}/mois` : ""}
+        Alternative simple : 1 seule police {palier.duree} pour le total
       </div>
     </div>
   );
@@ -360,17 +342,12 @@ function CartePalier({ palier, avenant, S }) {
 
 function CarteCouple({ palierA, palierB, nomA, nomB, avenant, S }) {
   const win = palierA.recommandee;
-  const primeA = palierA.multiTerm ? palierA.multiTerm.primeInitiale : (palierA.prime || 0);
-  const primeB = palierB.multiTerm ? palierB.multiTerm.primeInitiale : (palierB.prime || 0);
   const couvTot = palierA.couverture + palierB.couverture;
-  const primeTot = primeA + primeB + (avenant ? avenant.prime : 0);
-  const ecoTot = (palierA.multiTerm?.economie || 0) + (palierB.multiTerm?.economie || 0);
 
-  const Ligne = ({ nom, couv, prime, color }) => (
+  const Ligne = ({ nom, couv, color }) => (
     <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,.05)" }}>
       <div style={{ flex: 1, fontSize: 12.5, fontWeight: 600, color: color || "#fff" }}>{nom}</div>
       <div style={{ fontFamily: "ui-monospace,monospace", fontSize: 13, color: "#fff" }}>{fmtk(couv)}</div>
-      <div style={{ fontFamily: "ui-monospace,monospace", fontSize: 12, fontWeight: 600, color: COL.celi, width: 64, textAlign: "right" }}>{prime ? `${fmt(prime)}/m` : "—"}</div>
     </div>
   );
 
@@ -387,30 +364,20 @@ function CarteCouple({ palierA, palierB, nomA, nomB, avenant, S }) {
 
       <div style={{ padding: "14px 0", borderTop: "1px solid rgba(255,255,255,.08)", borderBottom: "1px solid rgba(255,255,255,.08)", marginBottom: 12 }}>
         <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 26, fontWeight: 700, color: win ? COL.gold : "#fff", lineHeight: 1, marginBottom: 4 }}>{fmtk(couvTot)}</div>
-        <div style={{ fontSize: 11, color: COL.dim }}>couverture combinée</div>
+        <div style={{ fontSize: 11, color: COL.dim }}>total assuré · chaque conjoint séparément</div>
       </div>
 
-      <Ligne nom={nomA} couv={palierA.couverture} prime={primeA} color={COL.blue} />
-      <Ligne nom={nomB} couv={palierB.couverture} prime={primeB} color={COL.celi} />
+      <Ligne nom={nomA} couv={palierA.couverture} color={COL.blue} />
+      <Ligne nom={nomB} couv={palierB.couverture} color={COL.celi} />
       {avenant && (
         <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,.05)" }}>
           <div style={{ flex: 1, fontSize: 12.5, fontWeight: 600, color: COL.celi, display: "flex", alignItems: "center", gap: 5 }}><Baby size={12} /> Avenant enfant</div>
           <div style={{ fontFamily: "ui-monospace,monospace", fontSize: 13, color: "#fff" }}>{fmtk(avenant.montant)}</div>
-          <div style={{ fontFamily: "ui-monospace,monospace", fontSize: 12, fontWeight: 600, color: COL.celi, width: 64, textAlign: "right" }}>{fmt(avenant.prime)}/m</div>
         </div>
       )}
 
-      <div style={{ marginTop: 12, padding: "12px 14px", borderRadius: 10, background: "rgba(91,196,160,.06)", border: "1px solid rgba(91,196,160,.18)" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-          <span style={{ fontSize: 11.5, color: COL.dim, fontWeight: 600 }}>Prime familiale</span>
-          <span style={{ fontFamily: "ui-monospace,monospace", fontSize: 16, fontWeight: 700, color: COL.celi }}>{fmt(primeTot)}/mois</span>
-        </div>
-        {ecoTot > 0 && (
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 4 }}>
-            <span style={{ fontSize: 10.5, color: COL.dim }}>Économie multi-terme totale</span>
-            <span style={{ fontFamily: "ui-monospace,monospace", fontSize: 11.5, fontWeight: 600, color: COL.celi }}>{fmt(ecoTot)}</span>
-          </div>
-        )}
+      <div style={{ marginTop: 12, padding: "10px 14px", borderRadius: 10, background: "rgba(111,143,214,.06)", border: "1px solid rgba(111,143,214,.18)", fontSize: 11, color: "rgba(255,255,255,.5)", lineHeight: 1.5 }}>
+        Chaque conjoint est assuré pour ses propres responsabilités : au premier décès, le survivant est entièrement libéré.
       </div>
     </div>
   );

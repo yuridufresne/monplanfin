@@ -3,6 +3,8 @@
  * Modèle de données du module Immobilier — pré-qualification hypothécaire.
  */
 
+import { resoudreRetraite } from "@/lib/sectionsRetraite";
+
 export const defaultImmobilierPayload = {
   // ── Profil du ménage (auto-rempli depuis l'ABF) ──────────────────────────
   enCouple: false,
@@ -67,7 +69,7 @@ export function payloadDepuisABF(bySection) {
   const profil = bySection.profil_personnel || {};
   const revenu = bySection.revenu || {};
   const dettes = bySection.dettes || {};
-  const retraite = bySection.retraite || {};
+  const retraite = resoudreRetraite(bySection); // épargne(ét.4) + objectifs(ét.10), repli legacy
   const allocations = bySection.allocations || {};
   const immobilier = bySection.immobilier || {};
   const enCouple = ["marie", "conjoint", "union_civile", "conjoint_de_fait"].includes(profil.situation || "");

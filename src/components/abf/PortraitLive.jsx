@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { calcRevenuDisponible, calcValeurNette } from "@/lib/calcRevenuNet";
+import { resoudreRetraite } from "@/lib/sectionsRetraite";
 
 /**
  * PortraitLive — portrait financier en direct (panneau latéral de l'ABF).
@@ -49,7 +50,7 @@ function LigneLive({ label, valeur, color = "#fff", visible }) {
 export default function PortraitLive({ sections = {}, sectionsCompletees = 0, totalSections = 11 }) {
   const profil    = sections.profil_personnel || {};
   const revenu    = sections.revenu || {};
-  const retraite  = sections.retraite || {};
+  const retraite  = resoudreRetraite(sections); // épargne(ét.4) + objectifs(ét.10), repli legacy
   const dettesSec = sections.dettes || {};
   const immo      = sections.immobilier || {};
   const fonds     = sections.fonds_urgence || {};

@@ -1,5 +1,6 @@
 import { calcAllocations } from "@/lib/allocations2026";
 import { calculateFullTax } from "@/lib/moteurFiscal2026";
+import { lireRetraite } from "@/lib/sectionsRetraite";
 
 function unwrap(raw) {
   if (!raw || typeof raw !== "object") return {};
@@ -80,7 +81,7 @@ function _fondPensionDC(panel, field) {
 }
 
 export function calcEpargne(profiles) {
-  const ret = unwrap((profiles || []).find(p => p && p.section === "retraite") && (profiles || []).find(p => p && p.section === "retraite").data || {});
+  const ret = lireRetraite(profiles); // épargne(ét.4) + objectifs(ét.10), repli legacy "retraite"
   const retB = ret.conjoint || {};
   const cA = ret.comptes || {};
   const cB = retB.comptes || {};
@@ -111,7 +112,7 @@ export function calcValeurNette(profiles, { investmentsTotal = 0, debtsTotal = n
     const found = (profiles || []).find(p => p && p.section === sec);
     return unwrap(found && found.data || {});
   };
-  const ret = get("retraite");
+  const ret = lireRetraite(profiles); // épargne(ét.4) + objectifs(ét.10), repli legacy "retraite"
   const retB = ret.conjoint || {};
   const immo = get("immobilier");
   const dettesSec = get("dettes");
@@ -160,6 +161,7 @@ export function toMensuel(amount, freq) {
 }
 
 // Paiement mensuel hypotheque : champ saisi, sinon auto-calcul (solde/taux/amortissement).
+export function paiementHypoMensuel(h) { return _paiementHypo(h); }
 function _paiementHypo(h) {
   let pay = parseFloat(h.paiement_mensuel) || 0;
   if (!pay) {

@@ -8,6 +8,7 @@ import {
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import { calcAllocations } from "@/lib/allocations2026";
 import { calcRevenuDisponible, calcValeurNette, calcDepensesMensuelles } from "@/lib/calcRevenuNet";
+import { resoudreRetraite } from "@/lib/sectionsRetraite";
 
 // ── Formatters ──────────────────────────────────────────────────────────────
 const fmt = (v) => new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(v || 0);
@@ -253,7 +254,7 @@ export default function FeuilleResume() {
   const revenuABF     = bySection.revenu           || {};
   const dettesABF     = bySection.dettes           || {};
   const immoABF       = bySection.immobilier      || {};
-  const retraiteABF   = bySection.retraite         || {};
+  const retraiteABF   = resoudreRetraite(bySection); // épargne(ét.4) + objectifs(ét.10), repli legacy
   const fondsABF      = bySection.fonds_urgence    || {};
   const allocationsABF= bySection.allocations      || {};
 

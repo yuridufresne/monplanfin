@@ -13,6 +13,7 @@ import Calculators from '@/pages/Calculators';
 import Dashboard from '@/pages/Dashboard';
 import Budget from '@/pages/Budget';
 import FinancialAnalysis from '@/pages/FinancialAnalysis';
+import AnalyseABF from '@/pages/AnalyseABF';
 import FeuilleResume from '@/pages/FeuilleResume';
 import AdvancedMode from '@/pages/AdvancedMode';
 import ProtectionAssurance from '@/pages/ProtectionAssurance';
@@ -104,6 +105,7 @@ const AuthenticatedApp = () => {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/budget" element={<Budget />} />
         <Route path="/analyse" element={<FinancialAnalysis />} />
+        <Route path="/analyse2" element={<AnalyseABF />} />
         <Route path="/resume" element={<FeuilleResume />} />
         <Route path="/avance" element={<AdvancedMode />} />
       

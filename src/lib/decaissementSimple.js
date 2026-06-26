@@ -128,7 +128,8 @@ function shiftRetraite(profiles, delta) {
   if (!Array.isArray(cloned)) return profiles;
   cloned.forEach(function (p) {
     const section = (p && (p.section || (p.data && p.data.section))) || "";
-    if (section === "retraite") {
+    // Les âges de retraite vivent dans "retraite" (legacy) OU "objectifs" (refonte ABF).
+    if (section === "retraite" || section === "objectifs") {
       const d = (p && p.data) ? p.data : p;
       if (d && typeof d === "object") {
         const baseA = parseInt(d.age_retraite) || 65;

@@ -1,6 +1,7 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { calcRevenuDisponible, calcEpargne } from "@/lib/calcRevenuNet";
+import { resoudreRetraite } from "@/lib/sectionsRetraite";
 
 /**
  * InsightsABF — insights instantanés affichés à la complétion d'une section.
@@ -91,7 +92,7 @@ export function getInsightForSection(sectionId, S = {}) {
     }
 
     case "retraite": {
-      const r = S.retraite || {};
+      const r = resoudreRetraite(S); // épargne + objectifs, repli legacy
       // Epargne capital = source unique calcEpargne (7 comptes hors REEE + fond pension DC)
       const _ep = calcEpargne([{ section: "retraite", data: r }]);
       const solde = _ep.soldeFoyer;
@@ -192,7 +193,7 @@ export function getInsightForSection(sectionId, S = {}) {
     case "fonds_urgence": {
       const montant = parseFloat((S.fonds_urgence || {}).montant_fonds) || 0;
       if (brutFoyer <= 0) return null;
-      const netM = calcRevenuDisponible([{ section: "revenu", data: S.revenu || {} }, { section: "retraite", data: S.retraite || {} }]).revenuNetMensuel;
+      const netM = calcRevenuDisponible([{ section: "revenu", data: S.revenu || {} }, { section: "retraite", data: resoudreRetraite(S) }]).revenuNetMensuel;
       const mois = netM > 0 ? montant / (netM * 0.8) : 0;
       const ok = mois >= 3;
       return {

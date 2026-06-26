@@ -7,6 +7,8 @@
  *   - Plan de décaissement
  */
 
+import { resoudreRetraite } from '@/lib/sectionsRetraite';
+
 export const IQPF = {
   INFLATION: 0.023, INFLATION_SALAIRE: 0.031,
   REND_ACCUM: 0.07, REND_DECAISSE: 0.05,
@@ -254,7 +256,7 @@ export function buildPayload(profiles = [], opts = {}) {
 
   const profil = dict.profil_personnel || {};
   const rev = dict.revenu || {};
-  const ret = dict.retraite || {};
+  const ret = resoudreRetraite(dict); // épargne(ét.4) + objectifs(ét.10), repli legacy "retraite"
   const enCouple = ['marie', 'conjoint', 'union_civile', 'conjoint_de_fait']
     .includes((profil.situation || '').toLowerCase());
   const profilCj = profil.conjoint || {};
@@ -460,7 +462,7 @@ export function debugPayload(profiles = []) {
   });
   const profil = dict.profil_personnel || {};
   const rev    = dict.revenu           || {};
-  const ret    = dict.retraite         || {};
+  const ret    = resoudreRetraite(dict); // épargne + objectifs, repli legacy "retraite"
   const retCj  = ret.conjoint          || {};
   return {
     raw: {

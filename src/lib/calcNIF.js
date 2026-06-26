@@ -18,6 +18,7 @@
 
 import { indexerRevenusGarantis } from '@/lib/prestationsGouvernementales';
 import { buildPayload, nifMoyenne } from '@/lib/clientPayload';
+import { resoudreRetraite } from '@/lib/sectionsRetraite';
 
 export const RENDEMENT_ACCUM   = 0.07;
 export const RENDEMENT_DECAISS = 0.05;
@@ -170,7 +171,7 @@ export function calcNIFFromProfiles(profiles) {
   });
 
   const profil   = m.profil_personnel || {};
-  const retraite = m.retraite         || {};
+  const retraite = resoudreRetraite(m); // épargne + objectifs, repli legacy "retraite"
   const revABF   = m.revenu           || {};
 
   const enCouple    = ["marie", "conjoint", "union_civile"].includes(profil.situation || "");

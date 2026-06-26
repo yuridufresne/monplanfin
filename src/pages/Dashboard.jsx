@@ -18,6 +18,7 @@ import ConsentGate from "@/components/dashboard/ConsentGate";
 import NIFCalculator from "@/components/dashboard/NIFCalculator";
 import { calcNIFFromProfiles } from "@/lib/calcNIF";
 import { buildPayload } from "@/lib/clientPayload";
+import { resoudreRetraite } from "@/lib/sectionsRetraite";
 import InfoTooltip from "@/components/ui/InfoTooltip";
 import FlipCard from "@/components/ui/FlipCard";
 import { strategieReelle, nifParAge } from "@/lib/decaissementSimple";
@@ -356,7 +357,7 @@ export default function Dashboard() {
   }, [profiles]);
 
   const profil      = bySection.profil_personnel || {};
-  const retraiteABF = bySection.retraite || {};
+  const retraiteABF = resoudreRetraite(bySection); // épargne(ét.4) + objectifs(ét.10), repli legacy
   const dettesABF   = bySection.dettes || {};
   const allocABF    = bySection.allocations || {};
   const fondsABF    = bySection.fonds_urgence || {};

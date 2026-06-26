@@ -13,6 +13,20 @@
  * Canada Life, Manulife, Empire Life, iA, Desjardins). À titre indicatif.
  */
 
+import { calculateFullTax } from "@/lib/moteurFiscal2026";
+
+/**
+ * Revenu net après impôt (fédéral + QC + cotisations) à partir du brut.
+ * Remplace l'approximation à plat brut × 0,72 par le vrai moteur fiscal QC,
+ * puisque le besoin d'assurance remplace le revenu NET dont vivait la famille.
+ */
+function netDe(brut) {
+  const b = Number(brut) || 0;
+  if (b <= 0) return 0;
+  try { return calculateFullTax({ grossIncome: b }).netIncomeAfterTax || b * 0.72; }
+  catch { return b * 0.72; }
+}
+
 // ────────────────────────────────────────────────────────────────────────────
 //  TABLES DE PRIX — $/mois pour 500 000 $ (non-fumeur, classe standard)
 // ────────────────────────────────────────────────────────────────────────────
@@ -169,20 +183,21 @@ function calculUrgence(p) {
 
 /** Sécuritaire = Urgence + (salaire_net × annees_remplacement) */
 function calculSecuritaire(p, urgence) {
-  return urgence + Math.round((p.salaire_brut || 0) * 0.72 * (p.annees_remplacement_secur || 3));
+  return urgence + Math.round(netDe(p.salaire_brut) * (p.annees_remplacement_secur || 3));
 }
 
 /**
  * Optimale = Urgence + capital_remplacement_revenu + études.
  * Le revenu utilise un capital actualisé (taux réel 3%) sur N années
- * (jusqu'à 65 ans, plafonné 20 ans), borné à 10× le salaire net (DIME).
+ * (jusqu'à 65 ans, plafonné 20 ans), borné à 12× le salaire BRUT (limite de
+ * tarification financière des assureurs), pour ne pas sous-assurer les jeunes.
  */
 function calculOptimal(p, urgence) {
-  const salaireNet = (p.salaire_brut || 0) * 0.72;
+  const salaireNet = netDe(p.salaire_brut);
   const annees = p.annees_remplacement_optimal ?? Math.min(20, Math.max(5, 65 - (p.age || 35)));
   const rReel = 0.03;
   const facteurRente = rReel > 0 ? (1 - Math.pow(1 + rReel, -annees)) / rReel : annees;
-  let remplacement = Math.min(salaireNet * facteurRente, salaireNet * 10);
+  let remplacement = Math.min(salaireNet * facteurRente, (p.salaire_brut || 0) * 12);
   const etudes = (p.nb_enfants || 0) * (p.cout_etudes_par_enfant || 60000);
   return urgence + Math.round(remplacement) + Math.round(etudes);
 }
@@ -192,24 +207,24 @@ function composantesUrgence(p) {
   return [
     { terme: "T10", label: "Dettes", montant: p.dettes_autres || 0 },
     { terme: "HYPO", label: "Hypothèque", montant: p.hypotheque_solde || 0 },
-    { terme: "LONG", label: "Frais funéraires", montant: p.frais_funeraires || 50000 },
+    { terme: "LONG", label: "Frais de dernier recours", montant: p.frais_funeraires || 50000 },
   ];
 }
 function composantesSecuritaire(p) {
-  const revTrans = Math.round((p.salaire_brut || 0) * 0.72 * (p.annees_remplacement_secur || 3));
+  const revTrans = Math.round(netDe(p.salaire_brut) * (p.annees_remplacement_secur || 3));
   return [
     { terme: "T10", label: "Dettes", montant: p.dettes_autres || 0 },
     { terme: "T10", label: "Revenu transitoire", montant: revTrans },
     { terme: "HYPO", label: "Hypothèque", montant: p.hypotheque_solde || 0 },
-    { terme: "LONG", label: "Frais funéraires", montant: p.frais_funeraires || 50000 },
+    { terme: "LONG", label: "Frais de dernier recours", montant: p.frais_funeraires || 50000 },
   ];
 }
 function composantesOptimal(p) {
-  const salaireNet = (p.salaire_brut || 0) * 0.72;
+  const salaireNet = netDe(p.salaire_brut);
   const annees = p.annees_remplacement_optimal ?? Math.min(20, Math.max(5, 65 - (p.age || 35)));
   const rReel = 0.03;
   const facteurRente = rReel > 0 ? (1 - Math.pow(1 + rReel, -annees)) / rReel : annees;
-  const revenu = Math.min(salaireNet * facteurRente, salaireNet * 10);
+  const revenu = Math.min(salaireNet * facteurRente, (p.salaire_brut || 0) * 12);
   const etudes = (p.nb_enfants || 0) * (p.cout_etudes_par_enfant || 60000);
   return [
     { terme: "T10", label: "Dettes", montant: p.dettes_autres || 0 },
@@ -217,7 +232,7 @@ function composantesOptimal(p) {
     { terme: "T20", label: "Revenu prolongé", montant: Math.round(revenu * 0.5) },
     { terme: "T20", label: "Études", montant: etudes },
     { terme: "HYPO", label: "Hypothèque", montant: p.hypotheque_solde || 0 },
-    { terme: "LONG", label: "Frais funéraires", montant: p.frais_funeraires || 50000 },
+    { terme: "LONG", label: "Frais de dernier recours", montant: p.frais_funeraires || 50000 },
   ];
 }
 
@@ -265,7 +280,7 @@ export function calculerRecommandations(p) {
   const securitaire = calculSecuritaire(p, urgence);
   const optimal = calculOptimal(p, urgence);
   const round25 = v => Math.round(v / 25000) * 25000;
-  const salaireNet = (p.salaire_brut || 0) * 0.72;
+  const salaireNet = netDe(p.salaire_brut);
   const anOptimal = p.annees_remplacement_optimal ?? Math.min(20, Math.max(5, 65 - age));
 
   const paliers = [
@@ -280,7 +295,7 @@ export function calculerRecommandations(p) {
       composantes: [
         { label: "Hypothèque", montant: p.hypotheque_solde || 0 },
         { label: "Autres dettes", montant: p.dettes_autres || 0 },
-        { label: "Frais funéraires", montant: p.frais_funeraires || 50000 },
+        { label: "Frais de dernier recours", montant: p.frais_funeraires || 50000 },
         { label: "Moins : épargne liquide", montant: -Math.round((p.epargne_actuelle || 0) * 0.5) },
       ],
       multiTerm: layeringParComposantes(p, round25(urgence), composantesUrgence(p)),
@@ -321,7 +336,7 @@ export function calculerRecommandations(p) {
     paliers,
     permanente: evaluerPermanente(p),
     hypotheses: {
-      taux_remplacement_net: 0.72,
+      taux_remplacement_net: (p.salaire_brut || 0) > 0 ? +(netDe(p.salaire_brut) / p.salaire_brut).toFixed(2) : 0.72,
       annees_jusqu_independance: anOptimal,
       cout_etudes_par_enfant: p.cout_etudes_par_enfant || 60000,
       frais_funeraires: p.frais_funeraires || 50000,
