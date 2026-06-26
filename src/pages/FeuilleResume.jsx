@@ -389,6 +389,9 @@ export default function FeuilleResume() {
   const _dispoReel = calcRevenuDisponible(profiles);
   const revenuNetMensuel = _dispoReel.revenuNetMensuel;
   const revenuNetTotal = revenuNetMensuel * 12;
+  // Source unique du « revenu net mensuel » affiché = net + allocations familiales (calcRevenuDisponible).
+  const allocMensuelReel = _dispoReel.allocMensuel || 0;
+  const revenuDisponibleMensuel = _dispoReel.totalMensuel; // net + alloc — ne PAS re-ajouter d'allocations
   // P9 -- impot retenu a la source vs theorique.
   const impotRetenu = _dispoReel.impotSaisiFamilial || 0;
 
@@ -508,8 +511,8 @@ export default function FeuilleResume() {
     }, {})
   ).map(([name, value]) => ({ name: name.replace(/_/g, " "), value: Math.round(value) }));
 
-  // Inclure les allocations dans le cashflow disponible
-  const revenuNetMensuelAvecAlloc = revenuNetMensuel + allocMensuelEffectif;
+  // Cashflow disponible = revenu net + allocations (source unique, sans re-ajout manuel)
+  const revenuNetMensuelAvecAlloc = revenuDisponibleMensuel;
   const capaciteEpargne = revenuNetMensuelAvecAlloc - depensesMensuelles;
 
   // ── Dettes ────────────────────────────────────────────────────────────
@@ -832,7 +835,7 @@ export default function FeuilleResume() {
             <div style={{ display: "flex", gap: 8 }}>
               {[
                 { label: "Valeur nette", val: fmt(valeurNette), color: valeurNette >= 0 ? "#5BC4A0" : "#f87171" },
-                { label: "Revenu net/mois", val: fmt(revenuNetMensuel), color: "#C9A063" },
+                { label: "Revenu net/mois", val: fmt(revenuDisponibleMensuel), color: "#C9A063" },
               ].map(b => (
                 <div key={b.label} style={{ ...glass, borderRadius: 14, padding: "10px 18px", textAlign: "center" }}>
                   <p style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginBottom: 4 }}>{b.label}</p>
@@ -865,8 +868,8 @@ export default function FeuilleResume() {
           />
           <KpiCard
             label="Revenu disponible"
-            value={fmt(revenuNetTotal + (hasEnfants ? allocMensuelEffectif * 12 : 0))}
-            sub={hasEnfants ? `dont ${fmt(allocMensuelEffectif * 12)}/an alloc.` : `${fmt(revenuNetMensuel)}/mois`}
+            value={fmt(revenuDisponibleMensuel * 12)}
+            sub={allocMensuelReel > 0 ? `dont ${fmt(allocMensuelReel * 12)}/an alloc.` : `${fmt(revenuDisponibleMensuel)}/mois`}
             icon={DollarSign}
             color="#A87DD3"
           />
@@ -1433,11 +1436,11 @@ export default function FeuilleResume() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4" style={{ marginBottom: 24 }}>
             {[
               {
-                label: hasEnfants ? "Revenus nets + allocations" : "Revenus nets mensuels",
+                label: allocMensuelReel > 0 ? "Revenus nets + allocations" : "Revenus nets mensuels",
                 val: fmt(revenuNetMensuelAvecAlloc),
                 color: "#5BC4A0",
                 icon: TrendingUp,
-                sub: hasEnfants && allocMensuelEffectif > 0 ? `dont ${fmt(allocMensuelEffectif)}/mois d'allocations` : undefined,
+                sub: allocMensuelReel > 0 ? `dont ${fmt(allocMensuelReel)}/mois d'allocations` : undefined,
               },
               { label: "Dépenses mensuelles totales", val: fmt(depensesMensuelles), color: "#f87171", icon: TrendingDown },
               {
