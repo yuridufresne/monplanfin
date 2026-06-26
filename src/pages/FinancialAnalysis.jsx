@@ -258,7 +258,7 @@ const SIDE_TYPES = [
 ];
 
 const PALIERS_FED_EST = [
-  { min: 0, max: 58523, rate: 0.15 },
+  { min: 0, max: 58523, rate: 0.14 },
   { min: 58523, max: 117045, rate: 0.205 },
   { min: 117045, max: 181440, rate: 0.26 },
   { min: 181440, max: 258482, rate: 0.29 },
@@ -279,7 +279,7 @@ function estimerRetenueMensuelle(revenuBrut) {
     if (brut <= p.min) break;
     impFed += (Math.min(brut, p.max) - p.min) * p.rate;
   }
-  impFed = Math.max(0, (impFed - 16452 * 0.15) * (1 - 0.165));
+  impFed = Math.max(0, (impFed - 16452 * 0.14) * (1 - 0.165));
   let impQc = 0;
   for (const p of PALIERS_QC_EST) {
     if (brut <= p.min) break;
