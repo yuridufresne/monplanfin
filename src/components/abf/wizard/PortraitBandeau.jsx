@@ -17,8 +17,8 @@ function Cellule({ label, valeur, vide, ton = "neutre", sous }) {
     : ton === "accent" ? "text-accent"
     : "text-foreground";
   return (
-    <div className="flex flex-col min-w-0 px-3 py-1.5">
-      <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground truncate">{label}</span>
+    <div className="flex flex-col flex-1 min-w-0 px-3 py-1.5">
+      <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground leading-tight">{label}</span>
       <span className={`font-mono text-[14px] font-bold tabular-nums truncate ${vide ? "text-muted-foreground/60" : couleur}`}>
         {vide ? "—" : valeur}
       </span>
@@ -64,7 +64,7 @@ export default function PortraitBandeau({ stepData = {}, pctComplet = 0 }) {
           <Cellule label="Revenu brut / an" valeur={fmtMontant(d.brut)} vide={d.brut <= 0} />
           <Cellule label="Épargne" valeur={fmtMontant(d.epargne)} vide={d.epargne <= 0} ton="vert" />
           <Cellule label="Immobilier" valeur={fmtMontant(d.immo)} vide={d.immo <= 0} />
-          <Cellule label="Dettes" valeur={fmtMontant(d.dettes)} vide={d.dettes <= 0} ton="rouge" />
+          <Cellule label="Dettes & hypothèques" valeur={fmtMontant(d.dettes)} vide={d.dettes <= 0} ton="rouge" />
         </div>
 
         {/* Barre « Analyse complète » — pleine largeur de la section */}
