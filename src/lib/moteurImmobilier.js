@@ -142,9 +142,9 @@ export function calculerQualification(p) {
   };
 
   // Amortissement : 30 ans permis seulement si non-assuré (≥20 %) OU
-  // premier acheteur + construction neuve.
+  // premier acheteur OU construction neuve (règle fédérale déc. 2024 : l'un ou l'autre).
   const amortDemande = p.amortissement || 25;
-  const amortPermis30Assure = !!p.premier_acheteur && !!p.construction_neuve;
+  const amortPermis30Assure = !!p.premier_acheteur || !!p.construction_neuve;
 
   // ── Évaluateur central : valide un prix selon le REVENU uniquement ────────
   const evaluerPrix = (prix) => {
