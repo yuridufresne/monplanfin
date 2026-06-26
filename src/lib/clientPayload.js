@@ -216,16 +216,18 @@ function readPersonne(ret = {}, profil = {}, salaireAnnuel = 0) {
 export function lireCibleRetraite(ret, brutAnnuelFoyer) {
   ret = ret || {};
   const brut = parseFloat(brutAnnuelFoyer) || 0;
-  // Cible foyer = somme des deux personnes (la conjoint etait ignoree -> cible et % sous-evalues)
-  const mensuelA = parseFloat(ret.revenu_retraite_mensuel) || 0;
-  const mensuelB = parseFloat((ret.conjoint || {}).revenu_retraite_mensuel) || 0;
-  const mensuel = mensuelA + mensuelB;
+  const mensuel = parseFloat(ret.revenu_retraite_mensuel);
   let pctRaw = parseFloat(ret.taux_remplacement);
   if (!Number.isFinite(pctRaw) || pctRaw <= 0) pctRaw = parseFloat(ret.revenu_retraite_pct);
-  let taux;
-  if (Number.isFinite(pctRaw) && pctRaw > 0) { taux = pctRaw > 2 ? pctRaw / 100 : pctRaw; } else { taux = 0.70; }
+  const pctValide = Number.isFinite(pctRaw) && pctRaw > 0;
+  const taux = pctValide ? (pctRaw > 2 ? pctRaw / 100 : pctRaw) : 0.70;
+  // Priorite au % de remplacement choisi (relatif au revenu actuel, standard IQPF, et c'est
+  // le champ que le client regle explicitement). Le montant mensuel n'est utilise comme cible
+  // en dollars fixes QUE si aucun % n'est defini, evite qu'un montant mensuel perime ecrase le %.
   let cibleAnnuelle;
-  if (Number.isFinite(mensuel) && mensuel > 0) { cibleAnnuelle = Math.round(mensuel * 12); } else { cibleAnnuelle = Math.round(brut * taux); }
+  if (pctValide && brut > 0) { cibleAnnuelle = Math.round(brut * taux); }
+  else if (Number.isFinite(mensuel) && mensuel > 0) { cibleAnnuelle = Math.round(mensuel * 12); }
+  else { cibleAnnuelle = Math.round(brut * taux); }
   const tauxEffectif = brut > 0 ? Math.round((cibleAnnuelle / brut) * 100) : Math.round(taux * 100);
   return { cibleAnnuelle, taux, tauxEffectif };
 }
