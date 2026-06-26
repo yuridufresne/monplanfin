@@ -59,9 +59,9 @@ export default function PortraitBandeau({ stepData = {}, pctComplet = 0 }) {
     <div className="rounded-xl border border-border bg-card">
       <div className="px-2 py-1.5">
         <div className="flex items-stretch gap-1 overflow-x-auto divide-x divide-border-subtle">
+          <Cellule label="Revenu brut / an" valeur={fmtMontant(d.brut)} vide={d.brut <= 0} />
           <Cellule label="Revenu net / mois" valeur={fmtMontant(d.net)} vide={d.net <= 0} ton="accent"
             sous={d.alloc > 0 ? `+ incl. allocation ${fmtMontant(d.alloc)}` : undefined} />
-          <Cellule label="Revenu brut / an" valeur={fmtMontant(d.brut)} vide={d.brut <= 0} />
           <Cellule label="Épargne" valeur={fmtMontant(d.epargne)} vide={d.epargne <= 0} ton="vert" />
           <Cellule label="Immobilier" valeur={fmtMontant(d.immo)} vide={d.immo <= 0} />
           <Cellule label="Dettes & hypothèques" valeur={fmtMontant(d.dettes)} vide={d.dettes <= 0} ton="rouge" />
