@@ -440,6 +440,13 @@ export default function Dashboard() {
   const psvAnnuel  = psvMensuelTotal * 12;
   const fpAnnuel   = fpMensuelTotal * 12;
   const totalGarantiAnnuel = revGarantiAnnuel;
+  // Revenus garantis à la retraite (indexés) — même source que la carte NIF (buildPayload)
+  const garFoyer = payloadIQPF?.revenus_garantis || {};
+  const rrqFoyerIdx  = (garFoyer.rrq_a_idx || 0) + (garFoyer.rrq_b_idx || 0);
+  const svFoyerIdx   = (garFoyer.sv_a_idx || 0) + (garFoyer.sv_b_idx || 0);
+  const pensFoyerIdx = (garFoyer.pension_a_idx || 0) + (garFoyer.pension_b_idx || 0);
+  const srgFoyerIdx  = (garFoyer.srg_a_idx || 0) + (garFoyer.srg_b_idx || 0);
+  const garFoyerIdx  = (garFoyer.sous_total_a_idx || 0) + (garFoyer.sous_total_b_idx || 0);
 
   // ── Allocations ────────────────────────────────────────────────────────────
   const hasEnfants = allocABF.a_enfants === true && (allocABF.enfants || []).some(e => {
@@ -693,32 +700,29 @@ export default function Dashboard() {
                   <div style={{ ...G.card, padding: "1.1rem 1.25rem" }}>
                     <SectionHeader
                       title="Revenus garantis — retraite"
-                      info="Montants en dollars d'aujourd'hui. Les valeurs futures sont indexées à 2,5%/an jusqu'à l'âge de retraite."
+                      info="Revenus garantis à la retraite, indexés à l'inflation (même base que la carte NIF). L'équivalent en dollars d'aujourd'hui est indiqué en bas."
                       link
                     />
-                    {rrqAnnuel > 0 && <Row left="RRQ foyer" right={`${fmt(rrqAnnuel)}/an`} dot="#5BC4A0" />}
-                    {psvAnnuel > 0 && <Row left="PSV foyer" right={`${fmt(psvAnnuel)}/an`} dot="#6B8ED6" />}
-                    {fpAnnuel  > 0 && <Row left="Pension PD" right={`${fmt(fpAnnuel)}/an`} dot="#A87DD3" />}
-                    {totalGarantiAnnuel === 0 && <p style={{ ...MUTED, padding: "8px 0" }}>Aucun revenu garanti saisi</p>}
-                    {totalGarantiAnnuel > 0 && (
+                    {garFoyerIdx > 0 ? (
                       <>
-                        <div style={{ marginTop: 10, display: "flex", justifyContent: "space-between", paddingTop: 8, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", fontWeight: 600 }}>Aujourd'hui</p>
-                          <p style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 700, color: "#5BC4A0" }}>{fmt(totalGarantiAnnuel)}/an</p>
-                        </div>
-                        {nif.nifResult?.revenuGarantiFutur > 0 && (
-                          <div style={{ marginTop: 6, padding: "8px 10px", borderRadius: 10, background: "rgba(201,160,99,0.07)", border: "1px solid rgba(201,160,99,0.18)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                            <div>
-                              <p style={{ fontSize: 11, fontWeight: 700, color: "#C9A063" }}>À la retraite ({ageRetraite || 65} ans)</p>
-                              <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 1 }}>en dollars futurs · ×{nif.nifResult?.facteurInflation?.toFixed(2)}</p>
-                            </div>
-                            <div style={{ textAlign: "right" }}>
-                              <p style={{ fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 800, color: "#C9A063" }}>{fmt(nif.nifResult.revenuGarantiFutur)}/an</p>
-                              <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "rgba(201,160,99,0.6)", marginTop: 1 }}>{fmt(Math.round(nif.nifResult.revenuGarantiFutur / 12))}/mois</p>
-                            </div>
+                        {rrqFoyerIdx > 0 && <Row left="RRQ foyer" right={`${fmt(rrqFoyerIdx)}/an`} dot="#5BC4A0" />}
+                        {svFoyerIdx > 0 && <Row left="SV foyer" right={`${fmt(svFoyerIdx)}/an`} dot="#6B8ED6" />}
+                        {pensFoyerIdx > 0 && <Row left="Pension PD foyer" right={`${fmt(pensFoyerIdx)}/an`} dot="#A87DD3" />}
+                        {srgFoyerIdx > 0 && <Row left="SRG foyer" right={`${fmt(srgFoyerIdx)}/an`} dot="#A87DD3" />}
+                        <div style={{ marginTop: 8, padding: "10px 12px", borderRadius: 10, background: "rgba(201,160,99,0.07)", border: "1px solid rgba(201,160,99,0.18)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                          <div>
+                            <p style={{ fontSize: 11, fontWeight: 700, color: "#C9A063" }}>À la retraite ({ageRetraite || 65} ans) · foyer</p>
+                            <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 1 }}>indexé à l'inflation</p>
                           </div>
-                        )}
+                          <div style={{ textAlign: "right" }}>
+                            <p style={{ fontFamily: "var(--font-mono)", fontSize: 15, fontWeight: 800, color: "#C9A063" }}>{fmt(garFoyerIdx)}/an</p>
+                            <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "rgba(201,160,99,0.6)", marginTop: 1 }}>{fmt(Math.round(garFoyerIdx / 12))}/mois</p>
+                          </div>
+                        </div>
+                        {totalGarantiAnnuel > 0 && <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 8, textAlign: "right" }}>≈ {fmt(totalGarantiAnnuel)}/an en dollars d'aujourd'hui</p>}
                       </>
+                    ) : (
+                      <p style={{ ...MUTED, padding: "8px 0" }}>Aucun revenu garanti saisi</p>
                     )}
                   </div>
                 </motion.div>
