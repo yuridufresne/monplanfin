@@ -282,12 +282,21 @@ function ComparaisonAvoirNet({ carteSolde, carteTaux, pretSolde, pretTaux, pretD
     const M = pmtfn(pretSolde, lr, lm);
     const refund = pretSolde * (tmi / 100);
     const surplus = refund - carteSolde;
-    let reerA = pretSolde + (surplus > 0 ? surplus : 0), loanA = pretSolde;
+    // Personne A : le retour d'impot eponge la carte; le surplus va au REER.
+    // S'il manque (refund < carteSolde), le residu de carte reste une dette suivie
+    // ici (sinon l'avoir net de A serait surevalue). A l'epongera en priorite.
+    let reerA = pretSolde + Math.max(0, surplus), loanA = pretSolde, cardA = Math.max(0, -surplus), loanIntA = 0;
     let reerB = 0, cardB = carteSolde, cardInt = 0, monthsCard = 0;
-    const data = [{ annee: 0, strategie: Math.round(surplus > 0 ? surplus : (refund - carteSolde)), minimum: Math.round(-carteSolde) }];
+    const data = [{ annee: 0, strategie: Math.round(reerA - loanA - cardA), minimum: Math.round(-carteSolde) }];
     for (let i = 1; i <= N; i++) {
       reerA *= (1 + rm);
-      if (i <= lm) { loanA = loanA * (1 + lr) - M; if (loanA < 0) loanA = 0; } else { reerA += M; }
+      let budgetA = M;
+      // 1. eponger d'abord le residu de carte (pire taux)
+      if (cardA > 0) { cardA += cardA * crm; const pay = Math.min(budgetA, cardA); cardA -= pay; budgetA -= pay; }
+      // 2. rembourser le pret REER
+      if (loanA > 0) { const it = loanA * lr; loanIntA += it; loanA += it; const pay = Math.min(budgetA, loanA); loanA -= pay; budgetA -= pay; }
+      // 3. investir le reste du budget
+      if (budgetA > 0) reerA += budgetA;
       reerB *= (1 + rm);
       if (cardB > 0) {
         const it = cardB * crm; cardInt += it; cardB += it;
@@ -296,9 +305,9 @@ function ComparaisonAvoirNet({ carteSolde, carteTaux, pretSolde, pretTaux, pretD
         const left = M - pay; if (left > 0) reerB += left;
         monthsCard = i;
       } else { reerB += M; }
-      if (i % 12 === 0) data.push({ annee: i / 12, strategie: Math.round(reerA - loanA), minimum: Math.round(reerB - cardB) });
+      if (i % 12 === 0) data.push({ annee: i / 12, strategie: Math.round(reerA - loanA - cardA), minimum: Math.round(reerB - cardB) });
     }
-    return { data, M, netA: data[data.length - 1].strategie, netB: data[data.length - 1].minimum, cardInt: Math.round(cardInt), loanInt: Math.round(M * lm - pretSolde), ansCarte: monthsCard / 12 };
+    return { data, M, netA: data[data.length - 1].strategie, netB: data[data.length - 1].minimum, cardInt: Math.round(cardInt), loanInt: Math.round(loanIntA), ansCarte: monthsCard / 12 };
   }, [carteSolde, carteTaux, pretSolde, pretTaux, pretDuree, tmi, rendement, horizon]);
   const ecart = sim.netA - sim.netB;
   const miniCard = (label, value, color, bdr) => (
