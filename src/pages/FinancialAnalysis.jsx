@@ -933,9 +933,6 @@ function RetraitePanel({ data, setData, stepData, isPrincipal = true , ecran }) 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <Field label="Âge prévu de retraite"><Input value={data.age_retraite} onChange={f("age_retraite")} type="number" placeholder="ex : 65" /></Field>
         <Field label="Espérance de vie visée" hint="IQPF recommande 95 ans"><Input value={data.esperance_vie} onChange={f("esperance_vie")} type="number" placeholder="ex : 95" /></Field>
-        <Field label="Revenu mensuel désiré à la retraite ($)" hint={brutMensuel > 0 && data.revenu_retraite_pct ? `≈ ${Math.round(data.revenu_retraite_pct)}% du revenu actuel` : undefined}>
-          <Input value={data.revenu_retraite_mensuel} onChange={handleMensuelChange} type="number" placeholder={brutMensuel > 0 ? Math.round(brutMensuel * 0.8) : ""} />
-        </Field>
         <Field label="% du revenu actuel" hint={brutMensuel > 0 && data.revenu_retraite_mensuel ? `≈ ${Math.round(data.revenu_retraite_mensuel).toLocaleString('fr-CA')} $/mois` : "80% recommandé"}>
           <Input value={data.revenu_retraite_pct} onChange={handlePctChange} type="number" placeholder="ex : 80" />
         </Field>
