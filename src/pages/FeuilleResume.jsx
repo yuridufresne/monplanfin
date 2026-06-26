@@ -858,10 +858,12 @@ export default function FeuilleResume() {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4" style={{ marginBottom: 40 }}>
           <KpiCard label="Revenu brut annuel" value={fmt(revenuBrutAnnuel)} icon={TrendingUp} color="#C9A063" />
           <KpiCard
-            label="Impôts totaux (théorique)"
-            value={fmt(totalImpots)}
+            label={impotRetenu > 0 ? "Impôts retenus sur le salaire" : "Impôts totaux (théorique)"}
+            value={fmt(impotRetenu > 0 ? impotRetenu : totalImpots)}
             sub={impotRetenu > 0
-              ? `Retenu ${fmt(impotRetenu)} · ${totalImpots - impotRetenu >= 0 ? `solde à payer ≈ ${fmt(totalImpots - impotRetenu)}` : `remb. ≈ ${fmt(impotRetenu - totalImpots)}`}`
+              ? (impotRetenu - totalImpots >= 0
+                  ? `Potentiel de retour d'impôt ≈ ${fmt(impotRetenu - totalImpots)}`
+                  : `Solde à payer ≈ ${fmt(totalImpots - impotRetenu)}`)
               : `Taux effectif ${fmtPct1(txEffectif)}`}
             icon={FileText}
             color="#E07B6B"
