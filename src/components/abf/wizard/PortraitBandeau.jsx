@@ -65,14 +65,16 @@ export default function PortraitBandeau({ stepData = {}, pctComplet = 0 }) {
           <Cellule label="Épargne" valeur={fmtMontant(d.epargne)} vide={d.epargne <= 0} ton="vert" />
           <Cellule label="Immobilier" valeur={fmtMontant(d.immo)} vide={d.immo <= 0} />
           <Cellule label="Dettes" valeur={fmtMontant(d.dettes)} vide={d.dettes <= 0} ton="rouge" />
-          <div className="flex flex-col justify-center min-w-[140px] flex-1 px-3 py-1.5">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Analyse complète</span>
-              <span className="font-mono text-[11px] font-bold tabular-nums text-accent">{pct} %</span>
-            </div>
-            <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-              <div className="h-full rounded-full bg-gradient-to-r from-accent to-success transition-[width] duration-500" style={{ width: pct + "%" }} />
-            </div>
+        </div>
+
+        {/* Barre « Analyse complète » — pleine largeur de la section */}
+        <div className="mt-2 pt-2.5 px-2 border-t border-border-subtle">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Analyse complète</span>
+            <span className="font-mono text-[11px] font-bold tabular-nums text-accent">{pct} %</span>
+          </div>
+          <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+            <div className="h-full rounded-full bg-gradient-to-r from-success to-accent transition-[width] duration-500" style={{ width: pct + "%" }} />
           </div>
         </div>
       </div>
