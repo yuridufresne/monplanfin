@@ -307,7 +307,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     base44.auth.me().then(setUser);
-    if (new URLSearchParams(window.location.search).get("client")) { setSynced(true); } else { syncABFToEntities().then(() => setSynced(true)); }
+    setSynced(true)
   }, []);
 
   // — Contexte client (mode conseiller) —
