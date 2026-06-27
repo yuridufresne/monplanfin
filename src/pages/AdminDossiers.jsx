@@ -198,7 +198,7 @@ export default function AdminDossiers() {
         {/* ─── Stats ─── */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginBottom: 22 }}>
           <Stat label="Total dossiers" value={stats.total} color="#fff" icon={<Users size={16} />} />
-          <Stat label="Nouveaux" value={stats.nouveaux} color="#6B8ED6" icon={<FileText size={16} />} pulse={stats.nouveaux > 0} />
+          <Stat label="Nouveaux" onClick={() => setFiltreStatut("nouveau")} clickable value={stats.nouveaux} color="#6B8ED6" icon={<FileText size={16} />} pulse={stats.nouveaux > 0} />
           <Stat label="En traitement" value={stats.en_cours} color="#f59e0b" icon={<Clock size={16} />} />
           <Stat label="Convertis" value={stats.convertis} color="#5BC4A0" icon={<CheckCircle2 size={16} />} />
         </div>
