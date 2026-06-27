@@ -1,22 +1,21 @@
-import { createClient } from '@base44/sdk';
-import { appParams } from '@/lib/app-params';
 import { supabaseEntities } from './supabaseEntities';
 
-const { appId, token, functionsVersion, appBaseUrl } = appParams;
-
-const realBase44 = createClient({
-  appId,
-  token,
-  functionsVersion,
-  serverUrl: '',
-  requiresAuth: false,
-  appBaseUrl
-});
+const noop = () => {};
+const noopAsync = async () => null;
+const noopList = async () => [];
 
 export const base44 = {
-  ...realBase44,
+  auth: {
+    me: noopAsync,
+    logout: noop,
+    redirectToLogin: noop,
+    isAuthenticated: async () => true,
+  },
   entities: {
-    ...realBase44.entities,
+    User: { list: noopList, me: noopAsync },
     ...supabaseEntities,
+  },
+  functions: {
+    invoke: noopAsync,
   },
 };
