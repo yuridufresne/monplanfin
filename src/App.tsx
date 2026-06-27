@@ -9,135 +9,107 @@ import { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import AppLayout from '@/components/layout/AppLayout';
-import Home from '@/pages/Home';
-import Calculators from '@/pages/Calculators';
-import Dashboard from '@/pages/Dashboard';
-import Budget from '@/pages/Budget';
-import AnalyseABF from '@/pages/AnalyseABF';
-import FeuilleResume from '@/pages/FeuilleResume';
-import AdvancedMode from '@/pages/AdvancedMode';
-import ProtectionAssurance from '@/pages/ProtectionAssurance';
-import Immobilier from '@/pages/Immobilier';
-import Conditions from '@/pages/Conditions';
-import Confidentialite from '@/pages/Confidentialite';
-import Methodologie from "@/pages/Methodologie";
-import Contact from '@/pages/Contact';
-import AdminDossiers from '@/pages/AdminDossiers';
-import AdminFeedback from '@/pages/AdminFeedback';
-import AgentDossiers from '@/pages/AgentDossiers';
-import AgentDebug from '@/pages/AgentDebug';
-import EducationFinanciere from '@/pages/EducationFinanciere';
+import { Home, Calculators, Dashboard, Budget, AnalyseABF, FeuilleResume, AdvancedMode, ProtectionAssurance, Immobilier, Conditions, Confidentialite, Methodologie, Contact, AdminDossiers, AdminFeedback, AgentDossiers, AgentDebug, EducationFinanciere } from "./App-pages";
+import FinancialPlan from '@/pages/FinancialPlan';
+import Investments from '@/pages/Investments';
+import StudioDecaissement from '@/pages/StudioDecaissement';
 
-const PUBLIC_PATHS = ['/', '/calculatrices'];
+const PUBLIC_PATHS: string[] = ['/', '/calculatrices', '/education', '/contact', '/confidentialite', '/conditions', '/methodologie'];
 
-function PremiumGate({ children }) {
-  const [unlocked, setUnlocked] = useState(() => {
-    try { return localStorage.getItem("mpf_studio_premium") === "1"; } catch (e) { return false; }
-  });
+function SoftWall({ onUnlock }: { onUnlock: () => void }) {
   const [code, setCode] = useState("");
   const [err, setErr] = useState(false);
-
-  const submit = (e) => {
+  const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (code.trim().toLowerCase() === "monplanfin") {
-      try { localStorage.setItem("mpf_studio_premium", "1"); } catch (e2) {}
-      setUnlocked(true);
-    } else {
-      setErr(true);
-    }
+    if (code === "STRATEGE2026") { localStorage.setItem("studio_decaissement_unlocked", "1"); onUnlock(); }
+    else setErr(true);
   };
-
-  if (unlocked) return children;
-
   return (
     <div style={{ minHeight: "70vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px", background: "#050810" }}>
       <div style={{ maxWidth: 460, width: "100%", textAlign: "center", padding: "40px 32px", borderRadius: 20, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(201,160,99,0.25)" }}>
-        <div style={{ fontSize: 12, letterSpacing: ".18em", textTransform: "uppercase", color: "#C9A063", fontWeight: 700, marginBottom: 12 }}>Fonctionnalite Premium</div>
-        <h2 style={{ fontSize: 24, fontWeight: 800, color: "#fff", marginBottom: 10 }}>Studio de decaissement</h2>
-        <p style={{ fontSize: 14, color: "rgba(255,255,255,0.6)", lineHeight: 1.5, marginBottom: 24 }}>Strategies de retraite annee par annee. Acces reserve, entre ton code d'acces pour debloquer.</p>
+        <div style={{ fontSize: 12, letterSpacing: ".18em", textTransform: "uppercase", color: "#C9A063", fontWeight: 700, marginBottom: 12 }}>Fonctionnalité Premium</div>
+        <h2 style={{ fontSize: 24, fontWeight: 800, color: "#fff", marginBottom: 10 }}>Studio de décaissement</h2>
+        <p style={{ fontSize: 14, color: "rgba(255,255,255,0.6)", lineHeight: 1.5, marginBottom: 24 }}>Stratégies de retraite année par année. Accès réservé, entre ton code d'accès pour débloquer.</p>
         <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <input type="text" value={code} onChange={(e) => { setCode(e.target.value); setErr(false); }} placeholder="Code d'acces" style={{ padding: "12px 14px", borderRadius: 10, background: "rgba(255,255,255,0.05)", border: "1px solid " + (err ? "#ef5e0b" : "rgba(255,255,255,0.15)"), color: "#fff", fontSize: 15, outline: "none", textAlign: "center" }} />
+          <input type="text" value={code} onChange={(e) => { setCode(e.target.value); setErr(false); }} placeholder="Code d'accès" style={{ padding: "12px 14px", borderRadius: 10, background: "rgba(255,255,255,0.05)", border: "1px solid " + (err ? "#ef5e0b" : "rgba(255,255,255,0.15)"), color: "#fff", fontSize: 15, outline: "none", textAlign: "center" }} />
           {err && <span style={{ color: "#ef5e0b", fontSize: 13 }}>Code invalide.</span>}
-          <button type="submit" style={{ padding: "12px 14px", borderRadius: 10, background: "#C9A063", color: "#050810", fontWeight: 700, fontSize: 15, border: "none", cursor: "pointer" }}>Debloquer</button>
+          <button type="submit" style={{ padding: "12px 14px", borderRadius: 10, background: "#C9A063", color: "#050810", fontWeight: 700, fontSize: 15, border: "none", cursor: "pointer" }}>Débloquer</button>
         </form>
       </div>
     </div>
   );
 }
 
-const AuthenticatedApp = () => {
-  // One-time cleanup of duplicate debt entry
-  useEffect(() => {
-    base44.entities.Debt.delete("6a12333a6937d47618169cc7").catch(() => {});
-  }, []);
-  const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
-  const isPublicPath = PUBLIC_PATHS.includes(window.location.pathname);
+function AuthenticatedApp() {
+  const { user, isAuthenticated, isLoadingAuth, isLoadingPublicSettings, authError, appPublicSettings, authChecked, logout, navigateToLogin, checkUserAuth } = useAuth();
+  const [studioUnlocked, setStudioUnlocked] = useState(false);
 
-  // Show loading spinner only for private routes
-  if ((isLoadingPublicSettings || isLoadingAuth) && !isPublicPath) {
+  useEffect(() => { setStudioUnlocked(localStorage.getItem("studio_decaissement_unlocked") === "1"); }, []);
+
+  if (isLoadingPublicSettings || isLoadingAuth) {
+    return <div style={{ minHeight: "100vh", background: "#050810", display: "flex", alignItems: "center", justifyContent: "center", color: "#C9A063", fontSize: 14 }}>Chargement...</div>;
+  }
+
+  if (authError) return <UserNotRegisteredError error={authError} onRetry={checkUserAuth} />;
+  if (!isAuthenticated) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center" style={{ background: "#050810" }}>
-        <div className="w-8 h-8 border-4 border-white/10 border-t-[#C9A063] rounded-full animate-spin"></div>
+      <div style={{ minHeight: "100vh", background: "#050810", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ textAlign: "center", padding: 40, borderRadius: 16, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(201,160,99,0.25)" }}>
+          <h2 style={{ color: "#fff", marginBottom: 16 }}>Bienvenue sur MonPlanFin</h2>
+          <button onClick={navigateToLogin} style={{ padding: "12px 24px", background: "#C9A063", color: "#050810", border: "none", borderRadius: 8, fontWeight: 700, cursor: "pointer" }}>Se connecter</button>
+        </div>
       </div>
     );
   }
 
-  // Handle authentication errors
-  if (authError) {
-    if (authError.type === 'user_not_registered') {
-      return <UserNotRegisteredError />;
-    } else if (authError.type === 'auth_required' && !isPublicPath) {
-      // Only redirect to login for private routes
-      navigateToLogin();
-      return null;
-    }
-  }
-
-  // Render the main app
   return (
     <Routes>
-      <Route element={<AppLayout />}>
-        {/* Public routes — always accessible */}
-        <Route path="/" element={<Home />} />
-        <Route path="/calculatrices" element={<Calculators />} />
-          <Route path="/education" element={<EducationFinanciere />} />
-        {/* Private routes */}
+      {PUBLIC_PATHS.map(path => (
+        <Route key={path} path={path} element={<AppLayout logout={logout} user={user} />}>
+          {path === '/' && <Route index element={<Home />} />}
+          {path === '/calculatrices' && <Route index element={<Calculators />} />}
+          {path === '/education' && <Route index element={<EducationFinanciere />} />}
+          {path === '/contact' && <Route index element={<Contact />} />}
+          {path === '/confidentialite' && <Route index element={<Confidentialite />} />}
+          {path === '/conditions' && <Route index element={<Conditions />} />}
+          {path === '/methodologie' && <Route index element={<Methodologie />} />}
+        </Route>
+      ))}
+      <Route element={<AppLayout logout={logout} user={user} />}>
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/budget" element={<Budget />} />
         <Route path="/analyse" element={<AnalyseABF />} />
-        <Route path="/analyse2" element={<AnalyseABF />} />
+        <Route path="/analyse-classique" element={<AnalyseABF />} />
         <Route path="/resume" element={<FeuilleResume />} />
         <Route path="/avance" element={<AdvancedMode />} />
-      
         <Route path="/protection" element={<ProtectionAssurance />} />
         <Route path="/immobilier" element={<Immobilier />} />
-        <Route path="/conditions" element={<Conditions />} />
-        <Route path="/confidentialite" element={<Confidentialite />} />
-        <Route path="/methodologie" element={<Methodologie />} />
-        <Route path="/contact" element={<Contact />} />
+        <Route path="/plan-financier" element={<FinancialPlan />} />
+        <Route path="/investments" element={<Investments />} />
+        <Route path="/studio-decaissement" element={studioUnlocked ? <StudioDecaissement /> : <SoftWall onUnlock={() => setStudioUnlocked(true)} />} />
         <Route path="/admin/dossiers" element={<AdminDossiers />} />
         <Route path="/admin/feedback" element={<AdminFeedback />} />
-        <Route path="/agent" element={<AgentDossiers />} />
-        <Route path="/agent-debug" element={<AgentDebug />} />
+        <Route path="/agent/dossiers" element={<AgentDossiers />} />
+        <Route path="/agent/debug" element={<AgentDebug />} />
         <Route path="*" element={<PageNotFound />} />
       </Route>
     </Routes>
   );
-};
-
-
-function App() {
-
-  return (
-    <AuthProvider>
-      <QueryClientProvider client={queryClientInstance}>
-        <Router>
-          <AuthenticatedApp />
-        </Router>
-        <Toaster />
-      </QueryClientProvider>
-    </AuthProvider>
-  )
 }
 
-export default App
+function App() {
+  return (
+    <ErrorBoundary>
+      <AuthProvider>
+        <QueryClientProvider client={queryClientInstance}>
+          <Router>
+            <AuthenticatedApp />
+          </Router>
+          <Toaster />
+        </QueryClientProvider>
+      </AuthProvider>
+    </ErrorBoundary>
+  );
+}
+
+export default App;
