@@ -298,7 +298,7 @@ export function calcNIFFromProfiles(profiles) {
 
   // ── Progression vers le NIF ───────────────────────────────────────────────────
   // Source unique : bloc NIF derive de buildPayload (meme valeur que la carte dashboard)
-  var _pl = buildPayload(profiles); var _k = _pl && _pl.kpis;
+  const _pl = buildPayload(profiles); const _k = _pl && _pl.kpis;
   if (_k && Number.isFinite(_k.nif_nominal) && _k.nif_nominal > 0) {
     nifResult.nif = _k.nif_nominal;
     if (Number.isFinite(_k.cible_annuelle_idx)) nifResult.revenuCibleFutur = _k.cible_annuelle_idx;
