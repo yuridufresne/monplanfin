@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
-import { ArrowLeft, Users, Clock, CheckCircle2, XCircle, Mail, Phone, MessageSquare, Video, Search, ChevronDown, ChevronUp, Lock, FileText, Calendar, UserCheck } from "lucide-react";
+import { ArrowLeft, Users, Clock, CheckCircle2, Mail, Phone, MessageSquare, Video, Search, ChevronDown, ChevronUp, Lock, FileText, Calendar, UserCheck } from "lucide-react";
 import { chargerAgents, assignerDossier, desassignerDossier } from "@/lib/assignation";
 
 /**

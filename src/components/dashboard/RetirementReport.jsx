@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { calcNIFFromProfiles, calcAtteintNIF } from "@/lib/calcNIF";
+import { calcNIFFromProfiles } from "@/lib/calcNIF";
 import { buildPayload } from "@/lib/clientPayload";
 import FlipCard from "@/components/ui/FlipCard";
 import PlanDecaissement from "@/components/dashboard/PlanDecaissement";

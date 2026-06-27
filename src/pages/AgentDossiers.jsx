@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
-import { estAgent, estAdmin } from "@/lib/roles";
 import { useNavigate } from "react-router-dom";
 import { Briefcase, Clock, CheckCircle2, Search, Inbox } from "lucide-react";
 

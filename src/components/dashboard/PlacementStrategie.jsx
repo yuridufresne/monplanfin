@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import InfoTooltip from "@/components/ui/InfoTooltip";
-import { buildPayload, IQPF } from "@/lib/clientPayload";
+import { buildPayload } from "@/lib/clientPayload";
 
 const fmt = n => Math.round(n).toLocaleString("fr-CA") + " $";
 const FV  = (c, r, n) => { const rM=r/12; const months=n*12; return rM>0?c*(Math.pow(1+rM,months)-1)/rM:c*months; };

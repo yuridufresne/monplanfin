@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Upload, Trash2, Edit2, TrendingUp, TrendingDown, DollarSign, LayoutGrid, FileText } from "lucide-react";
+import { Plus, Trash2, Edit2, TrendingUp, TrendingDown, DollarSign, LayoutGrid, FileText } from "lucide-react";
 import { syncBudgetRevenuToABF } from "@/hooks/useABFSync";
 import BudgetEntryForm from "@/components/budget/BudgetEntryForm";
 import BudgetImport from "@/components/budget/BudgetImport";

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { X, Check, Send, Shield, Clock, Phone, Mail, MessageSquare, Video } from "lucide-react";
+import { X, Check, Send, Shield, Phone, Mail, MessageSquare, Video } from "lucide-react";
 
 /**
  * src/components/dashboard/SoumettreDossierModal.jsx

@@ -1,7 +1,7 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
-import { X, Lock, Sparkles, ArrowRight } from "lucide-react";
+import { X, Sparkles, ArrowRight } from "lucide-react";
 
 export default function SoftWall({ isOpen, onClose }) {
   return (

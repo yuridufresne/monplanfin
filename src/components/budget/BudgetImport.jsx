@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
-import { X, Upload, Sparkles, Check, AlertCircle, Loader2 } from "lucide-react";
+import { X, Sparkles, Check, AlertCircle, Loader2 } from "lucide-react";
 
 const CATEGORIES = ["logement","transport","alimentation","services_publics","assurances","sante","loisirs","vetements","education","epargne","dettes","divers"];
 const CATEGORY_LABELS = {
