@@ -306,6 +306,19 @@ export default function SoumettreDossierModal({ onClose, profiles, user }) {
 
             {error && <p style={{ marginTop: 12, fontSize: 12, color: "#f87171" }}>⚠ {error}</p>}
 
+            {canSubmit && (
+              <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: "rgba(91,196,160,0.08)", border: "1px solid rgba(91,196,160,0.25)" }}>
+                <p style={{ fontSize: 12, fontWeight: 700, color: "#5BC4A0", marginBottom: 10 }}>📋 Récapitulatif de votre demande</p>
+                <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.7)", lineHeight: 1.8 }}>
+                  <p>👤 <strong>{clientNom}</strong> · {clientCourriel || "Email non fourni"} · {clientTel || "Tél. non fourni"}</p>
+                  <p>⏱ Urgence : <strong style={{ color: URGENCES.find(u => u.id === form.priorite_urgence)?.color }}>{URGENCES.find(u => u.id === form.priorite_urgence)?.label || "Non précisée"}</strong></p>
+                  <p>🎯 Besoins : {form.besoins_principaux.map(b => BESOINS.find(x => x.id === b)?.emoji + " " + BESOINS.find(x => x.id === b)?.label).join(", ") || "Aucun"}</p>
+                  <p>📞 Contact : {MODES.find(m => m.id === form.mode_contact_prefere)?.label} · {MOMENTS.find(m => m.id === form.meilleur_moment_contact)?.label}</p>
+                  {form.notes_client && <p>💬 "{form.notes_client}"</p>}
+                </div>
+              </div>
+            )}
+
             {/* ─── Bouton soumettre ─── */}
             <div style={{ marginTop: 22, display: "flex", justifyContent: "flex-end", gap: 10 }}>
               <button onClick={onClose} style={{
