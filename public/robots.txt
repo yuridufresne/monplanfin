@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://monplanfin.ca/sitemap.xml
