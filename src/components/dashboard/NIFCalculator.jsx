@@ -22,11 +22,13 @@ const getFondPension = (profiles, isB = false) => {
 const getIndexationLabel = (fp) => {
   if (!fp || fp.indexee !== "oui") return null;
   const t = fp.indexation_taux;
-  if (t === "plein")  return "Plein IPC";
-  if (t === "75")     return "75 % IPC";
-  if (t === "50")     return "50 % IPC";
-  if (t === "rregop") return "IPC −3 %";
-  return null;
+  switch (t) {
+    case "plein":  return "Plein IPC";
+    case "75":     return "75 % IPC";
+    case "50":     return "50 % IPC";
+    case "rregop": return "IPC −3 %";
+    default:       return null;
+  }
 };
 
 // Label dynamique pour la colonne "à la retraite"
