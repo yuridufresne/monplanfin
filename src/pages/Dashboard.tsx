@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
+import { clearConsent } from "@/lib/consent";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { ArrowRight, Settings, Home, Send } from "lucide-react";
@@ -310,6 +311,13 @@ export default function Dashboard() {
     } catch (e) { console.error("Révocation consentement:", e); }
     if (typeof window !== "undefined") window.location.reload();
   };
+
+  // Révocation du consentement MARKETING (cookies/pixels) : efface le choix, bloque
+  // le suivi, et fait réapparaître la bannière au rechargement (Loi 25).
+  const revoquerMarketing = () => {
+    clearConsent();
+    if (typeof window !== "undefined") window.location.reload();
+  };
   const [detteFlipped, setDetteFlipped] = useState(false);
   const [placementFlipped, setPlacementFlipped] = useState(false);
   const [nifFlipped, setNifFlipped] = useState(false);
@@ -566,7 +574,10 @@ export default function Dashboard() {
                 <Settings style={{ width: 14, height: 14 }} />
               </button>
               <button onClick={revoquerConsentement} style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", background: "transparent", border: "none", cursor: "pointer", padding: "6px 10px" }}>
-                Révoquer mon consentement
+                Révoquer le partage
+              </button>
+              <button onClick={revoquerMarketing} style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", background: "transparent", border: "none", cursor: "pointer", padding: "6px 10px" }}>
+                Cookies marketing
               </button>
               <button onClick={() => setShowReset(true)} style={{ fontSize: 11, color: "rgba(248,113,113,0.6)", background: "transparent", border: "none", cursor: "pointer", padding: "6px 10px" }}>
                 Réinitialiser
