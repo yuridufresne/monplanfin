@@ -1,11 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Check, Moon, Sun, LayoutDashboard } from "lucide-react";
-import { Link } from "react-router-dom";
+import { ChevronLeft, ChevronRight, Check, Moon, Sun } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import PortraitBandeau from "@/components/abf/wizard/PortraitBandeau";
-import Logo from "@/components/abf/wizard/Logo";
 import { PHASES, STEPS, TOTAL_STEPS, TITRES, phaseOf, aConjoint } from "@/components/abf/wizard/abfWizardModel";
 import type { Step, StepData, SectionData, StepProps } from "@/components/abf/wizard/abfWizardModel";
 import StepProfil from "@/components/abf/wizard/steps/StepProfil";
@@ -166,19 +164,11 @@ export default function AnalyseABF() {
   return (
     <div className={`abf-root min-h-screen text-foreground ${dark ? "" : "abf-clair"}`}>
       <div className="max-w-5xl mx-auto px-4 md:px-6 py-7 pb-16">
-        {/* En-tête : logo (→ tableau de bord) + nav retour + bascule thème */}
-        <div className="flex items-center justify-between mb-5">
-          <Link to="/dashboard" aria-label="Retour au tableau de bord" className="inline-flex">
-            <Logo />
-          </Link>
-          <div className="flex items-center gap-2">
-            <Link to="/dashboard" className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border text-[12.5px] font-semibold text-muted-foreground hover:text-foreground hover:border-accent/40 transition-colors">
-              <LayoutDashboard className="w-4 h-4" /> <span className="hidden sm:inline">Tableau de bord</span>
-            </Link>
-            <button onClick={toggleTheme} aria-label="Basculer le thème" className="w-9 h-9 grid place-items-center rounded-lg border border-border text-muted-foreground hover:text-foreground hover:border-accent/40 transition-colors">
-              {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </button>
-          </div>
+        {/* En-tête ABF : bascule de thème (logo + navigation fournis par la navbar app) */}
+        <div className="flex items-center justify-end mb-5">
+          <button onClick={toggleTheme} aria-label="Basculer le thème" className="w-9 h-9 grid place-items-center rounded-lg border border-border text-muted-foreground hover:text-foreground hover:border-accent/40 transition-colors">
+            {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
         </div>
 
         {/* Eyebrow + titre de page (par étape) */}
