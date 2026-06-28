@@ -1,17 +1,19 @@
 import React, { useEffect, useMemo } from "react";
 import { calcAllocations } from "@/lib/allocations2026";
 import { calcRevenuDisponible } from "@/lib/calcRevenuNet";
-import { Field, DateInput } from "./primitives";
+import { Field, DatePicker } from "./primitives";
 import { toProfiles, nbEnfants as compteEnfants } from "../abfWizardModel";
+import type { StepProps, SectionData } from "../abfWizardModel";
 
 /**
  * Étape 3 — Allocations (section allocations). Branché sur calcAllocations (ACE + AF QC)
  * et calcRevenuDisponible (RFNR). Stocke EXACTEMENT les champs que le moteur lit
  * (a_enfants, enfants[{date_naissance}], situation_familiale) — aucun calcul propre.
+ * La date de naissance de chaque enfant utilise le même calendrier que le Profil.
  */
-const fmt = (v) => Math.round(Number(v) || 0).toLocaleString("fr-CA") + " $";
+const fmt = (v: unknown): string => Math.round(Number(v) || 0).toLocaleString("fr-CA") + " $";
 
-export default function StepAllocations({ data, patch, ctx }) {
+export default function StepAllocations({ data, patch, ctx }: StepProps) {
   const d = data || {};
   const stepData = ctx?.stepData || {};
   const nb = compteEnfants(stepData);
@@ -28,17 +30,17 @@ export default function StepAllocations({ data, patch, ctx }) {
     }
   }, [nb, situationFamiliale]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const setEnfant = (i, v) => {
-    const enfants = (d.enfants || []).map((e, idx) => (idx === i ? { ...e, date_naissance: v } : e));
+  const setEnfant = (i: number, v: string) => {
+    const enfants = (d.enfants || []).map((e: SectionData, idx: number) => (idx === i ? { ...e, date_naissance: v } : e));
     patch({ enfants });
   };
 
   const { rfnr, alloc } = useMemo(() => {
     const dispo = calcRevenuDisponible(toProfiles(stepData));
     const rfnrFam = Math.round(dispo.rfnrFamilial || 0);
-    const ageDe = (dob) => (dob ? (Date.now() - new Date(dob)) / (365.25 * 24 * 3600 * 1000) : null);
+    const ageDe = (dob: string): number | null => (dob ? (Date.now() - new Date(dob).getTime()) / (365.25 * 24 * 3600 * 1000) : null);
     let nbMoins6 = 0, nb6_17 = 0;
-    (d.enfants || []).forEach((e) => { const a = ageDe(e.date_naissance); if (a == null) return; if (a < 6) nbMoins6++; else if (a < 18) nb6_17++; });
+    (d.enfants || []).forEach((e: SectionData) => { const a = ageDe(e.date_naissance); if (a == null) return; if (a < 6) nbMoins6++; else if (a < 18) nb6_17++; });
     const a = calcAllocations({ rfnr: rfnrFam, nbMoins6, nb6_17, monoparental: situationFamiliale === "monoparental" });
     return { rfnr: rfnrFam, alloc: a };
   }, [stepData, d.enfants, situationFamiliale]);
@@ -58,9 +60,9 @@ export default function StepAllocations({ data, patch, ctx }) {
       <div className="space-y-3">
         <p className="text-[11.5px] font-semibold uppercase tracking-wide text-muted-foreground">Date de naissance de chaque enfant</p>
         <div className="grid sm:grid-cols-2 gap-4">
-          {(d.enfants || []).map((e, i) => (
+          {(d.enfants || []).map((e: SectionData, i: number) => (
             <Field key={i} label={`Enfant ${i + 1}`}>
-              <DateInput value={e.date_naissance} onChange={(v) => setEnfant(i, v)} />
+              <DatePicker value={e.date_naissance} onChange={(v) => setEnfant(i, v)} />
             </Field>
           ))}
         </div>
