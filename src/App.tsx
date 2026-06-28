@@ -77,11 +77,12 @@ function AuthenticatedApp() {
 
       {/* Pages privées — connexion requise */}
       <Route element={<RequireAuth />}>
+        {/* Parcours ABF : plein écran autonome (sans navbar/footer), fidèle au prototype */}
+        <Route path="/analyse" element={<AnalyseABF />} />
+        <Route path="/analyse-classique" element={<AnalyseABF />} />
         <Route element={<AppLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/budget" element={<Budget />} />
-          <Route path="/analyse" element={<AnalyseABF />} />
-          <Route path="/analyse-classique" element={<AnalyseABF />} />
           <Route path="/resume" element={<FeuilleResume />} />
           <Route path="/avance" element={<AdvancedMode />} />
           <Route path="/protection" element={<ProtectionAssurance />} />

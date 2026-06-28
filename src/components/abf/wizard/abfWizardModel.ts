@@ -46,7 +46,8 @@ export const STEPS: Step[] = [
 export const TOTAL_STEPS = STEPS.length;
 
 // Titres canoniques (prototype) : h1/sous = en-tête de page ; h2/lead = carte.
-export const TITRES = {
+export interface Titre { h1: string; sous: string; h2: string; lead: string; }
+export const TITRES: Record<string, Titre> = {
   profil_personnel: { h1: "Faisons connaissance.", sous: "Tout commence par votre profil — ça ne prend que quelques minutes.", h2: "Renseignements personnels", lead: "Quelques infos de base — rien ne quitte votre dossier." },
   revenu: { h1: "Vos revenus.", sous: "Indiquez les revenus du foyer pour estimer votre capacité d'épargne.", h2: "Vos revenus.", lead: "Le type d'emploi et les retenues déterminent votre revenu net réel. Le portrait se met à jour en direct." },
   allocations: { h1: "Allocations familiales.", sous: "Calculées automatiquement selon votre situation.", h2: "Allocations familiales", lead: "Calculées automatiquement (ACE fédérale + Allocation famille du Québec) selon votre revenu et vos enfants." },

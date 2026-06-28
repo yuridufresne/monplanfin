@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/AuthContext";
 import PortraitBandeau from "@/components/abf/wizard/PortraitBandeau";
 import Logo from "@/components/abf/wizard/Logo";
 import { PHASES, STEPS, TOTAL_STEPS, TITRES, phaseOf, aConjoint } from "@/components/abf/wizard/abfWizardModel";
+import type { Step, StepData, SectionData, StepProps } from "@/components/abf/wizard/abfWizardModel";
 import StepProfil from "@/components/abf/wizard/steps/StepProfil";
 import StepRevenu from "@/components/abf/wizard/steps/StepRevenu";
 import StepAllocations from "@/components/abf/wizard/steps/StepAllocations";
@@ -18,7 +19,7 @@ import StepBudget from "@/components/abf/wizard/steps/StepBudget";
 import StepObjectifs from "@/components/abf/wizard/steps/StepObjectifs";
 import StepUrgence from "@/components/abf/wizard/steps/StepUrgence";
 
-const STEP_COMPONENTS = {
+const STEP_COMPONENTS: Record<string, React.ComponentType<StepProps>> = {
   profil_personnel: StepProfil,
   revenu: StepRevenu,
   allocations: StepAllocations,
@@ -41,7 +42,7 @@ const STEP_COMPONENTS = {
  */
 
 // Placeholder d'étape — remplacé par les vrais composants (StepProfil, StepRevenu, …).
-function StepPlaceholder({ step }) {
+function StepPlaceholder({ step }: { step: Step }) {
   return (
     <div className="rounded-xl border border-dashed border-border p-8 text-center">
       <p className="text-[12px] font-semibold uppercase tracking-wide text-accent mb-2">
@@ -56,13 +57,13 @@ function StepPlaceholder({ step }) {
 
 
 export default function AnalyseABF() {
-  const { user: moi } = useAuth();
-  const [stepData, setStepData] = useState({});
+  useAuth(); // garantit le contexte d'auth (session) ; l'identité vient de base44.auth.me()
+  const [stepData, setStepData] = useState<StepData>({});
   const [current, setCurrent] = useState(1); // 1-based
   const [done, setDone] = useState(false);
   const [saveStatus, setSaveStatus] = useState("idle"); // idle | saving | saved
   const [dark, setDark] = useState(() => (localStorage.getItem("abf-theme") || "dark") === "dark");
-  const cardRef = useRef(null);
+  const cardRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
 
   const step = STEPS[current - 1];
@@ -81,8 +82,10 @@ export default function AnalyseABF() {
       try {
         const rows = (await base44.entities.FinancialProfile.list()) || [];
         if (annule || rows.length === 0) return;
-        const dict: Record<string, unknown> = {};
-        rows.forEach((r: any) => { if (r.section) dict[r.section] = r.data?.data || r.data || {}; });
+        const dict: StepData = {};
+        rows.forEach((r: { section?: string; data?: { data?: SectionData } & SectionData }) => {
+          if (r.section) dict[r.section] = r.data?.data || r.data || {};
+        });
         setStepData((prev) => ({ ...dict, ...prev }));
       } catch { /* hors-ligne : on reste en mémoire */ }
     })();
@@ -123,7 +126,7 @@ export default function AnalyseABF() {
     window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
   }, []);
 
-  const go = useCallback((n) => {
+  const go = useCallback((n: number) => {
     setDone(false);
     setCurrent(Math.max(1, Math.min(TOTAL_STEPS, n)));
     requestAnimationFrame(scrollToCard);
@@ -135,7 +138,7 @@ export default function AnalyseABF() {
   }, [current, go]);
 
   // setData(section, updater|value) — fourni aux futures étapes.
-  const patchSection = useCallback((sectionKey, patch) => {
+  const patchSection = useCallback((sectionKey: string, patch: SectionData) => {
     setStepData((prev) => ({ ...prev, [sectionKey]: { ...(prev[sectionKey] || {}), ...patch } }));
   }, []);
 
@@ -185,11 +188,11 @@ export default function AnalyseABF() {
             const [a, b] = ph.range;
             const fill = current > b ? 100 : current < a ? 0 : Math.round(((current - a + 1) / (b - a + 1)) * 100);
             return (
-              <div key={ph.id} className={`rounded-xl border px-3 py-2.5 ${active ? "border-accent/50 bg-accent-light/40" : doneP ? "border-success/40 bg-success/5" : "border-border bg-card"}`}>
-                <div className="text-[9.5px] font-bold uppercase tracking-wider text-muted-foreground">Phase {ph.id}</div>
-                <div className={`text-[13px] font-semibold ${active ? "text-accent-foreground" : "text-foreground"}`}>{ph.label}</div>
-                <div className="mt-1.5 h-1 rounded-full bg-muted overflow-hidden">
-                  <div className="h-full rounded-full bg-gradient-to-r from-accent to-success transition-[width] duration-500" style={{ width: (doneP ? 100 : active ? fill : 0) + "%" }} />
+              <div key={ph.id} className={`rounded-xl border px-3.5 py-3 transition-colors ${active ? "border-accent/45 bg-secondary" : "border-border-subtle bg-card"}`}>
+                <div className={`font-mono text-[10px] font-semibold uppercase tracking-[0.1em] ${active ? "text-accent" : "text-muted-foreground"}`}>Phase {ph.id}</div>
+                <div className="text-[13.5px] font-semibold text-foreground mt-[5px]">{ph.label}</div>
+                <div className="mt-[9px] h-1 rounded-full bg-white/10 overflow-hidden">
+                  <div className={`h-full rounded-full transition-[width] duration-300 ${active ? "bg-accent" : "bg-success"}`} style={{ width: (doneP ? 100 : active ? fill : 0) + "%" }} />
                 </div>
               </div>
             );
