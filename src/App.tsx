@@ -2,19 +2,16 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate, Outlet } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import { useEffect, useState } from 'react';
-import { base44 } from '@/api/base44Client';
-import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import AppLayout from '@/components/layout/AppLayout';
+import Login from '@/pages/Login';
 import { Home, Calculators, Dashboard, Budget, AnalyseABF, FeuilleResume, AdvancedMode, ProtectionAssurance, Immobilier, Conditions, Confidentialite, Methodologie, Contact, AdminDossiers, AdminFeedback, AgentDossiers, AgentDebug, EducationFinanciere } from "./App-pages";
 import FinancialPlan from '@/pages/FinancialPlan';
 import Investments from '@/pages/Investments';
 import StudioDecaissement from '@/pages/StudioDecaissement';
-
-const PUBLIC_PATHS: string[] = ['/', '/calculatrices', '/education', '/contact', '/confidentialite', '/conditions', '/methodologie'];
 
 function SoftWall({ onUnlock }: { onUnlock: () => void }) {
   const [code, setCode] = useState("");
@@ -40,58 +37,58 @@ function SoftWall({ onUnlock }: { onUnlock: () => void }) {
   );
 }
 
+// Garde de routes privées : redirige vers /login si pas de session.
+function RequireAuth() {
+  const { isAuthenticated } = useAuth();
+  return isAuthenticated ? <Outlet /> : <Navigate to="/login" replace />;
+}
+
 function AuthenticatedApp() {
-  const { user, isAuthenticated, isLoadingAuth, isLoadingPublicSettings, authError, appPublicSettings, authChecked, logout, navigateToLogin, checkUserAuth } = useAuth();
+  const { user, isAuthenticated, isLoadingAuth, logout } = useAuth();
   const [studioUnlocked, setStudioUnlocked] = useState(false);
 
   useEffect(() => { setStudioUnlocked(localStorage.getItem("studio_decaissement_unlocked") === "1"); }, []);
 
-  if (isLoadingPublicSettings || isLoadingAuth) {
+  if (isLoadingAuth) {
     return <div style={{ minHeight: "100vh", background: "#050810", display: "flex", alignItems: "center", justifyContent: "center", color: "#C9A063", fontSize: 14 }}>Chargement...</div>;
-  }
-
-  if (authError) return <UserNotRegisteredError error={authError} onRetry={checkUserAuth} />;
-  if (!isAuthenticated) {
-    return (
-      <div style={{ minHeight: "100vh", background: "#050810", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ textAlign: "center", padding: 40, borderRadius: 16, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(201,160,99,0.25)" }}>
-          <h2 style={{ color: "#fff", marginBottom: 16 }}>Bienvenue sur MonPlanFin</h2>
-          <button onClick={navigateToLogin} style={{ padding: "12px 24px", background: "#C9A063", color: "#050810", border: "none", borderRadius: 8, fontWeight: 700, cursor: "pointer" }}>Se connecter</button>
-        </div>
-      </div>
-    );
   }
 
   return (
     <Routes>
-      {PUBLIC_PATHS.map(path => (
-        <Route key={path} path={path} element={<AppLayout logout={logout} user={user} />}>
-          {path === '/' && <Route index element={<Home />} />}
-          {path === '/calculatrices' && <Route index element={<Calculators />} />}
-          {path === '/education' && <Route index element={<EducationFinanciere />} />}
-          {path === '/contact' && <Route index element={<Contact />} />}
-          {path === '/confidentialite' && <Route index element={<Confidentialite />} />}
-          {path === '/conditions' && <Route index element={<Conditions />} />}
-          {path === '/methodologie' && <Route index element={<Methodologie />} />}
-        </Route>
-      ))}
+      {/* Connexion — si déjà connecté, file vers le tableau de bord */}
+      <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />} />
+
+      {/* Pages publiques — accessibles à tous, connecté ou non */}
       <Route element={<AppLayout logout={logout} user={user} />}>
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/budget" element={<Budget />} />
-        <Route path="/analyse" element={<AnalyseABF />} />
-        <Route path="/analyse-classique" element={<AnalyseABF />} />
-        <Route path="/resume" element={<FeuilleResume />} />
-        <Route path="/avance" element={<AdvancedMode />} />
-        <Route path="/protection" element={<ProtectionAssurance />} />
-        <Route path="/immobilier" element={<Immobilier />} />
-        <Route path="/plan-financier" element={<FinancialPlan />} />
-        <Route path="/investments" element={<Investments />} />
-        <Route path="/studio-decaissement" element={studioUnlocked ? <StudioDecaissement /> : <SoftWall onUnlock={() => setStudioUnlocked(true)} />} />
-        <Route path="/admin/dossiers" element={<AdminDossiers />} />
-        <Route path="/admin/feedback" element={<AdminFeedback />} />
-        <Route path="/agent/dossiers" element={<AgentDossiers />} />
-        <Route path="/agent/debug" element={<AgentDebug />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/calculatrices" element={<Calculators />} />
+        <Route path="/education" element={<EducationFinanciere />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/confidentialite" element={<Confidentialite />} />
+        <Route path="/conditions" element={<Conditions />} />
+        <Route path="/methodologie" element={<Methodologie />} />
         <Route path="*" element={<PageNotFound />} />
+      </Route>
+
+      {/* Pages privées — connexion requise */}
+      <Route element={<RequireAuth />}>
+        <Route element={<AppLayout logout={logout} user={user} />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/budget" element={<Budget />} />
+          <Route path="/analyse" element={<AnalyseABF />} />
+          <Route path="/analyse-classique" element={<AnalyseABF />} />
+          <Route path="/resume" element={<FeuilleResume />} />
+          <Route path="/avance" element={<AdvancedMode />} />
+          <Route path="/protection" element={<ProtectionAssurance />} />
+          <Route path="/immobilier" element={<Immobilier />} />
+          <Route path="/plan-financier" element={<FinancialPlan />} />
+          <Route path="/investments" element={<Investments />} />
+          <Route path="/studio-decaissement" element={studioUnlocked ? <StudioDecaissement /> : <SoftWall onUnlock={() => setStudioUnlocked(true)} />} />
+          <Route path="/admin/dossiers" element={<AdminDossiers />} />
+          <Route path="/admin/feedback" element={<AdminFeedback />} />
+          <Route path="/agent/dossiers" element={<AgentDossiers />} />
+          <Route path="/agent/debug" element={<AgentDebug />} />
+        </Route>
       </Route>
     </Routes>
   );

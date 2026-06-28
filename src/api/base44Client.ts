@@ -1,50 +1,44 @@
+import { supabase } from './supabaseClient';
 import { supabaseEntities } from './supabaseEntities';
-
-const noop = () => {};
-
-// Bêta mono-utilisateur : identité « client » par défaut. Les entités Supabase
-// sont taguées created_by="user@monplanfin.ca" — me() DOIT retourner ce courriel
-// sinon tout le filtrage created_by === moi.email vide les pages.
-const CLIENT_USER = { email: 'user@monplanfin.ca', full_name: 'Utilisateur', role: 'user' };
 
 // Allowlist admin. yuridufresne@gmail.com est le seul admin pour l'instant ;
 // ajouter ici la secrétaire (assignation de dossiers) le moment venu.
 export const ADMIN_EMAILS = ['yuridufresne@gmail.com'];
-const ADMIN_FLAG = 'mpf-admin'; // localStorage : courriel admin déverrouillé
 
-/** Identité de session : admin si un courriel valide est déverrouillé, sinon client. */
-export function getSessionUser() {
-  try {
-    const saved = typeof localStorage !== 'undefined' ? localStorage.getItem(ADMIN_FLAG) : null;
-    if (saved && ADMIN_EMAILS.includes(saved)) {
-      return { email: saved, full_name: 'Administrateur', role: 'admin', type_compte: 'directeur' };
-    }
-  } catch { /* localStorage indisponible */ }
-  return CLIENT_USER;
+/**
+ * Mappe un user Supabase Auth vers la forme attendue par l'app
+ * ({ email, full_name, role, type_compte }). Le rôle admin est dérivé du
+ * COURRIEL RÉEL authentifié (plus de hack localStorage ?admin=).
+ */
+export function mapUser(u) {
+  if (!u) return null;
+  const email = u.email || '';
+  const isAdmin = ADMIN_EMAILS.includes(email);
+  const meta = u.user_metadata || {};
+  return {
+    id: u.id,
+    email,
+    full_name: meta.full_name || meta.name || email,
+    role: isAdmin ? 'admin' : 'user',
+    type_compte: isAdmin ? 'directeur' : undefined,
+  };
 }
 
-/** Déverrouille le mode admin si le courriel est dans l'allowlist. */
-export function unlockAdmin(email) {
-  if (ADMIN_EMAILS.includes(email)) {
-    try { localStorage.setItem(ADMIN_FLAG, email); } catch { /* noop */ }
-    return true;
-  }
-  return false;
-}
-
-/** Repasse en mode client. */
-export function lockAdmin() {
-  try { localStorage.removeItem(ADMIN_FLAG); } catch { /* noop */ }
-}
-
-const meAsync = async () => getSessionUser();
+// Identité courante depuis la session Supabase (locale, pas de réseau).
+const meAsync = async () => {
+  const { data } = await supabase.auth.getSession();
+  return mapUser(data.session?.user);
+};
 
 export const base44 = {
   auth: {
     me: meAsync,
-    logout: () => lockAdmin(),
-    redirectToLogin: noop,
-    isAuthenticated: async () => true,
+    logout: () => supabase.auth.signOut(),
+    redirectToLogin: () => { if (typeof window !== 'undefined') window.location.href = '/login'; },
+    isAuthenticated: async () => {
+      const { data } = await supabase.auth.getSession();
+      return !!data.session;
+    },
   },
   entities: {
     // Les admins sont exposés comme « directeurs » pour l'assignation de dossiers.

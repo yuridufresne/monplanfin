@@ -1,49 +1,77 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { getSessionUser, unlockAdmin, lockAdmin } from '@/api/base44Client';
+import { supabase } from '@/api/supabaseClient';
+import { mapUser } from '@/api/base44Client';
 
 const AuthContext = createContext(null);
 
-// Déverrouillage admin via ?admin=courriel (validé contre l'allowlist).
-// ?admin= (vide) repasse en mode client. Le param est ensuite retiré de l'URL.
-const appliquerParamAdmin = () => {
-  try {
-    const params = new URLSearchParams(window.location.search);
-    if (!params.has('admin')) return;
-    const val = params.get('admin') || '';
-    if (val) unlockAdmin(val); else lockAdmin();
-    params.delete('admin');
-    const reste = params.toString();
-    window.history.replaceState({}, '', window.location.pathname + (reste ? `?${reste}` : '') + window.location.hash);
-  } catch { /* noop */ }
-};
-
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(() => { appliquerParamAdmin(); return getSessionUser(); });
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
-  const [isLoadingAuth, setIsLoadingAuth] = useState(false);
-  const [isLoadingPublicSettings, setIsLoadingPublicSettings] = useState(false);
-  const [authError, setAuthError] = useState(null);
-  const [authChecked, setAuthChecked] = useState(true);
-  const [appPublicSettings, setAppPublicSettings] = useState(null);
+  const [user, setUser] = useState(null);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
 
+  // Session réelle Supabase : lecture initiale + écoute des changements
+  // (connexion, déconnexion, retour OAuth, confirmation d'email).
   useEffect(() => {
-    setIsLoadingPublicSettings(false);
-    setIsLoadingAuth(false);
-    setAuthChecked(true);
+    let monte = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (!monte) return;
+      setUser(mapUser(data.session?.user));
+      setIsLoadingAuth(false);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(mapUser(session?.user));
+      setIsLoadingAuth(false);
+    });
+    return () => { monte = false; sub.subscription.unsubscribe(); };
   }, []);
 
-  const checkAppState = async () => {};
-  const checkUserAuth = async () => {};
+  // ── Méthodes d'authentification (Supabase Auth) ──────────────────────────
+  const signUp = (email, password, full_name) =>
+    supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: full_name ? { full_name } : undefined,
+        emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/dashboard` : undefined,
+      },
+    });
 
-  // Déconnexion = quitter le mode admin et repasser en client (pas de vraie session).
-  const logout = () => { lockAdmin(); setUser(getSessionUser()); };
-  const navigateToLogin = () => {};
+  const signIn = (email, password) =>
+    supabase.auth.signInWithPassword({ email, password });
 
-  return (
-    <AuthContext.Provider value={{ user, isAuthenticated, isLoadingAuth, isLoadingPublicSettings, authError, appPublicSettings, authChecked, logout, navigateToLogin, checkUserAuth, checkAppState }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  const signInWithGoogle = () =>
+    supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/dashboard` : undefined },
+    });
+
+  const resetPassword = (email) =>
+    supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/login` : undefined,
+    });
+
+  const logout = async () => { await supabase.auth.signOut(); setUser(null); };
+  const navigateToLogin = () => { if (typeof window !== 'undefined') window.location.href = '/login'; };
+
+  const value = {
+    user,
+    isAuthenticated: !!user,
+    isLoadingAuth,
+    isLoadingPublicSettings: false,
+    authError: null,
+    appPublicSettings: null,
+    authChecked: !isLoadingAuth,
+    logout,
+    navigateToLogin,
+    checkUserAuth: async () => {},
+    checkAppState: async () => {},
+    // Auth réelle
+    signUp,
+    signIn,
+    signInWithGoogle,
+    resetPassword,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {
