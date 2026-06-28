@@ -174,10 +174,11 @@ function _paiementHypo(h) {
 }
 
 // Depenses mensuelles totales (SSOT) = depenses de vie (hors impots et lignes (ABF)) + service dette.
-export function calcDepensesMensuelles(budgetEntries = [], profiles = []) {
+export function calcDepensesMensuelles(budgetEntries: any[] = [], profiles: any[] = []) {
   const get = (sec) => unwrap((profiles || []).find(p => p && p.section === sec) && (profiles || []).find(p => p && p.section === sec).data || {});
   const immo = get("immobilier");
   const dettesSec = get("dettes");
+  const epargneSec = get("epargne");
 
   const depensesVie = (budgetEntries || [])
     .filter(e => e && e.type === "depense"
@@ -189,9 +190,21 @@ export function calcDepensesMensuelles(budgetEntries = [], profiles = []) {
   const dettesB = dettesSec.conjoint || {};
   const hyposA = (immo.hypotheques && immo.hypotheques.length) ? immo.hypotheques : (dettesSec.hypotheques || []);
   const hyposB = (immoB.hypotheques && immoB.hypotheques.length) ? immoB.hypotheques : (dettesB.hypotheques || []);
-  const serviceHypo = [...hyposA, ...hyposB].reduce((s, h) => s + _paiementHypo(h), 0);
+  const toutesHypos = [...hyposA, ...hyposB];
+  const serviceHypo = toutesHypos.reduce((s, h) => s + _paiementHypo(h), 0);
   const servicePrets = [...(dettesSec.dettes || []), ...(dettesB.dettes || [])].reduce((s, d) => s + (parseFloat(d.paiement_min) || 0), 0);
+  // Frais de possession immobiliers : taxes (municipale + scolaire) + assurance habitation, annuels ÷ 12.
+  const fraisImmo = toutesHypos.reduce((s, h) =>
+    s + ((parseFloat(h.taxe_municipale) || 0) + (parseFloat(h.taxe_scolaire) || 0) + (parseFloat(h.assurance_habitation) || 0)) / 12, 0);
   const serviceDette = serviceHypo + servicePrets;
 
-  return { depensesVie, serviceDette, total: depensesVie + serviceDette };
+  // Cotisations d'épargne : AFFICHAGE seulement (mise de côté, pas une dépense → hors total).
+  const sumCot = (sec) => Object.values((sec && sec.comptes) || {}).flat().reduce((s, c) => s + (parseFloat(c && c.cotisation_mensuelle) || 0), 0);
+  const cotisationsEpargne = sumCot(epargneSec) + sumCot(epargneSec.conjoint || {});
+
+  return {
+    depensesVie, serviceHypo, servicePrets, fraisImmo, serviceDette,
+    cotisationsEpargne,
+    total: depensesVie + serviceDette + fraisImmo,
+  };
 }

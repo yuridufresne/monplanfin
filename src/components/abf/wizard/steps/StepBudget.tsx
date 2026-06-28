@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { calcRevenuDisponible, calcDepensesMensuelles, toMensuel } from "@/lib/calcRevenuNet";
 import { MoneyInput, Select, AddButton, RemoveButton } from "./primitives";
 import { toProfiles } from "../abfWizardModel";
+import type { StepProps, SectionData } from "../abfWizardModel";
 
 /**
  * Étape 9 — Budget (section "budget", entries[]). KPI & totaux via les moteurs
@@ -15,7 +16,7 @@ const CATS = [
   { k: "Épargne", c: "#5B8FC4" }, { k: "Dettes", c: "#C46B5B" }, { k: "Divers", c: "#9aa0ad" },
 ];
 const FREQS = [{ value: "mensuel", label: "/ mois" }, { value: "hebdomadaire", label: "/ semaine" }, { value: "bimensuel", label: "aux 2 sem." }, { value: "annuel", label: "/ année" }];
-const SOUS_POSTES = {
+const SOUS_POSTES: Record<string, string[]> = {
   Logement: ["Loyer / hypothèque", "Électricité", "Chauffage", "Taxes", "Entretien"],
   Transport: ["Essence", "Assurance auto", "Entretien", "Transport en commun", "Stationnement"],
   Alimentation: ["Épicerie", "Restaurants", "Café"],
@@ -29,39 +30,48 @@ const SOUS_POSTES = {
   Dettes: ["Carte", "Marge", "Prêt"],
   Divers: ["Cadeaux", "Dons", "Animaux"],
 };
-const fmt = (v) => Math.round(Number(v) || 0).toLocaleString("fr-CA") + " $";
+const fmt = (v: unknown): string => Math.round(Number(v) || 0).toLocaleString("fr-CA") + " $";
 
-export default function StepBudget({ data, patch, ctx }) {
+export default function StepBudget({ data, patch, ctx }: StepProps) {
   const d = data || {};
   const [onglet, setOnglet] = useState("depenses");
-  const [ouvert, setOuvert] = useState(null);
-  const [survol, setSurvol] = useState(null);
+  const [ouvert, setOuvert] = useState<string | null>(null);
+  const [survol, setSurvol] = useState<string | null>(null);
   const stepData = ctx?.stepData || {};
   const profiles = useMemo(() => toProfiles(stepData), [stepData]);
-  const entries = d.entries || [];
+  const entries: SectionData[] = d.entries || [];
 
   const net = useMemo(() => calcRevenuDisponible(profiles).totalMensuel || 0, [profiles]);
   const dep = useMemo(() => calcDepensesMensuelles(entries, profiles), [entries, profiles]);
   const solde = net - dep.total;
   const tauxEpargne = net > 0 ? Math.round((solde / net) * 100) : 0;
 
+  // Lignes injectées depuis les autres étapes (lecture seule). `compte` = entre
+  // dans le total des dépenses (déjà inclus dans dep.total) ; l'épargne ne l'est pas.
+  const injectees = useMemo(() => ([
+    { label: "Hypothèque", val: dep.serviceHypo || 0, compte: true, note: "depuis Immobilier" },
+    { label: "Frais immobiliers (taxes + assurance)", val: dep.fraisImmo || 0, compte: true, note: "depuis Immobilier" },
+    { label: "Paiements de dettes", val: dep.servicePrets || 0, compte: true, note: "depuis Dettes" },
+    { label: "Cotisations d'épargne", val: dep.cotisationsEpargne || 0, compte: false, note: "mise de côté · hors solde" },
+  ].filter((x) => x.val > 0)), [dep]);
+
   // Sources de revenu détectées (affichage seulement)
   const revenus = useMemo(() => {
-    const r = [];
+    const r: { label: string; montant: number }[] = [];
     const rev = stepData.revenu || {};
-    const push = (lst, suffix) => (lst || []).forEach((e) => { const m = (parseFloat(e.revenu_brut) || 0) / 12; if (m > 0) r.push({ label: `Salaire — ${e.employeur || "emploi"}${suffix}`, montant: m }); });
+    const push = (lst: SectionData[] | undefined, suffix: string) => (lst || []).forEach((e: SectionData) => { const m = (parseFloat(e.revenu_brut) || 0) / 12; if (m > 0) r.push({ label: `Salaire — ${e.employeur || "emploi"}${suffix}`, montant: m }); });
     push(rev.emplois, ""); push(rev.conjoint?.emplois, " (conjoint)");
     const alloc = calcRevenuDisponible(profiles).allocMensuel || 0;
     if (alloc > 0) r.push({ label: "Allocation familiale", montant: alloc });
-    (stepData.immobilier?.hypotheques || []).forEach((p) => { const m = parseFloat(p.revenu_locatif) || 0; if (m > 0) r.push({ label: "Revenu locatif", montant: m }); });
+    (stepData.immobilier?.hypotheques || []).forEach((p: SectionData) => { const m = parseFloat(p.revenu_locatif) || 0; if (m > 0) r.push({ label: "Revenu locatif", montant: m }); });
     return r;
   }, [stepData, profiles]);
 
-  const catTotal = (cat) => entries.filter((e) => e.categorie === cat).reduce((s, e) => s + toMensuel(e.amount, e.frequency), 0);
-  const setEntries = (next) => patch({ entries: next });
-  const addLigne = (cat) => setEntries([...entries, { categorie: cat, label: "", amount: "", frequency: "mensuel", type: "depense" }]);
-  const updateLigne = (globalIdx, k, v) => setEntries(entries.map((e, i) => (i === globalIdx ? { ...e, [k]: v } : e)));
-  const removeLigne = (globalIdx) => setEntries(entries.filter((_, i) => i !== globalIdx));
+  const catTotal = (cat: string): number => entries.filter((e: SectionData) => e.categorie === cat).reduce((s: number, e: SectionData) => s + toMensuel(e.amount, e.frequency), 0);
+  const setEntries = (next: SectionData[]) => patch({ entries: next });
+  const addLigne = (cat: string) => setEntries([...entries, { categorie: cat, label: "", amount: "", frequency: "mensuel", type: "depense" }]);
+  const updateLigne = (globalIdx: number, k: string, v: unknown) => setEntries(entries.map((e: SectionData, i: number) => (i === globalIdx ? { ...e, [k]: v } : e)));
+  const removeLigne = (globalIdx: number) => setEntries(entries.filter((_: SectionData, i: number) => i !== globalIdx));
 
   const totalDepenses = dep.total;
   const segments = CATS.map((c) => ({ ...c, val: catTotal(c.k) })).filter((s) => s.val > 0);
@@ -97,11 +107,13 @@ export default function StepBudget({ data, patch, ctx }) {
       ) : (
         <div className="grid md:grid-cols-[1fr_220px] gap-5">
           <div className="space-y-3">
-            {/* Lignes ABF injectées (lecture seule) */}
-            {dep.serviceDette > 0 && (
-              <div className="rounded-xl border border-accent/30 bg-accent-light/30 px-4 py-2.5 flex justify-between items-center">
-                <span className="text-[12px] font-semibold text-accent-foreground">Service de la dette (hypothèque + prêts) <span className="ml-1 text-[9px] uppercase tracking-wide rounded bg-accent/20 px-1.5 py-0.5">ABF</span></span>
-                <span className="font-mono text-[13px] font-bold text-foreground">{fmt(dep.serviceDette)}/mois</span>
+            {/* Lignes ABF injectées (lecture seule, non modifiables ici) — issues des
+                étapes Dettes / Immobilier / Épargne. L'épargne est « hors solde ». */}
+            {injectees.length > 0 && (
+              <div className="space-y-1.5">
+                {injectees.map((ln) => (
+                  <LigneABF key={ln.label} label={ln.label} montant={ln.val} compte={ln.compte} note={ln.note} />
+                ))}
               </div>
             )}
             {/* Grille catégories */}
@@ -165,7 +177,8 @@ export default function StepBudget({ data, patch, ctx }) {
   );
 }
 
-function KPI({ label, val, ton }) {
+type KpiTon = "vert" | "rouge" | "accent" | "neutre";
+function KPI({ label, val, ton }: { label: string; val: string; ton?: KpiTon }) {
   const couleur = ton === "vert" ? "text-success" : ton === "rouge" ? "text-destructive" : ton === "accent" ? "text-accent" : "text-foreground";
   return (
     <div className="rounded-xl border border-border bg-card px-3 py-2">
@@ -175,7 +188,22 @@ function KPI({ label, val, ton }) {
   );
 }
 
-function Donut({ segments, total, survol, onHover }) {
+// Ligne ABF injectée (lecture seule). `compte=false` → mise de côté, hors solde.
+function LigneABF({ label, montant, compte, note }: { label: string; montant: number; compte: boolean; note?: string }) {
+  return (
+    <div className={`rounded-xl border px-4 py-2.5 flex justify-between items-center ${compte ? "border-accent/30 bg-accent-light/30" : "border-success/30 bg-success/5"}`}>
+      <span className="text-[12px] font-semibold text-foreground flex items-center gap-2 min-w-0">
+        <span className="truncate">{label}</span>
+        <span className="flex-none text-[9px] uppercase tracking-wide rounded bg-accent/20 text-accent px-1.5 py-0.5">ABF</span>
+        {note && <span className="flex-none hidden sm:inline text-[10px] font-normal text-muted-foreground">· {note}</span>}
+      </span>
+      <span className={`font-mono text-[13px] font-bold flex-none ${compte ? "text-foreground" : "text-success"}`}>{fmt(montant)}/mois</span>
+    </div>
+  );
+}
+
+interface Segment { k: string; c: string; val: number; }
+function Donut({ segments, total, survol, onHover }: { segments: Segment[]; total: number; survol: string | null; onHover: (k: string | null) => void }) {
   const R = 52, C = 2 * Math.PI * R;
   let offset = 0;
   const seg = segments.find((s) => s.k === survol);
