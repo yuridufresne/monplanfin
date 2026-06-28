@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { ChevronRight } from "lucide-react";
 import { calcRevenuDisponible, calcDepensesMensuelles, toMensuel } from "@/lib/calcRevenuNet";
 import { MoneyInput, Select, AddButton, RemoveButton } from "./primitives";
 import { toProfiles } from "../abfWizardModel";
@@ -105,71 +106,82 @@ export default function StepBudget({ data, patch, ctx }: StepProps) {
           {revenus.length > 0 && <div className="flex justify-between px-3 pt-2 text-[13px] font-bold"><span>Total mensuel</span><span className="font-mono text-success">{fmt(revenus.reduce((s, r) => s + r.montant, 0))}</span></div>}
         </div>
       ) : (
-        <div className="grid md:grid-cols-[1fr_220px] gap-5">
-          <div className="space-y-3">
-            {/* Lignes ABF injectées (lecture seule, non modifiables ici) — issues des
-                étapes Dettes / Immobilier / Épargne. L'épargne est « hors solde ». */}
-            {injectees.length > 0 && (
-              <div className="space-y-1.5">
-                {injectees.map((ln) => (
-                  <LigneABF key={ln.label} label={ln.label} montant={ln.val} compte={ln.compte} note={ln.note} />
-                ))}
-              </div>
-            )}
-            {/* Grille catégories */}
-            <div className="space-y-1.5">
-              {CATS.map((cat) => {
-                const t = catTotal(cat.k);
-                const open = ouvert === cat.k;
-                const lignesCat = entries.map((e, gi) => ({ e, gi })).filter(({ e }) => e.categorie === cat.k);
-                return (
-                  <div key={cat.k} className="rounded-xl border border-border overflow-hidden">
-                    <button onClick={() => setOuvert(open ? null : cat.k)} className="w-full flex items-center justify-between px-4 py-2.5 text-[13px]">
-                      <span className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full" style={{ background: cat.c }} /><span className="font-semibold text-foreground">{cat.k}</span></span>
-                      <span className="font-mono text-muted-foreground">{t > 0 ? fmt(t) + "/mois" : "—"}</span>
-                    </button>
-                    {open && (
-                      <div className="px-4 pb-3 space-y-2 border-t border-border-subtle pt-3">
-                        {lignesCat.map(({ e, gi }) => (
-                          <div key={gi} className="grid grid-cols-[1fr_auto] gap-2 items-end">
-                            <div className="grid grid-cols-[1fr_auto_auto] gap-2">
-                              <input value={e.label} onChange={(ev) => updateLigne(gi, "label", ev.target.value)} placeholder="Libellé" className="px-3 py-2 rounded-lg text-[13px] bg-card border border-border outline-none focus:border-accent/60" />
-                              <MoneyInput value={e.amount} onChange={(v) => updateLigne(gi, "amount", v)} placeholder="0 $" />
-                              <Select value={e.frequency} onChange={(v) => updateLigne(gi, "frequency", v)} options={FREQS} />
-                            </div>
-                            <div className="pb-1"><RemoveButton onClick={() => removeLigne(gi)} /></div>
-                          </div>
-                        ))}
-                        <div className="flex flex-wrap gap-1.5">
-                          {(SOUS_POSTES[cat.k] || []).map((sp) => (
-                            <button key={sp} type="button" onClick={() => setEntries([...entries, { categorie: cat.k, label: sp, amount: "", frequency: "mensuel", type: "depense" }])}
-                              className="text-[11px] px-2 py-1 rounded-full border border-border text-muted-foreground hover:border-accent/50 hover:text-accent transition-colors">+ {sp}</button>
-                          ))}
-                        </div>
-                        <AddButton onClick={() => addLigne(cat.k)}>Ajouter une ligne</AddButton>
+        <div className="space-y-4">
+          {/* Répartition (donut) — prominent en haut, comme le prototype */}
+          <div className="rounded-2xl border border-border bg-card/40 p-5 flex flex-col sm:flex-row items-center gap-6">
+            <Donut segments={segments} total={sommeSeg} survol={survol} onHover={setSurvol} />
+            <div className="flex-1 w-full min-w-0">
+              {segments.length === 0 ? (
+                <p className="text-[13px] text-muted-foreground">Remplissez la grille budgétaire pour voir la répartition.</p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-0.5">
+                  {segments.map((s) => {
+                    const actif = survol === s.k;
+                    return (
+                      <div key={s.k} onMouseEnter={() => setSurvol(s.k)} onMouseLeave={() => setSurvol(null)}
+                        className={`flex items-center justify-between text-[12px] rounded px-1.5 py-0.5 cursor-default transition-colors ${actif ? "bg-muted/60" : ""}`}>
+                        <span className="flex items-center gap-1.5 min-w-0"><span className="w-2 h-2 rounded-full flex-none" style={{ background: s.c }} /><span className="truncate">{s.k}</span></span>
+                        <span className="font-mono text-muted-foreground flex-none">{Math.round((s.val / sommeSeg) * 100)} %</span>
                       </div>
-                    )}
-                  </div>
-                );
-              })}
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Donut interactif */}
-          <div className="hidden md:flex flex-col items-center">
-            <Donut segments={segments} total={sommeSeg} survol={survol} onHover={setSurvol} />
-            <div className="mt-3 space-y-1 w-full">
-              {segments.map((s) => {
-                const actif = survol === s.k;
-                return (
-                  <div key={s.k} onMouseEnter={() => setSurvol(s.k)} onMouseLeave={() => setSurvol(null)}
-                    className={`flex items-center justify-between text-[11px] rounded px-1 cursor-default transition-colors ${actif ? "bg-muted/60" : ""}`}>
-                    <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: s.c }} />{s.k}</span>
-                    <span className="font-mono text-muted-foreground">{Math.round((s.val / sommeSeg) * 100)} %</span>
-                  </div>
-                );
-              })}
+          {/* Lignes ABF injectées (lecture seule, non modifiables ici) — issues des
+              étapes Dettes / Immobilier / Épargne. L'épargne est « hors solde ». */}
+          {injectees.length > 0 && (
+            <div className="space-y-1.5">
+              {injectees.map((ln) => (
+                <LigneABF key={ln.label} label={ln.label} montant={ln.val} compte={ln.compte} note={ln.note} />
+              ))}
             </div>
+          )}
+
+          {/* Grille budgétaire — catégories numérotées, dépliables */}
+          <div className="text-[11px] font-mono font-semibold uppercase tracking-wider text-muted-foreground">
+            Grille budgétaire <span className="font-sans normal-case tracking-normal text-muted-foreground/70">— cliquez une catégorie pour saisir le détail</span>
+          </div>
+          <div className="space-y-1.5">
+            {CATS.map((cat, idx) => {
+              const t = catTotal(cat.k);
+              const open = ouvert === cat.k;
+              const lignesCat = entries.map((e, gi) => ({ e, gi })).filter(({ e }) => e.categorie === cat.k);
+              return (
+                <div key={cat.k} className="rounded-xl border border-border overflow-hidden">
+                  <button onClick={() => setOuvert(open ? null : cat.k)} className="w-full flex items-center justify-between px-4 py-2.5 text-[13px]">
+                    <span className="flex items-center gap-2.5"><span className="w-2.5 h-2.5 rounded-full" style={{ background: cat.c }} /><span className="font-semibold text-foreground">{idx + 1}. {cat.k}</span></span>
+                    <span className="flex items-center gap-2">
+                      <span className="font-mono text-muted-foreground">{t > 0 ? fmt(t) + "/mois" : "0 $/mois"}</span>
+                      <ChevronRight className={`w-4 h-4 text-muted-foreground transition-transform ${open ? "rotate-90" : ""}`} />
+                    </span>
+                  </button>
+                  {open && (
+                    <div className="px-4 pb-3 space-y-2 border-t border-border-subtle pt-3">
+                      {lignesCat.map(({ e, gi }) => (
+                        <div key={gi} className="grid grid-cols-[1fr_auto] gap-2 items-end">
+                          <div className="grid grid-cols-[1fr_auto_auto] gap-2">
+                            <input value={e.label} onChange={(ev) => updateLigne(gi, "label", ev.target.value)} placeholder="Libellé" className="px-3 py-2 rounded-lg text-[13px] bg-card border border-border outline-none focus:border-accent/60" />
+                            <MoneyInput value={e.amount} onChange={(v) => updateLigne(gi, "amount", v)} placeholder="0 $" />
+                            <Select value={e.frequency} onChange={(v) => updateLigne(gi, "frequency", v)} options={FREQS} />
+                          </div>
+                          <div className="pb-1"><RemoveButton onClick={() => removeLigne(gi)} /></div>
+                        </div>
+                      ))}
+                      <div className="flex flex-wrap gap-1.5">
+                        {(SOUS_POSTES[cat.k] || []).map((sp) => (
+                          <button key={sp} type="button" onClick={() => setEntries([...entries, { categorie: cat.k, label: sp, amount: "", frequency: "mensuel", type: "depense" }])}
+                            className="text-[11px] px-2 py-1 rounded-full border border-border text-muted-foreground hover:border-accent/50 hover:text-accent transition-colors">+ {sp}</button>
+                        ))}
+                      </div>
+                      <AddButton onClick={() => addLigne(cat.k)}>Ajouter une ligne</AddButton>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
@@ -207,7 +219,7 @@ function Donut({ segments, total, survol, onHover }: { segments: Segment[]; tota
   const R = 52, C = 2 * Math.PI * R;
   let offset = 0;
   const seg = segments.find((s) => s.k === survol);
-  const centerTop = seg ? seg.k : "Dépenses de vie";
+  const centerTop = seg ? seg.k : "Dépenses / mois";
   const centerVal = seg ? fmt(seg.val) : fmt(total);
   const centerPct = seg ? Math.round((seg.val / total) * 100) + " %" : "";
   return (
