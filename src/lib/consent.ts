@@ -12,7 +12,7 @@
 const KEY = "mpf-cookies-consent";
 const GA_ID = "G-P963K15GZF";
 const ENV = (import.meta as unknown as { env?: Record<string, string | undefined> }).env || {};
-const META_PIXEL_ID = ENV.VITE_META_PIXEL_ID || "";
+const META_PIXEL_ID = ENV.VITE_META_PIXEL_ID || "2132766237676991";
 
 export interface ConsentState {
   marketing: boolean;
@@ -105,4 +105,16 @@ export function trackEvent(nom: string, params?: Record<string, unknown>): void 
   const w = window as unknown as { fbq?: (...a: unknown[]) => void; gtag?: (...a: unknown[]) => void };
   if (w.fbq) w.fbq("track", nom, params);
   if (w.gtag) w.gtag("event", nom, params);
+}
+
+/**
+ * PageView à chaque changement de route (SPA react-router) — UNIQUEMENT si le
+ * consentement marketing est donné. Le PageView INITIAL est déjà émis par
+ * loadMetaPixel ; SeoManager saute donc le premier rendu pour éviter le doublon.
+ */
+export function trackPageView(): void {
+  if (!getConsent()?.marketing) return;
+  const w = window as unknown as { fbq?: (...a: unknown[]) => void; gtag?: (...a: unknown[]) => void };
+  if (w.fbq) w.fbq("track", "PageView");
+  if (w.gtag) w.gtag("event", "page_view");
 }

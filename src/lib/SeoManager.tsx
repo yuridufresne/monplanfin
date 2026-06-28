@@ -1,5 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
+import { trackPageView } from "@/lib/consent";
 
 /**
  * SeoManager — met à jour titre + meta (<description>, Open Graph, Twitter,
@@ -75,6 +76,7 @@ function upsertCanonical(href: string): void {
 
 export default function SeoManager() {
   const { pathname } = useLocation();
+  const premier = useRef(true);
   useEffect(() => {
     const m = SEO[pathname] || DEFAUT;
     const url = SITE + (pathname === "/" ? "/" : pathname);
@@ -86,6 +88,11 @@ export default function SeoManager() {
     upsertByName("twitter:title", m.title);
     upsertByName("twitter:description", m.description);
     upsertCanonical(url);
+
+    // PageView marketing par changement de route (gardé par le consentement).
+    // On saute le 1er rendu : le PageView initial est émis par le pixel lui-même.
+    if (premier.current) premier.current = false;
+    else trackPageView();
   }, [pathname]);
   return null;
 }

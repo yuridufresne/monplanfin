@@ -233,8 +233,8 @@ export default function Confidentialite() {
             Nous utilisons des témoins (« cookies ») pour assurer le bon fonctionnement du Service et améliorer votre expérience :
           </p>
           <ul style={liste}>
-            <li><strong style={strong}>Témoins essentiels</strong> : authentification, sécurité, préférences linguistiques</li>
-            <li><strong style={strong}>Témoins analytiques</strong> : compréhension de l'usage agrégé du Service</li>
+            <li><strong style={strong}>Témoins essentiels</strong> : authentification, sécurité, préférences linguistiques (toujours actifs).</li>
+            <li><strong style={strong}>Témoins de mesure et de marketing</strong> : Google Analytics ainsi que le <strong style={strong}>Pixel Meta (Facebook)</strong>, utilisés pour mesurer l'audience et diffuser de la publicité pertinente. Ils ne sont activés <strong style={strong}>qu'avec votre consentement explicite</strong> et vous pouvez le retirer à tout moment.</li>
           </ul>
           <p style={paragraph}>
             Vous pouvez configurer votre navigateur pour refuser les témoins. Toutefois, certains témoins essentiels sont nécessaires au fonctionnement du Service et leur désactivation peut limiter votre accès.
