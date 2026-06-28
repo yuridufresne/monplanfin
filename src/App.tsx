@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import Login from '@/pages/Login';
 import ResetPassword from '@/pages/ResetPassword';
+import SeoManager from '@/lib/SeoManager';
 import { Home, Calculators, Dashboard, Budget, AnalyseABF, FeuilleResume, AdvancedMode, ProtectionAssurance, Immobilier, Conditions, Confidentialite, Methodologie, Contact, AdminDossiers, AdminFeedback, AgentDossiers, AgentDebug, EducationFinanciere } from "./App-pages";
 import FinancialPlan from '@/pages/FinancialPlan';
 import Investments from '@/pages/Investments';
@@ -106,6 +107,7 @@ function App() {
       <AuthProvider>
         <QueryClientProvider client={queryClientInstance}>
           <Router>
+            <SeoManager />
             <AuthenticatedApp />
           </Router>
           <Toaster />
