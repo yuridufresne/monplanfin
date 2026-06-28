@@ -41,7 +41,12 @@ function makeEntity(table: string) {
       return data;
     },
     deleteMany: async () => ({}),
-    bulkCreate: async () => [],
+    bulkCreate: async (rows: Record<string, unknown>[]) => {
+      if (!Array.isArray(rows) || rows.length === 0) return [];
+      const { data, error } = await supabase.from(table).insert(rows).select();
+      logErr('bulkCreate', table, error);
+      return data || [];
+    },
     restore: async () => null,
   };
 }

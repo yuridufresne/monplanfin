@@ -39,6 +39,25 @@ alter table public.debt              add column if not exists agent_courriel tex
 alter table public.financial_goal    add column if not exists agent_courriel text;
 alter table public.investment        add column if not exists agent_courriel text;
 
+-- ─── investment : champs du formulaire manquants (ajout/édition de placement) ─
+alter table public.investment add column if not exists account_type     text;
+alter table public.investment add column if not exists purchase_date     text;
+alter table public.investment add column if not exists current_price     numeric;
+alter table public.investment add column if not exists annual_return_pct numeric;
+alter table public.investment add column if not exists current_value     numeric;
+alter table public.investment add column if not exists ai_metadata       jsonb;
+alter table public.investment add column if not exists notes             text;
+alter table public.investment add column if not exists last_updated      timestamptz;
+
+-- ─── debt : champs manquants (ajout/édition de dette + sync ABF) ────────────
+alter table public.debt add column if not exists monthly_payment numeric;
+alter table public.debt add column if not exists original_amount numeric;
+alter table public.debt add column if not exists source          text;
+
+-- ─── budget_entry : champs manquants (import budget + sync ABF) ─────────────
+alter table public.budget_entry add column if not exists is_fixed boolean default false;
+alter table public.budget_entry add column if not exists source   text;
+
 -- ─── Tables entièrement absentes ────────────────────────────────────────────
 create table if not exists public.beta_feedback (
   id               uuid primary key default gen_random_uuid(),
