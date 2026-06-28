@@ -2,21 +2,22 @@ import React, { useMemo } from "react";
 import { calcRevenuDisponible } from "@/lib/calcRevenuNet";
 import { Field, MoneyInput, Toggle } from "./primitives";
 import { toProfiles } from "../abfWizardModel";
+import type { StepProps } from "../abfWizardModel";
 
 /**
  * Étape 11 — Fonds d'urgence & protection (section "fonds_urgence").
  * Cible = N mois × revenu net mensuel HORS allocation (revenuNetMensuel du moteur).
  */
-const fmt = (v) => Math.round(Number(v) || 0).toLocaleString("fr-CA") + " $";
+const fmt = (v: unknown): string => Math.round(Number(v) || 0).toLocaleString("fr-CA") + " $";
 
-export default function StepUrgence({ data, patch, ctx }) {
+export default function StepUrgence({ data, patch, ctx }: StepProps) {
   const d = data || {};
   const stepData = ctx?.stepData || {};
   // HORS allocation : revenuNetMensuel (totalMensuel inclurait l'allocation).
   const netHorsAlloc = useMemo(() => calcRevenuDisponible(toProfiles(stepData)).revenuNetMensuel || 0, [stepData]);
   const mois = parseInt(d.objectif_mois ?? 3, 10) || 3;
   const cible = mois * netHorsAlloc;
-  const setMois = (m) => patch({ objectif_mois: Math.max(1, Math.min(24, m)) });
+  const setMois = (m: number) => patch({ objectif_mois: Math.max(1, Math.min(24, m)) });
 
   return (
     <div className="space-y-5">

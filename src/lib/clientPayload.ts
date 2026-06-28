@@ -245,7 +245,7 @@ export function nifMoyenne(manqueFutur, anneesDecaisse, rendementDecaissement, i
   return { nif: (nif_4pct + nif_rente) / 2, nif_4pct, nif_rente };
 }
 
-export function buildPayload(profiles = [], opts = {}) {
+export function buildPayload(profiles: any[] = [], opts: Record<string, any> = {}) {
   const REND_ACCUM_EFF = (opts && typeof opts.rendAccum === "number") ? opts.rendAccum : IQPF.REND_ACCUM;
   const dict = {};
   (profiles || []).forEach(p => {

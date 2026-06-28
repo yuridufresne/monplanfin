@@ -2,15 +2,16 @@ import React, { useMemo } from "react";
 import { buildPayload } from "@/lib/clientPayload";
 import { Field, MoneyInput, NumInput, Select, Toggle, AddButton, RemoveButton } from "./primitives";
 import { toProfiles } from "../abfWizardModel";
+import type { StepProps, SectionData } from "../abfWizardModel";
 
 /**
  * Étape 10 — Objectifs (section "objectifs"). Calibre le NIF : écrit les intrants
  * de rentes garanties que buildPayload lit (via le résolveur). Le RRQ/PSV est calculé
  * par les moteurs EXISTANTS (calculRRQ / calculPSV) — aucun estimateur porté.
  */
-const fmtM = (v) => Math.round(Number(v) || 0).toLocaleString("fr-CA") + " $";
+const fmtM = (v: unknown): string => Math.round(Number(v) || 0).toLocaleString("fr-CA") + " $";
 
-export default function StepObjectifs({ data, patch, ctx }) {
+export default function StepObjectifs({ data, patch, ctx }: StepProps) {
   const d = data || {};
   const stepData = ctx?.stepData || {};
   const enCouple = ctx?.enCouple;
@@ -20,17 +21,17 @@ export default function StepObjectifs({ data, patch, ctx }) {
   // Rentes garanties calculées par buildPayload (lecture du moteur, pas un calcul local).
   const G = useMemo(() => (buildPayload(toProfiles(stepData)).revenus_garantis) || {}, [stepData]);
 
-  const setRoot = (k) => (v) => patch({ [k]: v });
+  const setRoot = (k: string) => (v: unknown) => patch({ [k]: v });
   const conjoint = d.conjoint || {};
-  const setConj = (k) => (v) => patch({ conjoint: { ...conjoint, [k]: v } });
+  const setConj = (k: string) => (v: unknown) => patch({ conjoint: { ...conjoint, [k]: v } });
 
   // Train de vie visé (annuel, couple) → revenu_retraite_mensuel (cible lue par lireCibleRetraite)
   const trainAnnuel = d.train_vie_annuel ?? "";
-  const setTrain = (v) => patch({ train_vie_annuel: v, revenu_retraite_mensuel: (parseFloat(v) || 0) / 12 });
+  const setTrain = (v: string) => patch({ train_vie_annuel: v, revenu_retraite_mensuel: (parseFloat(v) || 0) / 12 });
 
   // Projets + objectif pré-rempli (achat) depuis Immobilier
-  const objectifs = d.objectifs || [];
-  const setObjectifs = (next) => patch({ objectifs: next });
+  const objectifs: SectionData[] = d.objectifs || [];
+  const setObjectifs = (next: SectionData[]) => patch({ objectifs: next });
 
   return (
     <div className="space-y-5">
@@ -81,14 +82,23 @@ const PROFILS = [
   { value: "modestes", label: "Revenus modestes", salaire: 30000 },
 ];
 
-function PersonneRetraite({ titre, d, set, apply, rrq, sv, pension }) {
+interface PersonneRetraiteProps {
+  titre: string;
+  d: SectionData;
+  set: (k: string) => (v: unknown) => void;
+  apply: (o: SectionData) => void;
+  rrq: number;
+  sv: number;
+  pension: number;
+}
+function PersonneRetraite({ titre, d, set, apply, rrq, sv, pension }: PersonneRetraiteProps) {
   const mode = d.rrq_mode || "estimer";
-  const total = (parseFloat(rrq) || 0) + (parseFloat(sv) || 0) + (parseFloat(pension) || 0);
+  const total = (Number(rrq) || 0) + (Number(sv) || 0) + (Number(pension) || 0);
   const [estimProfil, setEstimProfil] = React.useState("moyens");
-  const [estimAnnees, setEstimAnnees] = React.useState(40);
+  const [estimAnnees, setEstimAnnees] = React.useState<string | number>(40);
   const appliquerEstimation = () => {
     const p = PROFILS.find((x) => x.value === estimProfil) || PROFILS[1];
-    const an = Math.max(0, Math.min(40, parseInt(estimAnnees, 10) || 40));
+    const an = Math.max(0, Math.min(40, parseInt(String(estimAnnees), 10) || 40));
     apply({
       rrq_mode: "estimer",
       salaire_moyen_carriere: p.salaire,

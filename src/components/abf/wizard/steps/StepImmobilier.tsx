@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import { paiementHypoMensuel } from "@/lib/calcRevenuNet";
 import { Field, MoneyInput, NumInput, Select, Toggle, AddButton, RemoveButton } from "./primitives";
+import type { StepProps, SectionData } from "../abfWizardModel";
 
 /**
  * Étape 6 — Immobilier (section "immobilier"). Écrit `hypotheques[]` (= propriétés)
@@ -9,17 +10,17 @@ import { Field, MoneyInput, NumInput, Select, Toggle, AddButton, RemoveButton } 
  */
 const TYPES = ["Résidence principale", "Immeuble à revenus (locatif)", "Chalet / secondaire"];
 const REGIONS = ["Île de Montréal", "Laval", "Reste du Québec"];
-const fmt = (v) => Math.round(Number(v) || 0).toLocaleString("fr-CA") + " $";
+const fmt = (v: unknown): string => Math.round(Number(v) || 0).toLocaleString("fr-CA") + " $";
 
-export default function StepImmobilier({ data, patch }) {
+export default function StepImmobilier({ data, patch }: StepProps) {
   const d = data || {};
   const statut = d.statut_propriete || "proprietaire";
-  const props = d.hypotheques || [];
+  const props: SectionData[] = d.hypotheques || [];
 
-  const setProps = (next) => patch({ hypotheques: next });
-  const updateProp = (i, k, v) => setProps(props.map((p, idx) => (idx === i ? { ...p, [k]: v } : p)));
-  const addProp = (type) => setProps([...props, { type: type || TYPES[0] }]);
-  const removeProp = (i) => setProps(props.filter((_, idx) => idx !== i));
+  const setProps = (next: SectionData[]) => patch({ hypotheques: next });
+  const updateProp = (i: number, k: string, v: unknown) => setProps(props.map((p, idx) => (idx === i ? { ...p, [k]: v } : p)));
+  const addProp = (type?: string) => setProps([...props, { type: type || TYPES[0] }]);
+  const removeProp = (i: number) => setProps(props.filter((_, idx) => idx !== i));
 
   const montreLoyer = statut === "locataire";
 
@@ -71,7 +72,7 @@ export default function StepImmobilier({ data, patch }) {
   );
 }
 
-function PropCard({ p, i, update, remove, canRemove }) {
+function PropCard({ p, i, update, remove, canRemove }: { p: SectionData; i: number; update: (i: number, k: string, v: unknown) => void; remove: () => void; canRemove: boolean }) {
   const valeur = parseFloat(p.valeur_marchande) || 0;
   const solde = parseFloat(p.solde) || 0;
   const equite = Math.max(0, valeur - solde);

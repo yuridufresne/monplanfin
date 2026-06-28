@@ -1,18 +1,19 @@
 import React, { useEffect, useMemo } from "react";
 import { Field, TextInput, MoneyInput, NumInput, Toggle, AddButton, RemoveButton } from "./primitives";
 import { nbEnfants as compteEnfants } from "../abfWizardModel";
+import type { StepProps, SectionData } from "../abfWizardModel";
 
 /**
  * Étape 8 — Études / REEE (section "etudes"). Écrit `comptes.reee[]` lu par
  * calcValeurNette via le résolveur (REEE = source UNIQUE ici, retiré d'Épargne).
  * Un compte auto « Enfant N » par enfant du Profil + comptes additionnels.
  */
-const fmt = (v) => Math.round(Number(v) || 0).toLocaleString("fr-CA") + " $";
+const fmt = (v: unknown): string => Math.round(Number(v) || 0).toLocaleString("fr-CA") + " $";
 
-export default function StepEtudes({ data, patch, ctx }) {
+export default function StepEtudes({ data, patch, ctx }: StepProps) {
   const d = data || {};
   const nb = compteEnfants(ctx?.stepData || {});
-  const reee = (d.comptes && d.comptes.reee) || [];
+  const reee: SectionData[] = (d.comptes && d.comptes.reee) || [];
 
   // Aligne les comptes auto sur le nombre d'enfants (sans toucher aux additionnels).
   useEffect(() => {
@@ -28,13 +29,13 @@ export default function StepEtudes({ data, patch, ctx }) {
     }
   }, [nb]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  function setReee(next) { patch({ a_reee: true, comptes: { ...(d.comptes || {}), reee: next } }); }
-  const update = (i, k, v) => setReee(reee.map((c, idx) => (idx === i ? { ...c, [k]: v } : c)));
+  function setReee(next: SectionData[]) { patch({ a_reee: true, comptes: { ...(d.comptes || {}), reee: next } }); }
+  const update = (i: number, k: string, v: unknown) => setReee(reee.map((c, idx) => (idx === i ? { ...c, [k]: v } : c)));
   const addCompte = () => setReee([...reee, { auto: false, beneficiaire: "", age: "", solde: "", cotisation_mensuelle: "" }]);
-  const remove = (i) => setReee(reee.filter((_, idx) => idx !== i));
+  const remove = (i: number) => setReee(reee.filter((_, idx) => idx !== i));
 
-  const totalSolde = useMemo(() => reee.reduce((s, c) => s + (parseFloat(c.solde) || 0), 0), [reee]);
-  const totalCot = useMemo(() => reee.reduce((s, c) => s + (parseFloat(c.cotisation_mensuelle) || 0), 0), [reee]);
+  const totalSolde = useMemo(() => reee.reduce((s: number, c: SectionData) => s + (parseFloat(c.solde) || 0), 0), [reee]);
+  const totalCot = useMemo(() => reee.reduce((s: number, c: SectionData) => s + (parseFloat(c.cotisation_mensuelle) || 0), 0), [reee]);
 
   if (nb === 0) {
     return <p className="text-sm text-muted-foreground">Aucun enfant déclaré au Profil — le REEE ne s'applique pas. Ajoutez des personnes à charge à l'étape Profil pour activer cette section.</p>;

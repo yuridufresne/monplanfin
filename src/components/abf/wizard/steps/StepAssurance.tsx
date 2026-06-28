@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
 import { Field, MoneyInput, Select, AddButton, RemoveButton } from "./primitives";
+import type { StepProps, SectionData } from "../abfWizardModel";
 
 /**
  * Étape 7 — Assurance (section "assurance", polices[]). Total des primes mensualisées
@@ -7,9 +8,9 @@ import { Field, MoneyInput, Select, AddButton, RemoveButton } from "./primitives
  */
 const COUVERTURES = ["Vie", "Invalidité", "Maladie grave", "Soins de longue durée", "Accident", "Hypothécaire", "Autre"];
 const SOURCES = ["Individuelle", "Groupe employeur", "Association"];
-const fmt = (v) => Math.round(Number(v) || 0).toLocaleString("fr-CA") + " $";
+const fmt = (v: unknown): string => Math.round(Number(v) || 0).toLocaleString("fr-CA") + " $";
 
-export default function StepAssurance({ data, patch, ctx }) {
+export default function StepAssurance({ data, patch, ctx }: StepProps) {
   const d = data || {};
   const profil = ctx?.stepData?.profil_personnel || {};
   const enCouple = ctx?.enCouple;
@@ -23,14 +24,14 @@ export default function StepAssurance({ data, patch, ctx }) {
     { value: "autre", label: "Autre" },
   ];
 
-  const polices = d.polices || [];
-  const setPolices = (next) => patch({ polices: next });
-  const update = (i, k, v) => setPolices(polices.map((p, idx) => (idx === i ? { ...p, [k]: v } : p)));
+  const polices: SectionData[] = d.polices || [];
+  const setPolices = (next: SectionData[]) => patch({ polices: next });
+  const update = (i: number, k: string, v: unknown) => setPolices(polices.map((p, idx) => (idx === i ? { ...p, [k]: v } : p)));
   const add = () => setPolices([...polices, { type: "Vie", source: "Individuelle", frequence: "mois", personne: "A" }]);
-  const remove = (i) => setPolices(polices.filter((_, idx) => idx !== i));
+  const remove = (i: number) => setPolices(polices.filter((_, idx) => idx !== i));
 
   const totalMensuel = useMemo(
-    () => polices.reduce((s, p) => s + (parseFloat(p.prime) || 0) / (p.frequence === "annee" ? 12 : 1), 0),
+    () => polices.reduce((s: number, p: SectionData) => s + (parseFloat(p.prime) || 0) / (p.frequence === "annee" ? 12 : 1), 0),
     [polices]
   );
 
