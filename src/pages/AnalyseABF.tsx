@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { ChevronLeft, ChevronRight, Check, Moon, Sun } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/lib/AuthContext";
 import PortraitBandeau from "@/components/abf/wizard/PortraitBandeau";
 import Logo from "@/components/abf/wizard/Logo";
 import { PHASES, STEPS, TOTAL_STEPS, TITRES, phaseOf, aConjoint } from "@/components/abf/wizard/abfWizardModel";
@@ -55,10 +56,10 @@ function StepPlaceholder({ step }) {
 
 
 export default function AnalyseABF() {
+  const { user: moi } = useAuth();
   const [stepData, setStepData] = useState({});
   const [current, setCurrent] = useState(1); // 1-based
   const [done, setDone] = useState(false);
-  const [moi, setMoi] = useState(null);
   const [saveStatus, setSaveStatus] = useState("idle"); // idle | saving | saved
   const [dark, setDark] = useState(() => (localStorage.getItem("abf-theme") || "dark") === "dark");
   const cardRef = useRef(null);
@@ -73,34 +74,29 @@ export default function AnalyseABF() {
     setDark((prev) => { const next = !prev; localStorage.setItem("abf-theme", next ? "dark" : "light"); return next; });
   }, []);
 
-  // Auth + hydratation depuis FinancialProfile (continuité du dossier ABF existant).
-  useEffect(() => { base44.auth.me().then(setMoi).catch(() => {}); }, []);
+  // Hydratation depuis FinancialProfile (continuité du dossier ABF existant).
   useEffect(() => {
-    if (!moi) return;
     let annule = false;
     (async () => {
       try {
-        const cible = moi.email;
         const rows = (await base44.entities.FinancialProfile.list()) || [];
-        const miennes = rows.filter((r) => r.created_by === cible || r.client_courriel === cible);
-        if (annule || miennes.length === 0) return;
-        const dict = {};
-        miennes.forEach((r) => { if (r.section) dict[r.section] = r.data?.data || r.data || {}; });
+        if (annule || rows.length === 0) return;
+        const dict: Record<string, unknown> = {};
+        rows.forEach((r: any) => { if (r.section) dict[r.section] = r.data?.data || r.data || {}; });
         setStepData((prev) => ({ ...dict, ...prev }));
       } catch { /* hors-ligne : on reste en mémoire */ }
     })();
     return () => { annule = true; };
-  }, [moi]);
+  }, []);
 
-  // Autosave debounced de la section courante (pattern éprouvé de FinancialAnalysis).
+  // Autosave debounced de la section courante.
   const sectionData = stepData[step.key];
   useEffect(() => {
-    if (!moi || !sectionData || Object.keys(sectionData).length === 0) return;
+    if (!sectionData || Object.keys(sectionData as object).length === 0) return;
     setSaveStatus("saving");
     const t = setTimeout(async () => {
       try {
-        const existing = ((await base44.entities.FinancialProfile.filter({ section: step.key })) || [])
-          .filter((r) => r.created_by === moi.email || r.client_courriel === moi.email);
+        const existing = ((await base44.entities.FinancialProfile.filter({ section: step.key })) || []);
         if (existing.length > 0) await base44.entities.FinancialProfile.update(existing[0].id, { data: sectionData });
         else await base44.entities.FinancialProfile.create({ section: step.key, data: sectionData, completed: false });
         queryClient.invalidateQueries({ queryKey: ["financialProfiles"] });
@@ -109,7 +105,7 @@ export default function AnalyseABF() {
       } catch { setSaveStatus("idle"); }
     }, 1500);
     return () => clearTimeout(t);
-  }, [sectionData, moi, step.key]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [sectionData, step.key]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // « Analyse complète » = sections non vides / total (dérivé d'état, pas un calcul financier).
   const pctComplet = useMemo(() => {
