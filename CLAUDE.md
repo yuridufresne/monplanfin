@@ -1,0 +1,35 @@
+# Contexte projet — MonPlanFin (à respecter par l'agent)
+
+## Avant tout
+- TOUJOURS exécuter `git pull origin main` AVANT de modifier quoi que ce soit.
+  `main` est souvent en avance sur le local (Base44 auto-commit vers GitHub + push récents).
+- NE JAMAIS force-push sur `main`.
+
+## Ne pas régresser (CRITIQUE)
+- NE PAS toucher à la route `/analyse` : c'est la refonte ABF FINALE déjà déployée
+  (copie du prototype Open Design, 11 étapes typées). Ne pousse AUCUN autre wizard dessus.
+  (`/analyse2` contient une version antérieure `AnalyseABF` — laisser les deux tels quels
+  sauf demande explicite de Yuri.)
+- NE PAS merger ces branches sur `main` (elles sont derrière main → régression auth/ABF/SEO) :
+  `backup-securite`, `improvements-v2`, `securisation-tests`.
+
+## Auth Google = déjà fonctionnelle (ne pas modifier)
+- Connexion Google configurée au niveau plateforme (Google Cloud OAuth + provider Google
+  activé dans Supabase). `signInWithGoogle` dans `src/lib/AuthContext` marche tel quel.
+  Aucun changement de code requis pour l'auth Google.
+
+## Hors périmètre code
+- Email / DNS / certificat SSL (`mailpro7.swhc.ca`, `media@monplanfin.ca`, MX) = côté
+  hébergeur (WHC/cPanel). Pas de correctif applicatif pour ça.
+
+## Architecture / déploiement
+- Base44 édite aussi ce dépôt et auto-commit vers GitHub `main` ("Manual code change").
+  Donc `main` peut bouger sans action locale → d'où la règle "pull d'abord".
+- La mise en ligne sur monplanfin.ca passe par **Publish dans Base44** (pas par un simple push).
+- SSOT : pas de doublon de moteur de calcul. Brancher sur les moteurs existants
+  (`clientPayload`, `calcNIF`, `sectionsRetraite`, `moteurFiscal2026`, etc.).
+
+## Outils & rôles
+- Open Design (Opus 4.8) = conception/prototypage. Cursor / Claude Code = code dans ce dépôt.
+  Cowork = navigateur (Base44 publish, Google/Supabase), vérifs, visuels.
+- Un seul agent à la fois sur les mêmes fichiers.
