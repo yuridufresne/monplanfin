@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
 import { Field, MoneyInput, Select, RemoveButton } from "./primitives";
+import type { StepProps, SectionData } from "../abfWizardModel";
 
 /**
  * Étape 4 — Épargne (NOUVELLE section "epargne"). Écrit `comptes` avec les CLÉS EXACTES
@@ -18,15 +19,15 @@ const TYPES = [
   { value: "crypto", label: "Crypto" },
   { value: "autre", label: "Autre" },
 ];
-const fmt = (v) => Math.round(Number(v) || 0).toLocaleString("fr-CA") + " $";
-const estRemplie = (l) => l && l.type && (Number(l.solde) > 0 || Number(l.cotisation) > 0);
+const fmt = (v: unknown) => Math.round(Number(v) || 0).toLocaleString("fr-CA") + " $";
+const estRemplie = (l: SectionData) => l && l.type && (Number(l.solde) > 0 || Number(l.cotisation) > 0);
 
 // lignes UI -> { comptes (clés moteur) }
 // Le régime employeur DC (RPA/RVER) est du capital retraite immobilisé -> clé cri_lira
 // (comptée inconditionnellement). On NE le met PAS dans fond_pension, réservé à la
 // pension DB de l'étape Objectifs (sinon la règle either/or supprime le solde DC — C6).
-function deriver(lignes) {
-  const comptes = {};
+function deriver(lignes: SectionData[]) {
+  const comptes: Record<string, { solde: number; cotisation_mensuelle: number }[]> = {};
   (lignes || []).forEach((l) => {
     if (!l || !l.type) return;
     const solde = parseFloat(l.solde) || 0;
@@ -38,7 +39,7 @@ function deriver(lignes) {
   return { comptes };
 }
 
-export default function StepEpargne({ data, patch }) {
+export default function StepEpargne({ data, patch }: StepProps) {
   const d = data || {};
   // Lignes UI + toujours une ligne vide en fin (auto-add).
   const lignes = useMemo(() => {
@@ -47,16 +48,16 @@ export default function StepEpargne({ data, patch }) {
     return arr;
   }, [d.lignes]);
 
-  const commit = (next) => {
+  const commit = (next: SectionData[]) => {
     // Retire les lignes totalement vides (sauf garder l'écriture propre), garde une vide en fin via le render.
     const nettoyees = next.filter((l) => l && (l.type || l.solde || l.cotisation));
     patch({ lignes: nettoyees, ...deriver(nettoyees) });
   };
-  const updateRow = (i, k, v) => { const n = lignes.map((l, idx) => (idx === i ? { ...l, [k]: v } : l)); commit(n); };
-  const removeRow = (i) => commit(lignes.filter((_, idx) => idx !== i));
+  const updateRow = (i: number, k: string, v: unknown) => { const n = lignes.map((l, idx) => (idx === i ? { ...l, [k]: v } : l)); commit(n); };
+  const removeRow = (i: number) => commit(lignes.filter((_, idx) => idx !== i));
 
-  const totalSolde = useMemo(() => (d.lignes || []).reduce((s, l) => s + (parseFloat(l.solde) || 0), 0), [d.lignes]);
-  const totalCot = useMemo(() => (d.lignes || []).reduce((s, l) => s + (parseFloat(l.cotisation) || 0), 0), [d.lignes]);
+  const totalSolde = useMemo(() => (d.lignes || []).reduce((s: number, l: SectionData) => s + (parseFloat(l.solde) || 0), 0), [d.lignes]);
+  const totalCot = useMemo(() => (d.lignes || []).reduce((s: number, l: SectionData) => s + (parseFloat(l.cotisation) || 0), 0), [d.lignes]);
 
   return (
     <div className="space-y-4">

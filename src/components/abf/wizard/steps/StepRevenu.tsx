@@ -1,5 +1,6 @@
 import React from "react";
 import { Field, TextInput, MoneyInput, Select, Toggle, AddButton, RemoveButton } from "./primitives";
+import type { StepProps, SectionData } from "../abfWizardModel";
 
 /**
  * Étape 2 — Revenu (section revenu). Branché sur calcRevenuDisponible (moteur fiscal
@@ -9,7 +10,9 @@ import { Field, TextInput, MoneyInput, Select, Toggle, AddButton, RemoveButton }
 const SITUATIONS = ["Travail", "Sans emploi", "Aux études", "Au foyer", "À la retraite"];
 const TYPES = ["Salarié", "Contrat", "Travailleur autonome"];
 
-export default function StepRevenu({ data, patch, ctx }) {
+type Emploi = SectionData & { titulaire?: "A" | "B" };
+
+export default function StepRevenu({ data, patch, ctx }: StepProps) {
   const d = data || {};
   const profil = ctx?.stepData?.profil_personnel || {};
   const enCouple = ctx?.enCouple;
@@ -17,19 +20,19 @@ export default function StepRevenu({ data, patch, ctx }) {
   const prenomB = profil.conjoint?.prenom || "Conjoint(e)";
 
   // Liste UI combinée (chaque ligne porte titulaire "A"/"B").
-  const rows = [
-    ...((d.emplois || []).map((e) => ({ ...e, titulaire: "A" }))),
-    ...(((d.conjoint || {}).emplois || []).map((e) => ({ ...e, titulaire: "B" }))),
+  const rows: Emploi[] = [
+    ...((d.emplois || []).map((e: SectionData) => ({ ...e, titulaire: "A" as const }))),
+    ...(((d.conjoint || {}).emplois || []).map((e: SectionData) => ({ ...e, titulaire: "B" as const }))),
   ];
 
-  const commit = (newRows) => {
+  const commit = (newRows: Emploi[]) => {
     const emploisA = newRows.filter((r) => r.titulaire !== "B").map(({ titulaire, ...e }) => e);
     const emploisB = newRows.filter((r) => r.titulaire === "B").map(({ titulaire, ...e }) => e);
     patch({ emplois: emploisA, conjoint: { ...(d.conjoint || {}), emplois: emploisB } });
   };
-  const updateRow = (i, k, v) => { const n = rows.map((r, idx) => (idx === i ? { ...r, [k]: v } : r)); commit(n); };
+  const updateRow = (i: number, k: string, v: unknown) => { const n = rows.map((r, idx) => (idx === i ? { ...r, [k]: v } : r)); commit(n); };
   const addRow = () => commit([...rows, { titulaire: "A", type: "Salarié" }]);
-  const removeRow = (i) => commit(rows.filter((_, idx) => idx !== i));
+  const removeRow = (i: number) => commit(rows.filter((_, idx) => idx !== i));
 
   return (
     <div className="space-y-5">
