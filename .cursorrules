@@ -23,7 +23,10 @@
   hébergeur (WHC/cPanel). Ne crée pas de correctif applicatif pour ça.
 
 ## Architecture / déploiement
-- Base44 édite aussi ce dépôt et auto-commit vers GitHub `main` ("Manual code change").
-  Donc `main` peut bouger sans action locale → d'où la règle "pull d'abord".
+- **Production = Vercel** (projet `monplan-fin`), connecté à GitHub. Chaque push sur `main`
+  → **Vercel redéploie AUTOMATIQUEMENT** → en ligne sur monplanfin.ca en ~1-2 min.
+  ⚠️ Un push sur `main` part DIRECT en prod (pas de tampon « brouillon »). Prudence.
+- Base44 = éditeur seulement (auto-commit aussi vers `main`) → `main` peut bouger sans action
+  locale → d'où la règle "pull d'abord". Pas de « Publish Base44 » pour mettre le site en ligne.
 - SSOT : pas de doublon de moteur de calcul. Brancher sur les moteurs existants
   (`clientPayload`, `calcNIF`, `sectionsRetraite`, `moteurFiscal2026`, etc.).
