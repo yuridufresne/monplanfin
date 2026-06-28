@@ -1,14 +1,24 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import { getSessionUser, unlockAdmin, lockAdmin } from '@/api/base44Client';
 
 const AuthContext = createContext(null);
 
-const getWindowLocation = () => {
-  if (typeof window !== 'undefined') return window.location.href;
-  return '';
+// Déverrouillage admin via ?admin=courriel (validé contre l'allowlist).
+// ?admin= (vide) repasse en mode client. Le param est ensuite retiré de l'URL.
+const appliquerParamAdmin = () => {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has('admin')) return;
+    const val = params.get('admin') || '';
+    if (val) unlockAdmin(val); else lockAdmin();
+    params.delete('admin');
+    const reste = params.toString();
+    window.history.replaceState({}, '', window.location.pathname + (reste ? `?${reste}` : '') + window.location.hash);
+  } catch { /* noop */ }
 };
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState({ email: "user@monplanfin.ca", full_name: "Utilisateur", role: "user" });
+  const [user, setUser] = useState(() => { appliquerParamAdmin(); return getSessionUser(); });
   const [isAuthenticated, setIsAuthenticated] = useState(true);
   const [isLoadingAuth, setIsLoadingAuth] = useState(false);
   const [isLoadingPublicSettings, setIsLoadingPublicSettings] = useState(false);
@@ -25,7 +35,8 @@ export const AuthProvider = ({ children }) => {
   const checkAppState = async () => {};
   const checkUserAuth = async () => {};
 
-  const logout = () => { setUser(null); setIsAuthenticated(false); };
+  // Déconnexion = quitter le mode admin et repasser en client (pas de vraie session).
+  const logout = () => { lockAdmin(); setUser(getSessionUser()); };
   const navigateToLogin = () => {};
 
   return (
