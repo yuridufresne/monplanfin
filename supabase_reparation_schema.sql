@@ -68,3 +68,9 @@ create table if not exists public.education_progress (
 
 alter table public.beta_feedback     disable row level security;
 alter table public.education_progress disable row level security;
+
+-- IMPORTANT : une table créée en SQL brut n'accorde PAS les privilèges au rôle
+-- anon/authenticated (contrairement à l'éditeur de tables Supabase). Sans ces
+-- GRANT, l'app reçoit « permission denied for table ... ». Indispensable.
+grant all on table public.beta_feedback     to anon, authenticated, service_role;
+grant all on table public.education_progress to anon, authenticated, service_role;
