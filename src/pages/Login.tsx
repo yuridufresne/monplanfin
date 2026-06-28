@@ -80,7 +80,7 @@ export default function Login() {
       <div style={{ maxWidth: 420, width: "100%", padding: "40px 32px", borderRadius: 20, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(201,160,99,0.25)" }}>
         <div style={{ textAlign: "center", marginBottom: 28 }}>
           <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", letterSpacing: "-0.02em" }}>
-            Mon<span style={{ color: OR }}>PlanFin</span>
+            Mon<span style={{ color: "hsl(var(--success))" }}>PlanFin</span>
           </div>
           <p style={{ fontSize: 13.5, color: "rgba(255,255,255,0.55)", marginTop: 8 }}>
             {mode === "login" ? "Connecte-toi pour accéder à ton dossier." : "Crée ton compte pour démarrer ton analyse."}

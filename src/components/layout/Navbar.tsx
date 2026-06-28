@@ -83,7 +83,7 @@ export default function Navbar() {
             }}>
               <span style={{ fontFamily: "var(--font-urbanist)", fontWeight: 800, fontSize: 12, color: "#C9A063", letterSpacing: "-0.02em" }}>MP</span>
             </div>
-            <span style={{ fontFamily: "var(--font-urbanist)", fontSize: 15, fontWeight: 700, color: "#fff", letterSpacing: "-0.02em" }}>MonPlanFin</span>
+            <span style={{ fontFamily: "var(--font-urbanist)", fontSize: 15, fontWeight: 700, color: "#fff", letterSpacing: "-0.02em" }}>Mon</span><span style={{ fontFamily: "var(--font-urbanist)", fontSize: 15, fontWeight: 700, color: "hsl(var(--success))", letterSpacing: "-0.02em" }}>PlanFin</span>
             <span style={{
               padding: "2px 7px",
               borderRadius: 5,
@@ -174,7 +174,7 @@ export default function Navbar() {
                     <div style={{ width: 30, height: 30, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, #C9A063, #e6c07a)" }}>
                       <span style={{ fontFamily: "var(--font-urbanist)", fontWeight: 800, fontSize: 10, color: "#050810" }}>MP</span>
                     </div>
-                    <span style={{ fontFamily: "var(--font-urbanist)", fontWeight: 700, fontSize: 14, color: "#fff" }}>MonPlanFin</span>
+                    <span style={{ fontFamily: "var(--font-urbanist)", fontWeight: 700, fontSize: 14, color: "#fff" }}>Mon</span><span style={{ fontFamily: "var(--font-urbanist)", fontWeight: 700, fontSize: 14, color: "hsl(var(--success))" }}>PlanFin</span>
                     <span style={{
                       padding: "2px 6px",
                       borderRadius: 4,
