@@ -66,8 +66,23 @@ create table if not exists public.education_progress (
   points            integer default 0
 );
 
-alter table public.beta_feedback     disable row level security;
+-- ─── user_consent : colonnes manquantes (consentement Loi 25 ne se sauvait pas) ─
+alter table public.user_consent add column if not exists user_nom        text;
+alter table public.user_consent add column if not exists consent_version text;
+alter table public.user_consent add column if not exists consent_text    text;
+alter table public.user_consent add column if not exists consent_uses    jsonb default '[]'::jsonb;
+alter table public.user_consent add column if not exists navigateur_info text;
+alter table public.user_consent add column if not exists revoque         boolean default false;
+
+-- ─── RLS : aligner sur les tables qui marchent (bêta sans auth, clé anon) ────
+-- 4 tables avaient RLS activé sans policy → écritures anon bloquées (feedback,
+-- progression Éducation, objectifs, consentement). Désactivé = cohérent avec
+-- financial_profile/budget_entry/debt/investment/lead_dossier.
+-- À REVOIR avant lancement réel : vraie auth + policies restrictives.
+alter table public.beta_feedback      disable row level security;
 alter table public.education_progress disable row level security;
+alter table public.financial_goal     disable row level security;
+alter table public.user_consent       disable row level security;
 
 -- IMPORTANT : une table créée en SQL brut n'accorde PAS les privilèges au rôle
 -- anon/authenticated (contrairement à l'éditeur de tables Supabase). Sans ces
