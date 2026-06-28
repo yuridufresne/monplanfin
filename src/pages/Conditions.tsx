@@ -1,10 +1,10 @@
+import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, FileText } from "lucide-react";
 
 /**
- * src/pages/Conditions.jsx
+ * src/pages/Conditions.tsx
  * Conditions d'utilisation — MonPlanFin
- * MODÈLE à faire réviser par un avocat avant lancement public.
  */
 
 const SECTIONS = [
@@ -229,7 +229,7 @@ const lien = { color: "#C9A063", textDecoration: "underline" };
 const liste = { fontSize: 13.5, color: "rgba(255,255,255,0.75)", lineHeight: 1.85, marginBottom: 14, paddingLeft: 22, listStyle: "disc" };
 const highlight = { padding: "14px 18px", borderRadius: 12, background: "rgba(201,160,99,0.06)", border: "1px solid rgba(201,160,99,0.2)", marginBottom: 14 };
 
-function Section({ id, titre, children }) {
+function Section({ id, titre, children }: { id?: string; titre?: string; children: ReactNode }) {
   return (
     <div id={id} style={{ marginBottom: 28 }}>
       {titre && (

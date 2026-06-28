@@ -10,6 +10,7 @@ import AppLayout from '@/components/layout/AppLayout';
 import Login from '@/pages/Login';
 import ResetPassword from '@/pages/ResetPassword';
 import SeoManager from '@/lib/SeoManager';
+import CookieConsent from '@/components/ui/CookieConsent';
 import { Home, Calculators, Dashboard, Budget, AnalyseABF, FeuilleResume, AdvancedMode, ProtectionAssurance, Immobilier, Conditions, Confidentialite, Methodologie, Contact, AdminDossiers, AdminFeedback, AgentDossiers, AgentDebug, EducationFinanciere } from "./App-pages";
 import FinancialPlan from '@/pages/FinancialPlan';
 import Investments from '@/pages/Investments';
@@ -109,6 +110,7 @@ function App() {
           <Router>
             <SeoManager />
             <AuthenticatedApp />
+            <CookieConsent />
           </Router>
           <Toaster />
         </QueryClientProvider>

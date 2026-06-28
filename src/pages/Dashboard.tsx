@@ -298,6 +298,18 @@ export default function Dashboard() {
   const { user } = useAuth();
   const [synced, setSynced] = useState(false);
   const [showReset, setShowReset] = useState(false);
+
+  // Révocation du consentement (Loi 25) : marque les consentements comme révoqués,
+  // ce qui force le ConsentGate à redemander le consentement au prochain chargement.
+  const revoquerConsentement = async () => {
+    if (!user?.email) return;
+    if (typeof window !== "undefined" && !window.confirm("Révoquer votre consentement ? Vous devrez le redonner pour continuer à utiliser votre dossier.")) return;
+    try {
+      const consents = (await base44.entities.UserConsent.filter({ created_by: user.email })) || [];
+      await Promise.all(consents.map((c) => base44.entities.UserConsent.update(c.id, { revoque: true })));
+    } catch (e) { console.error("Révocation consentement:", e); }
+    if (typeof window !== "undefined") window.location.reload();
+  };
   const [detteFlipped, setDetteFlipped] = useState(false);
   const [placementFlipped, setPlacementFlipped] = useState(false);
   const [nifFlipped, setNifFlipped] = useState(false);
@@ -552,6 +564,9 @@ export default function Dashboard() {
               </Link>
               <button style={{ fontSize: 11, color: "#C9A063", background: "rgba(201,160,99,0.08)", border: "1px solid rgba(201,160,99,0.2)", cursor: "pointer", padding: "6px 10px", borderRadius: 10, display: "flex", alignItems: "center", gap: 4 }}>
                 <Settings style={{ width: 14, height: 14 }} />
+              </button>
+              <button onClick={revoquerConsentement} style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", background: "transparent", border: "none", cursor: "pointer", padding: "6px 10px" }}>
+                Révoquer mon consentement
               </button>
               <button onClick={() => setShowReset(true)} style={{ fontSize: 11, color: "rgba(248,113,113,0.6)", background: "transparent", border: "none", cursor: "pointer", padding: "6px 10px" }}>
                 Réinitialiser

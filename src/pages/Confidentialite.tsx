@@ -1,16 +1,13 @@
+import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Shield } from "lucide-react";
 import { EMAIL_CONFIDENTIALITE, RPRP_NOM } from "@/lib/constants";
 
 /**
- * src/pages/Confidentialite.jsx
+ * src/pages/Confidentialite.tsx
  * Politique de confidentialité — MonPlanFin
- * Conforme à la Loi 25 (Loi sur la protection des renseignements personnels
- * dans le secteur privé, modifiée par la Loi 25 - Québec, en vigueur depuis 2023).
- *
- * ⚠️ MODÈLE à faire réviser par un avocat avant lancement public.
- * Les sections [À COMPLÉTER] doivent être remplies avec les vraies coordonnées
- * du Responsable de la protection des renseignements personnels (RPRP).
+ * Conforme à la Loi 25 (Loi sur la protection des renseignements personnels dans
+ * le secteur privé — Québec) et à la LPRPDE (loi fédérale canadienne).
  */
 
 const SECTIONS = [
@@ -21,10 +18,11 @@ const SECTIONS = [
   { id: 5, titre: "Communication à nos partenaires" },
   { id: 6, titre: "Conservation et sécurité" },
   { id: 7, titre: "Vos droits (Loi 25)" },
-  { id: 8, titre: "Cookies et témoins" },
-  { id: 9, titre: "Transferts hors Québec" },
-  { id: 10, titre: "Modifications de la politique" },
-  { id: 11, titre: "Plainte à la Commission d'accès à l'information" },
+  { id: 8, titre: "Consentement des mineurs" },
+  { id: 9, titre: "Cookies et témoins" },
+  { id: 10, titre: "Transferts hors Québec" },
+  { id: 11, titre: "Modifications de la politique" },
+  { id: 12, titre: "Plainte à la Commission d'accès à l'information" },
 ];
 
 export default function Confidentialite() {
@@ -82,8 +80,11 @@ export default function Confidentialite() {
           <div style={highlight}>
             <p style={{ ...paragraph, marginBottom: 4, fontSize: 12 }}><strong style={strong}>RPRP — MonPlanFin</strong></p>
             <p style={{ ...paragraph, marginBottom: 4, fontSize: 12 }}>Nom : {RPRP_NOM}</p>
-            <p style={{ ...paragraph, marginBottom: 4, fontSize: 12 }}>Courriel : {EMAIL_CONFIDENTIALITE}</p>
+            <p style={{ ...paragraph, marginBottom: 0, fontSize: 12 }}>Courriel : {EMAIL_CONFIDENTIALITE}</p>
           </div>
+          <p style={paragraph}>
+            La même personne agit également à titre de <strong style={strong}>responsable de la protection de la vie privée (« privacy officer »)</strong> au sens de la <em>Loi sur la protection des renseignements personnels et les documents électroniques</em> (LPRPDE), la loi fédérale canadienne. Elle est imputable du respect de nos obligations en matière de protection des renseignements personnels, tant au niveau provincial (Loi 25) que fédéral (LPRPDE), et constitue votre point de contact unique pour toute question ou demande.
+          </p>
         </Section>
 
         {/* 3. Renseignements collectés */}
@@ -114,7 +115,7 @@ export default function Confidentialite() {
           <ul style={liste}>
             <li>Adresse IP, type de navigateur, système d'exploitation</li>
             <li>Pages visitées, durée des sessions, interactions avec le Service</li>
-            <li>Témoins (cookies) — voir section 8</li>
+            <li>Témoins (cookies) — voir section 9</li>
           </ul>
         </Section>
 
@@ -213,8 +214,21 @@ export default function Confidentialite() {
           </p>
         </Section>
 
-        {/* 8. Cookies */}
-        <Section id="section-8" titre="8. Cookies et témoins">
+        {/* 8. Consentement des mineurs */}
+        <Section id="section-8" titre="8. Consentement des mineurs">
+          <p style={paragraph}>
+            Au Québec, en vertu de la Loi 25, le consentement à la collecte, à l'utilisation ou à la communication des renseignements personnels d'un mineur de <strong style={strong}>moins de 14 ans</strong> doit être donné par le titulaire de l'autorité parentale ou par le tuteur. Un mineur de <strong style={strong}>14 ans et plus</strong> peut consentir lui-même.
+          </p>
+          <p style={paragraph}>
+            MonPlanFin s'adresse à une clientèle adulte. Nous ne recueillons pas sciemment de renseignements personnels d'enfants de moins de 14 ans. Les renseignements relatifs aux enfants saisis par un utilisateur adulte (par exemple les dates de naissance servant au calcul des allocations familiales et du REEE) sont fournis par le parent ou le tuteur, dans le cadre de la planification financière du foyer et sous sa responsabilité.
+          </p>
+          <p style={paragraph}>
+            Si vous estimez qu'un mineur nous a transmis des renseignements personnels sans le consentement requis, écrivez à {EMAIL_CONFIDENTIALITE} : nous les supprimerons dans les meilleurs délais.
+          </p>
+        </Section>
+
+        {/* 9. Cookies */}
+        <Section id="section-9" titre="9. Cookies et témoins">
           <p style={paragraph}>
             Nous utilisons des témoins (« cookies ») pour assurer le bon fonctionnement du Service et améliorer votre expérience :
           </p>
@@ -227,8 +241,8 @@ export default function Confidentialite() {
           </p>
         </Section>
 
-        {/* 9. Transferts */}
-        <Section id="section-9" titre="9. Transferts hors Québec">
+        {/* 10. Transferts */}
+        <Section id="section-10" titre="10. Transferts hors Québec">
           <p style={paragraph}>
             Vos renseignements peuvent être stockés ou traités à l'extérieur du Québec ou du Canada par nos fournisseurs technologiques (hébergement infonuagique, services d'authentification, etc.). Dans ce cas, nous nous assurons par contrat que ces fournisseurs offrent un niveau de protection comparable à celui exigé par la Loi 25.
           </p>
@@ -237,8 +251,8 @@ export default function Confidentialite() {
           </p>
         </Section>
 
-        {/* 10. Modifications */}
-        <Section id="section-10" titre="10. Modifications de la politique">
+        {/* 11. Modifications */}
+        <Section id="section-11" titre="11. Modifications de la politique">
           <p style={paragraph}>
             Nous pouvons modifier la présente Politique pour refléter l'évolution de nos pratiques ou des obligations légales. La version en vigueur sera toujours accessible sur le Service avec sa date de mise à jour.
           </p>
@@ -247,8 +261,8 @@ export default function Confidentialite() {
           </p>
         </Section>
 
-        {/* 11. Plainte CAI */}
-        <Section id="section-11" titre="11. Plainte à la Commission d'accès à l'information">
+        {/* 12. Plainte CAI */}
+        <Section id="section-12" titre="12. Plainte à la Commission d'accès à l'information">
           <p style={paragraph}>
             Si vous estimez que vos droits n'ont pas été respectés, vous pouvez d'abord communiquer avec notre RPRP (section 2). Si la réponse ne vous satisfait pas, vous avez le droit de déposer une plainte auprès de la Commission d'accès à l'information du Québec :
           </p>
@@ -279,7 +293,7 @@ const lien = { color: "#5BC4A0", textDecoration: "underline" };
 const liste = { fontSize: 13.5, color: "rgba(255,255,255,0.75)", lineHeight: 1.85, marginBottom: 14, paddingLeft: 22, listStyle: "disc" };
 const highlight = { padding: "14px 18px", borderRadius: 12, background: "rgba(91,196,160,0.06)", border: "1px solid rgba(91,196,160,0.2)", marginBottom: 14 };
 
-function Section({ id, titre, children }) {
+function Section({ id, titre, children }: { id?: string; titre?: string; children: ReactNode }) {
   return (
     <div id={id} style={{ marginBottom: 28 }}>
       <h2 style={{ fontFamily: "var(--font-urbanist)", fontSize: 18, fontWeight: 700, color: "#fff", marginBottom: 12, letterSpacing: "-.01em" }}>
