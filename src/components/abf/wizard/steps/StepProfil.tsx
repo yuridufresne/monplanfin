@@ -1,34 +1,40 @@
 import React from "react";
-import { Field, TextInput, DateInput, PhoneInput, Select, emailValide, telValide } from "./primitives";
+import { Field, TextInput, DatePicker, PhoneInput, Select, emailValide, telValide } from "./primitives";
+import type { StepProps } from "../abfWizardModel";
 
 /**
- * Étape 1 — Profil (section profil_personnel).
- * Pilote la cohérence conjoint (situation) et le nb d'enfants (Allocations + Études).
+ * Étape 1 — Profil (section profil_personnel). Copie conforme du prototype :
+ * calendrier date de naissance, tél/courriel requis + validés, conjoint Oui/Non
+ * (défaut Non) → l'état civil REMPLACE « Oui », 0–5 enfants.
+ * Pilote la cohérence conjoint (situation) + le nb d'enfants (Allocations + Études).
  */
 const ETATS = [
   { value: "conjoint_de_fait", label: "Conjoint de fait" },
   { value: "marie", label: "Marié(e)" },
 ];
-const estCouple = (s) => ["marie", "conjoint", "union_civile", "conjoint_de_fait"].includes(String(s || "").toLowerCase());
-const chip = (on) =>
-  `px-3.5 py-2 rounded-xl text-[12.5px] font-semibold border transition-colors ${
-    on ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border text-muted-foreground hover:border-accent/50 hover:text-foreground"
+const estCouple = (s: unknown): boolean =>
+  ["marie", "conjoint", "union_civile", "conjoint_de_fait"].includes(String(s || "").toLowerCase());
+
+const chip = (on: boolean): string =>
+  `px-3.5 py-2 rounded-full text-[12.5px] font-semibold border transition-colors ${
+    on ? "bg-secondary text-foreground border-accent" : "bg-card border-border text-muted-foreground hover:border-accent/50 hover:text-foreground"
   }`;
 
-export default function StepProfil({ data, patch }) {
+export default function StepProfil({ data, patch }: StepProps) {
   const d = data || {};
-  const set = (k) => (v) => patch({ [k]: v });
+  const set = (k: string) => (v: unknown) => patch({ [k]: v });
   const conjoint = d.conjoint || {};
-  const setConjoint = (k) => (v) => patch({ conjoint: { ...conjoint, [k]: v } });
+  const setConjoint = (k: string) => (v: unknown) => patch({ conjoint: { ...conjoint, [k]: v } });
   const aConjoint = estCouple(d.situation);
+  const estNon = !aConjoint; // défaut Non quand situation vide
 
   return (
     <div className="space-y-5">
       <div className="grid sm:grid-cols-2 gap-4">
         <Field label="Prénom"><TextInput value={d.prenom} onChange={set("prenom")} placeholder="Jean" /></Field>
         <Field label="Nom de famille"><TextInput value={d.nom} onChange={set("nom")} placeholder="Tremblay" /></Field>
-        <Field label="Date de naissance"><DateInput value={d.dob} onChange={set("dob")} /></Field>
-        <Field label="Personnes à charge (enfants)">
+        <Field label="Date de naissance"><DatePicker value={d.dob} onChange={set("dob")} /></Field>
+        <Field label="Personnes à charge (enfants)" hint="Déclenche les allocations et un REEE par enfant.">
           <Select value={String(d.nb_enfants ?? 0)} onChange={(v) => set("nb_enfants")(parseInt(v, 10))}
             options={[0, 1, 2, 3, 4, 5].map((n) => ({ value: String(n), label: String(n) }))} />
         </Field>
@@ -49,16 +55,15 @@ export default function StepProfil({ data, patch }) {
 
       <Field label="Avez-vous un conjoint ?">
         <div className="flex flex-wrap items-center gap-2">
-          <button type="button" onClick={() => { if (!aConjoint) set("situation")("conjoint_de_fait"); }} className={chip(aConjoint)}>Oui</button>
-          <button type="button" onClick={() => set("situation")("celibataire")} className={chip(!aConjoint)}>Non</button>
-          {aConjoint && (
-            <>
-              <span className="mx-1 text-muted-foreground">·</span>
-              {ETATS.map((e) => (
-                <button key={e.value} type="button" onClick={() => set("situation")(e.value)} className={chip(d.situation === e.value)}>{e.label}</button>
-              ))}
-            </>
+          {aConjoint ? (
+            // « Oui » est remplacé par le choix d'état civil (copie conforme).
+            ETATS.map((e) => (
+              <button key={e.value} type="button" onClick={() => set("situation")(e.value)} className={chip(d.situation === e.value)}>{e.label}</button>
+            ))
+          ) : (
+            <button type="button" onClick={() => set("situation")("conjoint_de_fait")} className={chip(false)}>Oui</button>
           )}
+          <button type="button" onClick={() => set("situation")("celibataire")} className={chip(estNon)}>Non</button>
         </div>
       </Field>
 
@@ -68,7 +73,7 @@ export default function StepProfil({ data, patch }) {
           <div className="grid sm:grid-cols-2 gap-4">
             <Field label="Prénom"><TextInput value={conjoint.prenom} onChange={setConjoint("prenom")} placeholder="Marie" /></Field>
             <Field label="Nom de famille"><TextInput value={conjoint.nom} onChange={setConjoint("nom")} /></Field>
-            <Field label="Date de naissance"><DateInput value={conjoint.dob} onChange={setConjoint("dob")} /></Field>
+            <Field label="Date de naissance"><DatePicker value={conjoint.dob} onChange={setConjoint("dob")} /></Field>
           </div>
         </div>
       )}
