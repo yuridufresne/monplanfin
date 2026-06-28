@@ -55,6 +55,7 @@ export default function PortraitBandeau({ stepData = {}, pctComplet = 0 }: { ste
       epargne: vn.epargneActifs || 0,
       immo: vn.immoValeur || 0,
       dettes: vn.totalPassifs || 0,
+      valeurNette: vn.valeurNette || 0,
     };
   }, [stepData]);
 
@@ -64,12 +65,14 @@ export default function PortraitBandeau({ stepData = {}, pctComplet = 0 }: { ste
     <div className="rounded-xl border border-border bg-card overflow-hidden">
       {/* Cellules en ligne */}
       <div className="flex items-stretch divide-x divide-border-subtle">
+        <Cellule label="Revenu brut annuel" valeur={fmtMontant(d.brut)} vide={d.brut <= 0} />
         <Cellule label="Revenu net / mois" valeur={fmtMontant(d.net)} vide={d.net <= 0} ton="accent"
           sous={d.alloc > 0 ? `+ incl. allocation ${fmtMontant(d.alloc)}` : undefined} />
-        <Cellule label="Revenu brut annuel" valeur={fmtMontant(d.brut)} vide={d.brut <= 0} />
         <Cellule label="Épargne & placements" valeur={fmtMontant(d.epargne)} vide={d.epargne <= 0} ton="vert" />
         <Cellule label="Immobilier" valeur={fmtMontant(d.immo)} vide={d.immo <= 0} />
         <Cellule label="Dettes & hypothèques" valeur={fmtMontant(d.dettes)} vide={d.dettes <= 0} ton="rouge" />
+        <Cellule label="Valeur nette" valeur={fmtMontant(d.valeurNette)} vide={d.epargne <= 0 && d.immo <= 0 && d.dettes <= 0}
+          ton={d.valeurNette >= 0 ? "vert" : "rouge"} />
       </div>
 
       {/* Barre « Analyse complète » — pleine largeur, sous les cellules */}
