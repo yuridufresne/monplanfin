@@ -3,16 +3,31 @@ import { supabaseEntities } from './supabaseEntities';
 
 // Allowlist admin. yuridufresne@gmail.com est le seul admin pour l'instant ;
 // ajouter ici la secrétaire (assignation de dossiers) le moment venu.
-export const ADMIN_EMAILS = ['yuridufresne@gmail.com'];
+export const ADMIN_EMAILS: string[] = ['yuridufresne@gmail.com'];
+
+/** Identité applicative dérivée de la session Supabase. */
+export interface AppUser {
+  id?: string;
+  email: string;
+  full_name: string;
+  role: 'admin' | 'user';
+  type_compte?: 'directeur' | 'agent';
+}
+
+// Sous-ensemble du user Supabase qu'on consomme (évite un import de type fragile).
+interface SupabaseAuthUser {
+  id?: string;
+  email?: string;
+  user_metadata?: { full_name?: string; name?: string } | null;
+}
 
 /**
- * Mappe un user Supabase Auth vers la forme attendue par l'app
- * ({ email, full_name, role, type_compte }). Le rôle admin est dérivé du
- * COURRIEL RÉEL authentifié (plus de hack localStorage ?admin=).
+ * Mappe un user Supabase Auth vers la forme attendue par l'app. Le rôle admin
+ * est dérivé du COURRIEL RÉEL authentifié (plus de hack localStorage ?admin=).
  */
-export function mapUser(u) {
-  if (!u) return null;
-  const email = u.email || '';
+export function mapUser(u: SupabaseAuthUser | null | undefined): AppUser | null {
+  if (!u || !u.email) return null;
+  const email = u.email;
   const isAdmin = ADMIN_EMAILS.includes(email);
   const meta = u.user_metadata || {};
   return {

@@ -27,7 +27,7 @@ export default function Login() {
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
 
-  const submit = async (e) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(""); setInfo(""); setBusy(true);
     try {
@@ -46,7 +46,7 @@ export default function Login() {
         navigate("/dashboard");
       }
     } catch (err) {
-      setError(traduireErreur(err?.message || "Une erreur est survenue."));
+      setError(traduireErreur((err as Error)?.message));
     } finally {
       setBusy(false);
     }
@@ -55,7 +55,7 @@ export default function Login() {
   const google = async () => {
     setError(""); setBusy(true);
     try { const { error } = await signInWithGoogle(); if (error) throw error; }
-    catch (err) { setError(traduireErreur(err?.message)); setBusy(false); }
+    catch (err) { setError(traduireErreur((err as Error)?.message)); setBusy(false); }
     // En cas de succès, redirection navigateur vers Google → pas de setBusy(false).
   };
 
@@ -66,11 +66,11 @@ export default function Login() {
       const { error } = await resetPassword(email.trim());
       if (error) throw error;
       setInfo("Si un compte existe pour ce courriel, un lien de réinitialisation vient d'être envoyé.");
-    } catch (err) { setError(traduireErreur(err?.message)); }
+    } catch (err) { setError(traduireErreur((err as Error)?.message)); }
     finally { setBusy(false); }
   };
 
-  const champ = {
+  const champ: React.CSSProperties = {
     width: "100%", padding: "12px 14px", borderRadius: 10, background: "rgba(255,255,255,0.05)",
     border: "1px solid rgba(255,255,255,0.15)", color: "#fff", fontSize: 15, outline: "none", boxSizing: "border-box",
   };
@@ -134,7 +134,7 @@ export default function Login() {
   );
 }
 
-function traduireErreur(msg) {
+function traduireErreur(msg?: string): string {
   if (!msg) return "Une erreur est survenue.";
   const m = msg.toLowerCase();
   if (m.includes("invalid login")) return "Courriel ou mot de passe incorrect.";

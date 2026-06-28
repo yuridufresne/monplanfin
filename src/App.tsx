@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import { useEffect, useState } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import Login from '@/pages/Login';
+import ResetPassword from '@/pages/ResetPassword';
 import { Home, Calculators, Dashboard, Budget, AnalyseABF, FeuilleResume, AdvancedMode, ProtectionAssurance, Immobilier, Conditions, Confidentialite, Methodologie, Contact, AdminDossiers, AdminFeedback, AgentDossiers, AgentDebug, EducationFinanciere } from "./App-pages";
 import FinancialPlan from '@/pages/FinancialPlan';
 import Investments from '@/pages/Investments';
@@ -44,7 +45,7 @@ function RequireAuth() {
 }
 
 function AuthenticatedApp() {
-  const { user, isAuthenticated, isLoadingAuth, logout } = useAuth();
+  const { isAuthenticated, isLoadingAuth, recoveryMode } = useAuth();
   const [studioUnlocked, setStudioUnlocked] = useState(false);
 
   useEffect(() => { setStudioUnlocked(localStorage.getItem("studio_decaissement_unlocked") === "1"); }, []);
@@ -53,13 +54,17 @@ function AuthenticatedApp() {
     return <div style={{ minHeight: "100vh", background: "#050810", display: "flex", alignItems: "center", justifyContent: "center", color: "#C9A063", fontSize: 14 }}>Chargement...</div>;
   }
 
+  // Arrivée via le lien de réinitialisation : écran « nouveau mot de passe »
+  // prioritaire sur tout le routage (une session temporaire est active).
+  if (recoveryMode) return <ResetPassword />;
+
   return (
     <Routes>
       {/* Connexion — si déjà connecté, file vers le tableau de bord */}
       <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />} />
 
       {/* Pages publiques — accessibles à tous, connecté ou non */}
-      <Route element={<AppLayout logout={logout} user={user} />}>
+      <Route element={<AppLayout />}>
         <Route path="/" element={<Home />} />
         <Route path="/calculatrices" element={<Calculators />} />
         <Route path="/education" element={<EducationFinanciere />} />
@@ -72,7 +77,7 @@ function AuthenticatedApp() {
 
       {/* Pages privées — connexion requise */}
       <Route element={<RequireAuth />}>
-        <Route element={<AppLayout logout={logout} user={user} />}>
+        <Route element={<AppLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/budget" element={<Budget />} />
           <Route path="/analyse" element={<AnalyseABF />} />

@@ -26,7 +26,7 @@ const COL = {
   ferr: "#E0913F", celi: "#5BC4A0", nonreg: "#6F8FD6", red: "#f87171", amber: "#EAB308", dim: "rgba(255,255,255,.4)",
 };
 
-export default function StudioDecaissement({ embedded = false, profiles: profilesProp }) {
+export default function StudioDecaissement({ embedded = false, profiles: profilesProp = [] }) {
   const { data: profilesQuery = [] } = useQuery({
     queryKey: ["financialProfiles"],
     queryFn: () => base44.entities.FinancialProfile.list(),

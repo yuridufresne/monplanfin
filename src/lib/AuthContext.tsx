@@ -1,15 +1,42 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { supabase } from '@/api/supabaseClient';
-import { mapUser } from '@/api/base44Client';
+import { mapUser, type AppUser } from '@/api/base44Client';
 
-const AuthContext = createContext(null);
+type SignUpResult = ReturnType<typeof supabase.auth.signUp>;
+type SignInResult = ReturnType<typeof supabase.auth.signInWithPassword>;
+type OAuthResult = ReturnType<typeof supabase.auth.signInWithOAuth>;
+type RecoverResult = ReturnType<typeof supabase.auth.resetPasswordForEmail>;
+type UpdateResult = ReturnType<typeof supabase.auth.updateUser>;
 
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+export interface AuthContextValue {
+  user: AppUser | null;
+  isAuthenticated: boolean;
+  isLoadingAuth: boolean;
+  isLoadingPublicSettings: boolean;
+  authError: null;
+  appPublicSettings: null;
+  authChecked: boolean;
+  recoveryMode: boolean;
+  logout: () => Promise<void>;
+  navigateToLogin: () => void;
+  checkUserAuth: () => Promise<void>;
+  checkAppState: () => Promise<void>;
+  signUp: (email: string, password: string, full_name?: string) => SignUpResult;
+  signIn: (email: string, password: string) => SignInResult;
+  signInWithGoogle: () => OAuthResult;
+  resetPassword: (email: string) => RecoverResult;
+  updatePassword: (password: string) => UpdateResult;
+}
+
+const AuthContext = createContext<AuthContextValue | null>(null);
+
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const [user, setUser] = useState<AppUser | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  const [recoveryMode, setRecoveryMode] = useState(false);
 
   // Session réelle Supabase : lecture initiale + écoute des changements
-  // (connexion, déconnexion, retour OAuth, confirmation d'email).
+  // (connexion, déconnexion, retour OAuth, confirmation d'email, récupération MDP).
   useEffect(() => {
     let monte = true;
     supabase.auth.getSession().then(({ data }) => {
@@ -17,7 +44,9 @@ export const AuthProvider = ({ children }) => {
       setUser(mapUser(data.session?.user));
       setIsLoadingAuth(false);
     });
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      // Arrivée via le lien « mot de passe oublié » → écran de nouveau mot de passe.
+      if (event === 'PASSWORD_RECOVERY') setRecoveryMode(true);
       setUser(mapUser(session?.user));
       setIsLoadingAuth(false);
     });
@@ -25,7 +54,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // ── Méthodes d'authentification (Supabase Auth) ──────────────────────────
-  const signUp = (email, password, full_name) =>
+  const signUp = (email: string, password: string, full_name?: string): SignUpResult =>
     supabase.auth.signUp({
       email,
       password,
@@ -35,24 +64,30 @@ export const AuthProvider = ({ children }) => {
       },
     });
 
-  const signIn = (email, password) =>
+  const signIn = (email: string, password: string): SignInResult =>
     supabase.auth.signInWithPassword({ email, password });
 
-  const signInWithGoogle = () =>
+  const signInWithGoogle = (): OAuthResult =>
     supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/dashboard` : undefined },
     });
 
-  const resetPassword = (email) =>
+  const resetPassword = (email: string): RecoverResult =>
     supabase.auth.resetPasswordForEmail(email, {
       redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/login` : undefined,
     });
 
-  const logout = async () => { await supabase.auth.signOut(); setUser(null); };
-  const navigateToLogin = () => { if (typeof window !== 'undefined') window.location.href = '/login'; };
+  const updatePassword = async (password: string): UpdateResult => {
+    const res = await supabase.auth.updateUser({ password });
+    if (!res.error) setRecoveryMode(false);
+    return res;
+  };
 
-  const value = {
+  const logout = async (): Promise<void> => { await supabase.auth.signOut(); setUser(null); };
+  const navigateToLogin = (): void => { if (typeof window !== 'undefined') window.location.href = '/login'; };
+
+  const value: AuthContextValue = {
     user,
     isAuthenticated: !!user,
     isLoadingAuth,
@@ -60,21 +95,22 @@ export const AuthProvider = ({ children }) => {
     authError: null,
     appPublicSettings: null,
     authChecked: !isLoadingAuth,
+    recoveryMode,
     logout,
     navigateToLogin,
     checkUserAuth: async () => {},
     checkAppState: async () => {},
-    // Auth réelle
     signUp,
     signIn,
     signInWithGoogle,
     resetPassword,
+    updatePassword,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-export const useAuth = () => {
+export const useAuth = (): AuthContextValue => {
   const context = useContext(AuthContext);
   if (!context) throw new Error('useAuth must be used within an AuthProvider');
   return context;
