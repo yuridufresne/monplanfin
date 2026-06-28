@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Check, Moon, Sun } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check, Moon, Sun, LayoutDashboard } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
@@ -165,12 +166,19 @@ export default function AnalyseABF() {
   return (
     <div className={`abf-root min-h-screen text-foreground ${dark ? "" : "abf-clair"}`}>
       <div className="max-w-5xl mx-auto px-4 md:px-6 py-7 pb-16">
-        {/* En-tête : logo + bascule thème */}
+        {/* En-tête : logo (→ tableau de bord) + nav retour + bascule thème */}
         <div className="flex items-center justify-between mb-5">
-          <Logo />
-          <button onClick={toggleTheme} aria-label="Basculer le thème" className="w-9 h-9 grid place-items-center rounded-lg border border-border text-muted-foreground hover:text-foreground hover:border-accent/40 transition-colors">
-            {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </button>
+          <Link to="/dashboard" aria-label="Retour au tableau de bord" className="inline-flex">
+            <Logo />
+          </Link>
+          <div className="flex items-center gap-2">
+            <Link to="/dashboard" className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border text-[12.5px] font-semibold text-muted-foreground hover:text-foreground hover:border-accent/40 transition-colors">
+              <LayoutDashboard className="w-4 h-4" /> <span className="hidden sm:inline">Tableau de bord</span>
+            </Link>
+            <button onClick={toggleTheme} aria-label="Basculer le thème" className="w-9 h-9 grid place-items-center rounded-lg border border-border text-muted-foreground hover:text-foreground hover:border-accent/40 transition-colors">
+              {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
+          </div>
         </div>
 
         {/* Eyebrow + titre de page (par étape) */}
