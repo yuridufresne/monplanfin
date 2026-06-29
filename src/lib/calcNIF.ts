@@ -368,7 +368,7 @@ export function calcNIFFromProfiles(profiles) {
       if (typeof k.score_nif === "number") resultatNIF.scoreNIF = k.score_nif;
       if (typeof k.cot_supp_mens === "number") resultatNIF.cotSupp = k.cot_supp_mens;
       if (typeof k.nif === "number") { resultatNIF.capitalNIF = k.nif; resultatNIF.capitalNIFNominal = k.nif_nominal != null ? k.nif_nominal : k.nif; }
-      if (typeof k.capital_projete === "number") { resultatNIF.capitalProjete = k.capital_projete; resultatNIF.capitalProjeteNominal = k.capital_projete; }
+      if (typeof k.capital_projete === "number") { resultatNIF.capitalProjecte = k.capital_projete; resultatNIF.capitalProjecteNominal = k.capital_projete; }
       resultatNIF.statut = resultatNIF.scoreNIF >= 110 ? "depasse" : resultatNIF.scoreNIF >= 100 ? "atteint" : resultatNIF.scoreNIF >= 75 ? "en_voie" : resultatNIF.scoreNIF >= 50 ? "insuffisant" : "critique";
     }
   } catch (e) { console.error("calcNIF/delegation IQPF", e); }
