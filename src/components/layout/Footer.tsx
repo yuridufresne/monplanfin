@@ -1,5 +1,12 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { clearConsent } from "@/lib/consent";
+
+// Rouvre la bannière de consentement aux témoins (Loi 25 : retrait facile = 1 clic).
+function ouvrirPreferencesCookies() {
+  clearConsent();
+  if (typeof window !== "undefined") window.location.reload();
+}
 
 const links = {
   Outils: [
@@ -99,6 +106,16 @@ export default function Footer() {
           <p style={{ fontSize: 11.5, fontWeight: 300, color: "rgba(148,163,184,0.4)" }}>
             © {new Date().getFullYear()} MonPlanFin · Tous droits réservés
           </p>
+          {/* Liens discrets — accès Loi 25 en 1 clic (cookies + confidentialité) */}
+          <div style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 11.5, fontWeight: 300 }}>
+            <button onClick={ouvrirPreferencesCookies}
+              style={{ background: "transparent", border: "none", cursor: "pointer", color: "rgba(148,163,184,0.6)", fontSize: 11.5, padding: 0 }}>
+              Préférences cookies
+            </button>
+            <Link to="/confidentialite" style={{ color: "rgba(148,163,184,0.6)", textDecoration: "none" }}>
+              Confidentialité
+            </Link>
+          </div>
           <p style={{ fontSize: 10.5, fontWeight: 300, color: "rgba(148,163,184,0.3)" }}>
             Conforme à la Loi 25 (Québec) · BSIF · AMF
           </p>

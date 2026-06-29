@@ -298,6 +298,7 @@ export default function Dashboard() {
   const { user } = useAuth();
   const [synced, setSynced] = useState(false);
   const [showReset, setShowReset] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false); // menu ⚙️ : actions secondaires/destructrices
 
   // Révocation du consentement (Loi 25) : marque les consentements comme révoqués,
   // ce qui force le ConsentGate à redemander le consentement au prochain chargement.
@@ -565,22 +566,39 @@ export default function Dashboard() {
             <h1 style={{ fontFamily: "var(--font-urbanist)", fontSize: "clamp(1.6rem,3.5vw,2.25rem)", fontWeight: 800, color: "#fff", letterSpacing: "-0.03em", lineHeight: 1.1 }}>
               {modeConseiller ? `Dossier de ${(nomCible || "client").split(" ")[0]}` : profil.nom ? `Bonjour, ${profil.nom.split(" ")[0]}.` : user?.full_name ? `Bonjour, ${user.full_name.split(" ")[0]}.` : "Bonjour."}
             </h1>
-            <div style={{ display: "flex", gap: 8 }}>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              {/* Action primaire unique */}
               <Link to="/analyse" style={{ fontSize: 11.5, fontWeight: 600, color: "#C9A063", background: "rgba(201,160,99,0.08)", border: "1px solid rgba(201,160,99,0.2)", padding: "6px 14px", borderRadius: 10, textDecoration: "none", display: "flex", alignItems: "center", gap: 6 }}>
                 Modifier l'ABF →
               </Link>
-              <button style={{ fontSize: 11, color: "#C9A063", background: "rgba(201,160,99,0.08)", border: "1px solid rgba(201,160,99,0.2)", cursor: "pointer", padding: "6px 10px", borderRadius: 10, display: "flex", alignItems: "center", gap: 4 }}>
-                <Settings style={{ width: 14, height: 14 }} />
-              </button>
-              <button onClick={revoquerConsentement} style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", background: "transparent", border: "none", cursor: "pointer", padding: "6px 10px" }}>
-                Révoquer le partage
-              </button>
-              <button onClick={revoquerMarketing} style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", background: "transparent", border: "none", cursor: "pointer", padding: "6px 10px" }}>
-                Cookies marketing
-              </button>
-              <button onClick={() => setShowReset(true)} style={{ fontSize: 11, color: "rgba(248,113,113,0.6)", background: "transparent", border: "none", cursor: "pointer", padding: "6px 10px" }}>
-                Réinitialiser
-              </button>
+              {/* Menu ⚙️ : actions secondaires (confidentialité / destructrices) regroupées */}
+              <div style={{ position: "relative" }}>
+                <button onClick={() => setMenuOpen((o) => !o)} aria-label="Options du dossier" aria-haspopup="menu" aria-expanded={menuOpen}
+                  style={{ fontSize: 11, color: "#C9A063", background: "rgba(201,160,99,0.08)", border: "1px solid rgba(201,160,99,0.2)", cursor: "pointer", padding: "6px 10px", borderRadius: 10, display: "flex", alignItems: "center", gap: 4 }}>
+                  <Settings style={{ width: 14, height: 14 }} />
+                </button>
+                {menuOpen && (
+                  <>
+                    {/* clic en dehors = ferme */}
+                    <div onClick={() => setMenuOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 40 }} />
+                    <div role="menu" style={{ position: "absolute", right: 0, top: "calc(100% + 6px)", zIndex: 50, minWidth: 210, background: "#0b1020", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 12, padding: 6, boxShadow: "0 12px 32px rgba(0,0,0,0.5)" }}>
+                      <button role="menuitem" onClick={() => { setMenuOpen(false); revoquerConsentement(); }}
+                        style={{ display: "block", width: "100%", textAlign: "left", background: "transparent", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.78)", fontSize: 12.5, padding: "9px 12px", borderRadius: 8 }}>
+                        Révoquer le partage
+                      </button>
+                      <button role="menuitem" onClick={() => { setMenuOpen(false); revoquerMarketing(); }}
+                        style={{ display: "block", width: "100%", textAlign: "left", background: "transparent", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.78)", fontSize: 12.5, padding: "9px 12px", borderRadius: 8 }}>
+                        Cookies marketing
+                      </button>
+                      <div style={{ height: 1, background: "rgba(255,255,255,0.08)", margin: "4px 8px" }} />
+                      <button role="menuitem" onClick={() => { setMenuOpen(false); setShowReset(true); }}
+                        style={{ display: "block", width: "100%", textAlign: "left", background: "transparent", border: "none", cursor: "pointer", color: "rgba(248,113,113,0.85)", fontSize: 12.5, padding: "9px 12px", borderRadius: 8 }}>
+                        Réinitialiser…
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </motion.div>
