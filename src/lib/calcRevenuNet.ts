@@ -13,9 +13,11 @@ function extractReerAnnuel(retraiteData) {
 }
 
 export function calcNetPersonne(brut, reerAnnuel = 0) {
-  if (!brut || brut <= 0) return { net: 0, rfnr: 0 };
+  if (!brut || brut <= 0) return { net: 0, rfnr: 0, impot: 0 };
   const r = calculateFullTax({ grossIncome: brut, reerDeduction: reerAnnuel });
-  return { net: r.netIncomeAfterTax, rfnr: r.rfnr };
+  // impot = impot total annuel estime par le moteur fiscal (sert d'estimation
+  // automatique de la retenue quand l'utilisateur laisse le champ vide).
+  return { net: r.netIncomeAfterTax, rfnr: r.rfnr, impot: r.totalTax };
 }
 
 export function calcRevenuDisponible(profiles) {

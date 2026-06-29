@@ -1,6 +1,7 @@
 import React from "react";
 import { Field, TextInput, MoneyInput, Select, Toggle, AddButton, RemoveButton } from "./primitives";
 import type { StepProps, SectionData } from "../abfWizardModel";
+import { calcNetPersonne } from "@/lib/calcRevenuNet";
 
 /**
  * Étape 2 — Revenu (section revenu). Branché sur calcRevenuDisponible (moteur fiscal
@@ -46,6 +47,13 @@ export default function StepRevenu({ data, patch, ctx }: StepProps) {
       <div className="space-y-3">
         {rows.map((r, i) => {
           const autonome = r.type === "Travailleur autonome";
+          // Estimation auto de la retenue d'impot mensuelle (moteur fiscal) -> sert de
+          // placeholder quand le champ est laisse vide. La valeur saisie reste prioritaire.
+          const brutAnnuel = parseFloat(r.revenu_brut) || 0;
+          const impotEstimeMensuel = brutAnnuel > 0 ? Math.round(calcNetPersonne(brutAnnuel).impot / 12) : 0;
+          const phImpotRetenu = impotEstimeMensuel > 0
+            ? `≈ ${impotEstimeMensuel.toLocaleString("fr-CA")} $ (auto)`
+            : "estimé auto";
           return (
             <div key={i} className="rounded-xl border border-border p-4 space-y-3">
               <div className="flex items-center justify-between">
@@ -71,7 +79,7 @@ export default function StepRevenu({ data, patch, ctx }: StepProps) {
                   </Field>
                 )}
                 <Field label="Impôt retenu / mois" hint="Laissez vide pour une estimation automatique.">
-                  <MoneyInput value={r.impot_saisi} onChange={(v) => updateRow(i, "impot_saisi", v)} placeholder="estimé auto" />
+                  <MoneyInput value={r.impot_saisi} onChange={(v) => updateRow(i, "impot_saisi", v)} placeholder={phImpotRetenu} />
                 </Field>
                 <Field label="Autres retenues / mois" hint="Syndicat, régime, vacances. Pas la pension alimentaire ni FTQ/CSN.">
                   <MoneyInput value={r.autres_retenues} onChange={(v) => updateRow(i, "autres_retenues", v)} placeholder="ex. 80 $" />
