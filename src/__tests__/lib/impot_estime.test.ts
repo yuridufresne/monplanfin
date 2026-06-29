@@ -19,4 +19,13 @@ describe("calcNetPersonne — impot estime auto", () => {
   it("retourne 0 pour un revenu nul", () => {
     expect(calcNetPersonne(0).impot).toBe(0);
   });
+
+  // Regression : sans conjoint, le moteur ne doit PLUS accorder le credit de
+  // conjoint fantome (conjointNetIncome=0 par defaut). A 50 000 $ seul, la retenue
+  // totale (impot CAN/QC + RRQ/AE/RQAP) est ~907 $/mois, pas ~525 $/mois (buggee).
+  it("personne seule a 50 000 $ : retenue totale realiste (~900 $/mois, pas ~525)", () => {
+    const mensuel = calcNetPersonne(50000).impot / 12;
+    expect(mensuel).toBeGreaterThan(850);
+    expect(mensuel).toBeLessThan(960);
+  });
 });

@@ -78,7 +78,10 @@ export default function StepRevenu({ data, patch, ctx }: StepProps) {
                     <Toggle value={r.tps_tvq === true} onChange={(v) => updateRow(i, "tps_tvq", v)} />
                   </Field>
                 )}
-                <Field label="Impôt retenu / mois" hint="Laissez vide pour une estimation automatique.">
+                <Field
+                  label={<>Impôt retenu / mois <span className="normal-case font-normal" style={{ color: "#C9A063" }}>· vide = estimé auto</span></>}
+                  hint="Estimation = retenue totale : impôt CAN/QC + RRQ/AE/RQAP."
+                >
                   <MoneyInput value={r.impot_saisi} onChange={(v) => updateRow(i, "impot_saisi", v)} placeholder={phImpotRetenu} />
                 </Field>
                 <Field label="Autres retenues / mois" hint="Syndicat, régime, vacances. Pas la pension alimentaire ni FTQ/CSN.">

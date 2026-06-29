@@ -59,7 +59,7 @@ export function calcCotisations(brut, isTA = false, inscritAE = true) {
   return { rrq: Math.round(rrq*100)/100, rqap: Math.round(rqap*100)/100, ae: Math.round(ae*100)/100, fss: Math.round(fss*100)/100, total: Math.round((rrq+rqap+ae+fss)*100)/100 };
 }
 
-export function calculateFullTax({ grossIncome = 0, reerDeduction = 0, conjointNetIncome = 0, isTravailleurAutonome = false, inscritAE = true, studentLoanInterest = 0, medicalExpenses = 0, charitableDonations = 0, childcareExpenses = 0, childcareRate = 0.67 } = {}) {
+export function calculateFullTax({ grossIncome = 0, reerDeduction = 0, aConjoint = false, conjointNetIncome = 0, isTravailleurAutonome = false, inscritAE = true, studentLoanInterest = 0, medicalExpenses = 0, charitableDonations = 0, childcareExpenses = 0, childcareRate = 0.67 } = {}) {
   if (grossIncome <= 0) return { gross:0, rfnr:0, imposableFed:0, imposableQC:0, federal:{grossTax:0,credits:0,abattement:0,finalTax:0}, provincial:{grossTax:0,credits:0,deductionTrav:0,childcareCredit:0,finalTax:0}, social:{rrq:0,rqap:0,ae:0,fss:0,total:0}, totalTax:0, netIncomeAfterTax:0, effectiveRate:0, marginalRate:0, marginal:{federal:0,quebec:0,combine:0,economieParDollarReer:0} };
   const social = calcCotisations(grossIncome, isTravailleurAutonome, inscritAE);
   const deductionTA = isTravailleurAutonome ? social.rrq/2 + social.rqap/2 : 0;
@@ -68,7 +68,10 @@ export function calculateFullTax({ grossIncome = 0, reerDeduction = 0, conjointN
   const imposableFed = rfnr;
   const imposableQC  = Math.max(0, rfnr - deductionTravQC);
   const mpb = getMontantBaseFed(imposableFed);
-  const conjCredit = conjointNetIncome < mpb ? (mpb - conjointNetIncome) * 0.14 : 0;
+  // Credit pour conjoint a charge : UNIQUEMENT si un conjoint a faible revenu existe.
+  // Sans ce garde-fou, conjointNetIncome=0 par defaut accordait le credit a TOUTE
+  // personne seule -> impot sous-estime de ~4 600 $/an. (aConjoint defaut = false)
+  const conjCredit = aConjoint && conjointNetIncome < mpb ? (mpb - conjointNetIncome) * 0.14 : 0;
   const medFed = Math.max(0, medicalExpenses - Math.max(imposableFed * 0.03, 2635)) * 0.14;
   const charFed = Math.min(charitableDonations,200)*0.14 + Math.max(0,charitableDonations-200)*0.29;
   const fedGross = calcImpotPaliers(imposableFed, PALIERS_FED);
@@ -77,7 +80,7 @@ export function calculateFullTax({ grossIncome = 0, reerDeduction = 0, conjointN
   const abattement = fedAvant * ABATTEMENT_QC;
   const fedFinal = Math.max(0, fedAvant - abattement);
   const qcGross = calcImpotPaliers(imposableQC, PALIERS_QC);
-  const conjQC = conjointNetIncome < MONTANT_BASE_QC_2026 ? (MONTANT_BASE_QC_2026 - conjointNetIncome)*0.14 : 0;
+  const conjQC = aConjoint && conjointNetIncome < MONTANT_BASE_QC_2026 ? (MONTANT_BASE_QC_2026 - conjointNetIncome)*0.14 : 0;
   const medQC = Math.max(0, medicalExpenses - imposableQC*0.03)*0.20;
   const charQC = Math.min(charitableDonations,200)*0.20 + Math.max(0,charitableDonations-200)*0.24;
   const childCred = childcareExpenses * childcareRate;
