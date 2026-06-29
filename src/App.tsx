@@ -16,6 +16,13 @@ import FinancialPlan from '@/pages/FinancialPlan';
 import Investments from '@/pages/Investments';
 import StudioDecaissement from '@/pages/StudioDecaissement';
 import { supabase } from '@/api/supabaseClient';
+import DisclaimerAMF from '@/components/DisclaimerAMF';
+
+// Pages de RÉSULTATS : avertissement AMF « pas un conseil personnalisé » en bas.
+// (PAS sur /analyse ni les pages publiques.)
+function AvecDisclaimer({ children }: { children: React.ReactNode }) {
+  return <>{children}<DisclaimerAMF /></>;
+}
 
 function SoftWall({ onUnlock }: { onUnlock: () => void }) {
   const [code, setCode] = useState("");
@@ -104,14 +111,14 @@ function AuthenticatedApp() {
       {/* Pages privées — connexion requise */}
       <Route element={<RequireAuth />}>
         <Route element={<AppLayout />}>
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/dashboard" element={<AvecDisclaimer><Dashboard /></AvecDisclaimer>} />
           <Route path="/analyse" element={<AnalyseABF />} />
           <Route path="/analyse-classique" element={<AnalyseABF />} />
           <Route path="/budget" element={<Budget />} />
-          <Route path="/resume" element={<FeuilleResume />} />
-          <Route path="/avance" element={<AdvancedMode />} />
-          <Route path="/protection" element={<ProtectionAssurance />} />
-          <Route path="/immobilier" element={<Immobilier />} />
+          <Route path="/resume" element={<AvecDisclaimer><FeuilleResume /></AvecDisclaimer>} />
+          <Route path="/avance" element={<AvecDisclaimer><AdvancedMode /></AvecDisclaimer>} />
+          <Route path="/protection" element={<AvecDisclaimer><ProtectionAssurance /></AvecDisclaimer>} />
+          <Route path="/immobilier" element={<AvecDisclaimer><Immobilier /></AvecDisclaimer>} />
           <Route path="/plan-financier" element={<FinancialPlan />} />
           <Route path="/investments" element={<Investments />} />
           <Route path="/studio-decaissement" element={
