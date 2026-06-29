@@ -15,14 +15,28 @@ import { Home, Calculators, Dashboard, Budget, AnalyseABF, FeuilleResume, Advanc
 import FinancialPlan from '@/pages/FinancialPlan';
 import Investments from '@/pages/Investments';
 import StudioDecaissement from '@/pages/StudioDecaissement';
+import { supabase } from '@/api/supabaseClient';
 
 function SoftWall({ onUnlock }: { onUnlock: () => void }) {
   const [code, setCode] = useState("");
   const [err, setErr] = useState(false);
-  const submit = (e: React.FormEvent) => {
+  const [busy, setBusy] = useState(false);
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (code === "STRATEGE2026") { localStorage.setItem("studio_decaissement_unlocked", "1"); onUnlock(); }
-    else setErr(true);
+    setErr(false); setBusy(true);
+    try {
+      // Validation SERVEUR : le code est vérifié EN BASE (RPC SECURITY DEFINER),
+      // jamais dans le bundle. En cas de succès, l'entitlement est inséré côté
+      // serveur pour auth.uid() ; le front ne fait que relire son droit.
+      const { data, error } = await supabase.rpc("redeem_studio_code", { p_code: code.trim() });
+      if (error) throw error;
+      if (data === true) onUnlock();
+      else setErr(true);
+    } catch {
+      setErr(true);
+    } finally {
+      setBusy(false);
+    }
   };
   return (
     <div style={{ minHeight: "70vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px", background: "#050810" }}>
@@ -31,9 +45,9 @@ function SoftWall({ onUnlock }: { onUnlock: () => void }) {
         <h2 style={{ fontSize: 24, fontWeight: 800, color: "#fff", marginBottom: 10 }}>Studio de décaissement</h2>
         <p style={{ fontSize: 14, color: "rgba(255,255,255,0.6)", lineHeight: 1.5, marginBottom: 24 }}>Stratégies de retraite année par année. Accès réservé, entre ton code d'accès pour débloquer.</p>
         <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <input type="text" value={code} onChange={(e) => { setCode(e.target.value); setErr(false); }} placeholder="Code d'accès" style={{ padding: "12px 14px", borderRadius: 10, background: "rgba(255,255,255,0.05)", border: "1px solid " + (err ? "#ef5e0b" : "rgba(255,255,255,0.15)"), color: "#fff", fontSize: 15, outline: "none", textAlign: "center" }} />
+          <input type="text" value={code} disabled={busy} onChange={(e) => { setCode(e.target.value); setErr(false); }} placeholder="Code d'accès" style={{ padding: "12px 14px", borderRadius: 10, background: "rgba(255,255,255,0.05)", border: "1px solid " + (err ? "#ef5e0b" : "rgba(255,255,255,0.15)"), color: "#fff", fontSize: 15, outline: "none", textAlign: "center" }} />
           {err && <span style={{ color: "#ef5e0b", fontSize: 13 }}>Code invalide.</span>}
-          <button type="submit" style={{ padding: "12px 14px", borderRadius: 10, background: "#C9A063", color: "#050810", fontWeight: 700, fontSize: 15, border: "none", cursor: "pointer" }}>Débloquer</button>
+          <button type="submit" disabled={busy} style={{ padding: "12px 14px", borderRadius: 10, background: "#C9A063", color: "#050810", fontWeight: 700, fontSize: 15, border: "none", cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1 }}>{busy ? "Vérification…" : "Débloquer"}</button>
         </form>
       </div>
     </div>
@@ -49,8 +63,18 @@ function RequireAuth() {
 function AuthenticatedApp() {
   const { isAuthenticated, isLoadingAuth, recoveryMode } = useAuth();
   const [studioUnlocked, setStudioUnlocked] = useState(false);
+  const [studioChecked, setStudioChecked] = useState(false);
 
-  useEffect(() => { setStudioUnlocked(localStorage.getItem("studio_decaissement_unlocked") === "1"); }, []);
+  // Entitlement Studio lu côté SERVEUR : via la RLS, l'utilisateur ne voit que
+  // sa propre ligne. Plus de flag localStorage contournable côté client.
+  useEffect(() => {
+    let alive = true;
+    if (!isAuthenticated) { setStudioUnlocked(false); setStudioChecked(true); return; }
+    setStudioChecked(false);
+    supabase.from("studio_entitlement").select("user_id").maybeSingle()
+      .then(({ data }) => { if (alive) { setStudioUnlocked(!!data); setStudioChecked(true); } });
+    return () => { alive = false; };
+  }, [isAuthenticated]);
 
   if (isLoadingAuth) {
     return <div style={{ minHeight: "100vh", background: "#050810", display: "flex", alignItems: "center", justifyContent: "center", color: "#C9A063", fontSize: 14 }}>Chargement...</div>;
@@ -90,7 +114,13 @@ function AuthenticatedApp() {
           <Route path="/immobilier" element={<Immobilier />} />
           <Route path="/plan-financier" element={<FinancialPlan />} />
           <Route path="/investments" element={<Investments />} />
-          <Route path="/studio-decaissement" element={studioUnlocked ? <StudioDecaissement /> : <SoftWall onUnlock={() => setStudioUnlocked(true)} />} />
+          <Route path="/studio-decaissement" element={
+            !studioChecked
+              ? <div style={{ minHeight: "70vh", display: "flex", alignItems: "center", justifyContent: "center", color: "#C9A063", fontSize: 14, background: "#050810" }}>Chargement…</div>
+              : studioUnlocked
+                ? <StudioDecaissement />
+                : <SoftWall onUnlock={() => setStudioUnlocked(true)} />
+          } />
           <Route path="/admin/dossiers" element={<AdminDossiers />} />
           <Route path="/admin/feedback" element={<AdminFeedback />} />
           <Route path="/agent/dossiers" element={<AgentDossiers />} />
