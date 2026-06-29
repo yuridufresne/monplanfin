@@ -19,6 +19,14 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-06-29 19:02 — Claude Code (#3 en-tête dashboard)
+- **Fait (branche, EN PREVIEW — pas encore mergé) :** `feat/dashboard-header-cleanup`.
+  - En-tête Dashboard : « Modifier l'ABF » = seule action primaire ; « Révoquer le partage », « Cookies marketing », « Réinitialiser… » déplacés dans le **menu ⚙️** (dropdown, clic dehors = ferme). Confirmations existantes conservées (confirm + ResetDataModal).
+  - Footer : liens discrets **« Préférences cookies »** (rouvre la bannière) + **« Confidentialité »**.
+  - Loi 25 : retrait du consentement reste **1 clic**. Affichage seulement, pas touché `/analyse`. lint vert, build OK.
+- **→ Pour Yuri/Cowork :** tester la Preview → dire « merge ». (Les 3 tâches de la file Cowork sont alors toutes traitées.)
+- ⚠️ **Attention :** branche touche `Dashboard.tsx` + `Footer.tsx` — si Cowork/Cursor y touche aussi, coordonner pour éviter un conflit.
+
 ## 2026-06-29 18:52 — Claude Code (merges Studio + disclaimer AMF)
 - **Fait (mergé en prod) :**
   - **#7 Studio** `fix/studio-entitlement-serveur` mergé (`888bc0e`). SQL déjà en base (Cowork), pas relancé.
