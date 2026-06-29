@@ -3,6 +3,8 @@
 ## Avant tout
 - TOUJOURS exécuter `git pull origin main` AVANT de modifier quoi que ce soit.
   `main` est souvent en avance sur le local (Base44 auto-commit vers GitHub + push récents).
+- **LIRE `JOURNAL-AGENTS.md` (racine) avant chaque tâche** pour voir ce que les autres agents (Cowork,
+  Claude Code, Cursor, Open Design) ont fait. **Ajouter une entrée EN HAUT après ta tâche**, puis commit/push.
 - NE JAMAIS force-push sur `main`.
 
 ## Ne pas régresser (CRITIQUE)
@@ -30,6 +32,15 @@
   locale → d'où la règle "pull d'abord". Il N'Y A PAS de « Publish Base44 » pour le site.
 - SSOT : pas de doublon de moteur de calcul. Brancher sur les moteurs existants
   (`clientPayload`, `calcNIF`, `sectionsRetraite`, `moteurFiscal2026`, etc.).
+
+## Statut AMF / conformité (CRITIQUE pour le contenu & le branding)
+- MonPlanFin = **outil ÉDUCATIF** (estimations générales). Tant qu'il **ne vend pas de produit**, n'est
+  **pas un cabinet inscrit** et ne donne **pas de conseil personnalisé** → **hors du régime d'inscription AMF**.
+- **NE JAMAIS** utiliser le titre réservé « **planificateur financier** » (ni se présenter en « conseiller
+  financier ») dans l'UI, le SEO, les pubs. Rester « **estimateur / outil éducatif** ».
+- **Garder le disclaimer** « ceci n'est pas un conseil financier personnalisé » sur les pages d'analyse.
+- **NE PAS** afficher « Membre AMF » (faux : non inscrit). Pas de promesse de rendement.
+- Détails + statut Loi 25/sécu : voir `conformite/NOTES-AMF-et-statut-conformite.md`.
 
 ## Outils & rôles
 - Open Design (Opus 4.8) = conception/prototypage. Cursor / Claude Code = code dans ce dépôt.

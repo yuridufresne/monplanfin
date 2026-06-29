@@ -32,3 +32,6 @@ dist-ssr
 .vercel
 .env*
 !.env.example
+
+# Documents de conformite sensibles (DPA signes, etc.) — ne pas publier dans le repo
+conformite/*.pdf
