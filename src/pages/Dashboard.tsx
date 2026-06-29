@@ -8,7 +8,6 @@ import { motion } from "framer-motion";
 import { ArrowRight, Settings, Home, Send } from "lucide-react";
 import { calculerQualification } from "@/lib/moteurImmobilier";
 import { payloadDepuisABF } from "@/lib/immobilierPayload";
-import { syncABFToEntities } from "@/hooks/useABFSync";
 import { calcRevenuDisponible, calcDepensesMensuelles } from "@/lib/calcRevenuNet";
 import ResetDataModal from "@/components/dashboard/ResetDataModal";
 import SoumettreDossierModal from "@/components/dashboard/SoumettreDossierModal";
