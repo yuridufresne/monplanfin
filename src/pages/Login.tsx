@@ -103,7 +103,7 @@ export default function Login() {
             <input style={champ} type="text" placeholder="Nom complet" value={fullName} onChange={(e) => setFullName(e.target.value)} autoComplete="name" />
           )}
           <input style={champ} type="email" placeholder="Courriel (gmail, hotmail, yahoo…)" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required />
-          <input style={champ} type="password" placeholder="Mot de passe" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete={mode === "signup" ? "new-password" : "current-password"} required minLength={6} />
+          <input style={champ} type="password" placeholder={mode === "signup" ? "Mot de passe (8+ car., lettres et chiffres)" : "Mot de passe"} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete={mode === "signup" ? "new-password" : "current-password"} required minLength={8} />
 
           {error && <div style={{ fontSize: 13, color: "#ff8a6b", lineHeight: 1.4 }}>{error}</div>}
           {info && <div style={{ fontSize: 13, color: "#6ee7b7", lineHeight: 1.4 }}>{info}</div>}
@@ -140,7 +140,8 @@ function traduireErreur(msg?: string): string {
   if (m.includes("invalid login")) return "Courriel ou mot de passe incorrect.";
   if (m.includes("email not confirmed")) return "Ton courriel n'est pas encore confirmé. Vérifie ta boîte de réception.";
   if (m.includes("already registered") || m.includes("already been registered")) return "Un compte existe déjà avec ce courriel. Connecte-toi plutôt.";
-  if (m.includes("password should be at least")) return "Le mot de passe doit faire au moins 6 caractères.";
+  if (m.includes("password should be at least")) return "Le mot de passe doit faire au moins 8 caractères.";
+  if (m.includes("password should contain") || m.includes("character of each") || m.includes("required characters")) return "Le mot de passe doit contenir au moins une lettre et un chiffre (8 caractères min.).";
   if (m.includes("rate limit") || m.includes("too many")) return "Trop de tentatives. Réessaie dans quelques minutes.";
   if (m.includes("provider is not enabled")) return "La connexion Google n'est pas encore activée. Utilise le courriel + mot de passe.";
   return msg;

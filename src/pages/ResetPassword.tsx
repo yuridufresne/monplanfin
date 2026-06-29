@@ -20,7 +20,8 @@ export default function ResetPassword() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (password.length < 6) { setError("Le mot de passe doit faire au moins 6 caractères."); return; }
+    if (password.length < 8) { setError("Le mot de passe doit faire au moins 8 caractères."); return; }
+    if (!/[a-zA-Z]/.test(password) || !/[0-9]/.test(password)) { setError("Le mot de passe doit contenir au moins une lettre et un chiffre."); return; }
     if (password !== confirm) { setError("Les deux mots de passe ne correspondent pas."); return; }
     setBusy(true);
     try {
@@ -51,10 +52,10 @@ export default function ResetPassword() {
           </p>
         </div>
         <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <input style={champ} type="password" placeholder="Nouveau mot de passe" value={password}
-            onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" required minLength={6} />
+          <input style={champ} type="password" placeholder="Nouveau mot de passe (8+ car., lettres et chiffres)" value={password}
+            onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" required minLength={8} />
           <input style={champ} type="password" placeholder="Confirmer le mot de passe" value={confirm}
-            onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" required minLength={6} />
+            onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" required minLength={8} />
           {error && <div style={{ fontSize: 13, color: "#ff8a6b", lineHeight: 1.4 }}>{error}</div>}
           <button type="submit" disabled={busy}
             style={{ padding: "12px 14px", borderRadius: 10, background: OR, color: BG, fontWeight: 700, fontSize: 15, border: "none", cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1 }}>
