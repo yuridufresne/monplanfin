@@ -217,6 +217,8 @@ export function calcNIFFromProfiles(profiles) {
 
   // -- Revenus garantis : SOURCE UNIQUE = buildPayload (clientPayload, chiffres 2026)
   // Meme decomposition RRQ/PSV/pension que la carte NIF -> aucun doublon de moteur.
+  // buildPayload est deterministe et couteux : on l'appelle UNE SEULE FOIS ici puis on
+  // reutilise _payG plus bas (progression NIF + delegation IQPF).
   const _payG = buildPayload(profiles);
   const _G = (_payG && _payG.revenus_garantis) || {};
   const revenusGarantis = {
@@ -298,7 +300,7 @@ export function calcNIFFromProfiles(profiles) {
 
   // ── Progression vers le NIF ───────────────────────────────────────────────────
   // Source unique : bloc NIF derive de buildPayload (meme valeur que la carte dashboard)
-  const _pl = buildPayload(profiles); const _k = _pl && _pl.kpis;
+  const _k = _payG && _payG.kpis;
   if (_k && Number.isFinite(_k.nif_nominal) && _k.nif_nominal > 0) {
     nifResult.nif = _k.nif_nominal;
     if (Number.isFinite(_k.cible_annuelle_idx)) nifResult.revenuCibleFutur = _k.cible_annuelle_idx;
@@ -361,8 +363,7 @@ export function calcNIFFromProfiles(profiles) {
   };
   // ── SOURCE UNIQUE DE VÉRITÉ : les chiffres NIF proviennent du moteur IQPF (clientPayload) ──
   try {
-    const pIQPF = buildPayload(profiles);
-    const k = pIQPF && pIQPF.kpis;
+    const k = _payG && _payG.kpis;
     if (k) {
       if (typeof k.score_nif === "number") resultatNIF.scoreNIF = k.score_nif;
       if (typeof k.cot_supp_mens === "number") resultatNIF.cotSupp = k.cot_supp_mens;
