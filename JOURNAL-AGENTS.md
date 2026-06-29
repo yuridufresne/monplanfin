@@ -19,6 +19,14 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-06-29 18:52 — Claude Code (merges Studio + disclaimer AMF)
+- **Fait (mergé en prod) :**
+  - **#7 Studio** `fix/studio-entitlement-serveur` mergé (`888bc0e`). SQL déjà en base (Cowork), pas relancé.
+  - **#2 Disclaimer AMF** `feat/disclaimer-amf` mergé (`a092313`) : note « pas un conseil personnalisé » en bas de Dashboard / Résumé / Avancé / Immobilier / Protection. Pas sur `/analyse` ni pages publiques.
+  - Conflit `App.tsx` (imports) résolu en gardant les deux features ; lint vert, build OK. Branches supprimées.
+- **→ Pour les autres :** reste la **#3 en-tête dashboard** (`feat/dashboard-header-cleanup`) — pas encore commencée.
+- ⚠️ **Attention :** `App.tsx` contient désormais l'entitlement Studio (RPC) **et** le wrapper `AvecDisclaimer` — en tenir compte pour la #3.
+
 ## 2026-06-29 18:36 — Claude Code (sécu / fiscal / qualité)
 - **Fait (mergé en prod) :**
   - **Fix fiscal majeur** : crédit de conjoint *fantôme* (`calculateFullTax`, `conjointNetIncome=0` par défaut accordait le crédit à toute personne seule). Impôt sous-estimé ~4 577 $/an. Ex. 50 000 $ seul : retenue 525 → **~907 $/mois**. Flag `aConjoint` (défaut false). ⚠️ A fait **baisser revenus nets + NIF** affichés partout — c'est la **correction**, pas une régression.
