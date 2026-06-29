@@ -11,7 +11,7 @@ import Login from '@/pages/Login';
 import ResetPassword from '@/pages/ResetPassword';
 import SeoManager from '@/lib/SeoManager';
 import CookieConsent from '@/components/ui/CookieConsent';
-import { Home, Calculators, Dashboard, Budget, AnalyseABF, FeuilleResume, AdvancedMode, ProtectionAssurance, Immobilier, Conditions, Confidentialite, Methodologie, Contact, AdminDossiers, AdminFeedback, AgentDossiers, AgentDebug, EducationFinanciere } from "./App-pages";
+import { Home, Calculators, Dashboard, Budget, AnalyseABF, FeuilleResume, AdvancedMode, ProtectionAssurance, Immobilier, Conditions, Confidentialite, Methodologie, Contact, AdminDossiers, AdminFeedback, AgentDossiers, EducationFinanciere } from "./App-pages";
 import FinancialPlan from '@/pages/FinancialPlan';
 import Investments from '@/pages/Investments';
 import StudioDecaissement from '@/pages/StudioDecaissement';
@@ -94,7 +94,6 @@ function AuthenticatedApp() {
           <Route path="/admin/dossiers" element={<AdminDossiers />} />
           <Route path="/admin/feedback" element={<AdminFeedback />} />
           <Route path="/agent/dossiers" element={<AgentDossiers />} />
-          <Route path="/agent/debug" element={<AgentDebug />} />
         </Route>
       </Route>
     </Routes>

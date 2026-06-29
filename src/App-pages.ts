@@ -15,6 +15,5 @@ const Contact = lazy(() => import('@/pages/Contact'));
 const AdminDossiers = lazy(() => import('@/pages/AdminDossiers'));
 const AdminFeedback = lazy(() => import('@/pages/AdminFeedback'));
 const AgentDossiers = lazy(() => import('@/pages/AgentDossiers'));
-const AgentDebug = lazy(() => import('@/pages/AgentDebug'));
 const EducationFinanciere = lazy(() => import('@/pages/EducationFinanciere'));
-export { Home, Calculators, Dashboard, Budget, AnalyseABF, FeuilleResume, AdvancedMode, ProtectionAssurance, Immobilier, Conditions, Confidentialite, Methodologie, Contact, AdminDossiers, AdminFeedback, AgentDossiers, AgentDebug, EducationFinanciere };
+export { Home, Calculators, Dashboard, Budget, AnalyseABF, FeuilleResume, AdvancedMode, ProtectionAssurance, Immobilier, Conditions, Confidentialite, Methodologie, Contact, AdminDossiers, AdminFeedback, AgentDossiers, EducationFinanciere };
