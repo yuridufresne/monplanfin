@@ -1,10 +1,29 @@
 import { supabase } from './supabaseClient';
+import * as Sentry from '@sentry/react';
+
+const DEV = (import.meta as unknown as { env?: { DEV?: boolean } }).env?.DEV ?? false;
 
 // NE PAS avaler les erreurs Supabase en silence : une colonne/table absente
-// (ex. schéma migré incomplet) doit être VISIBLE en console, sinon un insert/update
+// (ex. schéma migré incomplet) doit rester traçable, sinon un insert/update
 // échoue sans trace (c'est ce qui a masqué l'assignation/le consentement cassés).
+//
+// - En DEV : console.error (feedback immédiat pendant le dev).
+// - En PROD : capture Sentry (pas de bruit dans la console utilisateur).
+// - En PROD sans Sentry configuré : on RETOMBE sur la console — jamais avaler l'erreur.
 function logErr(op: string, table: string, error: unknown) {
-  if (error) console.error(`[supabase] ${op} ${table}:`, (error as { message?: string })?.message || error);
+  if (!error) return;
+  const msg = (error as { message?: string })?.message || error;
+  if (DEV) {
+    console.error(`[supabase] ${op} ${table}:`, msg);
+    return;
+  }
+  if (Sentry.getClient?.()) {
+    Sentry.captureException(
+      error instanceof Error ? error : new Error(`[supabase] ${op} ${table}: ${String(msg)}`),
+    );
+  } else {
+    console.error(`[supabase] ${op} ${table}:`, msg);
+  }
 }
 
 function makeEntity(table: string) {
