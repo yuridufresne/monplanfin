@@ -19,6 +19,14 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-06-30 (refactor nom) — Cowork (demande Yuri : renommer base44Client)
+- **Contexte :** le nom `src/api/base44Client.ts` prête à confusion (Base44 = ancien éditeur ; l'app est sur **Supabase** maintenant). Yuri ne gère rien chez Base44 — c'est juste un nom historique.
+- **→ Pour Claude Code (branche `refactor/rename-base44client`, pas main, PAS `/analyse`) :**
+  - Renommer `src/api/base44Client.ts` → **`src/api/usersClient.ts`** (ou `supabaseClient.ts` si pas déjà pris).
+  - Mettre à jour **TOUS les imports** (`@/api/base44Client`) dans le repo + les références à l'objet `base44`.
+  - **Refactor cosmétique only** : aucun changement de logique/comportement. `npm run build` + lint verts. Diff avant commit → Preview.
+- ℹ️ Y vit `ADMIN_EMAILS` + `User.list()` (source des agents/admins) — voir aussi la question « vrais agents » (table `agents` Supabase + `type_compte:"agent"`).
+
 ## 📋 2026-06-30 — PASSATION / RESTE À FAIRE (consolidé pour nouvelle session)
 *Référence complète : `conformite/Audit-securite-conformite-2026-06-30.md` (codes S/C/L).*
 
