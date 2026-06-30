@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { base44 } from "@/api/base44Client";
+import { appClient } from "@/api/usersClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Trash2, Edit2, TrendingUp, TrendingDown, DollarSign, LayoutGrid, FileText } from "lucide-react";
@@ -40,28 +40,28 @@ export default function Budget() {
   const qc = useQueryClient();
   const clientCible = new URLSearchParams(window.location.search).get("client");
   const [moi, setMoi] = useState(null);
-  useEffect(() => { base44.auth.me().then(setMoi).catch(() => {}); }, []);
+  useEffect(() => { appClient.auth.me().then(setMoi).catch(() => {}); }, []);
   const modeConseiller = !!clientCible && !!moi && (moi.type_compte === "agent" || moi.role === "admin" || moi.type_compte === "directeur");
   const cible = modeConseiller ? clientCible : moi?.email;
   const filtreCible = (rows) => (rows || []).filter(r => r.created_by === cible || r.client_courriel === cible);
   const champsConseiller = modeConseiller ? { client_courriel: clientCible, agent_courriel: moi?.email } : {};
 
-  const { data: entriesBrutes = [] } = useQuery({ queryKey: ["budgetEntries"], queryFn: () => base44.entities.BudgetEntry.list() });
-  const { data: profilesBruts = [] } = useQuery({ queryKey: ["financialProfiles"], queryFn: () => base44.entities.FinancialProfile.list() });
+  const { data: entriesBrutes = [] } = useQuery({ queryKey: ["budgetEntries"], queryFn: () => appClient.entities.BudgetEntry.list() });
+  const { data: profilesBruts = [] } = useQuery({ queryKey: ["financialProfiles"], queryFn: () => appClient.entities.FinancialProfile.list() });
   const entries = useMemo(() => filtreCible(entriesBrutes), [entriesBrutes, cible]);
   const profiles = useMemo(() => filtreCible(profilesBruts), [profilesBruts, cible]);
-  const deleteMutation = useMutation({ mutationFn: (id) => base44.entities.BudgetEntry.delete(id), onSuccess: () => qc.invalidateQueries({ queryKey: ["budgetEntries"] }) });
+  const deleteMutation = useMutation({ mutationFn: (id) => appClient.entities.BudgetEntry.delete(id), onSuccess: () => qc.invalidateQueries({ queryKey: ["budgetEntries"] }) });
 
   const handleSaveEntry = async (form) => {
     if (editing) {
-      await base44.entities.BudgetEntry.update(editing.id, form);
+      await appClient.entities.BudgetEntry.update(editing.id, form);
     } else {
       // Vérifier si une entrée avec ce label existe déjà pour éviter les doublons
       const existing = entries.find(e => e.label === form.label && e.type === form.type);
       if (existing) {
-        await base44.entities.BudgetEntry.update(existing.id, form);
+        await appClient.entities.BudgetEntry.update(existing.id, form);
       } else {
-        await base44.entities.BudgetEntry.create({ ...form, ...champsConseiller });
+        await appClient.entities.BudgetEntry.create({ ...form, ...champsConseiller });
       }
     }
     qc.invalidateQueries({ queryKey: ["budgetEntries"] });
@@ -69,7 +69,7 @@ export default function Budget() {
     setEditing(null);
     // Sync si c'est un revenu
     if (form.type === "revenu") {
-      const allEntries = filtreCible(await base44.entities.BudgetEntry.filter({ type: "revenu" }));
+      const allEntries = filtreCible(await appClient.entities.BudgetEntry.filter({ type: "revenu" }));
       await syncBudgetRevenuToABF(allEntries);
     }
   };

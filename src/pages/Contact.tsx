@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { appClient } from "@/api/usersClient";
 import { ArrowLeft, Mail, Shield, Send, Check } from "lucide-react";
 import { EMAIL_CONTACT, EMAIL_CONFIDENTIALITE } from "@/lib/constants";
 
@@ -35,7 +35,7 @@ export default function Contact() {
     setSending(true);
     setError("");
     try {
-      await base44.entities.ContactMessage.create({ ...form, statut: "nouveau" });
+      await appClient.entities.ContactMessage.create({ ...form, statut: "nouveau" });
       setSent(true);
     } catch (err) {
       setError("Une erreur est survenue. Veuillez réessayer ou nous écrire directement.");

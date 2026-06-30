@@ -45,7 +45,7 @@ const meAsync = async () => {
   return mapUser(data.session?.user);
 };
 
-export const base44 = {
+export const appClient = {
   auth: {
     me: meAsync,
     logout: () => supabase.auth.signOut(),

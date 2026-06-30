@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { appClient } from "@/api/usersClient";
 import { MessageSquarePlus, X, Bug, Lightbulb, HelpCircle, Heart, MoreHorizontal, Send, Check } from "lucide-react";
 
 /**
@@ -55,7 +55,7 @@ export default function BetaFeedbackButton({ user }) {
     if (!canSubmit) { setError("Veuillez remplir au moins le type, votre rôle, et un message d'au moins 5 caractères."); return; }
     setSending(true); setError("");
     try {
-      await base44.entities.BetaFeedback.create({
+      await appClient.entities.BetaFeedback.create({
         type_feedback: type,
         severite: type === "bug" ? (severite || "na") : "na",
         type_utilisateur: qui,

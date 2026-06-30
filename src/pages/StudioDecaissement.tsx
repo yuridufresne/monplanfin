@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import InfoTooltip from "@/components/ui/InfoTooltip";
 import { useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { appClient } from "@/api/usersClient";
 import { buildPayload, IQPF } from "@/lib/clientPayload";
 import { comparerStrategies } from "@/lib/moteurStrategies";
 import { projeterSoldesRetraite } from "@/lib/moteurDecaissement";
@@ -29,12 +29,12 @@ const COL = {
 export default function StudioDecaissement({ embedded = false, profiles: profilesProp = [] }) {
   const { data: profilesQuery = [] } = useQuery({
     queryKey: ["financialProfiles"],
-    queryFn: () => base44.entities.FinancialProfile.list(),
+    queryFn: () => appClient.entities.FinancialProfile.list(),
     enabled: !embedded,
   });
   const clientCible = new URLSearchParams(window.location.search).get("client");
   const [moi, setMoi] = useState(null);
-  useEffect(() => { base44.auth.me().then(setMoi).catch(() => {}); }, []);
+  useEffect(() => { appClient.auth.me().then(setMoi).catch(() => {}); }, []);
   const modeConseiller = !!clientCible && !!moi && (moi.type_compte === "agent" || moi.role === "admin" || moi.type_compte === "directeur");
   const courrielCible = modeConseiller ? clientCible : moi?.email;
   const filtreCible = (rows) => (rows || []).filter(r => r.created_by === courrielCible || r.client_courriel === courrielCible);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Outlet } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { appClient } from "@/api/usersClient";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import BetaIndicator from "./BetaIndicator";
@@ -9,7 +9,7 @@ import BetaFeedbackButton from "@/components/feedback/BetaFeedbackButton";
 export default function AppLayout() {
   const [user, setUser] = useState(null);
   useEffect(() => {
-    base44.auth.me().then(setUser).catch(() => setUser(null));
+    appClient.auth.me().then(setUser).catch(() => setUser(null));
   }, []);
 
   return (

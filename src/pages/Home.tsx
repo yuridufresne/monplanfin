@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { appClient } from "@/api/usersClient";
 import { ArrowRight, Sparkles, Shield, Lock, Clock3, CheckCircle2 } from "lucide-react";
 import SoftWall from "@/components/SoftWall";
 import FeatureScroll from "@/components/home/FeatureScroll";
@@ -54,7 +54,7 @@ export default function Home() {
   // Si déjà connecté → rediriger automatiquement vers le dashboard
   const [verifAuth, setVerifAuth] = useState(true);
   useEffect(() => {
-    base44.auth.me().then((user) => {
+    appClient.auth.me().then((user) => {
       if (user) { navigate(routeAccueil(user), { replace: true }); } else { setVerifAuth(false); }
     }).catch(() => setVerifAuth(false));
   }, [navigate]);

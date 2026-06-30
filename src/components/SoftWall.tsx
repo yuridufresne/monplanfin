@@ -1,6 +1,6 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { appClient } from "@/api/usersClient";
 import { X, Sparkles, ArrowRight } from "lucide-react";
 
 export default function SoftWall({ isOpen, onClose }) {
@@ -87,7 +87,7 @@ export default function SoftWall({ isOpen, onClose }) {
 
                 {/* CTAs */}
                 <button
-                  onClick={() => base44.auth.redirectToLogin()}
+                  onClick={() => appClient.auth.redirectToLogin()}
                   className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-xl font-semibold text-[14px] transition-all duration-200 mb-3"
                   style={{ background: "#C9A063", color: "#050810" }}
                 >
@@ -95,7 +95,7 @@ export default function SoftWall({ isOpen, onClose }) {
                   <ArrowRight className="w-4 h-4" />
                 </button>
                 <button
-                  onClick={() => base44.auth.redirectToLogin()}
+                  onClick={() => appClient.auth.redirectToLogin()}
                   className="w-full py-3 rounded-xl text-[13.5px] font-medium text-white/50 hover:text-white/80 transition-colors"
                 >
                   J'ai déjà un compte — Connexion

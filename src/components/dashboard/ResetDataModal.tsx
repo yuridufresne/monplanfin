@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { appClient } from "@/api/usersClient";
 import { X, AlertTriangle } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -14,19 +14,19 @@ export default function ResetDataModal({ onClose }) {
 
     // Fetch all and delete
     const [budgets, debts, investments, goals, profiles] = await Promise.all([
-      base44.entities.BudgetEntry.list(),
-      base44.entities.Debt.list(),
-      base44.entities.Investment.list(),
-      base44.entities.FinancialGoal.list(),
-      base44.entities.FinancialProfile.list(),
+      appClient.entities.BudgetEntry.list(),
+      appClient.entities.Debt.list(),
+      appClient.entities.Investment.list(),
+      appClient.entities.FinancialGoal.list(),
+      appClient.entities.FinancialProfile.list(),
     ]);
 
     await Promise.all([
-      ...budgets.map(e => base44.entities.BudgetEntry.delete(e.id)),
-      ...debts.map(e => base44.entities.Debt.delete(e.id)),
-      ...investments.map(e => base44.entities.Investment.delete(e.id)),
-      ...goals.map(e => base44.entities.FinancialGoal.delete(e.id)),
-      ...profiles.map(e => base44.entities.FinancialProfile.delete(e.id)),
+      ...budgets.map(e => appClient.entities.BudgetEntry.delete(e.id)),
+      ...debts.map(e => appClient.entities.Debt.delete(e.id)),
+      ...investments.map(e => appClient.entities.Investment.delete(e.id)),
+      ...goals.map(e => appClient.entities.FinancialGoal.delete(e.id)),
+      ...profiles.map(e => appClient.entities.FinancialProfile.delete(e.id)),
     ]);
 
     qc.invalidateQueries();

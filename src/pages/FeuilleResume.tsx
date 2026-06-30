@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { appClient } from "@/api/usersClient";
 import {
   TrendingUp, TrendingDown, DollarSign, Shield, Target, AlertTriangle,
   BarChart3, FileText, ChevronDown, Baby, Pencil, Check as CheckIcon
@@ -212,11 +212,11 @@ export default function FeuilleResume() {
   const [modeConseiller, setModeConseiller] = useState(false);
   useEffect(() => {
     Promise.all([
-      base44.entities.FinancialProfile.list(),
-      base44.entities.BudgetEntry.list(),
-      base44.entities.Debt.list(),
-      base44.entities.Investment.list(),
-      base44.auth.me().catch(() => null),
+      appClient.entities.FinancialProfile.list(),
+      appClient.entities.BudgetEntry.list(),
+      appClient.entities.Debt.list(),
+      appClient.entities.Investment.list(),
+      appClient.auth.me().catch(() => null),
     ]).then(([p, b, d, i, u]) => {
       const estConseiller = !!clientCible && !!u && (u.type_compte === "agent" || u.role === "admin" || u.type_compte === "directeur");
       const cible = estConseiller ? clientCible : (u ? u.email : null);

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { appClient } from "@/api/usersClient";
 import { X, Sparkles, CheckCircle2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -17,7 +17,7 @@ export default function BankImport({ onClose, onSaved }) {
   const handleAnalyze = async () => {
     if (!text.trim()) return;
     setLoading(true);
-    const result = await base44.integrations.Core.InvokeLLM({
+    const result = await appClient.integrations.Core.InvokeLLM({
       prompt: `Voici un relevé bancaire ou une liste de transactions. Extrais toutes les transactions et catégorise-les.
 Pour chaque transaction, détermine si c'est un "revenu" ou une "depense", assigne une catégorie parmi: logement, transport, alimentation, services_publics, assurances, sante, loisirs, vetements, education, epargne, dettes, divers.
 Retourne un tableau JSON de transactions.
@@ -67,7 +67,7 @@ ${text}`,
       is_fixed: false,
     }));
     if (toSave.length > 0) {
-      await base44.entities.BudgetEntry.bulkCreate(toSave);
+      await appClient.entities.BudgetEntry.bulkCreate(toSave);
       qc.invalidateQueries({ queryKey: ["budgetEntries"] });
     }
     setSaving(false);

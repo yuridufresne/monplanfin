@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { appClient } from "@/api/usersClient";
 import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/lib/AuthContext";
 import { clearConsent } from "@/lib/consent";
@@ -307,8 +307,8 @@ export default function Dashboard() {
     if (!user?.email) return;
     if (typeof window !== "undefined" && !window.confirm("Révoquer votre consentement ? Vous devrez le redonner pour continuer à utiliser votre dossier.")) return;
     try {
-      const consents = (await base44.entities.UserConsent.filter({ created_by: user.email })) || [];
-      await Promise.all(consents.map((c) => base44.entities.UserConsent.update(c.id, { revoque: true })));
+      const consents = (await appClient.entities.UserConsent.filter({ created_by: user.email })) || [];
+      await Promise.all(consents.map((c) => appClient.entities.UserConsent.update(c.id, { revoque: true })));
     } catch (e) { console.error("Révocation consentement:", e); }
     if (typeof window !== "undefined") window.location.reload();
   };
@@ -326,14 +326,14 @@ export default function Dashboard() {
     const email = user?.email;
     if (!email) return;
     const tables: Record<string, { filter: (q: Record<string, unknown>) => Promise<unknown[]> }> = {
-      profils_financiers: base44.entities.FinancialProfile,
-      dettes: base44.entities.Debt,
-      budget: base44.entities.BudgetEntry,
-      placements: base44.entities.Investment,
-      objectifs: base44.entities.FinancialGoal,
-      consentements: base44.entities.UserConsent,
-      progression_education: base44.entities.EducationProgress,
-      dossiers_soumis: base44.entities.LeadDossier,
+      profils_financiers: appClient.entities.FinancialProfile,
+      dettes: appClient.entities.Debt,
+      budget: appClient.entities.BudgetEntry,
+      placements: appClient.entities.Investment,
+      objectifs: appClient.entities.FinancialGoal,
+      consentements: appClient.entities.UserConsent,
+      progression_education: appClient.entities.EducationProgress,
+      dossiers_soumis: appClient.entities.LeadDossier,
     };
     try {
       const donnees: Record<string, unknown[]> = {};
@@ -361,14 +361,14 @@ export default function Dashboard() {
       try { const { error } = await supabase.rpc("delete_my_account"); serveurOk = !error; } catch { serveurOk = false; }
       if (!serveurOk) {
         // Repli : effacer les données possédées (le shell auth reste à purger côté serveur via la RPC).
-        const ents = [base44.entities.FinancialProfile, base44.entities.Debt, base44.entities.BudgetEntry, base44.entities.Investment, base44.entities.FinancialGoal, base44.entities.UserConsent, base44.entities.EducationProgress, base44.entities.LeadDossier];
+        const ents = [appClient.entities.FinancialProfile, appClient.entities.Debt, appClient.entities.BudgetEntry, appClient.entities.Investment, appClient.entities.FinancialGoal, appClient.entities.UserConsent, appClient.entities.EducationProgress, appClient.entities.LeadDossier];
         for (const ent of ents) {
           const rows = (await ent.filter({ created_by: email })) || [];
           await Promise.all(rows.map((r) => ent.delete((r as { id: string }).id)));
         }
       }
     } catch (e) { console.error("Suppression compte:", e); }
-    try { await base44.auth.logout(); } catch { /* noop */ }
+    try { await appClient.auth.logout(); } catch { /* noop */ }
     clearConsent();
     if (typeof window !== "undefined") window.location.href = "/";
   };
@@ -391,11 +391,11 @@ export default function Dashboard() {
   const cible = modeConseiller ? clientCible : user?.email;
   const filtreCible = (rows) => (rows || []).filter(r => r.created_by === cible || r.client_courriel === cible);
 
-  const { data: budgetEntriesBruts = [] } = useQuery({ queryKey: ["budgetEntries"], queryFn: () => base44.entities.BudgetEntry.list(), enabled: synced });
-  const { data: investmentsBruts = [] } = useQuery({ queryKey: ["investments"], queryFn: () => base44.entities.Investment.list(), enabled: synced });
-  const { data: debtsBruts = [] } = useQuery({ queryKey: ["debts"], queryFn: () => base44.entities.Debt.list(), enabled: synced });
-  const { data: goalsBruts = [] } = useQuery({ queryKey: ["goals"], queryFn: () => base44.entities.FinancialGoal.list(), enabled: synced });
-  const { data: profilesBruts = [] } = useQuery({ queryKey: ["financialProfiles"], queryFn: () => base44.entities.FinancialProfile.list(), enabled: synced });
+  const { data: budgetEntriesBruts = [] } = useQuery({ queryKey: ["budgetEntries"], queryFn: () => appClient.entities.BudgetEntry.list(), enabled: synced });
+  const { data: investmentsBruts = [] } = useQuery({ queryKey: ["investments"], queryFn: () => appClient.entities.Investment.list(), enabled: synced });
+  const { data: debtsBruts = [] } = useQuery({ queryKey: ["debts"], queryFn: () => appClient.entities.Debt.list(), enabled: synced });
+  const { data: goalsBruts = [] } = useQuery({ queryKey: ["goals"], queryFn: () => appClient.entities.FinancialGoal.list(), enabled: synced });
+  const { data: profilesBruts = [] } = useQuery({ queryKey: ["financialProfiles"], queryFn: () => appClient.entities.FinancialProfile.list(), enabled: synced });
 
   const budgetEntries = useMemo(() => filtreCible(budgetEntriesBruts), [budgetEntriesBruts, cible]);
   const investments = useMemo(() => filtreCible(investmentsBruts), [investmentsBruts, cible]);

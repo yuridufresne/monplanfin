@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { appClient } from "@/api/usersClient";
 import { Shield, Check, Lock, Eye, EyeOff } from "lucide-react";
 import { EMAIL_CONTACT, EMAIL_CONFIDENTIALITE, EXPLOITANT, RPRP_NOM } from "@/lib/constants";
 
@@ -298,7 +298,7 @@ export default function ConsentGate({ children, userEmail, userName }) {
   // Vérifier si le user a déjà donné son consentement
   useEffect(() => {
     if (!userEmail) return;
-    base44.entities.UserConsent
+    appClient.entities.UserConsent
       .filter({ created_by: userEmail })
       .then(consents => {
         const valid = (consents || []).find(c => c.accepted === true && c.revoque !== true);
@@ -315,7 +315,7 @@ export default function ConsentGate({ children, userEmail, userName }) {
     if (!accepted) return;
     setSubmitting(true);
     try {
-      await base44.entities.UserConsent.create({
+      await appClient.entities.UserConsent.create({
         user_email: userEmail,
         user_nom: userName || "",
         consent_version: CONSENT_VERSION,

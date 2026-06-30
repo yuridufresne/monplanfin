@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Check, Moon, Sun } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { appClient } from "@/api/usersClient";
 import { useAuth } from "@/lib/AuthContext";
 import PortraitBandeau from "@/components/abf/wizard/PortraitBandeau";
 import { PHASES, STEPS, TOTAL_STEPS, TITRES, phaseOf, aConjoint } from "@/components/abf/wizard/abfWizardModel";
@@ -56,7 +56,7 @@ function StepPlaceholder({ step }: { step: Step }) {
 
 
 export default function AnalyseABF() {
-  useAuth(); // garantit le contexte d'auth (session) ; l'identité vient de base44.auth.me()
+  useAuth(); // garantit le contexte d'auth (session) ; l'identité vient de appClient.auth.me()
   const [stepData, setStepData] = useState<StepData>({});
   const [current, setCurrent] = useState(1); // 1-based
   const [done, setDone] = useState(false);
@@ -79,7 +79,7 @@ export default function AnalyseABF() {
     let annule = false;
     (async () => {
       try {
-        const rows = (await base44.entities.FinancialProfile.list()) || [];
+        const rows = (await appClient.entities.FinancialProfile.list()) || [];
         if (annule || rows.length === 0) return;
         const dict: StepData = {};
         rows.forEach((r: { section?: string; data?: { data?: SectionData } & SectionData }) => {
@@ -98,9 +98,9 @@ export default function AnalyseABF() {
     setSaveStatus("saving");
     const t = setTimeout(async () => {
       try {
-        const existing = ((await base44.entities.FinancialProfile.filter({ section: step.key })) || []);
-        if (existing.length > 0) await base44.entities.FinancialProfile.update(existing[0].id, { data: sectionData });
-        else await base44.entities.FinancialProfile.create({ section: step.key, data: sectionData, completed: false });
+        const existing = ((await appClient.entities.FinancialProfile.filter({ section: step.key })) || []);
+        if (existing.length > 0) await appClient.entities.FinancialProfile.update(existing[0].id, { data: sectionData });
+        else await appClient.entities.FinancialProfile.create({ section: step.key, data: sectionData, completed: false });
         queryClient.invalidateQueries({ queryKey: ["financialProfiles"] });
         setSaveStatus("saved");
         setTimeout(() => setSaveStatus("idle"), 2000);

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { appClient } from "@/api/usersClient";
 import { useAuth } from "@/lib/AuthContext";
 import { ArrowLeft, Bug, Lightbulb, HelpCircle, Heart, MoreHorizontal, Lock, MessageSquarePlus, Search, ChevronDown, ChevronUp, Calendar } from "lucide-react";
 
@@ -55,7 +55,7 @@ export default function AdminFeedback() {
   const refresh = async () => {
     try {
       setLoading(true);
-      const items = await base44.entities.BetaFeedback.list("-created_date");
+      const items = await appClient.entities.BetaFeedback.list("-created_date");
       setList(Array.isArray(items) ? items : []);
     } catch (e) { console.error(e); } finally { setLoading(false); }
   };
@@ -83,11 +83,11 @@ export default function AdminFeedback() {
   }), [list, filterType, filterStatut, search]);
 
   const changerStatut = async (id, newStatut) => {
-    try { await base44.entities.BetaFeedback.update(id, { statut: newStatut }); await refresh(); } catch (e) { console.error(e); }
+    try { await appClient.entities.BetaFeedback.update(id, { statut: newStatut }); await refresh(); } catch (e) { console.error(e); }
   };
 
   const sauverNote = async (id, notes_admin) => {
-    try { await base44.entities.BetaFeedback.update(id, { notes_admin }); await refresh(); } catch (e) { console.error(e); }
+    try { await appClient.entities.BetaFeedback.update(id, { notes_admin }); await refresh(); } catch (e) { console.error(e); }
   };
 
   if (isLoadingAuth || (user && user.role !== "admin")) {

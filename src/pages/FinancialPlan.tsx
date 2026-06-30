@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { base44 } from "@/api/base44Client";
+import { appClient } from "@/api/usersClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
@@ -62,26 +62,26 @@ export default function FinancialPlan() {
 
   const clientCible = new URLSearchParams(window.location.search).get("client");
   const [moi, setMoi] = useState(null);
-  useEffect(() => { base44.auth.me().then(setMoi).catch(() => {}); }, []);
+  useEffect(() => { appClient.auth.me().then(setMoi).catch(() => {}); }, []);
   const modeConseiller = !!clientCible && !!moi && (moi.type_compte === "agent" || moi.role === "admin" || moi.type_compte === "directeur");
   const cible = modeConseiller ? clientCible : moi?.email;
   const filtreCible = (rows) => (rows || []).filter(r => r.created_by === cible || r.client_courriel === cible);
-  const { data: budgetEntriesBruts = [] } = useQuery({ queryKey: ["budgetEntries"], queryFn: () => base44.entities.BudgetEntry.list() });
-  const { data: investmentsBruts = [] } = useQuery({ queryKey: ["investments"], queryFn: () => base44.entities.Investment.list() });
-  const { data: debtsBruts = [] } = useQuery({ queryKey: ["debts"], queryFn: () => base44.entities.Debt.list() });
-  const { data: goalsBruts = [] } = useQuery({ queryKey: ["goals"], queryFn: () => base44.entities.FinancialGoal.list() });
+  const { data: budgetEntriesBruts = [] } = useQuery({ queryKey: ["budgetEntries"], queryFn: () => appClient.entities.BudgetEntry.list() });
+  const { data: investmentsBruts = [] } = useQuery({ queryKey: ["investments"], queryFn: () => appClient.entities.Investment.list() });
+  const { data: debtsBruts = [] } = useQuery({ queryKey: ["debts"], queryFn: () => appClient.entities.Debt.list() });
+  const { data: goalsBruts = [] } = useQuery({ queryKey: ["goals"], queryFn: () => appClient.entities.FinancialGoal.list() });
   const budgetEntries = useMemo(() => filtreCible(budgetEntriesBruts), [budgetEntriesBruts, cible]);
   const investments = useMemo(() => filtreCible(investmentsBruts), [investmentsBruts, cible]);
   const debts = useMemo(() => filtreCible(debtsBruts), [debtsBruts, cible]);
   const goals = useMemo(() => filtreCible(goalsBruts), [goalsBruts, cible]);
 
-  const goalCreate = useMutation({ mutationFn: (d) => base44.entities.FinancialGoal.create(d), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["goals"] }); setShowGoalForm(false); } });
-  const goalUpdate = useMutation({ mutationFn: ({ id, data }) => base44.entities.FinancialGoal.update(id, data), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["goals"] }); setEditGoal(null); } });
-  const goalDelete = useMutation({ mutationFn: (id) => base44.entities.FinancialGoal.delete(id), onSuccess: () => queryClient.invalidateQueries({ queryKey: ["goals"] }) });
+  const goalCreate = useMutation({ mutationFn: (d) => appClient.entities.FinancialGoal.create(d), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["goals"] }); setShowGoalForm(false); } });
+  const goalUpdate = useMutation({ mutationFn: ({ id, data }) => appClient.entities.FinancialGoal.update(id, data), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["goals"] }); setEditGoal(null); } });
+  const goalDelete = useMutation({ mutationFn: (id) => appClient.entities.FinancialGoal.delete(id), onSuccess: () => queryClient.invalidateQueries({ queryKey: ["goals"] }) });
 
-  const debtCreate = useMutation({ mutationFn: (d) => base44.entities.Debt.create(d), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["debts"] }); setShowDebtForm(false); } });
-  const debtUpdate = useMutation({ mutationFn: ({ id, data }) => base44.entities.Debt.update(id, data), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["debts"] }); setEditDebt(null); } });
-  const debtDelete = useMutation({ mutationFn: (id) => base44.entities.Debt.delete(id), onSuccess: () => queryClient.invalidateQueries({ queryKey: ["debts"] }) });
+  const debtCreate = useMutation({ mutationFn: (d) => appClient.entities.Debt.create(d), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["debts"] }); setShowDebtForm(false); } });
+  const debtUpdate = useMutation({ mutationFn: ({ id, data }) => appClient.entities.Debt.update(id, data), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["debts"] }); setEditDebt(null); } });
+  const debtDelete = useMutation({ mutationFn: (id) => appClient.entities.Debt.delete(id), onSuccess: () => queryClient.invalidateQueries({ queryKey: ["debts"] }) });
 
   const totalAssets = investments.reduce((s, i) => s + (i.current_value || 0), 0);
   const totalDebt = debts.reduce((s, d) => s + (d.balance || 0), 0);

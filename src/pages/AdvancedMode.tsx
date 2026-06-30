@@ -3,7 +3,7 @@ import { IQPF, nifMoyenne, buildPayload, facteurRRQ, facteurPSV } from "@/lib/cl
 import { calcEpargne } from "@/lib/calcRevenuNet";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { appClient } from "@/api/usersClient";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, TrendingUp, Sliders, GitBranch } from "lucide-react";
 import ReerLevierSimulator from "@/components/dashboard/ReerLevierSimulator";
@@ -446,8 +446,8 @@ function PierreTroisCoups() {
 }
 
 export default function AdvancedMode() {
-  const { data: profiles = [] } = useQuery({ queryKey: ["financialProfiles"], queryFn: () => base44.entities.FinancialProfile.list() });
-  const { data: debts = [] } = useQuery({ queryKey: ["debts"], queryFn: () => base44.entities.Debt.list() });
+  const { data: profiles = [] } = useQuery({ queryKey: ["financialProfiles"], queryFn: () => appClient.entities.FinancialProfile.list() });
+  const { data: debts = [] } = useQuery({ queryKey: ["debts"], queryFn: () => appClient.entities.Debt.list() });
 
   const [activeTab, setActiveTab] = useState("scenarios");
 

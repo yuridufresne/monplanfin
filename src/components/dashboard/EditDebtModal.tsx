@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { appClient } from "@/api/usersClient";
 import { X } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -42,9 +42,9 @@ export default function EditDebtModal({ debt, onClose, onSaved }) {
       minimum_payment: parseFloat(form.minimum_payment) || 0,
     };
     if (debt?.id) {
-      await base44.entities.Debt.update(debt.id, data);
+      await appClient.entities.Debt.update(debt.id, data);
     } else {
-      await base44.entities.Debt.create(data);
+      await appClient.entities.Debt.create(data);
     }
     qc.invalidateQueries({ queryKey: ["debts"] });
     setSaving(false);
@@ -54,7 +54,7 @@ export default function EditDebtModal({ debt, onClose, onSaved }) {
 
   const handleDelete = async () => {
     if (!debt?.id) return;
-    await base44.entities.Debt.delete(debt.id);
+    await appClient.entities.Debt.delete(debt.id);
     qc.invalidateQueries({ queryKey: ["debts"] });
     onClose();
   };

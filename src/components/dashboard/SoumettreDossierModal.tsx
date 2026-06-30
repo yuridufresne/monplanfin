@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { appClient } from "@/api/usersClient";
 import { X, Check, Send, Shield, Phone, Mail, MessageSquare, Video } from "lucide-react";
 
 /**
@@ -107,15 +107,15 @@ export default function SoumettreDossierModal({ onClose, profiles, user }) {
 
       // Upsert : chercher un dossier existant pour ce user
       const userEmail = user?.email || clientCourriel;
-      const myDossiers = await base44.entities.LeadDossier.list();
+      const myDossiers = await appClient.entities.LeadDossier.list();
       const existing = (myDossiers || []).find(d => d.created_by === userEmail);
 
       if (existing) {
         // Le client resoumet → on met à jour l'existant (pas de doublon)
-        await base44.entities.LeadDossier.update(existing.id, data);
+        await appClient.entities.LeadDossier.update(existing.id, data);
       } else {
         // Première soumission → on crée
-        await base44.entities.LeadDossier.create(data);
+        await appClient.entities.LeadDossier.create(data);
       }
       setSent(true);
     } catch (e) {

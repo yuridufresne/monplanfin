@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { appClient } from "@/api/usersClient";
 import { X, Search, Loader2, Sparkles } from "lucide-react";
 
 const ACCOUNT_TYPES = { celi: "CELI", reer: "REER", reee: "REEE", non_enregistre: "Non enregistré", autre: "Autre" };
@@ -81,7 +81,7 @@ export default function InvestmentForm({ investment, onClose, onSaved }) {
       setFetchingPrice(true);
       setPriceHint(null);
       try {
-        const res = await base44.functions.invoke("getStockPrice", { symbol: form.symbol, date: form.purchase_date });
+        const res = await appClient.functions.invoke("getStockPrice", { symbol: form.symbol, date: form.purchase_date });
         const price = res.data?.price;
         if (price) {
           setPriceHint(price);
@@ -103,8 +103,8 @@ export default function InvestmentForm({ investment, onClose, onSaved }) {
       current_value: (parseFloat(form.current_price) || parseFloat(form.purchase_price) || 0) * (parseFloat(form.quantity) || 0),
       ai_metadata: form.ai_metadata || generateAiMetadata(form.asset_name, form.symbol, form.asset_type),
     };
-    if (investment) await base44.entities.Investment.update(investment.id, data);
-    else await base44.entities.Investment.create(data);
+    if (investment) await appClient.entities.Investment.update(investment.id, data);
+    else await appClient.entities.Investment.create(data);
     onSaved();
   };
 

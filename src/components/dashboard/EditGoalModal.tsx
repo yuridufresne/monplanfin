@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { appClient } from "@/api/usersClient";
 import { X } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -40,9 +40,9 @@ export default function EditGoalModal({ goal, onClose }) {
       priority: form.priority,
     };
     if (goal?.id) {
-      await base44.entities.FinancialGoal.update(goal.id, data);
+      await appClient.entities.FinancialGoal.update(goal.id, data);
     } else {
-      await base44.entities.FinancialGoal.create(data);
+      await appClient.entities.FinancialGoal.create(data);
     }
     qc.invalidateQueries({ queryKey: ["goals"] });
     setSaving(false);
@@ -51,7 +51,7 @@ export default function EditGoalModal({ goal, onClose }) {
 
   const handleDelete = async () => {
     if (!goal?.id) return;
-    await base44.entities.FinancialGoal.delete(goal.id);
+    await appClient.entities.FinancialGoal.delete(goal.id);
     qc.invalidateQueries({ queryKey: ["goals"] });
     onClose();
   };

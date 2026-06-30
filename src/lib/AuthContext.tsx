@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { supabase } from '@/api/supabaseClient';
-import { mapUser, type AppUser } from '@/api/base44Client';
+import { mapUser, type AppUser } from '@/api/usersClient';
 
 type SignUpResult = ReturnType<typeof supabase.auth.signUp>;
 type SignInResult = ReturnType<typeof supabase.auth.signInWithPassword>;

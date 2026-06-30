@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { appClient } from "@/api/usersClient";
 import { useAuth } from "@/lib/AuthContext";
 import { ArrowLeft, Users, Clock, CheckCircle2, Mail, Phone, MessageSquare, Video, Search, ChevronDown, ChevronUp, Lock, FileText, Calendar, UserCheck } from "lucide-react";
 import { chargerAgents, assignerDossier, desassignerDossier } from "@/lib/assignation";
@@ -108,7 +108,7 @@ export default function AdminDossiers() {
   const refresh = async () => {
     try {
       setLoading(true);
-      const list = await base44.entities.LeadDossier.list("-updated_date");
+      const list = await appClient.entities.LeadDossier.list("-updated_date");
       setDossiers(Array.isArray(list) ? list : []);
     } catch (e) {
       console.error("Erreur chargement dossiers:", e);
@@ -144,7 +144,7 @@ export default function AdminDossiers() {
 
   const changerStatut = async (id, nouveauStatut) => {
     try {
-      await base44.entities.LeadDossier.update(id, { statut: nouveauStatut });
+      await appClient.entities.LeadDossier.update(id, { statut: nouveauStatut });
       await refresh();
     } catch (e) {
       console.error("Erreur changement statut:", e);
@@ -153,7 +153,7 @@ export default function AdminDossiers() {
 
   const sauverNote = async (id, notes_internes) => {
     try {
-      await base44.entities.LeadDossier.update(id, { notes_internes });
+      await appClient.entities.LeadDossier.update(id, { notes_internes });
       await refresh();
     } catch (e) {
       console.error("Erreur sauvegarde note:", e);

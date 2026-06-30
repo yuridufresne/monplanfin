@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { appClient } from "@/api/usersClient";
 import { X, Sparkles, Check, AlertCircle, Loader2 } from "lucide-react";
 
 const CATEGORIES = ["logement","transport","alimentation","services_publics","assurances","sante","loisirs","vetements","education","epargne","dettes","divers"];
@@ -23,7 +23,7 @@ export default function BudgetImport({ onClose, onSaved }) {
     setLoading(true);
     setError(null);
     try {
-      const result = await base44.integrations.Core.InvokeLLM({
+      const result = await appClient.integrations.Core.InvokeLLM({
         prompt: `Tu es un assistant financier. Analyse ce texte qui représente des transactions bancaires ou une liste de revenus/dépenses et extrais chaque entrée en JSON.
 
 Pour chaque entrée, détermine :
@@ -70,7 +70,7 @@ Retourne un objet JSON avec une clé "entries" contenant un tableau.`,
   const saveAll = async () => {
     setSaving(true);
     const toSave = parsed.filter(e => !e._skip);
-    await Promise.all(toSave.map(e => base44.entities.BudgetEntry.create({
+    await Promise.all(toSave.map(e => appClient.entities.BudgetEntry.create({
       label: e.label,
       amount: e.amount,
       type: e.type,

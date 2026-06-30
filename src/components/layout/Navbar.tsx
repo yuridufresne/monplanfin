@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { base44 } from "@/api/base44Client";
+import { appClient } from "@/api/usersClient";
 import { Menu, LogOut, ChevronRight, ChevronDown, Briefcase } from "lucide-react";
 import BrandIcon from "@/components/BrandIcon";
 
@@ -40,12 +40,12 @@ export default function Navbar() {
   const [user, setUser] = useState(null);
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const deconnexion = async () => { try { await base44.auth.logout(); } catch (e) {} window.location.href = "/"; };
+  const deconnexion = async () => { try { await appClient.auth.logout(); } catch (e) {} window.location.href = "/"; };
 
   useEffect(() => {
-    base44.auth.isAuthenticated().then(async (authed) => {
+    appClient.auth.isAuthenticated().then(async (authed) => {
       setIsAuthenticated(authed);
-      if (authed) { const me = await base44.auth.me(); setUser(me); }
+      if (authed) { const me = await appClient.auth.me(); setUser(me); }
     });
     const onScroll = () => setScrolled(window.scrollY > 12);
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -152,8 +152,8 @@ export default function Navbar() {
               </div>
             ) : (
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <button onClick={() => base44.auth.redirectToLogin()} style={{ padding: "8px 16px", fontSize: 13.5, fontWeight: 500, color: "rgba(148,163,184,0.75)", background: "none", border: "none", cursor: "pointer", borderRadius: 10 }}>Connexion</button>
-                <button onClick={() => base44.auth.redirectToLogin()} style={{
+                <button onClick={() => appClient.auth.redirectToLogin()} style={{ padding: "8px 16px", fontSize: 13.5, fontWeight: 500, color: "rgba(148,163,184,0.75)", background: "none", border: "none", cursor: "pointer", borderRadius: 10 }}>Connexion</button>
+                <button onClick={() => appClient.auth.redirectToLogin()} style={{
                   padding: "9px 20px", fontSize: 13.5, fontWeight: 700, cursor: "pointer", borderRadius: 12,
                   background: "linear-gradient(135deg, #C9A063, #e6c07a)",
                   color: "#050810", border: "none",
@@ -249,7 +249,7 @@ export default function Navbar() {
                       <LogOut style={{ width: 15, height: 15 }} /> Déconnexion
                     </button>
                   ) : (
-                    <button onClick={() => { base44.auth.redirectToLogin(); setOpen(false); }} style={{ width: "100%", padding: "12px 0", fontSize: 14, fontWeight: 700, borderRadius: 14, background: "linear-gradient(135deg, #C9A063, #e6c07a)", color: "#050810", border: "none", cursor: "pointer", boxShadow: "0 4px 14px rgba(201,160,99,0.3)" }}>
+                    <button onClick={() => { appClient.auth.redirectToLogin(); setOpen(false); }} style={{ width: "100%", padding: "12px 0", fontSize: 14, fontWeight: 700, borderRadius: 14, background: "linear-gradient(135deg, #C9A063, #e6c07a)", color: "#050810", border: "none", cursor: "pointer", boxShadow: "0 4px 14px rgba(201,160,99,0.3)" }}>
                       Connexion / Inscription
                     </button>
                   )}

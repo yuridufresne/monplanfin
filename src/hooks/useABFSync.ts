@@ -7,10 +7,10 @@
  * syncBudgetRevenuToABF : sens inverse — met à jour l'ABF quand les revenus
  * sont modifiés dans la grille budgétaire.
  */
-import { base44 } from "@/api/base44Client";
+import { appClient } from "@/api/usersClient";
 
 export async function syncABFToEntities() {
-  const profiles = await base44.entities.FinancialProfile.list();
+  const profiles = await appClient.entities.FinancialProfile.list();
   const bySection = {};
   profiles.forEach(p => { bySection[p.section] = p.data || {}; });
 
@@ -29,14 +29,14 @@ export async function syncABFToEntities() {
     }
     if (totalImpotMensuel > 0) {
       const label = "Impôts (retenues à la source)";
-      const existing = await base44.entities.BudgetEntry.filter({ label });
+      const existing = await appClient.entities.BudgetEntry.filter({ label });
       if (existing.length === 0) {
-        await base44.entities.BudgetEntry.create({
+        await appClient.entities.BudgetEntry.create({
           category: "divers", label, amount: totalImpotMensuel,
           type: "depense", frequency: "mensuel", is_fixed: true, source: "abf",
         });
       } else {
-        await base44.entities.BudgetEntry.update(existing[0].id, { amount: totalImpotMensuel, source: "abf", category: "divers", type: "depense" });
+        await appClient.entities.BudgetEntry.update(existing[0].id, { amount: totalImpotMensuel, source: "abf", category: "divers", type: "depense" });
       }
     }
   }
@@ -47,14 +47,14 @@ export async function syncABFToEntities() {
     const montant = parseFloat(dettesRevData.pension_mensuelle) || 0;
     if (montant > 0) {
       const label = "Pension alimentaire";
-      const existing = await base44.entities.BudgetEntry.filter({ label });
+      const existing = await appClient.entities.BudgetEntry.filter({ label });
       if (existing.length === 0) {
-        await base44.entities.BudgetEntry.create({
+        await appClient.entities.BudgetEntry.create({
           category: "divers", label, amount: montant,
           type: "depense", frequency: "mensuel", is_fixed: true, source: "abf",
         });
       } else {
-        await base44.entities.BudgetEntry.update(existing[0].id, { amount: montant, source: "abf" });
+        await appClient.entities.BudgetEntry.update(existing[0].id, { amount: montant, source: "abf" });
       }
     }
   }
@@ -93,18 +93,18 @@ export async function syncABFToEntities() {
       });
     }
 
-    const allDebts = await base44.entities.Debt.list();
+    const allDebts = await appClient.entities.Debt.list();
     for (const [name, payload] of desired) {
       const existing = allDebts.filter(x => x.name === name);
       if (existing.length === 0) {
-        await base44.entities.Debt.create(payload);
+        await appClient.entities.Debt.create(payload);
       } else {
-        await base44.entities.Debt.update(existing[0].id, payload);
+        await appClient.entities.Debt.update(existing[0].id, payload);
       }
     }
     for (const x of allDebts) {
       if (x.source === "abf" && !desired.has(x.name)) {
-        await base44.entities.Debt.delete(x.id);
+        await appClient.entities.Debt.delete(x.id);
       }
     }
   }
@@ -115,9 +115,9 @@ export async function syncABFToEntities() {
     const objectifs = objectifsData.objectifs || [];
     for (const o of objectifs) {
       if (!o.nom || !o.montant) continue;
-      const existing = await base44.entities.FinancialGoal.filter({ title: o.nom });
+      const existing = await appClient.entities.FinancialGoal.filter({ title: o.nom });
       if (existing.length === 0) {
-        await base44.entities.FinancialGoal.create({
+        await appClient.entities.FinancialGoal.create({
           title: o.nom,
           target_amount: parseFloat(o.montant) || 0,
           current_amount: 0,
@@ -131,9 +131,9 @@ export async function syncABFToEntities() {
   // ── 4. FONDS D'URGENCE (ABF fonds_urgence → FinancialGoal) ────────────────
   const fondsData = bySection["fonds_urgence"];
   if (fondsData?.objectif_fonds) {
-    const existing = await base44.entities.FinancialGoal.filter({ title: "Fonds d'urgence" });
+    const existing = await appClient.entities.FinancialGoal.filter({ title: "Fonds d'urgence" });
     if (existing.length === 0) {
-      await base44.entities.FinancialGoal.create({
+      await appClient.entities.FinancialGoal.create({
         title: "Fonds d'urgence",
         target_amount: parseFloat(fondsData.objectif_fonds) || 0,
         current_amount: parseFloat(fondsData.montant_fonds) || 0,
@@ -155,7 +155,7 @@ export async function syncABFToEntities() {
 export async function syncBudgetRevenuToABF(revenusEntries) {
   if (!revenusEntries || revenusEntries.length === 0) return;
 
-  const profiles = await base44.entities.FinancialProfile.list();
+  const profiles = await appClient.entities.FinancialProfile.list();
   const revenuProfile = profiles.find(p => p.section === "revenu");
 
   const currentData = revenuProfile?.data || {};
@@ -191,9 +191,9 @@ export async function syncBudgetRevenuToABF(revenusEntries) {
 
     const newData = { ...currentData, emplois: emploisMAJ, sidehustles: sidesMAJ };
     if (revenuProfile) {
-      await base44.entities.FinancialProfile.update(revenuProfile.id, { data: newData });
+      await appClient.entities.FinancialProfile.update(revenuProfile.id, { data: newData });
     } else {
-      await base44.entities.FinancialProfile.create({ section: "revenu", data: newData, completed: true });
+      await appClient.entities.FinancialProfile.create({ section: "revenu", data: newData, completed: true });
     }
     return;
   }
@@ -223,8 +223,8 @@ export async function syncBudgetRevenuToABF(revenusEntries) {
   };
 
   if (revenuProfile) {
-    await base44.entities.FinancialProfile.update(revenuProfile.id, { data: newData });
+    await appClient.entities.FinancialProfile.update(revenuProfile.id, { data: newData });
   } else {
-    await base44.entities.FinancialProfile.create({ section: "revenu", data: newData, completed: true });
+    await appClient.entities.FinancialProfile.create({ section: "revenu", data: newData, completed: true });
   }
 }

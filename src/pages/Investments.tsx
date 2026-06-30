@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { appClient } from "@/api/usersClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, RefreshCw, Edit2, Trash2 } from "lucide-react";
@@ -25,24 +25,24 @@ export default function Investments() {
   const qc = useQueryClient();
   const clientCible = new URLSearchParams(window.location.search).get("client");
   const [moi, setMoi] = useState(null);
-  useEffect(() => { base44.auth.me().then(setMoi).catch(() => {}); }, []);
+  useEffect(() => { appClient.auth.me().then(setMoi).catch(() => {}); }, []);
   const modeConseiller = !!clientCible && !!moi && (moi.type_compte === "agent" || moi.role === "admin" || moi.type_compte === "directeur");
   const cible = modeConseiller ? clientCible : moi?.email;
   const filtreCible = (rows) => (rows || []).filter(r => r.created_by === cible || r.client_courriel === cible);
 
-  const { data: investmentsBruts = [] } = useQuery({ queryKey: ["investments"], queryFn: () => base44.entities.Investment.list() });
+  const { data: investmentsBruts = [] } = useQuery({ queryKey: ["investments"], queryFn: () => appClient.entities.Investment.list() });
   const investments = useMemo(() => filtreCible(investmentsBruts), [investmentsBruts, cible]);
-  const deleteMutation = useMutation({ mutationFn: (id) => base44.entities.Investment.delete(id), onSuccess: () => qc.invalidateQueries({ queryKey: ["investments"] }) });
+  const deleteMutation = useMutation({ mutationFn: (id) => appClient.entities.Investment.delete(id), onSuccess: () => qc.invalidateQueries({ queryKey: ["investments"] }) });
 
   const handleRefresh = async () => {
     const withSymbols = investments.filter(i => i.symbol);
     if (!withSymbols.length) return;
     setRefreshing(true);
     try {
-      const res = await base44.functions.invoke("getStockPrice", { symbols: withSymbols.map(i => ({ id: i.id, symbol: i.symbol })) });
+      const res = await appClient.functions.invoke("getStockPrice", { symbols: withSymbols.map(i => ({ id: i.id, symbol: i.symbol })) });
       const results = res.data?.results || [];
       await Promise.all(results.filter(r => r.price != null).map(r =>
-        base44.entities.Investment.update(r.id, { current_price: r.price, current_value: r.price * (withSymbols.find(i => i.id === r.id)?.quantity || 1), last_updated: new Date().toISOString() })
+        appClient.entities.Investment.update(r.id, { current_price: r.price, current_value: r.price * (withSymbols.find(i => i.id === r.id)?.quantity || 1), last_updated: new Date().toISOString() })
       ));
       qc.invalidateQueries({ queryKey: ["investments"] });
     } finally { setRefreshing(false); }

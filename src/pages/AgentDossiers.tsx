@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { base44 } from "@/api/base44Client";
+import { appClient } from "@/api/usersClient";
 import { useAuth } from "@/lib/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Briefcase, Clock, CheckCircle2, Search, Inbox } from "lucide-react";
@@ -52,7 +52,7 @@ export default function AgentDossiers() {
       // RLS restreint déjà la lecture aux dossiers de l'agent. On charge tout
       // ce qu'on a le droit de voir, puis on garde explicitement les siens
       // (filtre JS, insensible à la casse = zéro ambiguïté de requête serveur).
-      const all = await base44.entities.LeadDossier.list("-updated_date");
+      const all = await appClient.entities.LeadDossier.list("-updated_date");
       const email = (user?.email || "").toLowerCase();
       const mesDossiers = (Array.isArray(all) ? all : []).filter(
         d => (d.agent_assigne_courriel || "").toLowerCase() === email
@@ -94,7 +94,7 @@ export default function AgentDossiers() {
         historique: [...(d.historique || []), { type: "statut", de: d.statut || "", a: statut, date: maintenant, par: (user && user.email) || "" }],
       };
       if (statut === "contacte" && !d.date_premier_contact) patch.date_premier_contact = maintenant;
-      await base44.entities.LeadDossier.update(id, patch);
+      await appClient.entities.LeadDossier.update(id, patch);
       await refresh();
     } catch (e) { console.error("Erreur statut:", e); }
   };
@@ -103,7 +103,7 @@ export default function AgentDossiers() {
     try {
       const d = dossiers.find(x => x.id === id) || {};
       const maintenant = new Date().toISOString();
-      await base44.entities.LeadDossier.update(id, {
+      await appClient.entities.LeadDossier.update(id, {
         derniere_activite_agent: maintenant,
         transfert_en_attente: false,
         historique: [...(d.historique || []), { type: "note", note: texte.trim(), date: maintenant, par: (user && user.email) || "" }],

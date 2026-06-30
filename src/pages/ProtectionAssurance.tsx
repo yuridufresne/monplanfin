@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { appClient } from "@/api/usersClient";
 import { Link } from "react-router-dom";
 import { calculerRecommandations } from "@/lib/moteurProtection";
 import { defaultProtectionPayload } from "@/lib/protectionPayload";
@@ -28,13 +28,13 @@ const fmtk = n => {
 export default function ProtectionAssurance() {
   const clientCible = new URLSearchParams(window.location.search).get("client");
   const [moi, setMoi] = useState(null);
-  useEffect(() => { base44.auth.me().then(setMoi).catch(() => {}); }, []);
+  useEffect(() => { appClient.auth.me().then(setMoi).catch(() => {}); }, []);
   const modeConseiller = !!clientCible && !!moi && (moi.type_compte === "agent" || moi.role === "admin" || moi.type_compte === "directeur");
   const cible = modeConseiller ? clientCible : moi?.email;
   const filtreCible = (rows) => (rows || []).filter(r => r.created_by === cible || r.client_courriel === cible);
   const { data: profilsBruts = [] } = useQuery({
     queryKey: ["financialProfiles"],
-    queryFn: () => base44.entities.FinancialProfile.list(),
+    queryFn: () => appClient.entities.FinancialProfile.list(),
   });
   const profiles = useMemo(() => filtreCible(profilsBruts), [profilsBruts, cible]);
 

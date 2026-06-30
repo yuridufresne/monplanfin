@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { appClient } from "@/api/usersClient";
 
 /**
  * AddressAutocomplete
@@ -34,7 +34,7 @@ export default function AddressAutocomplete({ value, onChange, placeholder = "12
   const search = async (text, lastId = "") => {
     if (!text || text.length < 3) { setSuggestions([]); setOpen(false); return; }
     setLoading(true);
-    const res = await base44.functions.invoke("canadaPostAddress", { action: "find", searchTerm: text, ...(lastId ? { lastId } : {}) });
+    const res = await appClient.functions.invoke("canadaPostAddress", { action: "find", searchTerm: text, ...(lastId ? { lastId } : {}) });
     setLoading(false);
     const json = res.data;
     if (json.Items && json.Items.length > 0 && !json.Items[0].Error) {
@@ -47,7 +47,7 @@ export default function AddressAutocomplete({ value, onChange, placeholder = "12
   };
 
   const retrieve = async (id) => {
-    const res = await base44.functions.invoke("canadaPostAddress", { action: "retrieve", id });
+    const res = await appClient.functions.invoke("canadaPostAddress", { action: "retrieve", id });
     const json = res.data;
     if (json.Items && json.Items.length > 0) {
       const addr = json.Items[0];

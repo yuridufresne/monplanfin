@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { appClient } from "@/api/usersClient";
 import { Compass, TrendingUp, CreditCard, Landmark, Receipt, Shield, Check, Lock, ArrowLeft, Award, Home, Wallet, Clock } from "lucide-react";
 import { buildPayload } from "@/lib/clientPayload";
 
@@ -662,8 +662,8 @@ function CommentArgentTravaille({ onTerme }) {
     let on = true;
     (async () => {
       try {
-        const me = await base44.auth.me();
-        const rows = await base44.entities.EducationProgress.list();
+        const me = await appClient.auth.me();
+        const rows = await appClient.entities.EducationProgress.list();
         const mine = (rows || []).find(r => r.created_by === (me && me.email));
         if (!on) return;
         setProg(mine ? { id: mine.id, lecons: mine.lecons_completees || [], themes: mine.themes_completes || [], points: mine.points || 0 } : { id: null, lecons: [], themes: [], points: 0 });
@@ -671,11 +671,11 @@ function CommentArgentTravaille({ onTerme }) {
     })();
     return () => { on = false; };
   }, []);
-  useEffect(() => { let on = true; (async () => { try { const me = await base44.auth.me(); const [profs, debts] = await Promise.all([base44.entities.FinancialProfile.list(), base44.entities.Debt.list()]); const mp = (profs || []).filter(r => r.created_by === (me && me.email)); const md = (debts || []).filter(r => r.created_by === (me && me.email)); const px = {}; try { const pay = buildPayload(mp); if (pay && pay.conjoint_a && pay.conjoint_a.age) px.age = pay.conjoint_a.age; if (pay && pay.epargne) { px.reer = pay.epargne.solde_reer_a || 0; px.celi = pay.epargne.solde_celi_a || 0; } if (pay && pay.kpis) px.nif = pay.kpis.nif_nominal || 0; } catch (e) {} const carte = md.find(d => d.type === "carte_credit") || md.find(d => d.type === "marge_credit"); if (carte) { px.carteSolde = carte.balance; px.carteTaux = carte.interest_rate; } if (on) setPerso(px); } catch (e) {} })(); return () => { on = false; }; }, []);
+  useEffect(() => { let on = true; (async () => { try { const me = await appClient.auth.me(); const [profs, debts] = await Promise.all([appClient.entities.FinancialProfile.list(), appClient.entities.Debt.list()]); const mp = (profs || []).filter(r => r.created_by === (me && me.email)); const md = (debts || []).filter(r => r.created_by === (me && me.email)); const px = {}; try { const pay = buildPayload(mp); if (pay && pay.conjoint_a && pay.conjoint_a.age) px.age = pay.conjoint_a.age; if (pay && pay.epargne) { px.reer = pay.epargne.solde_reer_a || 0; px.celi = pay.epargne.solde_celi_a || 0; } if (pay && pay.kpis) px.nif = pay.kpis.nif_nominal || 0; } catch (e) {} const carte = md.find(d => d.type === "carte_credit") || md.find(d => d.type === "marge_credit"); if (carte) { px.carteSolde = carte.balance; px.carteTaux = carte.interest_rate; } if (on) setPerso(px); } catch (e) {} })(); return () => { on = false; }; }, []);
   const persist = (next) => {
     setProg(next);
     const payload = { lecons_completees: next.lecons, themes_completes: next.themes, points: next.points };
-    (async () => { try { if (next.id) { await base44.entities.EducationProgress.update(next.id, payload); } else { const cr = await base44.entities.EducationProgress.create(payload); if (cr && cr.id) setProg(p => ({ ...p, id: cr.id })); } } catch (e) {} })();
+    (async () => { try { if (next.id) { await appClient.entities.EducationProgress.update(next.id, payload); } else { const cr = await appClient.entities.EducationProgress.create(payload); if (cr && cr.id) setProg(p => ({ ...p, id: cr.id })); } } catch (e) {} })();
   };
   const onLue = (leconId) => { if (!prog || prog.lecons.includes(leconId)) return; persist({ ...prog, lecons: [...prog.lecons, leconId], points: prog.points + PT_LECON }); };
   const onComplete = (themeId) => { if (!prog || prog.themes.includes(themeId)) return; persist({ ...prog, themes: [...prog.themes, themeId], points: prog.points + PT_QUIZ }); };

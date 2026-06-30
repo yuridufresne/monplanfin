@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { appClient } from "@/api/usersClient";
 import { useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, X, ChevronDown, ChevronRight, Trash2 } from "lucide-react";
 
@@ -212,15 +212,15 @@ export default function BudgetGrid({ onClose, onSaved }) {
   const [currentUserEmail, setCurrentUserEmail] = useState(null);
 
   useEffect(() => {
-    base44.auth.me().then(u => setCurrentUserEmail(u?.email || null)).catch(() => setCurrentUserEmail(null));
+    appClient.auth.me().then(u => setCurrentUserEmail(u?.email || null)).catch(() => setCurrentUserEmail(null));
   }, []);
 
   // Pré-remplir depuis les BudgetEntries existantes (priorité) puis l'ABF
   useEffect(() => {
     if (!currentUserEmail) return;
     Promise.all([
-      base44.entities.BudgetEntry.filter({ created_by: currentUserEmail }),
-      base44.entities.FinancialProfile.filter({ created_by: currentUserEmail }),
+      appClient.entities.BudgetEntry.filter({ created_by: currentUserEmail }),
+      appClient.entities.FinancialProfile.filter({ created_by: currentUserEmail }),
     ]).then(([existing, profiles]) => {
       setExistingEntries(existing);
 
@@ -388,8 +388,8 @@ export default function BudgetGrid({ onClose, onSaved }) {
     const toUpdate = entries.filter(e => existingByLabel[e.label]);
 
     await Promise.all([
-      ...toCreate.length > 0 ? [base44.entities.BudgetEntry.bulkCreate(toCreate)] : [],
-      ...toUpdate.map(e => base44.entities.BudgetEntry.update(existingByLabel[e.label].id, {
+      ...toCreate.length > 0 ? [appClient.entities.BudgetEntry.bulkCreate(toCreate)] : [],
+      ...toUpdate.map(e => appClient.entities.BudgetEntry.update(existingByLabel[e.label].id, {
         amount: e.amount,
         frequency: e.frequency,
         category: e.category,
@@ -400,7 +400,7 @@ export default function BudgetGrid({ onClose, onSaved }) {
 
     // CRITIQUE : recharger les entrées pour synchroniser l'état local
     // (évite les doublons sur saves répétés sans fermeture du modal)
-    const fresh = await base44.entities.BudgetEntry.filter({ created_by: currentUserEmail });
+    const fresh = await appClient.entities.BudgetEntry.filter({ created_by: currentUserEmail });
     setExistingEntries(fresh);
 
     qc.invalidateQueries({ queryKey: ["budgetEntries"] });
@@ -416,7 +416,7 @@ export default function BudgetGrid({ onClose, onSaved }) {
     if (!window.confirm("Supprimer toutes les entrées budgétaires qui ne proviennent pas de l'ABF ?")) return;
     // existingEntries est déjà filtré par created_by au chargement, on délète UNIQUEMENT les siennes
     const toDelete = existingEntries.filter(e => e.source !== "abf" && e.created_by === currentUserEmail);
-    await Promise.all(toDelete.map(e => base44.entities.BudgetEntry.delete(e.id)));
+    await Promise.all(toDelete.map(e => appClient.entities.BudgetEntry.delete(e.id)));
     // Recharger les entrées et réinitialiser les valeurs non-ABF dans la grille
     const abfReadOnlyLabels = new Set(SECTIONS.flatMap(s => s.rows).filter(r => r.abfReadOnly).map(r => r.label));
     setValues(prev => {
