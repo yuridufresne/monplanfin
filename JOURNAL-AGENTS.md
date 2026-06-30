@@ -43,7 +43,7 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 - **[C1] Trancher l'impôt 18 % forfaitaire** de l'aperçu décaissement gratuit (`decaissementSimple`) : l'assumer comme estimation OU le brancher sur `calculateFullTax`. *Décision Yuri.*
 
 ### 🟠 ROBUSTESSE (P1 — code, Claude Code)
-- ✅ **[C2 expansion] Gate `typecheck` bloquant en CI — FAIT (branche `feat/c2-typecheck-lib-gate`, EN PR)** : `tsconfig.lib.json` scopé à `src/lib` **+ `src/components/dashboard`**, **0 erreur**, étape CI **bloquante**. À merger après CI verte. (mémoire `garde-fous-ci-typecheck`)
+- ✅ **[C2 expansion] Gate `typecheck` bloquant en CI — MERGÉ EN PROD (`a5518d3`)** : `tsconfig.lib.json` scopé à `src/lib` **+ `src/components/dashboard`**, **0 erreur**, étape CI **bloquante** active. (mémoire `garde-fous-ci-typecheck`)
 - Plus tard : étendre le gate au reste de l'UI app (`src/pages` 428 err, `src/components` hors ui 150 err). **Bloqueur** : 9 primitives shadcn vendored (`select/card/sheet/dialog/button/input/switch/slider/label`) « fuient » des erreurs via imports → à quarantainer (`@ts-nocheck`) avant de pouvoir gater les zones qui les importent. `src/components/ui/**` (460 err) = vendored, hors gate. Faible priorité (bugs visuels, pas de chiffres).
 
 ### 🟡 CONFORMITÉ / DÉCISIONS YURI (non-code)
@@ -72,6 +72,10 @@ S1 (revoke anon, Cowork) · **S2 CSP `script-src` durci, VALIDÉ en prod (ne pas
 - ⚠️ **Important / préservé :** au moment du nettoyage, l'arbre de travail contenait les **modifs non commitées de Claude Code [C2]** (`src/lib/*`, `tsconfig.lib.json`, `.github/workflows/ci.yml`, `src/vite-env.d.ts`). Je les ai **laissées INTACTES** (pas de `reset --hard`). → Claude Code peut continuer/committer sa branche `feat/c2-typecheck-lib-gate` normalement.
 - **→ Pour Open Design :** repartir du favicon canonique (`public/favicon.svg`) pour les visuels ; respecter `BRIEF-MARKETING-OpenDesign.md`. Ne pas réutiliser mes SVG (supprimés).
 - ⚠️ **Leçon (outillage Cowork) :** le sandbox a un accès `.git` restreint (locks/refs « Operation not permitted ») → les `git reset`/push depuis Cowork sont fragiles. Préférer un nettoyage ciblé ; pour pousser, passer par la machine de Yuri.
+
+## 2026-06-30 13:05 — Claude Code (C2 + C2 suite — MERGÉS EN PROD)
+- **Fait :** `feat/c2-typecheck-lib-gate` **mergé en fast-forward sur `main` (`a5518d3`)** → Vercel redéploie. Gate typecheck bloquant actif sur **`src/lib` + `src/components/dashboard`** (0 erreur). Changements purement types → aucun impact runtime/visuel ; lint vert, 32/32 tests, build OK avant merge.
+- **→ Pour les autres :** la CI a maintenant une étape **« Typecheck gate (src/lib + components/dashboard) »** bloquante → un PR qui casse les types de ces zones échoue. Pour étendre (pages, autres composants) : voir « ROBUSTESSE » (quarantainer d'abord les 9 shadcn vendored qui fuient).
 
 ## 2026-06-30 12:55 — Claude Code (C2 suite — gate étendu au dashboard — même PR)
 - **Fait (même branche `feat/c2-typecheck-lib-gate`, EN PR) :** étendu le gate typecheck à **`src/components/dashboard`** (1ère zone UI engine-facing : affichage NIF / capital / décaissement / stratégies).
