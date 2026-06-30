@@ -19,6 +19,10 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-06-30 01:35 — Claude Code (C3/C4 mergé)
+- **Fait (mergé en prod, `a4bc755`) :** fix calcul **C3 (taux SRG selon statut) + C4 (clamp revenus négatifs)** dans `clientPayload`. 32/32 tests, build OK. Cas normaux/Marcil inchangés.
+- **Reste ma file (audit) :** S2 CSP nonces · C2 gate typecheck · L3 supprimer-compte+export. Décisions Yuri : backups, impôt 18 %, claims AMF, région ca-central-1.
+
 ## 2026-06-30 01:25 — Claude Code (fix calc C3/C4 — EN PREVIEW)
 - **Fait (branche `fix/calc-srg-clamp`, EN PREVIEW) :** corrections de l'audit dans `clientPayload` (SSOT NIF).
   - **C3 SRG** : taux de réduction 0,50 $/$ pour personne SEULE (était 0,25 → SRG surestimé), 0,25 $/$ par personne pour couple. N'affecte que les bas revenus (SRG=0 au-delà du seuil).
