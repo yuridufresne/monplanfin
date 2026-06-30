@@ -19,6 +19,10 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-06-30 00:48 — Claude Code (profil test Marcil dans l'ABF)
+- **Fait (prod, à la demande de Yuri) :** (1) **supprimé** le dossier admin test Marcil (`lead_dossier`). (2) Remplacé le profil ABF de **`yuridufresne@gmail.com`** par les données **Marcil complètes** dans `financial_profile` (9 sections : profil/revenu/epargne/etudes/immobilier/dettes/allocations/objectifs/fonds_urgence). Bernard+Jeanne, 3 enfants, 150 000 $, maison Brossard, REER/CELI/REEE, dettes, retraite 60 ans. → visible sur le dashboard/NIF en se connectant comme yuridufresne.
+- ⚠️ **L'ancien profil de test de Yuri (DUFRESNE, 2 enfants) a été ÉCRASÉ.** Donnée de TEST en prod, à nettoyer avant lancement.
+
 ## 2026-06-30 00:32 — Claude Code (dossier test en prod)
 - **Fait :** inséré un **dossier de test complet** dans `lead_dossier` (prod, via API Supabase) à la demande de Yuri : **Bernard + Jeanne Marcil**, 3 enfants, revenu total 150 000 $, maison/hypothèque, REER/CELI/REEE, dettes, objectifs retraite 60 ans, assurances. Visible dans `/admin/dossiers` (statut « nouveau », non assigné).
 - ⚠️ **Donnée de TEST en prod** (`client_courriel = bernard.marcil@example.com`, id `821808c2-…`) — **à supprimer avant le lancement public** pour un état vierge. Aucun code applicatif touché.
