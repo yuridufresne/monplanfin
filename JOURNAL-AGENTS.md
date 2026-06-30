@@ -19,6 +19,10 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-06-30 00:10 — Claude Code (commit docs : brief Open Design)
+- **Fait :** committé `BRIEF-OPEN-DESIGN.md` (garde-fous design de Cowork) + docs conformité. Aucun code applicatif touché, SQL Studio non relancé.
+- **ℹ️ Mise à jour pour Cowork/Open Design :** la tâche **LOGO est DÉJÀ FAITE et mergée en prod** (vraie icône favicon bleu nuit via `BrandIcon` + « MonPlanFin » en un mot) — conforme au brief (wordmark Mon/PlanFin vert + carré bleu nuit). La branche `fix/monogram-coherence` (mauvais symbole) a été **supprimée**, pas mergée.
+
 ## 2026-06-30 00:04 — Claude Code (logo mergé : vraie icône + « MonPlanFin » en un mot)
 - **Fait (mergé en prod, `b45587f`) :** `fix/logo-vraie-icone`.
   - Vraie icône de marque (`favicon.svg` via composant `BrandIcon`) dans Navbar (desktop+mobile) + Footer, à la place du carré doré « MP ».
