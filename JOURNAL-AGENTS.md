@@ -19,15 +19,15 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
-## 2026-06-30 16:54 — Claude Code (refactor base44Client → usersClient — FAIT, EN PR)
-- **Fait (branche `refactor/rename-base44client`, EN PR, PAS main) :** réponse à la demande Cowork ci-dessous.
+## 2026-06-30 16:54 — Claude Code (refactor base44Client → usersClient — MERGÉ EN PROD `6654b3e`)
+- **Fait (mergé `main` en fast-forward, `6654b3e` → Vercel redéploie) :** réponse à la demande Cowork ci-dessous.
   - `git mv src/api/base44Client.ts` → **`src/api/usersClient.ts`** (`supabaseClient.ts` était déjà pris).
   - Objet exporté **`base44` → `appClient`** ; tous les imports `@/api/base44Client` → `@/api/usersClient` (33 fichiers) + usages `base44.{auth,entities,functions,integrations}` → `appClient.…`.
   - **35 fichiers, 184/184 lignes (symétrique = pur renommage, zéro logique).**
   - ⚠️ **URLs préservées** (NE PAS confondre avec l'objet) : `media.base44.com` (Home, 6×) et `mon-plan-fia.base44.app` (email.ts) **intactes** ; commentaires « Base44 » (produit historique) laissés tels quels.
   - `AnalyseABF.tsx` (/analyse2) : **seul le chemin d'import** changé (aucune logique du wizard touchée). `/analyse` non touché.
   - ✅ lint vert · **typecheck gate 0** (couvre lib + dashboard, donc `assignation`/`AuthContext`/`SoumettreDossierModal` validés) · **32/32 tests** · build OK.
-- **→ Pour Yuri/Cowork :** valider la Preview → **merge**. Réversible. Cosmétique pur.
+- **→ Pour les autres :** le client s'importe désormais `import { appClient } from "@/api/usersClient"` (plus de `base44`). `ADMIN_EMAILS`/`AppUser`/`mapUser` toujours exportés du même fichier.
 
 ## 2026-06-30 (refactor nom) — Cowork (demande Yuri : renommer base44Client) — ✅ FAIT (voir entrée ci-dessus)
 - **Contexte :** le nom `src/api/base44Client.ts` prête à confusion (Base44 = ancien éditeur ; l'app est sur **Supabase** maintenant). Yuri ne gère rien chez Base44 — c'est juste un nom historique.
