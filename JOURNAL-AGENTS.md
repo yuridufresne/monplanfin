@@ -19,6 +19,33 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 📋 2026-06-30 — PASSATION / RESTE À FAIRE (consolidé pour nouvelle session)
+*Référence complète : `conformite/Audit-securite-conformite-2026-06-30.md` (codes S/C/L).*
+
+### ⚙️ Garde-fous (tout agent doit respecter)
+- **Protocole journal** : `git pull` + lire avant CHAQUE tâche ; entrée EN HAUT + commit/push après.
+- **NE PAS toucher `/analyse`** (refonte ABF finale). **NE PAS merger** `backup-securite` / `improvements-v2` / `securisation-tests`.
+- **Prod = push `main` → Vercel auto-deploy** (direct, pas de brouillon). UI sensible : branche → Preview, sauf demande « fix direct ».
+- ⚠️ **Keychain git intermittent** : si « could not read Username », refaire l'étape token (PAT dans le keychain) ; le code est souvent déjà poussé, vérifier `origin/main`.
+- ⚠️ Auth Google + moteurs SSOT (`buildPayload`/`calcNIF`/`moteurFiscal2026`) : ne pas dupliquer.
+
+### 🔴 AVANT LANCEMENT PUBLIC (P0)
+- **[L4] Nettoyer les DONNÉES DE TEST en prod** : profil **Marcil** sous `yuridufresne@gmail.com` (`financial_profile`, 9 sections) — remettre un état vierge / le vrai profil de Yuri.
+- **[L2] Backups Supabase** (plan payant — le gratuit n'a AUCUN backup auto). *Décision Yuri.*
+- **[C1] Trancher l'impôt 18 % forfaitaire** de l'aperçu décaissement gratuit (`decaissementSimple`) : l'assumer comme estimation OU le brancher sur `calculateFullTax`. *Décision Yuri.*
+
+### 🟠 ROBUSTESSE (P1 — code, Claude Code)
+- **[C2 expansion] Gate `typecheck:lib` en CI** : (1) typer les **données de section** (`ret`/`profil`/`rev` défaultées à `{}` = la majorité des ~100 erreurs assouplies de `src/lib`), (2) amener `src/lib` assoupli à **0**, (3) ajouter l'étape CI **bloquante**. Outils déjà en place : `tsconfig.lib.json` + `npm run typecheck:lib`. (mémoire `garde-fous-ci-typecheck`)
+- Plus tard : étendre le typecheck à l'UI (`src/components`, ~570 err — faible priorité, bugs visuels).
+
+### 🟡 CONFORMITÉ / DÉCISIONS YURI (non-code)
+- **[AMF] Véracité des claims** « conseillers partenaires inscrits à l'AMF » (les partenaires doivent réellement être inscrits au registre).
+- **Rémunération du référencement** (partage de commissions) à valider AMF/avocat.
+- **[L1] Région `ca-central-1`** : hébergement hors Canada (EFVP fait) — évaluer migration.
+
+### ✅ DÉJÀ FAIT (mémoire, ne pas refaire)
+S1 (revoke anon, Cowork) · **S2 CSP `script-src` durci, VALIDÉ en prod (ne pas révérer)** · C2 étape 1 (type `ClientPayload`) · C3/C4 (SRG + clamp) · **L3 export + supprimer-compte** (RPC `delete_my_account` créée par Cowork) · AMF wording · logo/branding (vraie icône favicon + « MonPlanFin » 1 mot) · Studio entitlement serveur (#7) · Meta Pixel (consentement) · disclaimer AMF · garde-fous CI ESLint · clés Supabase env · /agent/debug retiré · mot de passe 8+ · nettoyage code mort.
+
 ## 2026-06-30 11:50 — Claude Code (L3 + S2 mergés)
 - **Fait (mergés en prod) :**
   - **L3** `feat/loi25-export-suppression` (`fbdac05`) : « Exporter mes données » + « Supprimer mon compte » (menu ⚙️ Dashboard). RPC `delete_my_account` créée par Cowork → suppression complète OK.
