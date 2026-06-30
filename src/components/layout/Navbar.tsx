@@ -78,7 +78,7 @@ export default function Navbar() {
           {/* Logo */}
           <Link to="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
             <BrandIcon size={40} />
-            <span style={{ fontFamily: "var(--font-urbanist)", fontSize: 15, fontWeight: 700, color: "#fff", letterSpacing: "-0.02em" }}>Mon</span><span style={{ fontFamily: "var(--font-urbanist)", fontSize: 15, fontWeight: 700, color: "hsl(var(--success))", letterSpacing: "-0.02em" }}>PlanFin</span>
+            <span style={{ whiteSpace: "nowrap" }}><span style={{ fontFamily: "var(--font-urbanist)", fontSize: 15, fontWeight: 700, color: "#fff", letterSpacing: "-0.02em" }}>Mon</span><span style={{ fontFamily: "var(--font-urbanist)", fontSize: 15, fontWeight: 700, color: "hsl(var(--success))", letterSpacing: "-0.02em" }}>PlanFin</span></span>
             <span style={{
               padding: "2px 7px",
               borderRadius: 5,
@@ -175,7 +175,7 @@ export default function Navbar() {
                 <div style={{ padding: "0 20px 24px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <BrandIcon size={30} />
-                    <span style={{ fontFamily: "var(--font-urbanist)", fontWeight: 700, fontSize: 14, color: "#fff" }}>Mon</span><span style={{ fontFamily: "var(--font-urbanist)", fontWeight: 700, fontSize: 14, color: "hsl(var(--success))" }}>PlanFin</span>
+                    <span style={{ whiteSpace: "nowrap" }}><span style={{ fontFamily: "var(--font-urbanist)", fontWeight: 700, fontSize: 14, color: "#fff" }}>Mon</span><span style={{ fontFamily: "var(--font-urbanist)", fontWeight: 700, fontSize: 14, color: "hsl(var(--success))" }}>PlanFin</span></span>
                     <span style={{
                       padding: "2px 6px",
                       borderRadius: 4,

@@ -70,7 +70,7 @@ export default function Footer() {
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
               <BrandIcon size={32} />
-              <span style={{ fontFamily: "var(--font-urbanist)", fontWeight: 700, fontSize: 14, color: "#fff", letterSpacing: "-0.02em" }}>Mon</span><span style={{ fontFamily: "var(--font-urbanist)", fontWeight: 700, fontSize: 14, color: "hsl(var(--success))", letterSpacing: "-0.02em" }}>PlanFin</span>
+              <span style={{ whiteSpace: "nowrap" }}><span style={{ fontFamily: "var(--font-urbanist)", fontWeight: 700, fontSize: 14, color: "#fff", letterSpacing: "-0.02em" }}>Mon</span><span style={{ fontFamily: "var(--font-urbanist)", fontWeight: 700, fontSize: 14, color: "hsl(var(--success))", letterSpacing: "-0.02em" }}>PlanFin</span></span>
             </div>
             <p style={{ fontSize: 12.5, fontWeight: 300, lineHeight: 1.7, color: "rgba(148,163,184,0.55)" }}>
               Estimation financière conçue pour le Québec.
