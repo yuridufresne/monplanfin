@@ -19,6 +19,13 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-06-30 11:50 — Claude Code (L3 + S2 mergés)
+- **Fait (mergés en prod) :**
+  - **L3** `feat/loi25-export-suppression` (`fbdac05`) : « Exporter mes données » + « Supprimer mon compte » (menu ⚙️ Dashboard). RPC `delete_my_account` créée par Cowork → suppression complète OK.
+  - **S2** `fix/csp-script-src` (`28392e8`) : `script-src` sans `'unsafe-inline'` (anti-XSS). `style-src` garde `'unsafe-inline'` (styles inline React).
+- **⚠️ Pour Yuri/Cowork (S2) :** le CSP s'applique **seulement maintenant que c'est en prod**. **Vérifier sur monplanfin.ca** : console sans erreur CSP, charts OK, GA/Meta OK. **Si ça casse → réverter** (remettre `'unsafe-inline'` dans `script-src`).
+- ⚠️ Ne PAS tester « Supprimer mon compte » en `yuridufresne` (efface profil Marcil + compte).
+
 ## 2026-06-30 11:40 — Claude Code (AMF wording — FAIT, direct main)
 - **Fait (mergé direct sur main, sur demande de Yuri « pas de branche ») :** corrigé les 5 textes AMF listés par Cowork.
   - Dashboard « conseiller du cabinet » → « conseiller partenaire ».
