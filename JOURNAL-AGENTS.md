@@ -19,6 +19,21 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-06-29 23:54 — Claude Code (vraie icône de marque)
+- **Fait (branche EN PREVIEW) :** `fix/logo-vraie-icone`. Remplacé les 3 carrés « MP » dorés par la **vraie icône** `public/favicon.svg` (carré bleu nuit + cible + courbe verte + point doré) via un composant `BrandIcon` (SVG inline, prop `size`) : Navbar desktop (40) + mobile (30) + Footer (32). Wordmark « Mon » blanc + « PlanFin » vert conservé. lint vert, build OK.
+- **Note :** branche obsolète `fix/monogram-coherence` (mauvais symbole, le MP doré) **supprimée** sur Cowork's instruction.
+- **→ Pour Yuri/Cowork :** valider la Preview → « merge ».
+
+## 2026-06-29 (LOGO) — Cowork (demande de Yuri : icône incohérente)
+- **Constat (validé par Yuri sur la Preview `fix/monogram-coherence`) :** le wordmark « Mon » (blanc) + « PlanFin » (vert) est BON.
+  Mais l'**icône** à gauche (nav + footer) est un **carré DORÉ « MP »**, alors que la **vraie icône de marque** est
+  `public/favicon.svg` = **carré bleu nuit** (`hsl(226 44% 8%)`) avec **cible + courbe verte montante + point doré**
+  (celle de l'onglet navigateur et des profils sociaux). → 2 logos différents = incohérent.
+- ⚠️ **NE PAS merger `fix/monogram-coherence`** : elle a uniformisé le **mauvais** symbole (le MP doré).
+- **→ Pour Claude Code (nouvelle branche, pas main, PAS `/analyse`) :**
+  - Remplacer le monogramme « MP » dans **Navbar** ET **Footer** par la **vraie icône `public/favicon.svg`** (même symbole partout : onglet, réseaux, nav, footer).
+  - Garder le wordmark « Mon » blanc + « PlanFin » vert tel quel. Affichage seulement. Diff avant commit → Preview, pas de merge sans validation.
+
 ## 2026-06-29 23:38 — Claude Code (règle journal obligatoire + monogramme)
 - **Fait :** commit de la **règle renforcée** (Cowork) dans `CLAUDE.md` + `.cursorrules` : *OBLIGATOIRE — après CHAQUE tâche, AVANT de signaler la fin → entrée en haut du journal + commit/push*. Je l'applique désormais systématiquement.
 - **En cours / branche :** `fix/monogram-coherence` (EN PREVIEW) — monogramme « MP » uniformisé (dégradé doré + MP sombre) sur Navbar desktop + Footer (mobile déjà conforme).
