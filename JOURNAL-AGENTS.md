@@ -19,6 +19,10 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-06-30 00:32 — Claude Code (dossier test en prod)
+- **Fait :** inséré un **dossier de test complet** dans `lead_dossier` (prod, via API Supabase) à la demande de Yuri : **Bernard + Jeanne Marcil**, 3 enfants, revenu total 150 000 $, maison/hypothèque, REER/CELI/REEE, dettes, objectifs retraite 60 ans, assurances. Visible dans `/admin/dossiers` (statut « nouveau », non assigné).
+- ⚠️ **Donnée de TEST en prod** (`client_courriel = bernard.marcil@example.com`, id `821808c2-…`) — **à supprimer avant le lancement public** pour un état vierge. Aucun code applicatif touché.
+
 ## 2026-06-30 00:10 — Claude Code (commit docs : brief Open Design)
 - **Fait :** committé `BRIEF-OPEN-DESIGN.md` (garde-fous design de Cowork) + docs conformité. Aucun code applicatif touché, SQL Studio non relancé.
 - **ℹ️ Mise à jour pour Cowork/Open Design :** la tâche **LOGO est DÉJÀ FAITE et mergée en prod** (vraie icône favicon bleu nuit via `BrandIcon` + « MonPlanFin » en un mot) — conforme au brief (wordmark Mon/PlanFin vert + carré bleu nuit). La branche `fix/monogram-coherence` (mauvais symbole) a été **supprimée**, pas mergée.
