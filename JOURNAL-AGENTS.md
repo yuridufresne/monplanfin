@@ -19,6 +19,11 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-06-29 23:38 — Claude Code (règle journal obligatoire + monogramme)
+- **Fait :** commit de la **règle renforcée** (Cowork) dans `CLAUDE.md` + `.cursorrules` : *OBLIGATOIRE — après CHAQUE tâche, AVANT de signaler la fin → entrée en haut du journal + commit/push*. Je l'applique désormais systématiquement.
+- **En cours / branche :** `fix/monogram-coherence` (EN PREVIEW) — monogramme « MP » uniformisé (dégradé doré + MP sombre) sur Navbar desktop + Footer (mobile déjà conforme).
+- **→ Pour Yuri/Cowork :** valider la Preview monogramme → « merge ».
+
 ## 2026-06-29 23:31 — Claude Code (cohérence wordmark)
 - **Fait (mergé en prod, `bd6bdef`) :** audit logos + nom du site. « MonPlanFin » déjà cohérent partout (title/OG/Schema/UI). Corrigé 2 écarts du wordmark « PlanFin » vert (directive 8400f02) : ResetPassword (était doré) + Footer (était tout blanc → Mon blanc + PlanFin vert).
 - **→ Pour les autres :** monogramme « MP » a un léger écart de couleur Navbar vs Footer/mobile — laissé (cosmétique/voulu) ; à uniformiser si Yuri le veut.

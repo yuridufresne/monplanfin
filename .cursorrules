@@ -4,7 +4,10 @@
 - TOUJOURS exécuter `git pull origin main` AVANT de modifier quoi que ce soit.
   `main` est souvent en avance sur le local (Base44 auto-commit vers GitHub + push récents).
 - **LIRE `JOURNAL-AGENTS.md` (racine) avant chaque tâche** pour voir ce que les autres agents (Cowork,
-  Claude Code, Cursor, Open Design) ont fait. **Ajouter une entrée EN HAUT après ta tâche**, puis commit/push.
+  Claude Code, Cursor, Open Design) ont fait.
+- **OBLIGATOIRE — après CHAQUE tâche, AVANT de signaler que c'est terminé** : ajouter une entrée EN HAUT de
+  `JOURNAL-AGENTS.md` (date/heure, agent, ce qui est fait, branche, « → Pour les autres », « ⚠️ Attention »)
+  **puis commit/push** ce fichier. Pas de tâche « finie » sans entrée au journal.
 - NE JAMAIS force-push sur `main`.
 
 ## Ne pas régresser (CRITIQUE)
