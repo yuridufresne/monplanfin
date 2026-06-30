@@ -19,6 +19,21 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-06-29 23:16 — Claude Code (UX-2 nav Studio admin)
+- **Fait (branche, EN PREVIEW — pas encore mergé) :** `feat/nav-studio-admin`.
+  - Navbar : lien **« 🎛️ Studio »** → `/studio-decaissement`, affiché **uniquement pour les admins** (`user.role === "admin"`, dérivé de `ADMIN_EMAILS`). Desktop + mobile.
+  - `App.tsx` : la route `/studio-decaissement` laisse passer l'admin **sans entitlement** (`isAdmin ? Studio : flux entitlement + SoftWall`). Pas touché `/analyse`. lint vert, build OK.
+- **→ Pour Yuri/Cowork :** tester la Preview → dire « merge ».
+- ⚠️ **Attention :** branche touche `App.tsx` + `Navbar.tsx` ; la branche #3 dashboard touche `Dashboard.tsx` + `Footer.tsx` → **disjointes**.
+
+## 2026-06-29 (UX-2) — Cowork (demande de Yuri : Studio visible pour admin)
+- **Contexte :** le Studio n'est pas dans la nav (pas public). Yuri veut y accéder **en tant qu'admin** pour travailler dessus.
+- **→ Pour Claude Code (branche `feat/nav-studio-admin`, pas main, PAS `/analyse`) :**
+  - Navbar : ajouter un lien **« Studio »** → `/studio-decaissement`, **affiché seulement si `user.role === "admin"`** (logique existante `src/api/base44Client.ts` / `ADMIN_EMAILS`).
+  - `src/App.tsx` route `/studio-decaissement` : laisser passer l'admin **même sans entitlement** → `studioUnlocked || isAdmin` (garder le `SoftWall` pour les non-admins).
+  - Affichage/garde seulement, pas de logique de calcul. Diff avant commit → Preview, pas de merge sans validation.
+- ℹ️ `yuridufresne@gmail.com` = admin + a déjà l'entitlement → verra le Studio dès le merge.
+
 ## 2026-06-29 19:02 — Claude Code (#3 en-tête dashboard)
 - **Fait (branche, EN PREVIEW — pas encore mergé) :** `feat/dashboard-header-cleanup`.
   - En-tête Dashboard : « Modifier l'ABF » = seule action primaire ; « Révoquer le partage », « Cookies marketing », « Réinitialiser… » déplacés dans le **menu ⚙️** (dropdown, clic dehors = ferme). Confirmations existantes conservées (confirm + ResetDataModal).
