@@ -9,6 +9,7 @@
     "lint": "eslint . --quiet",
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc --noEmit -p tsconfig.json",
+    "typecheck:lib": "tsc --noEmit -p tsconfig.lib.json",
     "preview": "vite preview",
     "test": "jest --passWithNoTests --testPathIgnorePatterns=\"e2e\"",
     "test:watch": "jest --watch"

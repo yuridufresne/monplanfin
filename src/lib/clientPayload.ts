@@ -245,7 +245,55 @@ export function nifMoyenne(manqueFutur, anneesDecaisse, rendementDecaissement, i
   return { nif: (nif_4pct + nif_rente) / 2, nif_4pct, nif_rente };
 }
 
-export function buildPayload(profiles: any[] = [], opts: Record<string, any> = {}) {
+// ── Type de retour de buildPayload (SSOT) — C2 : permet à TypeScript d'attraper
+//    les fautes de champ (ex. capitalProjecte) dans les moteurs. kpis +
+//    revenus_garantis sont typés STRICTEMENT (pas d'index signature) ; le reste
+//    suffisamment pour le coeur NIF. À étendre ensuite. ──────────────────────────
+export interface RevenusGarantis {
+  rrq_foyer: number; sv_foyer: number; pension_foyer: number; srg_foyer: number;
+  total: number; total_futur: number;
+  rrq_a: number; sv_a: number; pension_a: number; srg_a: number; sous_total_a: number;
+  rrq_b: number; sv_b: number; pension_b: number; srg_b: number; sous_total_b: number;
+  rrq_a_idx: number; sv_a_idx: number; srg_a_idx: number; pension_a_idx: number;
+  rrq_b_idx: number; sv_b_idx: number; srg_b_idx: number; pension_b_idx: number;
+  clawback_a_idx: number; clawback_b_idx: number;
+  taux_indexation_pension_a: number; taux_indexation_pension_b: number;
+  facteur_pension_a_retraite: number; facteur_pension_b_retraite: number;
+  sous_total_a_idx: number; sous_total_b_idx: number; total_idx: number;
+}
+export interface PayloadKpis {
+  nif: number; nif_nominal: number; capital_projete: number;
+  score_nif: number; cot_supp_mens: number; manque_annuel: number;
+  cible_annuelle_idx: number; investissement_actuel: number;
+  cot_mensuelle_actuelle: number; capital_projete_idx: number; annee_retraite: number;
+  carte_objectifs: {
+    revenu_mensuel_actuel: number; taux_remplacement: number;
+    objectif_mensuel_actuel: number; objectif_mensuel_futur: number;
+    prestations_gouv: string; garantis_annuels: number; garantis_mensuels: number;
+  };
+  carte_hypotheses: {
+    age_retraite_string: string; esperance_vie_string: string;
+    epargne_actuelle_totale: number; epargne_mensuelle_actuelle: number;
+    taux_inflation: number; taux_rendement_string: string; psv_mensuelle_2026: number;
+  };
+}
+export interface ClientPayload {
+  enCouple: boolean;
+  hypotheses: { inflation: number; inflation_salaire: number; rendement_accumulation: number; rendement_decaissement: number; esperance_vie: number; };
+  objectifs: { revenu_mensuel_actuel: number; taux_remplacement_vise: number; cible_annuelle: number; cible_mensuelle: number; epargne_mensuelle_actuelle: number; };
+  conjoint_a: Record<string, any>;
+  conjoint_b: Record<string, any> | null;
+  revenus_garantis: RevenusGarantis;
+  epargne: {
+    solde_reer_a: number; cot_reer_a: number; solde_celi_a: number; cot_celi_a: number;
+    solde_reer_b: number; cot_reer_b: number; solde_celi_b: number; cot_celi_b: number;
+    total_soldes: number; total_cot_mens: number;
+    comptes_a: Record<string, any[]>; comptes_b: Record<string, any[]>;
+  };
+  kpis: PayloadKpis;
+}
+
+export function buildPayload(profiles: any[] = [], opts: Record<string, any> = {}): ClientPayload {
   const REND_ACCUM_EFF = (opts && typeof opts.rendAccum === "number") ? opts.rendAccum : IQPF.REND_ACCUM;
   const dict = {};
   (profiles || []).forEach(p => {
