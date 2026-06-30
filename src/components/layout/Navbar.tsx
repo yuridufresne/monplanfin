@@ -137,6 +137,14 @@ export default function Navbar() {
                     onMouseLeave={e => { e.currentTarget.style.color = "rgba(148,163,184,0.65)"; e.currentTarget.style.background = "transparent"; }}>
                       💬 Feedback
                     </Link>
+                    <Link to="/studio-decaissement" style={{
+                      display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "rgba(148,163,184,0.65)",
+                      textDecoration: "none", padding: "6px 10px", borderRadius: 8, transition: "all 0.15s",
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.color = "#C9A063"; e.currentTarget.style.background = "rgba(201,160,99,0.08)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.color = "rgba(148,163,184,0.65)"; e.currentTarget.style.background = "transparent"; }}>
+                      🎛️ Studio
+                    </Link>
                   </>
                 )}
                 <div style={{ width: 1, height: 28, background: "rgba(255,255,255,0.1)" }} />
@@ -226,6 +234,17 @@ export default function Navbar() {
                            : { color: "rgba(148,163,184,0.8)" })
                        }}>
                          💬 Feedback Beta
+                         <ChevronRight style={{ width: 13, height: 13, opacity: 0.4 }} />
+                       </Link>
+                       <Link to="/studio-decaissement" onClick={() => setOpen(false)} style={{
+                         display: "flex", alignItems: "center", justifyContent: "space-between",
+                         padding: "12px 16px", borderRadius: 12, fontSize: 13.5, fontWeight: 500,
+                         textDecoration: "none", transition: "all 0.15s",
+                         ...(isActive("/studio-decaissement")
+                           ? { background: "linear-gradient(135deg, #C9A063, #e6c07a)", color: "#050810", fontWeight: 700, boxShadow: "0 4px 12px rgba(201,160,99,0.25)" }
+                           : { color: "rgba(148,163,184,0.8)" })
+                       }}>
+                         🎛️ Studio décaissement
                          <ChevronRight style={{ width: 13, height: 13, opacity: 0.4 }} />
                        </Link>
                      </>

@@ -68,7 +68,8 @@ function RequireAuth() {
 }
 
 function AuthenticatedApp() {
-  const { isAuthenticated, isLoadingAuth, recoveryMode } = useAuth();
+  const { isAuthenticated, isLoadingAuth, recoveryMode, user } = useAuth();
+  const isAdmin = user?.role === "admin"; // accès Studio sans entitlement (travail interne)
   const [studioUnlocked, setStudioUnlocked] = useState(false);
   const [studioChecked, setStudioChecked] = useState(false);
 
@@ -122,11 +123,13 @@ function AuthenticatedApp() {
           <Route path="/plan-financier" element={<FinancialPlan />} />
           <Route path="/investments" element={<Investments />} />
           <Route path="/studio-decaissement" element={
-            !studioChecked
-              ? <div style={{ minHeight: "70vh", display: "flex", alignItems: "center", justifyContent: "center", color: "#C9A063", fontSize: 14, background: "#050810" }}>Chargement…</div>
-              : studioUnlocked
-                ? <StudioDecaissement />
-                : <SoftWall onUnlock={() => setStudioUnlocked(true)} />
+            isAdmin
+              ? <StudioDecaissement />
+              : !studioChecked
+                ? <div style={{ minHeight: "70vh", display: "flex", alignItems: "center", justifyContent: "center", color: "#C9A063", fontSize: 14, background: "#050810" }}>Chargement…</div>
+                : studioUnlocked
+                  ? <StudioDecaissement />
+                  : <SoftWall onUnlock={() => setStudioUnlocked(true)} />
           } />
           <Route path="/admin/dossiers" element={<AdminDossiers />} />
           <Route path="/admin/feedback" element={<AdminFeedback />} />
