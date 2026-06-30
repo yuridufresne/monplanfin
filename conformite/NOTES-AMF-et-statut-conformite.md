@@ -1,6 +1,28 @@
 # Notes — Position AMF & statut conformité MonPlanFin
 *(Mémo de référence — consigné le 2026-06-29. Mettre à jour si le modèle d'affaires change.)*
 
+## Esprit / modèle d'affaires (confirmé par Yuri, 2026-06-30)
+> MonPlanFin **n'est pas un cabinet**. Il met en place des **outils d'estimation éducatifs** et, avec le
+> consentement de l'usager, **connecte les gens à des professionnels du secteur financier**. Tout dossier
+> soumis pour analyse n'est analysé que par des **conseillers partenaires titulaires des titres appropriés**.
+
+Ce modèle (outil + référencement vers des pros inscrits) est **compatible** avec un positionnement hors
+régime d'inscription AMF, **à 4 conditions** :
+1. **Rémunération du référencement** — si des conseillers paient par lead / partage de commission, l'AMF
+   encadre le partage de commissions (souvent réservé aux inscrits). → **POINT À FAIRE VALIDER (AMF/avocat)** selon le mode de rémunération.
+2. **Véracité des titres** — chaque conseiller partenaire doit être **réellement inscrit au registre AMF**
+   (ou détenir le titre annoncé). N'afficher que ce qui est prouvable.
+3. **MonPlanFin ≠ le pro** — l'outil reste « estimateur / éducatif » ; « planification financière » est
+   réservé à ce que le **partenaire titré** fournit. Jamais « planificateur financier » / « cabinet » pour MonPlanFin.
+4. **Consentement Loi 25** — transmettre le dossier à un conseiller = communication à un tiers → **consentement explicite** requis.
+
+### Revue du site (2026-06-30) — écarts à corriger (tâche Claude Code)
+- ❌ `Dashboard.tsx:624` « conseiller **du cabinet** » → « conseiller **partenaire** ».
+- ❌ `Home.tsx:75` badge « **Planification financière** · Québec » → « **Estimation financière** · Québec ».
+- ❌ `Home.tsx:92` « **Conseillers accrédités AMF** » → « Conseillers partenaires **inscrits à l'AMF** » (si vrai).
+- ⚠️ `ConsentGate.tsx:13` « planification financière personnelle » → « outil d'estimation éducatif ».
+- ⚠️ `FeuilleResume.tsx:814` « Rapport de planification financière » → « Rapport d'estimation financière ».
+
 ## Position AMF (pourquoi MonPlanFin est largement HORS du régime)
 Tant que MonPlanFin reste **un outil éducatif** qui :
 - **ne vend aucun produit** financier (assurance, fonds, valeurs mobilières),

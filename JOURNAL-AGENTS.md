@@ -43,6 +43,18 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 - **Rémunération du référencement** (partage de commissions) à valider AMF/avocat.
 - **[L1] Région `ca-central-1`** : hébergement hors Canada (EFVP fait) — évaluer migration.
 
+### 🎨 MARKETING / OPEN DESIGN (Yuri démarre le marketing)
+- Open Design (OD) prend le relais des **visuels social/pub**. OD **n'a PAS accès au repo** → lui **COLLER** les briefs (il peut aussi les tirer du repo s'il a accès GitHub).
+- Briefs prêts (committés, racine) : `BRIEF-OPEN-DESIGN.md` (règles design) · `BRIEF-MARKETING-OpenDesign.md` (règles AMF + assets) · `marketing/Comparatif-outils-IA-MonPlanFin.md` (stack IA).
+- **Icône canonique = `public/favicon.svg`** (carré bleu nuit + cible + courbe verte + point doré), PAS le « MP » doré. Wordmark « Mon » blanc + « PlanFin » vert.
+- Stack IA reco : **HeyGen** (présentateur FR) + **Higgsfield/Seedance** (vidéo) + **Canva/Ideogram** (posts) + **ElevenLabs** (voix FR) ; **Firefly** pour images publiées (droits sûrs).
+- Garde-fou marketing : zéro « planificateur/conseiller financier », « Membre AMF », promesse de rendement ; pas de deepfake/faux témoignages.
+
+### 🟡 (compléments décisions Yuri, avant lancement)
+- **Vercel → plan Pro** (Hobby = usage non commercial ; le DPA vise Pro/Enterprise).
+- **Faire relire** les 3 docs Loi 25 (`conformite/` : EFVP, incidents+registre, rétention) par conseiller RP / avocat.
+- ✅ Fait cette session : GitHub PAT **régénéré + sécurisé** (keychain, plus dans l'URL) ; DPA Supabase + Vercel signés/archivés.
+
 ### ✅ DÉJÀ FAIT (mémoire, ne pas refaire)
 S1 (revoke anon, Cowork) · **S2 CSP `script-src` durci, VALIDÉ en prod (ne pas révérer)** · C2 étape 1 (type `ClientPayload`) · C3/C4 (SRG + clamp) · **L3 export + supprimer-compte** (RPC `delete_my_account` créée par Cowork) · AMF wording · logo/branding (vraie icône favicon + « MonPlanFin » 1 mot) · Studio entitlement serveur (#7) · Meta Pixel (consentement) · disclaimer AMF · garde-fous CI ESLint · clés Supabase env · /agent/debug retiré · mot de passe 8+ · nettoyage code mort.
 
