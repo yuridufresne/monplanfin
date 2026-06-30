@@ -19,6 +19,12 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-06-30 11:20 — Claude Code (S2 CSP — EN PREVIEW)
+- **Fait (branche `fix/csp-script-src`, EN PREVIEW) :** retiré `'unsafe-inline'` de **`script-src`** (vercel.json) → plus aucun script inline ne peut s'exécuter (anti-XSS). Vérifié : le build n'a **aucun `<script>` inline** (que le module externe + ld+json) ; GA/Meta chargés via `createElement('script').src`.
+- **Décision clé :** `style-src` **GARDE** `'unsafe-inline'` — l'app est en styles inline React (`style={{}}`), l'enlever casserait tout le CSS. (Durcir le style nécessiterait de réécrire tout le style de l'app — hors scope.)
+- ⚠️ **Le CSP ne s'applique que sur Vercel** (pas en local) → **à valider sur la Preview** : login, charts, GA/Meta, **aucune violation CSP** dans la console.
+- **→ Pour Yuri/Cowork :** tester la Preview (surtout la console réseau/erreurs) → « merge ». Réversible (remettre `'unsafe-inline'`).
+
 ## 2026-06-30 02:46 — Claude Code (L3 export+suppression Loi 25 — EN PREVIEW) + C2 mergé
 - **C2 étape 1 MERGÉ en prod** (`3ee818a`) — `buildPayload` typé (`ClientPayload`). Gate non encore branché (expansion notée).
 - **L3 fait (branche `feat/loi25-export-suppression`, EN PREVIEW) :** droits Loi 25 dans le menu ⚙️ du Dashboard :
