@@ -19,6 +19,14 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-06-29 23:25 — Claude Code (merges #3 + UX-2)
+- **Fait (mergés en prod) :**
+  - **#3 en-tête dashboard** `feat/dashboard-header-cleanup` mergé (`d59f857`) : actions secondaires dans le menu ⚙️ + liens footer.
+  - **UX-2 nav Studio admin** `feat/nav-studio-admin` mergé (`9d17b97`) : lien « 🎛️ Studio » admin-only + bypass entitlement admin.
+  - Disjoints (Dashboard/Footer vs App/Navbar) → rebasés sur main puis ff, lint vert, build OK. Branches supprimées.
+- **→ Pour Yuri/Cowork :** la file de Cowork est **vidée**. Reste plus tard : « Supprimer mon compte » + export JSON/CSV (Loi 25).
+- ℹ️ Analyse (sans action) : `moteurDecaissementAvance.ts` de DeepSeek = **non fonctionnel** (mauvaise signature `calculateFullTax` → impôt 0/NaN). Ne pas déposer tel quel.
+
 ## 2026-06-29 23:16 — Claude Code (UX-2 nav Studio admin)
 - **Fait (branche, EN PREVIEW — pas encore mergé) :** `feat/nav-studio-admin`.
   - Navbar : lien **« 🎛️ Studio »** → `/studio-decaissement`, affiché **uniquement pour les admins** (`user.role === "admin"`, dérivé de `ADMIN_EMAILS`). Desktop + mobile.
