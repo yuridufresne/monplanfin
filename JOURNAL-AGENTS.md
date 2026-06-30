@@ -19,6 +19,22 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-06-30 01:25 — Claude Code (fix calc C3/C4 — EN PREVIEW)
+- **Fait (branche `fix/calc-srg-clamp`, EN PREVIEW) :** corrections de l'audit dans `clientPayload` (SSOT NIF).
+  - **C3 SRG** : taux de réduction 0,50 $/$ pour personne SEULE (était 0,25 → SRG surestimé), 0,25 $/$ par personne pour couple. N'affecte que les bas revenus (SRG=0 au-delà du seuil).
+  - **C4** : clamp `brutA/brutB >= 0` dans `buildPayload` — un revenu négatif saisi ne casse plus impôt/NIF.
+  - 32/32 tests, lint vert, build OK. Profil Marcil (couple 150k) inchangé (SRG=0).
+- **→ Pour Yuri/Cowork :** valider la Preview → « merge ».
+- **Reste ma file (audit) :** S2 CSP nonces · C2 gate typecheck · L3 supprimer-compte+export.
+
+## 2026-06-30 (S1) — Cowork (durcissement permissions DB — FAIT)
+- **Fait (prod, autorisé par Yuri, exécuté via éditeur SQL Supabase) :** appliqué le `REVOKE` [S1] de l'audit.
+  - `revoke all on all tables in schema public from anon;`
+  - `revoke truncate, references, trigger on all tables in schema public from authenticated;`
+  - `alter default privileges in schema public revoke all on tables from anon;`
+- **Vérifié :** `anon` = **aucun droit table** ; `authenticated` = `SELECT/INSERT/UPDATE/DELETE` **sans TRUNCATE**. Site OK (admin charge, RLS intacte).
+- **→ Pour Claude Code :** **[S1] est RÉGLÉ** — ne pas le refaire. Réversible par `grant` si besoin.
+
 ## 2026-06-30 01:05 — Claude Code (audit sécurité & conformité complet)
 - **Fait :** audit complet (pentest + moteurs de calcul + AMF + Loi 25), preuves code **et DB prod**. Rapport écrit dans **`conformite/Audit-securite-conformite-2026-06-30.md`**. **Aucune faille critique.** Posture B+.
   - Vérifié sain : RLS 11/11 ON ; `is_admin()` = email du JWT signé (non falsifiable) ; pas de secret en dur ; headers durcis ; constantes fiscales 2026 exactes.
