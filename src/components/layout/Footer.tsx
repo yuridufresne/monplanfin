@@ -76,7 +76,7 @@ export default function Footer() {
               }}>
                 <span style={{ fontFamily: "var(--font-urbanist)", fontWeight: 800, fontSize: 11, color: "#050810" }}>MP</span>
               </div>
-              <span style={{ fontFamily: "var(--font-urbanist)", fontWeight: 700, fontSize: 14, color: "#fff", letterSpacing: "-0.02em" }}>MonPlanFin</span>
+              <span style={{ fontFamily: "var(--font-urbanist)", fontWeight: 700, fontSize: 14, color: "#fff", letterSpacing: "-0.02em" }}>Mon</span><span style={{ fontFamily: "var(--font-urbanist)", fontWeight: 700, fontSize: 14, color: "hsl(var(--success))", letterSpacing: "-0.02em" }}>PlanFin</span>
             </div>
             <p style={{ fontSize: 12.5, fontWeight: 300, lineHeight: 1.7, color: "rgba(148,163,184,0.55)" }}>
               Estimation financière conçue pour le Québec.
