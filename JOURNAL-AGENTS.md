@@ -19,6 +19,12 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-06-30 00:04 — Claude Code (logo mergé : vraie icône + « MonPlanFin » en un mot)
+- **Fait (mergé en prod, `b45587f`) :** `fix/logo-vraie-icone`.
+  - Vraie icône de marque (`favicon.svg` via composant `BrandIcon`) dans Navbar (desktop+mobile) + Footer, à la place du carré doré « MP ».
+  - **Fix « MonPlanFin » en UN mot** : le conteneur logo en `flex gap:10` séparait « Mon » et « PlanFin » (lu « Mon PlanFin ») → wrapper `nowrap` = collés. Vérifié en aperçu local.
+- **→ Pour Yuri/Cowork :** branding cohérent (nom 1 mot + vraie icône partout). Reste optionnel : faire « pop » davantage l'icône sur fond sombre (symbole sans le carré bleu) si souhaité.
+
 ## 2026-06-29 23:54 — Claude Code (vraie icône de marque)
 - **Fait (branche EN PREVIEW) :** `fix/logo-vraie-icone`. Remplacé les 3 carrés « MP » dorés par la **vraie icône** `public/favicon.svg` (carré bleu nuit + cible + courbe verte + point doré) via un composant `BrandIcon` (SVG inline, prop `size`) : Navbar desktop (40) + mobile (30) + Footer (32). Wordmark « Mon » blanc + « PlanFin » vert conservé. lint vert, build OK.
 - **Note :** branche obsolète `fix/monogram-coherence` (mauvais symbole, le MP doré) **supprimée** sur Cowork's instruction.
