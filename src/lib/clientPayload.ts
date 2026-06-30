@@ -262,11 +262,12 @@ export function buildPayload(profiles: any[] = [], opts: Record<string, any> = {
   const profilCj = profil.conjoint || {};
   const retCj = ret.conjoint || {};
 
-  const brutA = (rev.emplois || []).reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0), 0)
-    + (rev.sidehustles || []).reduce((s, sh) => s + (parseFloat(sh.revenu_mensuel_moyen) || 0) * 12, 0);
+  // C4 : clamp >= 0 — un revenu negatif saisi ne doit pas casser impot/NIF.
+  const brutA = Math.max(0, (rev.emplois || []).reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0), 0)
+    + (rev.sidehustles || []).reduce((s, sh) => s + (parseFloat(sh.revenu_mensuel_moyen) || 0) * 12, 0));
   const brutB = enCouple
-    ? (rev.conjoint?.emplois || []).reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0), 0)
-    + (rev.conjoint?.sidehustles || []).reduce((s, sh) => s + (parseFloat(sh.revenu_mensuel_moyen) || 0) * 12, 0)
+    ? Math.max(0, (rev.conjoint?.emplois || []).reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0), 0)
+    + (rev.conjoint?.sidehustles || []).reduce((s, sh) => s + (parseFloat(sh.revenu_mensuel_moyen) || 0) * 12, 0))
     : 0;
 
   const pA = readPersonne(ret, profil, brutA); pA.salaire = brutA;
@@ -284,9 +285,12 @@ export function buildPayload(profiles: any[] = [], opts: Record<string, any> = {
   const revHorsPSV = rrqFoyer + pensionFoyer;
   const srgSeuil = enCouple ? IQPF.SRG_SEUIL_COUPLE : IQPF.SRG_SEUIL_SEUL;
   const srgMaxParPers = enCouple ? IQPF.SRG_MAX_COUPLE : IQPF.SRG_MAX_SEUL;
+  // C3 : taux de reduction SRG. Seul = 0,50 $/$ d'autre revenu ; couple = 0,25 $/$
+  // par personne sur le revenu combine. (avant : 0,25 pour tous -> SRG surestime pour un seul)
+  const tauxReductionSRG = enCouple ? 0.25 : 0.50;
   const srgParPersonne = revHorsPSV >= srgSeuil
     ? 0
-    : Math.max(0, Math.round(srgMaxParPers - (revHorsPSV / 2) * 0.5));
+    : Math.max(0, Math.round(srgMaxParPers - revHorsPSV * tauxReductionSRG));
   const srgA = srgParPersonne;
   const srgB = enCouple ? srgParPersonne : 0;
   const srgFoyer = srgA + srgB;
