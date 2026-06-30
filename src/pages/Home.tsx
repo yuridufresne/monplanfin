@@ -72,7 +72,7 @@ export default function Home() {
         <motion.div initial={{ opacity: 0, y: 26 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 14px", borderRadius: 99, background: "rgba(201,160,99,0.1)", border: "1px solid rgba(201,160,99,0.3)", marginBottom: 26 }}>
             <Sparkles size={13} color="#C9A063" />
-            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".14em", textTransform: "uppercase", color: "#C9A063" }}>Planification financière · Québec</span>
+            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".14em", textTransform: "uppercase", color: "#C9A063" }}>Estimation financière · Québec</span>
           </div>
           <h1 className="font-urbanist" style={{ fontSize: "clamp(2.5rem, 5.6vw, 4.1rem)", fontWeight: 900, lineHeight: 1.06, color: "#fff", letterSpacing: "-0.03em", marginBottom: 22 }}>
             Vos finances,<br />enfin <span style={{ backgroundImage: "linear-gradient(95deg, #C9A063, #e8c896)", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent" }}>claires.</span>
@@ -89,7 +89,7 @@ export default function Home() {
             </button>
           </div>
           <div style={{ display: "flex", gap: 18, flexWrap: "wrap" }}>
-            {[["10 minutes", Clock3], ["100 % gratuit", CheckCircle2], ["Conforme Loi 25", Lock], ["Conseillers accrédités AMF", Shield]].map(([txt, Ic]) => (
+            {[["10 minutes", Clock3], ["100 % gratuit", CheckCircle2], ["Conforme Loi 25", Lock], ["Conseillers partenaires inscrits à l'AMF", Shield]].map(([txt, Ic]) => (
               <span key={txt} style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 12.5, color: "rgba(255,255,255,0.55)" }}><Ic size={14} color="#5BC4A0" /> {txt}</span>
             ))}
           </div>

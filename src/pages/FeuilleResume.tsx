@@ -811,7 +811,7 @@ export default function FeuilleResume() {
 
       <div id="rapport-conseiller" className="max-w-7xl mx-auto px-5 lg:px-10 py-14 md:py-20">
         <div className="print-seulement" style={{ borderBottom: "2px solid #111", paddingBottom: 10, marginBottom: 18 }}>
-          <p style={{ fontSize: 20, fontWeight: 800, color: "#111", margin: 0 }}>MonPlanFin — Rapport de planification financière</p>
+          <p style={{ fontSize: 20, fontWeight: 800, color: "#111", margin: 0 }}>MonPlanFin — Rapport d'estimation financière</p>
           <p style={{ fontSize: 12, color: "#444", margin: "4px 0 0 0" }}>
             {(() => { const n = new URLSearchParams(window.location.search).get("nom"); return n ? "Client : " + n + " · " : ""; })()}
             Préparé le {new Date().toLocaleDateString("fr-CA", { year: "numeric", month: "long", day: "numeric" })} · Document confidentiel

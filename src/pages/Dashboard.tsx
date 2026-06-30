@@ -621,7 +621,7 @@ export default function Dashboard() {
                   Prêt à passer à l'action ?
                 </p>
                 <p style={{ fontSize: 12.5, color: "rgba(255,255,255,0.55)", lineHeight: 1.5 }}>
-                  Transmettez votre dossier à un conseiller du cabinet pour une analyse personnalisée et gratuite.
+                  Transmettez votre dossier à un conseiller partenaire pour une analyse personnalisée et gratuite.
                 </p>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 18px", borderRadius: 10, background: "linear-gradient(135deg, #C9A063, #e6c07a)", color: "#050810", fontSize: 13, fontWeight: 700 }}>

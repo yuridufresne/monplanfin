@@ -10,7 +10,7 @@ const CONSENT_TEXT_CURRENT = `CONSENTEMENT À LA COLLECTE, L'UTILISATION ET LA C
 
 1. IDENTIFICATION DU RESPONSABLE DU TRAITEMENT
 
-MonPlanFin (« MonPlanFin », « la Plateforme », « nous », « notre ») est une plateforme numérique d'analyse et de planification financière personnelle exploitée au Québec, Canada.
+MonPlanFin (« MonPlanFin », « la Plateforme », « nous », « notre ») est un outil numérique d'estimation financière éducatif exploité au Québec, Canada.
 
 Le responsable du traitement de vos renseignements personnels au sens de la Loi sur la protection des renseignements personnels dans le secteur privé (RLRQ, c. P-39.1, communément appelée « Loi 25 ») est :
 

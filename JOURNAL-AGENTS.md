@@ -19,6 +19,33 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-06-30 11:40 — Claude Code (AMF wording — FAIT, direct main)
+- **Fait (mergé direct sur main, sur demande de Yuri « pas de branche ») :** corrigé les 5 textes AMF listés par Cowork.
+  - Dashboard « conseiller du cabinet » → « conseiller partenaire ».
+  - Home « Planification financière · Québec » → « Estimation financière · Québec » ; « Conseillers accrédités AMF » → « Conseillers partenaires inscrits à l'AMF ».
+  - ConsentGate « plateforme d'analyse et de planification financière personnelle » → « outil numérique d'estimation financière éducatif ».
+  - FeuilleResume « Rapport de planification financière » → « Rapport d'estimation financière ».
+  - Texte seulement, lint vert, build OK. Pas touché `/analyse`.
+- **→ Pour Yuri (non-code) :** point ouvert = **rémunération du référencement** (partage de commissions) à valider AMF/avocat.
+
+## 2026-06-30 (AMF wording) — Cowork (revue du site vs esprit MonPlanFin)
+- **Contexte :** Yuri confirme l'esprit — MonPlanFin **n'est PAS un cabinet** ; outil d'estimation éducatif qui **connecte** vers des **conseillers partenaires inscrits/titrés** (détails : `conformite/NOTES-AMF-et-statut-conformite.md`).
+- **→ Pour Claude Code (branche `fix/amf-wording`, pas main, PAS `/analyse`) — corriger ces textes :**
+  - ❌ `src/pages/Dashboard.tsx:~624` : « conseiller **du cabinet** » → « conseiller **partenaire** ».
+  - ❌ `src/pages/Home.tsx:~75` : « **Planification financière** · Québec » → « **Estimation financière** · Québec ».
+  - ❌ `src/pages/Home.tsx:~92` : « **Conseillers accrédités AMF** » → « Conseillers partenaires **inscrits à l'AMF** ».
+  - ⚠️ `src/components/dashboard/ConsentGate.tsx:~13` : « planification financière personnelle » → « outil d'estimation financière éducatif ».
+  - ⚠️ `src/pages/FeuilleResume.tsx:~814` : « Rapport de planification financière » → « Rapport d'estimation financière ».
+  - Texte/affichage seulement, aucune logique. Diff avant commit → Preview, pas de merge sans validation.
+- ✅ Déjà conformes (NE PAS toucher) : `Methodologie.tsx`, `Dashboard.tsx:292`, `ConsentGate.tsx:35-38`, `Conditions.tsx:137`. (« revenus garantis » = rentes gouv = OK.)
+- **→ Pour Yuri :** point ouvert non-code = **rémunération du référencement** à valider avec l'AMF/avocat (partage de commissions).
+
+## 2026-06-30 (L3 RPC) — Cowork (delete_my_account créée — FAIT)
+- **Fait (prod, autorisé Yuri, via éditeur SQL Supabase) :** créé la RPC `public.delete_my_account()` (SECURITY DEFINER, search_path figé) à partir de `supabase_delete_my_account.sql`.
+- **Vérifié :** fonction existe, `security_definer=true`, `authenticated` exécute=✅, `anon`=❌. Supprime données (created_by) + studio_entitlement + `auth.users` du **caller uniquement**.
+- **→ Pour Claude Code :** le « Supprimer mon compte » de la branche L3 a maintenant sa RPC → suppression complète OK. Tu peux merger L3 après validation.
+- ⚠️ Ne PAS appeler la RPC connecté en `yuridufresne` (effacerait profil Marcil + compte).
+
 ## 2026-06-30 11:20 — Claude Code (S2 CSP — EN PREVIEW)
 - **Fait (branche `fix/csp-script-src`, EN PREVIEW) :** retiré `'unsafe-inline'` de **`script-src`** (vercel.json) → plus aucun script inline ne peut s'exécuter (anti-XSS). Vérifié : le build n'a **aucun `<script>` inline** (que le module externe + ld+json) ; GA/Meta chargés via `createElement('script').src`.
 - **Décision clé :** `style-src` **GARDE** `'unsafe-inline'` — l'app est en styles inline React (`style={{}}`), l'enlever casserait tout le CSS. (Durcir le style nécessiterait de réécrire tout le style de l'app — hors scope.)
