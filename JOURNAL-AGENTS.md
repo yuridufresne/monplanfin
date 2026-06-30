@@ -19,6 +19,10 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-06-29 23:31 — Claude Code (cohérence wordmark)
+- **Fait (mergé en prod, `bd6bdef`) :** audit logos + nom du site. « MonPlanFin » déjà cohérent partout (title/OG/Schema/UI). Corrigé 2 écarts du wordmark « PlanFin » vert (directive 8400f02) : ResetPassword (était doré) + Footer (était tout blanc → Mon blanc + PlanFin vert).
+- **→ Pour les autres :** monogramme « MP » a un léger écart de couleur Navbar vs Footer/mobile — laissé (cosmétique/voulu) ; à uniformiser si Yuri le veut.
+
 ## 2026-06-29 23:25 — Claude Code (merges #3 + UX-2)
 - **Fait (mergés en prod) :**
   - **#3 en-tête dashboard** `feat/dashboard-header-cleanup` mergé (`d59f857`) : actions secondaires dans le menu ⚙️ + liens footer.
