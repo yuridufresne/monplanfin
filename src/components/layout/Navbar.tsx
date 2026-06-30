@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { base44 } from "@/api/base44Client";
 import { Menu, LogOut, ChevronRight, ChevronDown, Briefcase } from "lucide-react";
+import BrandIcon from "@/components/BrandIcon";
 
 const publicLinks = [
   { label: "Accueil", path: "/" },
@@ -76,13 +77,7 @@ export default function Navbar() {
 
           {/* Logo */}
           <Link to="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
-            <div style={{
-              width: 40, height: 40, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center",
-              background: "rgba(201,160,99,0.12)",
-              border: "1px solid rgba(201,160,99,0.25)",
-            }}>
-              <span style={{ fontFamily: "var(--font-urbanist)", fontWeight: 800, fontSize: 12, color: "#C9A063", letterSpacing: "-0.02em" }}>MP</span>
-            </div>
+            <BrandIcon size={40} />
             <span style={{ fontFamily: "var(--font-urbanist)", fontSize: 15, fontWeight: 700, color: "#fff", letterSpacing: "-0.02em" }}>Mon</span><span style={{ fontFamily: "var(--font-urbanist)", fontSize: 15, fontWeight: 700, color: "hsl(var(--success))", letterSpacing: "-0.02em" }}>PlanFin</span>
             <span style={{
               padding: "2px 7px",
@@ -179,9 +174,7 @@ export default function Navbar() {
               <div style={{ display: "flex", flexDirection: "column", height: "100%", paddingTop: 56, paddingBottom: 32 }}>
                 <div style={{ padding: "0 20px 24px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{ width: 30, height: 30, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, #C9A063, #e6c07a)" }}>
-                      <span style={{ fontFamily: "var(--font-urbanist)", fontWeight: 800, fontSize: 10, color: "#050810" }}>MP</span>
-                    </div>
+                    <BrandIcon size={30} />
                     <span style={{ fontFamily: "var(--font-urbanist)", fontWeight: 700, fontSize: 14, color: "#fff" }}>Mon</span><span style={{ fontFamily: "var(--font-urbanist)", fontWeight: 700, fontSize: 14, color: "hsl(var(--success))" }}>PlanFin</span>
                     <span style={{
                       padding: "2px 6px",

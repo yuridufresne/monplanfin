@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { clearConsent } from "@/lib/consent";
+import BrandIcon from "@/components/BrandIcon";
 
 // Rouvre la bannière de consentement aux témoins (Loi 25 : retrait facile = 1 clic).
 function ouvrirPreferencesCookies() {
@@ -68,14 +69,7 @@ export default function Footer() {
           {/* Brand */}
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-              <div style={{
-                width: 32, height: 32, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center",
-                background: "linear-gradient(135deg, rgba(201,160,99,0.85) 0%, rgba(201,160,99,0.6) 100%)",
-                border: "1px solid rgba(201,160,99,0.4)",
-                boxShadow: "0 4px 12px rgba(201,160,99,0.2), inset 0 1px 0 rgba(255,255,255,0.2)",
-              }}>
-                <span style={{ fontFamily: "var(--font-urbanist)", fontWeight: 800, fontSize: 11, color: "#050810" }}>MP</span>
-              </div>
+              <BrandIcon size={32} />
               <span style={{ fontFamily: "var(--font-urbanist)", fontWeight: 700, fontSize: 14, color: "#fff", letterSpacing: "-0.02em" }}>Mon</span><span style={{ fontFamily: "var(--font-urbanist)", fontWeight: 700, fontSize: 14, color: "hsl(var(--success))", letterSpacing: "-0.02em" }}>PlanFin</span>
             </div>
             <p style={{ fontSize: 12.5, fontWeight: 300, lineHeight: 1.7, color: "rgba(148,163,184,0.55)" }}>
