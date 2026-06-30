@@ -1,7 +1,7 @@
 # 📣 Brief Marketing / Réseaux sociaux — Open Design (MonPlanFin)
 *(À coller au début d'une session de création de visuels social/pub. RÈGLES + ASSETS uniquement.)*
 
-MonPlanFin = **outil ÉDUCATIF** québécois (estime le NIF — Numéro d'Indépendance Financière). Phase **BÊTA**.
+MonPlanFin = **outil ÉDUCATIF** québécois (estime le NIF — Numéro d'Indépendance Financière).
 
 ---
 
@@ -11,6 +11,9 @@ C'est dans la pub que les risques sont réels. Dans **tout** texte (post, pub, b
   → Se décrire comme « **estimateur / outil éducatif** ».
 - **NE PAS** afficher « **Membre AMF** » ni laisser entendre une inscription/encadrement AMF (c'est faux).
 - **AUCUNE promesse de rendement** ni garantie de résultat.
+- **JAMAIS le mot « Bêta »** (ni « beta », « BÉTA », badge ou mention) dans **aucun** doc, visuel, post,
+  pub, bio, légende, bannière ou story **marketing**. Le produit se présente comme **fini et fiable**.
+  (Le statut « bêta » reste une info **interne** au projet — il ne sort jamais en public.)
 - Ton informatif, pas de conseil nominatif. Mention « estimations à titre éducatif » bienvenue.
 
 ## 🟢 Identité visuelle (à respecter partout)
@@ -39,4 +42,4 @@ C'est dans la pub que les risques sont réels. Dans **tout** texte (post, pub, b
 - **Photo de profil** : carré (≥ 1024×1024) — l'icône favicon sur fond navy.
 - **Bannière Facebook** : 1640×856 · **Bannière LinkedIn** : 1584×396.
 - **Post carré** : 1080×1080 · **Story / Reel** : 1080×1920.
-- Toujours : wordmark vert + icône favicon + `monplanfin.ca` + badge « BÉTA » discret possible.
+- Toujours : wordmark vert + icône favicon + `monplanfin.ca`. **Aucun badge « Bêta »** (voir règles AMF).

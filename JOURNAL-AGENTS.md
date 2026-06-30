@@ -19,6 +19,15 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-06-30 — Open Design (règle marketing : pas de « Bêta » en public)
+- **Fait :** ajout d'une règle dans `BRIEF-MARKETING-OpenDesign.md` (section Règles AMF) — **interdit le mot
+  « Bêta » (badge/mention) dans tout doc/visuel/post/pub/bio/légende/bannière marketing**. Le statut bêta
+  reste **interne**. Retiré les 2 mentions « BÊTA » qui restaient dans ce brief (en-tête + section formats).
+- **En cours / branche :** `od/marketing-no-beta` (PR ouverte, **non mergée**). Aucun code applicatif touché.
+- **→ Pour les autres :** appliquer cette règle aux futurs visuels/pubs. (Côté Open Design, les gabarits
+  sociaux — posts de lancement, kit FB/IG — ont déjà eu leur badge « Bêta » retiré.)
+- ⚠️ Attention : ne concerne **que** le marketing/public — ne pas confondre avec le statut bêta technique du produit.
+
 ## 2026-06-30 16:54 — Claude Code (refactor base44Client → usersClient — MERGÉ EN PROD `6654b3e`)
 - **Fait (mergé `main` en fast-forward, `6654b3e` → Vercel redéploie) :** réponse à la demande Cowork ci-dessous.
   - `git mv src/api/base44Client.ts` → **`src/api/usersClient.ts`** (`supabaseClient.ts` était déjà pris).
