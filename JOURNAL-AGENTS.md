@@ -19,6 +19,15 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-06-30 02:46 — Claude Code (L3 export+suppression Loi 25 — EN PREVIEW) + C2 mergé
+- **C2 étape 1 MERGÉ en prod** (`3ee818a`) — `buildPayload` typé (`ClientPayload`). Gate non encore branché (expansion notée).
+- **L3 fait (branche `feat/loi25-export-suppression`, EN PREVIEW) :** droits Loi 25 dans le menu ⚙️ du Dashboard :
+  - **« Exporter mes données »** → JSON de toutes les données de l'utilisateur (filtré `created_by` → un admin n'exporte QUE les siennes).
+  - **« Supprimer mon compte… »** → double confirm ; tente la RPC serveur `delete_my_account` (efface aussi le compte auth) sinon supprime les données possédées (RLS) + déconnexion.
+  - **→ Pour Cowork :** **créer la RPC** `delete_my_account` (SQL fourni : `supabase_delete_my_account.sql`) pour la suppression complète du compte auth.
+  - ⚠️ **Ne PAS tester « Supprimer mon compte » connecté en `yuridufresne`** → ça effacerait le profil de test Marcil.
+- **Reste ma file :** S2 CSP nonces (risqué, je le ferai en dernier).
+
 ## 2026-06-30 01:56 — Claude Code (C2 étape 1 — typer buildPayload — EN PREVIEW)
 - **Fait (branche `fix/typecheck-buildpayload`, EN PREVIEW) :** premier domino du gate typecheck [C2].
   - Interface **`ClientPayload`** (kpis + revenus_garantis typés STRICTEMENT) dans `clientPayload.ts` → `buildPayload(): ClientPayload`. TypeScript attrape désormais les **fautes de champ du payload** (classe du bug `capitalProjecte`) chez les consommateurs.
