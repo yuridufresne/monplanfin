@@ -19,6 +19,15 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-06-30 01:56 — Claude Code (C2 étape 1 — typer buildPayload — EN PREVIEW)
+- **Fait (branche `fix/typecheck-buildpayload`, EN PREVIEW) :** premier domino du gate typecheck [C2].
+  - Interface **`ClientPayload`** (kpis + revenus_garantis typés STRICTEMENT) dans `clientPayload.ts` → `buildPayload(): ClientPayload`. TypeScript attrape désormais les **fautes de champ du payload** (classe du bug `capitalProjecte`) chez les consommateurs.
+  - `calcNIF` : reads `buildPayload` typés (gardes `|| {}` retirées). calcNIF 17 → 5 erreurs.
+  - `tsconfig.lib.json` + script `npm run typecheck:lib` (assoupli) pour mesurer. **Baseline src/lib = 100** (était 112). 32/32 tests, lint vert, build OK.
+- **⚠️ PAS encore gaté en CI** (100 err assouplies = surtout données de section non typées).
+- **→ EXPANSION (notée, à faire) :** (1) typer les **données de section** (ret/profil/rev → `{}`) pour amener src/lib à 0, (2) **brancher `typecheck:lib` en CI** (bloquant), (3) plus tard l'UI (`src/components`, faible priorité).
+- **→ Pour Yuri/Cowork :** valider la Preview → « merge » (c'est de la robustesse interne, rien d'observable à l'écran).
+
 ## 2026-06-30 01:35 — Claude Code (C3/C4 mergé)
 - **Fait (mergé en prod, `a4bc755`) :** fix calcul **C3 (taux SRG selon statut) + C4 (clamp revenus négatifs)** dans `clientPayload`. 32/32 tests, build OK. Cas normaux/Marcil inchangés.
 - **Reste ma file (audit) :** S2 CSP nonces · C2 gate typecheck · L3 supprimer-compte+export. Décisions Yuri : backups, impôt 18 %, claims AMF, région ca-central-1.
