@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 
-export default function InfoTooltip({ text, explanation, size = "sm" }) {
+export default function InfoTooltip({ text, explanation, size = "sm" }: { text?: any; explanation?: any; size?: string }) {
   // Support both `text` and legacy `explanation` prop
   const content = text || explanation;
 

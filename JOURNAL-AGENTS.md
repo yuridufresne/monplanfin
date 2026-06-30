@@ -35,8 +35,8 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 - **[C1] Trancher l'impôt 18 % forfaitaire** de l'aperçu décaissement gratuit (`decaissementSimple`) : l'assumer comme estimation OU le brancher sur `calculateFullTax`. *Décision Yuri.*
 
 ### 🟠 ROBUSTESSE (P1 — code, Claude Code)
-- ✅ **[C2 expansion] Gate `typecheck:lib` en CI — FAIT (branche `feat/c2-typecheck-lib-gate`, EN PR)** : `tsconfig.lib.json` scopé à `src/lib`, **0 erreur**, étape CI **bloquante** ajoutée. À merger après CI verte. (mémoire `garde-fous-ci-typecheck`)
-- Plus tard : étendre le typecheck à l'UI (`src/components`, ~570 err — faible priorité, bugs visuels).
+- ✅ **[C2 expansion] Gate `typecheck` bloquant en CI — FAIT (branche `feat/c2-typecheck-lib-gate`, EN PR)** : `tsconfig.lib.json` scopé à `src/lib` **+ `src/components/dashboard`**, **0 erreur**, étape CI **bloquante**. À merger après CI verte. (mémoire `garde-fous-ci-typecheck`)
+- Plus tard : étendre le gate au reste de l'UI app (`src/pages` 428 err, `src/components` hors ui 150 err). **Bloqueur** : 9 primitives shadcn vendored (`select/card/sheet/dialog/button/input/switch/slider/label`) « fuient » des erreurs via imports → à quarantainer (`@ts-nocheck`) avant de pouvoir gater les zones qui les importent. `src/components/ui/**` (460 err) = vendored, hors gate. Faible priorité (bugs visuels, pas de chiffres).
 
 ### 🟡 CONFORMITÉ / DÉCISIONS YURI (non-code)
 - **[AMF] Véracité des claims** « conseillers partenaires inscrits à l'AMF » (les partenaires doivent réellement être inscrits au registre).
@@ -57,6 +57,20 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 
 ### ✅ DÉJÀ FAIT (mémoire, ne pas refaire)
 S1 (revoke anon, Cowork) · **S2 CSP `script-src` durci, VALIDÉ en prod (ne pas révérer)** · C2 étape 1 (type `ClientPayload`) · C3/C4 (SRG + clamp) · **L3 export + supprimer-compte** (RPC `delete_my_account` créée par Cowork) · AMF wording · logo/branding (vraie icône favicon + « MonPlanFin » 1 mot) · Studio entitlement serveur (#7) · Meta Pixel (consentement) · disclaimer AMF · garde-fous CI ESLint · clés Supabase env · /agent/debug retiré · mot de passe 8+ · nettoyage code mort.
+
+## 2026-06-30 16:39 — Cowork (visuels marketing — créés puis ANNULÉS à la demande de Yuri)
+- **Contexte :** j'avais généré 4 visuels social/pub (SVG+PNG) dans `marketing/visuels/` à partir de `public/favicon.svg`. **Yuri n'était pas satisfait du rendu du logo → tout supprimé.** Les **visuels reviennent à Open Design**.
+- **Fait (état propre) :** supprimé `marketing/visuels/` ; **annulé mon commit local** (`0bcff4d`, JAMAIS poussé) ; `main` réaligné sur `origin/main` (`420febe`).
+- ⚠️ **Important / préservé :** au moment du nettoyage, l'arbre de travail contenait les **modifs non commitées de Claude Code [C2]** (`src/lib/*`, `tsconfig.lib.json`, `.github/workflows/ci.yml`, `src/vite-env.d.ts`). Je les ai **laissées INTACTES** (pas de `reset --hard`). → Claude Code peut continuer/committer sa branche `feat/c2-typecheck-lib-gate` normalement.
+- **→ Pour Open Design :** repartir du favicon canonique (`public/favicon.svg`) pour les visuels ; respecter `BRIEF-MARKETING-OpenDesign.md`. Ne pas réutiliser mes SVG (supprimés).
+- ⚠️ **Leçon (outillage Cowork) :** le sandbox a un accès `.git` restreint (locks/refs « Operation not permitted ») → les `git reset`/push depuis Cowork sont fragiles. Préférer un nettoyage ciblé ; pour pousser, passer par la machine de Yuri.
+
+## 2026-06-30 12:55 — Claude Code (C2 suite — gate étendu au dashboard — même PR)
+- **Fait (même branche `feat/c2-typecheck-lib-gate`, EN PR) :** étendu le gate typecheck à **`src/components/dashboard`** (1ère zone UI engine-facing : affichage NIF / capital / décaissement / stratégies).
+  - `tsconfig.lib.json` → `include: ["src/lib", "src/components/dashboard", "src/vite-env.d.ts"]`. **0 erreur** (lib + dashboard). Étape CI renommée « Typecheck gate (src/lib + components/dashboard) ».
+  - **37 → 0 erreurs** dashboard : `NIFCalculator` (8 styles partagés typés `React.CSSProperties` — littéraux `textAlign` élargis), `ReerLevierSimulator` (`Slider` props optionnelles + tuple `[string, any][]` pour le `reduce`), `SoumettreDossierModal` (`m: Record<string, any>` + `Section` props optionnelles), `InfoTooltip` (props `text`/`explanation` optionnelles → corrige `DetteStrategie`/`PlacementStrategie`).
+  - ✅ typecheck gate **0**, lint vert, **32/32 tests**, build OK. **Changements purement types** (effacés au build) → aucun impact visuel.
+- **→ Pour étendre encore (noté dans « ROBUSTESSE ») :** `src/pages` (428) + `src/components` hors ui (150) restent hors gate. Bloqueur = **9 primitives shadcn vendored** qui fuient des erreurs via imports → les quarantainer (`@ts-nocheck`) d'abord. `src/components/ui/**` (460) = vendored, jamais dans le gate.
 
 ## 2026-06-30 12:35 — Claude Code (C2 — gate typecheck:lib en CI — EN PR)
 - **Fait (branche `feat/c2-typecheck-lib-gate`, EN PR, PAS mergé) :** [C2 expansion] terminé.

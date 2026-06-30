@@ -71,7 +71,7 @@ export default function SoumettreDossierModal({ onClose, profiles, user }) {
   // Construire le snapshot du profil
   const buildSnapshot = () => {
     const unwrap = (raw) => raw?.data?.data || raw?.data || raw || {};
-    const m = {};
+    const m: Record<string, any> = {};
     profiles.forEach(p => { if (p?.section) m[p.section] = unwrap(p); });
     return m;
   };
@@ -352,7 +352,7 @@ const inputStyle = {
   color: "#fff", fontSize: 13, outline: "none",
 };
 
-function Section({ titre, obligatoire, hint, children }) {
+function Section({ titre, obligatoire, hint, children }: { titre?: any; obligatoire?: any; hint?: any; children?: any }) {
   return (
     <div style={{ marginBottom: 18 }}>
       <div style={{ fontSize: 11.5, fontWeight: 700, color: "rgba(255,255,255,0.85)", marginBottom: 8, letterSpacing: ".01em" }}>

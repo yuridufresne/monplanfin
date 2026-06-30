@@ -73,8 +73,8 @@ export default function NIFCalculator({ profiles }) {
     txt40:"rgba(255,255,255,0.4)", txt30:"rgba(255,255,255,0.3)", txt25:"rgba(255,255,255,0.25)",
     cellBg:"rgba(255,255,255,0.02)", headBg:"rgba(255,255,255,0.03)",
   };
-  const cell = {padding:"11px 16px",fontSize:13};
-  const num  = {fontFamily:"var(--font-mono)",textAlign:"right"};
+  const cell: React.CSSProperties = {padding:"11px 16px",fontSize:13};
+  const num: React.CSSProperties = {fontFamily:"var(--font-mono)",textAlign:"right"};
 
   const Lbl = ({children,indent}) => <div style={{...cell,background:C.cellBg,color:C.txt55,paddingLeft:indent?24:16}}>{children}</div>;
   const Num = ({children,color}) => <div style={{...cell,...num,background:C.cellBg,fontSize:13,color:color||C.txt45}}>{children}</div>;
@@ -85,12 +85,12 @@ export default function NIFCalculator({ profiles }) {
   const pct = kpis?.nif_nominal > 0 ? Math.min(100, Math.max(0, Math.round((kpis?.capital_projete || 0) / kpis.nif_nominal * 100))) : 0;
   const subTxt = `${pA?.prenom || "Client"}${pA?.age != null ? " " + pA.age + " ans" : ""}${enCouple && pB ? " · " + pB.prenom + (pB.age != null ? " " + pB.age + " ans" : "") : ""} — 1ʳᵉ retraite en ${anneeRet}`;
   const fmtN = (v) => fmt(v).replace(" $", "");
-  const thL = { fontFamily: "var(--font-mono)", fontSize: 10.5, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: C.txt40, textAlign: "left", padding: "0 0 9px" };
-  const thR = { ...thL, textAlign: "right", color: C.vert };
-  const tdL = { padding: "8px 0", textAlign: "left", fontSize: 13.5, borderTop: "1px solid rgba(255,255,255,0.06)", color: C.txt55 };
-  const tdR = { padding: "8px 0", textAlign: "right", fontSize: 13.5, borderTop: "1px solid rgba(255,255,255,0.06)", fontFamily: "var(--font-mono)", color: "#fff" };
-  const tdSubL = { padding: "11px 0 8px", textAlign: "left", fontSize: 14, borderTop: "1px solid rgba(255,255,255,0.14)", fontWeight: 700, color: "#fff" };
-  const tdSubR = { ...tdSubL, textAlign: "right", fontFamily: "var(--font-mono)" };
+  const thL: React.CSSProperties = { fontFamily: "var(--font-mono)", fontSize: 10.5, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: C.txt40, textAlign: "left", padding: "0 0 9px" };
+  const thR: React.CSSProperties = { ...thL, textAlign: "right", color: C.vert };
+  const tdL: React.CSSProperties = { padding: "8px 0", textAlign: "left", fontSize: 13.5, borderTop: "1px solid rgba(255,255,255,0.06)", color: C.txt55 };
+  const tdR: React.CSSProperties = { padding: "8px 0", textAlign: "right", fontSize: 13.5, borderTop: "1px solid rgba(255,255,255,0.06)", fontFamily: "var(--font-mono)", color: "#fff" };
+  const tdSubL: React.CSSProperties = { padding: "11px 0 8px", textAlign: "left", fontSize: 14, borderTop: "1px solid rgba(255,255,255,0.14)", fontWeight: 700, color: "#fff" };
+  const tdSubR: React.CSSProperties = { ...tdSubL, textAlign: "right", fontFamily: "var(--font-mono)" };
 
   return (
     <div style={{ background: "#0D1628", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 20, overflow: "hidden", boxShadow: "0 40px 90px -50px #000" }}>

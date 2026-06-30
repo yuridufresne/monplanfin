@@ -24,7 +24,7 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Typecheck moteurs (src/lib)
+      - name: Typecheck gate (src/lib + components/dashboard)
         run: npm run typecheck:lib
 
       - name: Tests (calculs critiques)

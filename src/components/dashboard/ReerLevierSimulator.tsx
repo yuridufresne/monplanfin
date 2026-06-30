@@ -12,7 +12,7 @@ const glass = {
   boxShadow: "0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)",
 };
 
-function Slider({ label, value, min, max, step, fmtFn, onChange, note }) {
+function Slider({ label, value, min, max, step, fmtFn, onChange, note }: { label?: any; value?: any; min?: any; max?: any; step?: any; fmtFn?: any; onChange?: any; note?: any }) {
   return (
     <div style={{ marginBottom: 14 }}>
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
@@ -165,7 +165,7 @@ export default function ReerLevierSimulator() {
   })), [resA, resB, resC, resReer, resLevierMax]);
 
   // Verdict
-  const best = [["A", resA], ["B", resB], ["C", resC], ["D", resReer], ["E", resLevierMax]].reduce(function(a, b){ return b[1].total > a[1].total ? b : a; })[0];
+  const best = ([["A", resA], ["B", resB], ["C", resC], ["D", resReer], ["E", resLevierMax]] as [string, any][]).reduce(function(a, b){ return b[1].total > a[1].total ? b : a; })[0];
   const ecartAB = resA.total - resB.total;
   const spreadNet = invRate - loanRate;
 

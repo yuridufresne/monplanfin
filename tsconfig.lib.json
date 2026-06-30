@@ -6,5 +6,5 @@
     "strictNullChecks": false,
     "skipLibCheck": true
   },
-  "include": ["src/lib", "src/vite-env.d.ts"]
+  "include": ["src/lib", "src/components/dashboard", "src/vite-env.d.ts"]
 }
