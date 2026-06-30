@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
+import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/lib/AuthContext";
 import { clearConsent } from "@/lib/consent";
 import { useQuery } from "@tanstack/react-query";
@@ -318,6 +319,59 @@ export default function Dashboard() {
     clearConsent();
     if (typeof window !== "undefined") window.location.reload();
   };
+
+  // Loi 25 — DROIT À LA PORTABILITÉ : export de toutes les données de l'utilisateur
+  // en JSON. Filtré par created_by (un admin n'exporte QUE ses propres données).
+  const exporterDonnees = async () => {
+    const email = user?.email;
+    if (!email) return;
+    const tables: Record<string, { filter: (q: Record<string, unknown>) => Promise<unknown[]> }> = {
+      profils_financiers: base44.entities.FinancialProfile,
+      dettes: base44.entities.Debt,
+      budget: base44.entities.BudgetEntry,
+      placements: base44.entities.Investment,
+      objectifs: base44.entities.FinancialGoal,
+      consentements: base44.entities.UserConsent,
+      progression_education: base44.entities.EducationProgress,
+      dossiers_soumis: base44.entities.LeadDossier,
+    };
+    try {
+      const donnees: Record<string, unknown[]> = {};
+      for (const [cle, ent] of Object.entries(tables)) {
+        donnees[cle] = (await ent.filter({ created_by: email })) || [];
+      }
+      const blob = new Blob([JSON.stringify({ exporte_le: new Date().toISOString(), compte: email, donnees }, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `monplanfin-mes-donnees-${email}.json`;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) { console.error("Export données:", e); alert("Une erreur est survenue lors de l'export."); }
+  };
+
+  // Loi 25 — DROIT À L'EFFACEMENT : suppression complète. Tente la RPC serveur
+  // (efface aussi le compte auth) ; à défaut, supprime les données possédées (RLS).
+  const supprimerCompte = async () => {
+    const email = user?.email;
+    if (!email) return;
+    if (typeof window !== "undefined" && !window.confirm("Supprimer DÉFINITIVEMENT votre compte et toutes vos données ? Cette action est irréversible.")) return;
+    if (typeof window !== "undefined" && !window.confirm("Dernière confirmation : toutes vos données seront effacées et vous serez déconnecté(e).")) return;
+    try {
+      let serveurOk = false;
+      try { const { error } = await supabase.rpc("delete_my_account"); serveurOk = !error; } catch { serveurOk = false; }
+      if (!serveurOk) {
+        // Repli : effacer les données possédées (le shell auth reste à purger côté serveur via la RPC).
+        const ents = [base44.entities.FinancialProfile, base44.entities.Debt, base44.entities.BudgetEntry, base44.entities.Investment, base44.entities.FinancialGoal, base44.entities.UserConsent, base44.entities.EducationProgress, base44.entities.LeadDossier];
+        for (const ent of ents) {
+          const rows = (await ent.filter({ created_by: email })) || [];
+          await Promise.all(rows.map((r) => ent.delete((r as { id: string }).id)));
+        }
+      }
+    } catch (e) { console.error("Suppression compte:", e); }
+    try { await base44.auth.logout(); } catch { /* noop */ }
+    clearConsent();
+    if (typeof window !== "undefined") window.location.href = "/";
+  };
   const [detteFlipped, setDetteFlipped] = useState(false);
   const [placementFlipped, setPlacementFlipped] = useState(false);
   const [nifFlipped, setNifFlipped] = useState(false);
@@ -590,10 +644,18 @@ export default function Dashboard() {
                         style={{ display: "block", width: "100%", textAlign: "left", background: "transparent", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.78)", fontSize: 12.5, padding: "9px 12px", borderRadius: 8 }}>
                         Cookies marketing
                       </button>
+                      <button role="menuitem" onClick={() => { setMenuOpen(false); exporterDonnees(); }}
+                        style={{ display: "block", width: "100%", textAlign: "left", background: "transparent", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.78)", fontSize: 12.5, padding: "9px 12px", borderRadius: 8 }}>
+                        Exporter mes données
+                      </button>
                       <div style={{ height: 1, background: "rgba(255,255,255,0.08)", margin: "4px 8px" }} />
                       <button role="menuitem" onClick={() => { setMenuOpen(false); setShowReset(true); }}
                         style={{ display: "block", width: "100%", textAlign: "left", background: "transparent", border: "none", cursor: "pointer", color: "rgba(248,113,113,0.85)", fontSize: 12.5, padding: "9px 12px", borderRadius: 8 }}>
                         Réinitialiser…
+                      </button>
+                      <button role="menuitem" onClick={() => { setMenuOpen(false); supprimerCompte(); }}
+                        style={{ display: "block", width: "100%", textAlign: "left", background: "transparent", border: "none", cursor: "pointer", color: "rgba(248,113,113,0.85)", fontSize: 12.5, padding: "9px 12px", borderRadius: 8 }}>
+                        Supprimer mon compte…
                       </button>
                     </div>
                   </>
