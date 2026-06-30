@@ -97,6 +97,15 @@ export function estimerPrime({ duree, age, sexe = "homme", fumeur = false, couve
 //  les couches < 25 000 $, puis on calcule l'économie sur le coût total.
 //  Les couches courtes expirent en premier → la prime chute par paliers.
 // ────────────────────────────────────────────────────────────────────────────
+interface CoucheAssurance {
+  terme: string;
+  couverture: number;
+  labels: string[];
+  expireAns: number;
+  raison?: string;
+  prime?: number | null;
+}
+
 function layeringParComposantes(p, montantNet, composantesBrutes) {
   const age = p.age || 35, sexe = p.sexe || "homme", fumeur = p.fumeur || false;
   const annéesHypo = p.hypotheque_annees_restantes || 25;
@@ -115,14 +124,14 @@ function layeringParComposantes(p, montantNet, composantesBrutes) {
   }));
 
   // Regrouper par terme (montant + libellés)
-  const parTerme = {};
+  const parTerme: Record<string, { montant: number; labels: Set<string> }> = {};
   items.forEach(it => {
     if (!parTerme[it.terme]) parTerme[it.terme] = { montant: 0, labels: new Set() };
     parTerme[it.terme].montant += it.montant;
     parTerme[it.terme].labels.add(it.label);
   });
 
-  let couches = Object.entries(parTerme)
+  let couches: CoucheAssurance[] = Object.entries(parTerme)
     .map(([terme, d]) => ({ terme, couverture: Math.round(d.montant / 25000) * 25000, labels: [...d.labels], expireAns: TERME_ANS[terme] }))
     .filter(c => c.couverture > 0)
     .sort((a, b) => a.expireAns - b.expireAns);

@@ -57,7 +57,7 @@ export function calcRevenuDisponible(profiles) {
     let nbMoins6 = 0, nb6_17 = 0;
     (alloc.enfants || []).forEach(e => {
       if (!e.date_naissance) return;
-      const age = (Date.now() - new Date(e.date_naissance)) / (365.25 * 24 * 3600 * 1000);
+      const age = (Date.now() - new Date(e.date_naissance).getTime()) / (365.25 * 24 * 3600 * 1000);
       if (age < 6) nbMoins6++; else if (age < 18) nb6_17++;
     });
     allocMensuel = calcAllocations({ rfnr: rfnrFamilial, nbMoins6, nb6_17, monoparental: alloc.situation_familiale === "monoparental" }).mensuel;
@@ -109,7 +109,7 @@ export function calcEpargne(profiles) {
 // PASSIFS : dettes + hypotheques (depuis les profils), ou debtsTotal si fourni.
 const COMPTES_ACTIFS = [...COMPTES_EPARGNE, "reee"];
 
-export function calcValeurNette(profiles, { investmentsTotal = 0, debtsTotal = null } = {}) {
+export function calcValeurNette(profiles, { investmentsTotal = 0, debtsTotal = null }: { investmentsTotal?: any; debtsTotal?: any } = {}) {
   const get = (sec) => {
     const found = (profiles || []).find(p => p && p.section === sec);
     return unwrap(found && found.data || {});
@@ -201,7 +201,7 @@ export function calcDepensesMensuelles(budgetEntries: any[] = [], profiles: any[
   const serviceDette = serviceHypo + servicePrets;
 
   // Cotisations d'épargne : AFFICHAGE seulement (mise de côté, pas une dépense → hors total).
-  const sumCot = (sec) => Object.values((sec && sec.comptes) || {}).flat().reduce((s, c) => s + (parseFloat(c && c.cotisation_mensuelle) || 0), 0);
+  const sumCot = (sec) => Object.values(((sec && sec.comptes) || {}) as Record<string, any[]>).flat().reduce((s, c) => s + (parseFloat(c && c.cotisation_mensuelle) || 0), 0);
   const cotisationsEpargne = sumCot(epargneSec) + sumCot(epargneSec.conjoint || {});
 
   return {

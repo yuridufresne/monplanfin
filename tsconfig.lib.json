@@ -5,5 +5,6 @@
     "noImplicitAny": false,
     "strictNullChecks": false,
     "skipLibCheck": true
-  }
+  },
+  "include": ["src/lib", "src/vite-env.d.ts"]
 }

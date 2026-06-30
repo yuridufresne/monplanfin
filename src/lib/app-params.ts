@@ -1,6 +1,8 @@
 const isNode = typeof window === 'undefined';
 const windowObj = isNode ? { localStorage: new Map() } : window;
-const storage = windowObj.localStorage;
+// En Node, localStorage est un Map factice (jamais utilisé : getAppParamValue
+// court-circuite via isNode). `any` évite l'union Storage | Map au typecheck.
+const storage: any = windowObj.localStorage;
 
 const toSnakeCase = (str) => {
 	return str.replace(/([A-Z])/g, '_$1').toLowerCase();

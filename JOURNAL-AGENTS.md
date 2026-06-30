@@ -35,7 +35,7 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 - **[C1] Trancher l'impôt 18 % forfaitaire** de l'aperçu décaissement gratuit (`decaissementSimple`) : l'assumer comme estimation OU le brancher sur `calculateFullTax`. *Décision Yuri.*
 
 ### 🟠 ROBUSTESSE (P1 — code, Claude Code)
-- **[C2 expansion] Gate `typecheck:lib` en CI** : (1) typer les **données de section** (`ret`/`profil`/`rev` défaultées à `{}` = la majorité des ~100 erreurs assouplies de `src/lib`), (2) amener `src/lib` assoupli à **0**, (3) ajouter l'étape CI **bloquante**. Outils déjà en place : `tsconfig.lib.json` + `npm run typecheck:lib`. (mémoire `garde-fous-ci-typecheck`)
+- ✅ **[C2 expansion] Gate `typecheck:lib` en CI — FAIT (branche `feat/c2-typecheck-lib-gate`, EN PR)** : `tsconfig.lib.json` scopé à `src/lib`, **0 erreur**, étape CI **bloquante** ajoutée. À merger après CI verte. (mémoire `garde-fous-ci-typecheck`)
 - Plus tard : étendre le typecheck à l'UI (`src/components`, ~570 err — faible priorité, bugs visuels).
 
 ### 🟡 CONFORMITÉ / DÉCISIONS YURI (non-code)
@@ -57,6 +57,18 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 
 ### ✅ DÉJÀ FAIT (mémoire, ne pas refaire)
 S1 (revoke anon, Cowork) · **S2 CSP `script-src` durci, VALIDÉ en prod (ne pas révérer)** · C2 étape 1 (type `ClientPayload`) · C3/C4 (SRG + clamp) · **L3 export + supprimer-compte** (RPC `delete_my_account` créée par Cowork) · AMF wording · logo/branding (vraie icône favicon + « MonPlanFin » 1 mot) · Studio entitlement serveur (#7) · Meta Pixel (consentement) · disclaimer AMF · garde-fous CI ESLint · clés Supabase env · /agent/debug retiré · mot de passe 8+ · nettoyage code mort.
+
+## 2026-06-30 12:35 — Claude Code (C2 — gate typecheck:lib en CI — EN PR)
+- **Fait (branche `feat/c2-typecheck-lib-gate`, EN PR, PAS mergé) :** [C2 expansion] terminé.
+  - `tsconfig.lib.json` **scopé à `src/lib`** (`include: ["src/lib", "src/vite-env.d.ts"]`) → le gate garde les **moteurs** (SSOT), pas l'UI.
+  - **100 → 0 erreurs** assouplies dans `src/lib`. Typé les **données de section** dynamiques (`ret`/`profil`/`rev`/`dict`/`m` → `Record<string, any>`) dans `clientPayload`, `sectionsRetraite`, `calcNIF`, `prestationsGouvernementales`, `immobilierPayload`, `calcRevenuNet`.
+  - Ajouté **`src/vite-env.d.ts`** (`vite/client`) → règle `import.meta.env` (app-params, email) **et fait baisser le typecheck principal de ~2936 → 2840**.
+  - `decaissementSimple` : retiré les `|| {}` sur le payload déjà typé (sinon `{}` masque les typos) + supprimé un fallback mort `hyp.rendement`. `moteurProtection` : interface `CoucheAssurance` + `parTerme` typé. `app-params` : cast du shim `localStorage` (Node).
+  - **Étape CI bloquante ajoutée** : `.github/workflows/ci.yml` → « Typecheck moteurs (src/lib) » (`npm run typecheck:lib`).
+  - **Bug latent corrigé** (attrapé par le gate) : `calcNIF.ts` lisait `revenusGarantis.p2.totalMensuel` (champ inexistant → `NaN` dans `ratioConjGaranti`, **non lu par l'UI**) → remplacé par `rrq+psv+pension`. Aussi `nifMoyenne` : 5e param `tauxRetrait` rendu optionnel (appel à 4 args).
+  - ✅ Vérifs locales : **typecheck:lib 0**, **lint vert**, **32/32 tests**, **build OK**. Aucun changement de comportement runtime (sauf le bug mort ci-dessus).
+- **→ Pour Yuri/Cowork :** valider la CI verte sur la PR → **merge**. C'est de la robustesse interne, rien d'observable à l'écran. Une fois mergé, tout nouveau code de `src/lib` avec une faute de champ (classe du bug `capitalProjecte`) **fera échouer la CI**.
+- ⚠️ **Le gate ne couvre que `src/lib`** (moteurs). L'UI (`src/components`, ~570 err assouplies) reste hors gate (faible priorité).
 
 ## 2026-06-30 11:50 — Claude Code (L3 + S2 mergés)
 - **Fait (mergés en prod) :**

@@ -163,7 +163,7 @@ function unwrapSection(raw) {
 }
 
 export function calcNIFFromProfiles(profiles) {
-  const m = {};
+  const m: Record<string, any> = {};
   (profiles || []).forEach(p => {
     // Section peut être à la racine (p.section) OU imbriquée (p.data.section)
     const section = p?.section || p?.data?.section;
@@ -187,12 +187,12 @@ export function calcNIFFromProfiles(profiles) {
 
   // ── Âges ────────────────────────────────────────────────────────────────────
   const ageActuel = (profil.date_naissance || profil.dob)
-    ? Math.floor((Date.now() - new Date(profil.date_naissance || profil.dob)) / (365.25 * 24 * 3600 * 1000))
+    ? Math.floor((Date.now() - new Date(profil.date_naissance || profil.dob).getTime()) / (365.25 * 24 * 3600 * 1000))
     : 38;
 
   const dobConj     = retraite.conjoint?.dob || profil.conjoint?.dob;
   const ageConjoint = dobConj
-    ? Math.floor((Date.now() - new Date(dobConj)) / (365.25 * 24 * 3600 * 1000))
+    ? Math.floor((Date.now() - new Date(dobConj).getTime()) / (365.25 * 24 * 3600 * 1000))
     : null;
 
   const ageRetraite  = parseInt(retraite.age_retraite)  || 65;
@@ -315,7 +315,9 @@ export function calcNIFFromProfiles(profiles) {
   });
 
   // Note : ratioConjGaranti pour affichage
-  const revGarantiC = revenusGarantis.p2.totalMensuel * 12;
+  // p2 ne porte pas de champ totalMensuel — le total mensuel garanti du conjoint
+  // est la somme rrq + psv + pension (le lire via .totalMensuel donnait NaN).
+  const revGarantiC = (revenusGarantis.p2.rrq + revenusGarantis.p2.psv + revenusGarantis.p2.pension) * 12;
   const ratioConjGaranti = revGarantiAnnuelAuj > 0 ? revGarantiC / revGarantiAnnuelAuj : 0;
 
   const resultatNIF = {

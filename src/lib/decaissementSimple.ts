@@ -66,16 +66,18 @@ export function strategieReelle(profiles, delta, rendAccum) {
     const eff = (delta && delta !== 0) ? shiftRetraite(profiles, delta) : profiles;
     const p = buildPayload(eff, (typeof rendAccum === "number") ? { rendAccum: rendAccum } : {});
     if (!p) return { etatVide: true };
-    const k = p.kpis || {};
-    const obj = p.objectifs || {};
-    const gar = p.revenus_garantis || {};
-    const ep = p.epargne || {};
-    const hyp = p.hypotheses || {};
+    // p est un ClientPayload typé (SSOT) : kpis/objectifs/revenus_garantis/epargne/
+    // hypotheses sont garantis présents → pas de repli `|| {}` (qui masquerait les typos).
+    const k = p.kpis;
+    const obj = p.objectifs;
+    const gar = p.revenus_garantis;
+    const ep = p.epargne;
+    const hyp = p.hypotheses;
     const pA = p.conjoint_a || {};
     const ageRet = pA.ageRetraite || 65;
     const esp = (typeof hyp.esperance_vie === "number") ? hyp.esperance_vie : 95;
     const inf = (typeof hyp.inflation === "number") ? hyp.inflation : 0.025;
-    const rendDec = (typeof hyp.rendement_decaissement === "number") ? hyp.rendement_decaissement : ((typeof hyp.rendement === "number") ? hyp.rendement : 0.05);
+    const rendDec = (typeof hyp.rendement_decaissement === "number") ? hyp.rendement_decaissement : 0.05;
     const TAUX_IMPOT = 0.18;
     const cibleRet = (typeof k.cible_annuelle_idx === "number") ? k.cible_annuelle_idx : (obj.cible_annuelle || 0);
     let rrq = (gar.rrq_a_idx || 0) + (gar.rrq_b_idx || 0);

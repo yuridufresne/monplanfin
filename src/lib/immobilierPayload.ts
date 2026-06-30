@@ -74,7 +74,7 @@ export function payloadDepuisABF(bySection) {
   const immobilier = bySection.immobilier || {};
   const enCouple = ["marie", "conjoint", "union_civile", "conjoint_de_fait"].includes(profil.situation || "");
 
-  const ageDe = (dob) => dob ? Math.floor((Date.now() - new Date(dob)) / (365.25 * 24 * 3600 * 1000)) : 35;
+  const ageDe = (dob) => dob ? Math.floor((Date.now() - new Date(dob).getTime()) / (365.25 * 24 * 3600 * 1000)) : 35;
   const sommeEmplois = (emplois) => (emplois || []).reduce((s, e) => s + (parseFloat(e.revenu_brut) || 0), 0);
   const sommeComptes = (liste) => (liste || []).reduce((s, c) => s + (parseFloat(c.solde) || 0), 0);
   const sommePaiements = (arr) => (arr || []).reduce((s, d) => s + (parseFloat(d.paiement_min) || 0), 0);

@@ -72,7 +72,7 @@ function sumC(comptes = {}, type, field) {
   return (comptes[type] || []).reduce((s, c) => s + (parseFloat(c[field]) || 0), 0);
 }
 
-function readEpargne(ret = {}) {
+function readEpargne(ret: Record<string, any> = {}) {
   const comptes = ret.comptes || {};
   const fp = ret.fond_pension || {};
   // « selon les champs remplis » : si prestation (DB) → revenu garanti ailleurs; sinon solde (DC) → capital ici
@@ -148,7 +148,7 @@ function calculDroitsCELI(dob, soldeCeli = 0, anneeRef = 2026) {
   return Math.max(0, total - soldeCeli);
 }
 
-function readPersonne(ret = {}, profil = {}, salaireAnnuel = 0) {
+function readPersonne(ret: Record<string, any> = {}, profil: Record<string, any> = {}, salaireAnnuel = 0) {
   const ep = readEpargne(ret);
   const ageActuel = calcAge(profil.date_naissance || profil.dob);
   const ageRetraite = parseInt(ret.age_retraite) || 65;
@@ -235,7 +235,7 @@ export function lireCibleRetraite(ret, brutAnnuelFoyer) {
 }
 
 // ===== FORMULE NIF UNIQUE (partagée par buildPayload ET calcNIF) =====
-export function nifMoyenne(manqueFutur, anneesDecaisse, rendementDecaissement, inflation, tauxRetrait) {
+export function nifMoyenne(manqueFutur, anneesDecaisse, rendementDecaissement, inflation, tauxRetrait?) {
   const tr = (tauxRetrait === undefined || tauxRetrait === null) ? 0.04 : tauxRetrait;
   const rReel = (1 + rendementDecaissement) / (1 + inflation) - 1;
   const nif_4pct = manqueFutur / tr;
@@ -295,7 +295,7 @@ export interface ClientPayload {
 
 export function buildPayload(profiles: any[] = [], opts: Record<string, any> = {}): ClientPayload {
   const REND_ACCUM_EFF = (opts && typeof opts.rendAccum === "number") ? opts.rendAccum : IQPF.REND_ACCUM;
-  const dict = {};
+  const dict: Record<string, any> = {};
   (profiles || []).forEach(p => {
     // Section peut être à la racine (p.section) OU imbriquée dans data (p.data.section)
     const section = p?.section || p?.data?.section;
@@ -506,7 +506,7 @@ export function buildPayload(profiles: any[] = [], opts: Record<string, any> = {
 }
 
 export function debugPayload(profiles = []) {
-  const dict = {};
+  const dict: Record<string, any> = {};
   (profiles || []).forEach(p => {
     // Section peut être à la racine (p.section) OU imbriquée dans data (p.data.section)
     const section = p?.section || p?.data?.section;

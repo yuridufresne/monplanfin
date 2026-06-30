@@ -132,7 +132,7 @@ export function calcSRG({ revenuAnnuelHorsPSV = 0, revenuSansPSV = 0, enCouple =
  * et PSV (−0,6%/mois avant 65, +0,6%/mois après 65, max 70 ans)
  * selon les âges de début saisis dans l'ABF.
  */
-export function getRevenusGarantisABF(retraite = {}, retraiteConj = {}, inclureConj = true, ageActuel1 = null, ageActuel2 = null) {
+export function getRevenusGarantisABF(retraite: Record<string, any> = {}, retraiteConj: Record<string, any> = {}, inclureConj = true, ageActuel1 = null, ageActuel2 = null) {
   const PSV_STD = PRESTATIONS_2026.psv.mensuel65;
   const R = PRESTATIONS_2026.rrq;
   const P = PRESTATIONS_2026.psv;

@@ -7,7 +7,7 @@ on:
 
 jobs:
   verifier:
-    name: Lint · Tests · Build
+    name: Lint · Types · Tests · Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -23,6 +23,9 @@ jobs:
 
       - name: Lint
         run: npm run lint
+
+      - name: Typecheck moteurs (src/lib)
+        run: npm run typecheck:lib
 
       - name: Tests (calculs critiques)
         run: npm test

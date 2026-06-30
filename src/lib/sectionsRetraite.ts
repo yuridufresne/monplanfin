@@ -18,8 +18,8 @@ function unwrap(d) {
 }
 
 /** Construit le dictionnaire { section: donnéesDéballées } depuis un tableau de profils. */
-export function dictSections(profiles = []) {
-  const dict = {};
+export function dictSections(profiles: any[] = []): Record<string, any> {
+  const dict: Record<string, any> = {};
   (profiles || []).forEach((p) => {
     const section = (p && p.section) || (p && p.data && p.data.section);
     if (section) dict[section] = unwrap(p.data || p);
@@ -43,7 +43,7 @@ function fusionner(base, eps, obs) {
  * Reconstruit l'objet « retraite » (avec son `.conjoint`) attendu par les lecteurs.
  * @param {object} dict - dictionnaire de sections déjà déballées.
  */
-export function resoudreRetraite(dict = {}) {
+export function resoudreRetraite(dict: Record<string, any> = {}): Record<string, any> {
   const legacy = dict.retraite || {};
   const ep = dict.epargne;
   const obj = dict.objectifs;
