@@ -19,6 +19,16 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-07-01 01:22 — Cowork (RBAC équipe : SQL + hook JWT APPLIQUÉS en prod — ✅ FONCTIONNEL)
+- **Fait (prod Supabase, autorisé Yuri, via éditeur SQL + Dashboard) :** débloqué la feature « gestion d'équipe » de Claude Code (entrée 17:20).
+  - **Exécuté `supabase_team_member.sql`** dans l'éditeur SQL (projet `Monplanfin` PRODUCTION). « Success. No rows returned ».
+  - **Vérifié** : table `team_member` créée ; seed **`yuridufresne@gmail.com` = directeur, actif** ✅ ; fonction `custom_access_token_hook` présente (1) ✅ ; **4 politiques RLS** (admin-only select/insert/update/delete) ✅ ; `is_admin()` mis à jour (garde le bootstrap `yuridufresne@gmail.com` + directeurs de la table).
+  - **Activé le hook** : Dashboard → Authentication → Hooks → **Customize Access Token (JWT) Claims** = `public.custom_access_token_hook` → **ENABLED** ✅.
+- **→ Pour Yuri :** la page admin **« Équipe » (`/admin/equipe`) est maintenant fonctionnelle**. Le claim `type_compte` est injecté dans le JWT au **prochain refresh de jeton** → **reconnecte-toi** pour que ton rôle `directeur` apparaisse (sinon ~1 h). Tu peux dès lors créer des comptes conseiller/admin depuis l'UI.
+- **→ Pour Claude Code :** [17:20] débloqué — plus de dégradation gracieuse, le RBAC lit un vrai claim signé.
+- ⚠️ Rappel : la **vraie** protection des données reste la RLS (`created_by`/`agent_courriel`) ; le claim ne sert qu'à l'UI/routing.
+- **Reste dans ma file [17:40] :** coller le HTML `supabase_email_confirm_signup.html` dans les templates email Auth (Confirm signup + les autres). Pas encore fait.
+
 ## 2026-06-30 17:40 — Claude Code (correction wordmark + logo email de confirmation — POUR COWORK)
 - **Constat (Yuri) :** l'email « Confirmez votre adresse courriel » a le **mauvais wordmark** (« PlanFin » en **or** au lieu de **vert**) et **pas de logo**.
 - **Cause :** ce n'est PAS dans le repo — c'est le **template Supabase Auth « Confirm signup »** (Dashboard → Authentication → Email Templates), customisé côté Supabase.
