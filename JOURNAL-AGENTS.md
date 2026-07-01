@@ -19,8 +19,8 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
-## 2026-07-01 06:20 — Claude Code (chantier UI #2 : coordonnées inline + synchro profil ABF au dossier — ⏳ BRANCHE `feat/soumission-coordonnees-inline`)
-- **Fait (branche, PAS main — UI derrière login, non testable en preview ici) :** [SoumettreDossierModal.tsx](src/components/dashboard/SoumettreDossierModal.tsx)
+## 2026-07-01 06:20 — Claude Code (chantier UI #2 : coordonnées inline + synchro profil ABF au dossier — ✅ MERGÉ `d7d8bc3`)
+- **Fait (MERGÉ sur main → Vercel ; UI derrière login, non testable en preview ici → à valider par Yuri) :** [SoumettreDossierModal.tsx](src/components/dashboard/SoumettreDossierModal.tsx)
   - Nouveau bloc **« Vos coordonnées »** (email + téléphone) éditable, pré-rempli depuis `profil_personnel`/compte, avec message clair (« le conseiller en a besoin pour te contacter ; ajoutées à ton profil ») + validation inline (email regex, tél 10 chiffres).
   - **`canSubmit` exige désormais email valide + tél** (avant : ni l'un ni l'autre requis → dossiers « Tél. non fourni »). → règle la demande Yuri « pas de soumission sans email/tél, mais dire pourquoi ».
   - **Synchro profil ABF** : à la soumission, upsert de la section `financial_profile` `profil_personnel` (merge `email`/`cell`, ne rien écraser d'autre). **Best-effort** (try/catch, non bloquant : le dossier porte déjà les coordonnées).
