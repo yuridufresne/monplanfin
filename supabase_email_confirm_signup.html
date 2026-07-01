@@ -1,0 +1,73 @@
+<!--
+  MonPlanFin — Gabarit d'email « Confirmation d'inscription » (Supabase Auth)
+  =========================================================================
+  À COLLER PAR COWORK dans : Supabase Dashboard → Authentication → Email Templates
+  → « Confirm signup » → coller ce HTML → Save.
+
+  Corrections vs l'ancien gabarit :
+   • Wordmark aux BONNES couleurs : « Mon » bleu nuit + « PlanFin » VERT (#5BC4A0),
+     au lieu de « PlanFin » en or.  (règle de marque : le vert est primaire, l'or = accent)
+   • AJOUT du logo (icône canonique) via PNG hébergé https://monplanfin.ca/favicon.png
+     (le favicon.svg n'est PAS utilisable : Gmail bloque les SVG en email).
+
+  Variable Supabase conservée : {{ .ConfirmationURL }} (lien du bouton).
+
+  ⚠️ Les AUTRES emails Auth (Reset password, Magic Link, Invite, Change email)
+     ont le même en-tête erroné → y appliquer le MÊME bloc en-tête (logo + wordmark).
+-->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8;margin:0;padding:32px 0;">
+  <tr>
+    <td align="center">
+      <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="max-width:480px;width:100%;background:#ffffff;border-radius:16px;border:1px solid #e6e9ee;overflow:hidden;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+        <tr>
+          <td style="padding:32px 36px 8px;">
+
+            <!-- Logo + wordmark -->
+            <table role="presentation" cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="vertical-align:middle;padding-right:10px;">
+                  <img src="https://monplanfin.ca/favicon.png" width="40" height="40" alt="MonPlanFin"
+                       style="display:block;border:0;border-radius:9px;" />
+                </td>
+                <td style="vertical-align:middle;">
+                  <span style="font-size:22px;font-weight:800;letter-spacing:-0.02em;color:#0B1428;">Mon</span><span style="font-size:22px;font-weight:800;letter-spacing:-0.02em;color:#5BC4A0;">PlanFin</span>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Titre -->
+            <h1 style="margin:26px 0 0;font-size:21px;font-weight:800;color:#0B1428;letter-spacing:-0.01em;">
+              Confirmez votre adresse courriel
+            </h1>
+
+            <!-- Corps -->
+            <p style="margin:18px 0 0;font-size:15px;line-height:1.6;color:#3d4655;">Bonjour,</p>
+            <p style="margin:12px 0 0;font-size:15px;line-height:1.6;color:#3d4655;">
+              Merci de vous être inscrit à <strong style="color:#0B1428;">MonPlanFin</strong>. Cliquez sur le bouton
+              ci-dessous pour confirmer votre adresse et activer votre compte.
+            </p>
+
+            <!-- Bouton -->
+            <table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px;">
+              <tr>
+                <td align="center" bgcolor="#C9A063" style="border-radius:10px;">
+                  <a href="{{ .ConfirmationURL }}" target="_blank"
+                     style="display:inline-block;padding:14px 28px;font-size:15px;font-weight:700;color:#0B1428;text-decoration:none;border-radius:10px;">
+                    Confirmer mon adresse courriel
+                  </a>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Note -->
+            <p style="margin:24px 0 0;font-size:13px;line-height:1.6;color:#8a93a3;">
+              Si vous n'êtes pas à l'origine de cette inscription, vous pouvez ignorer ce courriel.
+            </p>
+            <p style="margin:20px 0 32px;font-size:13px;color:#8a93a3;">— L'équipe MonPlanFin</p>
+
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>

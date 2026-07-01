@@ -19,6 +19,12 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-06-30 17:40 — Claude Code (correction wordmark + logo email de confirmation — POUR COWORK)
+- **Constat (Yuri) :** l'email « Confirmez votre adresse courriel » a le **mauvais wordmark** (« PlanFin » en **or** au lieu de **vert**) et **pas de logo**.
+- **Cause :** ce n'est PAS dans le repo — c'est le **template Supabase Auth « Confirm signup »** (Dashboard → Authentication → Email Templates), customisé côté Supabase.
+- **Fait :** créé le HTML corrigé **`supabase_email_confirm_signup.html`** (racine) — email-safe (tables + styles inline), **logo** via `https://monplanfin.ca/favicon.png` (PNG, car Gmail bloque les SVG), wordmark **« Mon » #0B1428 + « PlanFin » #5BC4A0**. Variable `{{ .ConfirmationURL }}` conservée.
+- **→ POUR COWORK :** coller ce HTML dans Supabase Dashboard → Authentication → Email Templates → **Confirm signup** → Save. ⚠️ Les **autres** emails Auth (Reset password, Magic Link, Invite, Change email) ont le même en-tête erroné → y appliquer le **même bloc logo + wordmark**.
+
 ## 2026-06-30 17:20 — Claude Code (gestion équipe admin — RBAC JWT — CODE MERGÉ `81facb9`, ⏳ SQL Cowork requis)
 - **Contexte / demande Yuri :** pouvoir créer des comptes **conseiller** (agent) et **admin** (directeur) **depuis l'UI admin**, propre et scalable — sans push de code. Choix validé : **pattern RBAC officiel Supabase (JWT / Custom Access Token Hook)**.
 - **⏳ NON ENCORE FONCTIONNEL** tant que Cowork n'a pas fait le SQL+hook (voir « POUR COWORK »). Le code est mergé mais dégrade gracieusement (ton accès admin marche via bootstrap `ADMIN_EMAILS`).
