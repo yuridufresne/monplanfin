@@ -19,7 +19,7 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
-## 2026-07-01 07:00 — Claude Code (chantier UI #1 : refonte modal « Soumettre mon dossier » (design Open Design) — ⏳ BRANCHE `od/soumission-dossier`, NON mergée)
+## 2026-07-01 07:00 — Claude Code (chantier UI #1 : refonte modal « Soumettre mon dossier » (design Open Design) — ✅ MERGÉ `f7179e1`)
 - **Fait (branche, PAS main — DoD : pas de merge sans accord Yuri) :** réécrit [SoumettreDossierModal.tsx](src/components/dashboard/SoumettreDossierModal.tsx) selon la maquette Open Design `soumission-dossier.html` (récupérée via MCP). Deux états dans le composant : **formulaire** + **confirmation** (sceau ✓, récap dynamique, timeline Reçu→Jumelage→Contact, retour dashboard).
   - Style porté fidèlement (thème sombre, tokens, pills urgence, chips besoins/contact/moment, inputs coordonnées + **masque téléphone** live + erreurs inline, `<details>` précision, bloc réassurance) via un `<style>` scoped `sd-*` (zéro collision). Icônes = **lucide monoline** (pas d'emoji). En-tête = **BrandIcon** (cible) + wordmark.
   - **Logique PRÉSERVÉE** (rien recalculé) : trigger/props (Dashboard), persistance `LeadDossier`, **`snapshot_profil` = buildPayload/sections (SSOT)**, validation email+tél, **synchro profil ABF** (`profil_personnel`), garde silent-fail.
