@@ -19,8 +19,11 @@ function calcPersonne(revenu, cotReer = 0, opts = {}) {
   return {
     revenuBrut:    revenu,
     cotReer,
-    revenuNetFed:  fmt(r.federal.netIncome),
-    revenuNetQc:   fmt(r.provincial.netIncome),
+    // r.federal/provincial n'exposent PAS netIncome → renvoyait NaN (bug).
+    // Le revenu net (ligne 23600, base des prestations sous condition de
+    // ressources : ACE, allocation famille QC, solidarité, REEE) = rfnr du moteur.
+    revenuNetFed:  fmt(r.rfnr),
+    revenuNetQc:   fmt(r.rfnr),
     revenuDisponible: fmt(r.netIncomeAfterTax),
     federal: {
       brutImpot:  fmt(r.federal.grossTax),

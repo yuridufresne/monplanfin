@@ -13,7 +13,7 @@ const glass = {
   boxShadow: "0 8px 32px rgba(0,0,0,0.25)",
 };
 
-function Slider({ label, min, max, step = 1, value, onChange, fmtFn, note }) {
+function Slider({ label, min, max, step = 1, value, onChange, fmtFn, note = null }) {
   return (
     <div style={{ marginBottom: 14 }}>
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>

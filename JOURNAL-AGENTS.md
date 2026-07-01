@@ -19,6 +19,15 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-06-30 23:10 — Claude Code (C2 tranche 3 : gate `src/utils` + composants top-level + 🐛 FIX BUG NaN prestations — ⏳ BRANCHE `chore/typecheck-gate-utils`)
+- **🐛 BUG RÉEL TROUVÉ & CORRIGÉ (à valider par Yuri) :** dans [fiscalQC.ts](src/utils/fiscalQC.ts) `revenuNetFed`/`revenuNetQc` lisaient `r.federal.netIncome` / `r.provincial.netIncome` — ces champs **n'existent pas** dans le retour du moteur `moteurFiscal2026` → `Math.round(undefined)` = **NaN**. Ce `revFamilialNet` NaN alimente **ACE, Allocation famille QC, crédit solidarité, subventions REEE** dans le **SimulateurImpot** (page `/calculatrices` → onglet Impôt QC 2026). → prestations affichaient des valeurs cassées.
+  - **Fix :** `revenuNetFed`/`revenuNetQc` = `r.rfnr` (revenu net = brut − déductions, c.-à-d. ligne 23600, la base des prestations sous condition de ressources). Confirmé dans le moteur : `rfnr = max(0, grossIncome − deductionTA − reerDeduction)`.
+  - **✅ Vérifié en Preview** (`/calculatrices`, onglet impôt) : ACE 1 654 $/an, Allocation famille 1 063 $/an, REEE 360 $/an, Total bénéfices 3 077 $/an — **plus de NaN**, 0 erreur console. Profil défaut (100k + 80k).
+- **Gate étendu** (`tsconfig.lib.json`) : ajout de **`src/utils`** (fiscalQC corrigé → 0) et du glob **`src/components/*.tsx`** (composants top-level). Corrections mécaniques pour y arriver (comportement identique) : `ErrorBoundary` typé `React.Component<Props,State>` ; défauts de props sur sous-composants locaux `InputRow`/`NumInput`/`StatCard` (SimulateurImpot) et `Slider` (SimulateurRetraite). Gate = **0**.
+- ✅ lint · typecheck:lib = 0 · 32/32 tests · build · smoke Preview.
+- **→ Pour Yuri :** merger `chore/typecheck-gate-utils`. ⚠️ **Contient un changement de CALCUL** (prestations passent de NaN à valeurs réelles) — jette un œil au SimulateurImpot après merge pour confirmer que les montants ACE/famille te semblent bons.
+- **⚠️ Bloqueur découvert (calculators/pages) :** les primitives shadcn `ui/**` ont été **dépouillées de leurs génériques `forwardRef`** → elles n'acceptent AUCUNE prop côté types (`RefAttributes<unknown>`). Tout consommateur qui passe `className`/`children` échoue → **74 erreurs** (surtout `calculators` 46 + Navbar). Indépendant de la quarantaine (persiste sans). Gater `calculators`/`layout` exige soit de **retyper les primitives** (restaurer les génériques shadcn, tout en gardant `@ts-nocheck`), soit des casts locaux — **décision à prendre** (ça nuance la doc quarantaine). `src/pages` (~417 err) = vraies erreurs séparées, gros chantier.
+
 ## 2026-06-30 22:40 — Claude Code (✅ MERGÉ sur `main` `4e5f793` : tranche 2 + doc quarantaine — Vercel redéploie)
 - Fast-forward de `chore/typecheck-gate-investments` → `main` (`4e5f793`), branche supprimée (local + remote). Gate = 0 sur main. Contient : la tranche 2 (entrée 22:15), la doc quarantaine (entrée 22:30), et l'édit journal **Reauthentication** de Cowork.
 

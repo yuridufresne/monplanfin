@@ -13,7 +13,7 @@ const glass = {
   boxShadow: "0 8px 32px rgba(0,0,0,0.25)",
 };
 
-function InputRow({ label, note, children }) {
+function InputRow({ label, note = null, children }) {
   return (
     <div style={{ marginBottom: 14 }}>
       <label style={{ fontSize: 11.5, color: "rgba(255,255,255,0.5)", fontWeight: 600, display: "block", marginBottom: 5 }}>{label}</label>
@@ -23,7 +23,7 @@ function InputRow({ label, note, children }) {
   );
 }
 
-function NumInput({ value, onChange, step = 500, disabled }) {
+function NumInput({ value, onChange, step = 500, disabled = false }) {
   return (
     <input
       type="number"
@@ -56,7 +56,7 @@ function Alerte({ type, children }) {
   );
 }
 
-function StatCard({ label, value, sub, color = "#C9A063" }) {
+function StatCard({ label, value, sub = null, color = "#C9A063" }) {
   return (
     <div style={{ ...glass, borderRadius: 14, padding: "12px 14px" }}>
       <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.4)", marginBottom: 5 }}>{label}</p>
