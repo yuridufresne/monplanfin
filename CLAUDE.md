@@ -10,6 +10,19 @@
   **puis commit/push** ce fichier. Pas de tâche « finie » sans entrée au journal.
 - NE JAMAIS force-push sur `main`.
 
+## 🔒 Verrou « un seul agent à la fois » (OBLIGATOIRE — checkout PARTAGÉ)
+Le dépôt est un **checkout partagé** : Cowork, Claude Code et Cursor éditent le **même répertoire**.
+Deux agents actifs en même temps **s'écrasent** : edits non commités perdus, et un `git checkout`/`reset`/
+switch de branche d'un agent **efface le travail non commité** de l'autre (c'est déjà arrivé). Donc :
+1. **AVANT de commencer** : `bash scripts/agent-lock.sh status`.
+   - Si **tenu par un autre agent** (< 2 h) → **NE PAS travailler.** Attendre, ou se coordonner via `JOURNAL-AGENTS.md`.
+2. Si **libre** (ou périmé >2 h) : `bash scripts/agent-lock.sh claim "<TonNom>"` (ex. `"Claude Code"`, `"Cowork"`, `"Cursor"`).
+3. **NE JAMAIS** faire `git checkout` / `git reset` / switch de branche / `git add -A` **sans tenir le verrou**
+   (tu écraserais/embarquerais le travail non commité d'un autre agent).
+4. **APRÈS ta tâche** (commit + push + entrée journal faits) : `bash scripts/agent-lock.sh release`.
+Le verrou = fichier LOCAL `.agent-lock` (dans `.gitignore`, jamais commité, visible instantanément par tous
+les agents du même répertoire). Il s'auto-expire après 120 min.
+
 ## Ne pas régresser (CRITIQUE)
 - NE PAS toucher à la route `/analyse` : c'est la refonte ABF FINALE déjà déployée
   (copie du prototype Open Design, 11 étapes typées). Ne pousse AUCUN autre wizard dessus.

@@ -35,3 +35,6 @@ dist-ssr
 
 # Documents de conformite sensibles (DPA signes, etc.) — ne pas publier dans le repo
 conformite/*.pdf
+
+# Verrou coopératif « un seul agent à la fois » (état LOCAL, cf. scripts/agent-lock.sh)
+.agent-lock

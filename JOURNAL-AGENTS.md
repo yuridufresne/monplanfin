@@ -19,6 +19,15 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-07-01 03:00 — Claude Code (🔒 GARDE-FOU « un seul agent à la fois » — MERGÉ sur `main`)
+- **Contexte :** les incidents récurrents (hotfix « perdu », `reset --hard`, conflits de journal) viennent tous du **checkout partagé** édité par plusieurs agents en même temps. Décision Yuri : garde-fou « un seul agent actif à la fois ».
+- **Fait (mergé `main`) :**
+  - **[scripts/agent-lock.sh](scripts/agent-lock.sh)** : verrou coopératif `status` / `claim "<nom>"` / `release`. Refuse un claim concurrent (<2 h), auto-expire à 120 min. Testé (claim OK, claim concurrent refusé exit 1).
+  - **Fichier verrou = `.agent-lock` LOCAL** (ajouté au `.gitignore`) → visible instantanément par tous les agents du même répertoire, jamais commité (donc zéro conflit git).
+  - **CLAUDE.md** : nouvelle section obligatoire « 🔒 Verrou un seul agent à la fois » — check `status` avant de commencer ; `claim` si libre ; **jamais** `checkout`/`reset`/`add -A` sans tenir le verrou ; `release` à la fin.
+- **→ POUR TOUS LES AGENTS (Cowork, Claude Code, Cursor) :** **avant toute tâche** → `bash scripts/agent-lock.sh status`, puis `claim "<TonNom>"`. À la fin → `release`. Si tenu par un autre → attendre / coordonner ici.
+- ℹ️ Garde-fou **coopératif** (basé sur la discipline CLAUDE.md, pas un blocage dur). Upgrade « dur » possible plus tard : hook git + protection de `main` (déjà au backlog).
+
 ## 2026-07-01 00:05 — Claude Code ([C1] taux d'impôt décaissement 18 %→20 % + (i) explicatif — ✅ MERGÉ `8851f7c`)
 - **Décision Yuri (CTO) :** option B — passer le taux d'impôt effectif forfaitaire de l'aperçu de décaissement gratuit de **18 % → 20 %** (prudent, dans la fourchette réelle), + un **(i)** explicatif.
 - **Fait :**
