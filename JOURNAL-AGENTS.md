@@ -19,6 +19,19 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-07-01 04:15 — Cowork (fix colonnes `lead_dossier` — ✅ EXÉCUTÉ en prod)
+- **Fait (verrou pris « Cowork » ; Supabase SQL editor, prod) :** exécuté `supabase_fix_lead_dossier_colonnes.sql` (entrée Claude Code 03:55) → « POUR COWORK/YURI » traité.
+  - Les 16 `alter table ... add column if not exists` ont passé **sans erreur** ; la requête de vérif renvoie **24 colonnes** présentes (client_nom/courriel/telephone, besoins_principaux, priorite_urgence, delai/moment/mode contact, notes_client, consentement_explicite, snapshot_profil, statut, agent_assigne_*, created_by/date, etc.).
+  - ℹ️ `besoins_principaux` existait déjà en **ARRAY** → `if not exists` l'a laissé (aucun impact, colonne présente).
+- **→ Pour Yuri :** **re-tester la soumission** d'un dossier → il doit maintenant apparaître dans `/admin/dossiers`. (Si un dossier test est créé pour valider, penser à le nettoyer ensuite, comme Marcil.)
+- **→ Pour Claude Code :** reste à merger ta branche `fix/soumettre-dossier-erreur-silencieuse` (le modal ne doit plus afficher un faux « transmis ✓ » si l'écriture échoue).
+
+## 2026-07-01 04:00 — Cowork (revue du garde-fou verrou + session récap)
+- **Garde-fou `agent-lock.sh` revu (demande Yuri).** Constat : mécanisme **sain mais purement coopératif** (fichier `.agent-lock`, `claim/release`, auto-expire 120 min) — **aucune application matérielle** (pas de hook git, pas de `core.hooksPath`). A échoué cette session car **personne ne l'a pris** (ni Claude Code, ni Cowork). Proposé un hook `pre-commit` d'enforcement (safe pour Base44 = cloud) → **Yuri : « laisse comme ça »**, on garde le coopératif tel quel. Rappel process : **un seul agent à la fois**, `claim` au début / `release` à la fin.
+- J'ai testé le verrou (claim « Cowork » → OK → release). Repart **libre**.
+- **Récap de ma session (tout en prod, autorisé Yuri) :** ✅ RBAC équipe (SQL `team_member` + hook JWT `custom_access_token_hook` ENABLED) · ✅ 6 templates email Auth brandés (logo + wordmark vert) · ✅ [L4] nettoyage profil test Marcil (`financial_profile` 9→0, re-audit 0 partout ; `auth.users`/`team_member` intacts) · ✅ hotfix UI `AdminEquipe.tsx` **décrit** pour Claude Code (mon édit working-tree écrasé par bascule de branche concurrente — Claude Code l'a repris/déployé).
+- **→ Pour Yuri :** entrées de journal Cowork (RBAC, emails, L4, ceci) à **committer sur `main` depuis ton Mac** (sandbox Cowork ne peut pas push — keychain). Les changements Supabase, eux, sont déjà en prod.
+
 ## 2026-07-01 03:55 — Claude Code (🐛 dossier soumis absent de /admin/dossiers → SQL colonnes lead_dossier — POUR COWORK/YURI)
 - **Confirmé (Yuri) :** le dossier soumis n'est **PAS** dans « Espace administrateur → Dossiers reçus ». Or le code admin affiche bien les dossiers `nouveau`/non assignés (compteur « Nouveaux » qui pulse). → donc **la ligne n'a jamais été écrite** = INSERT rejeté silencieusement.
 - **Cause probable :** `lead_dossier` créée incomplète à la migration (comme pour `supabase_reparation_schema.sql`). Le modal écrit des colonnes absentes → Postgres rejette toute la ligne → `supabaseEntities` avale l'erreur → faux « transmis ✓ ». (RLS peu probable : la policy INSERT passe car `created_by = auth.email()`.)
