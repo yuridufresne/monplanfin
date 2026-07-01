@@ -18,6 +18,22 @@
 - NE PAS merger ces branches sur `main` (elles sont derrière main → régression auth/ABF/SEO) :
   `backup-securite`, `improvements-v2`, `securisation-tests`.
 
+## Gate typecheck & quarantaine `@ts-nocheck` (NE PAS « corriger » par erreur)
+- **Le gate CI** = `npm run typecheck:lib` (scope = `tsconfig.lib.json`, doit **rester à 0**). Il ne
+  couvre PAS tout le repo : seulement les dossiers listés dans l'`include` (moteurs `src/lib`, `src/api`,
+  `src/hooks`, `src/components/{dashboard,home,feedback,examples,investments}`). On l'étend un dossier à
+  la fois, seulement quand ce dossier est déjà à 0 erreur.
+- **`src/components/ui/**` = primitives shadcn VENDORED** (code tiers copié, modèle shadcn). Les 49
+  fichiers lowercase portent `// @ts-nocheck` **volontairement** : ça coupe leurs erreurs de types
+  internes (~451) et empêche qu'elles « fuient » vers nos fichiers qui les importent. **Zéro impact
+  runtime/build** (juste la vérif de types). ⚠️ **NE PAS retirer ces `@ts-nocheck` ni essayer de « typer »
+  ces fichiers** : c'est l'état final assumé, PAS une dette à rembourser. `ui/**` n'entre JAMAIS dans le gate.
+- **Exception :** nos 4 composants MAISON dans `ui/` (PascalCase : `AddressAutocomplete`, `CookieConsent`,
+  `FlipCard`, `InfoTooltip`) ne sont **pas** en quarantaine → eux, on peut les typer/gater un jour.
+- **Reste à gater (vraies erreurs de NOTRE code, à corriger avant d'ajouter au gate)** : `src/pages`,
+  `src/components/{budget,calculators,layout}`. **`src/components/abf/**` reste hors gate** (territoire
+  `/analyse` figé — ne pas y toucher).
+
 ## Auth Google = déjà fonctionnelle (ne pas modifier)
 - Connexion Google configurée au niveau plateforme (Google Cloud OAuth + provider Google
   activé dans Supabase). `signInWithGoogle` dans `src/lib/AuthContext` marche tel quel.

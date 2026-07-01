@@ -1,3 +1,8 @@
+// Gate typecheck CI bloquant : `npm run typecheck:lib` DOIT rester à 0 erreur.
+// On étend `include` un dossier à la fois, seulement quand il est déjà à 0.
+// NE JAMAIS ajouter `src/components/ui/**` (primitives shadcn vendored, en
+// quarantaine @ts-nocheck — voir CLAUDE.md § "Gate typecheck & quarantaine")
+// ni `src/components/abf/**` (route /analyse figée).
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {

@@ -19,6 +19,12 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-06-30 22:30 — Claude Code (doc : principe gate typecheck + quarantaine `@ts-nocheck` — même branche)
+- **Fait (ajouté à la branche `chore/typecheck-gate-investments`) :** documenté pour que personne ne « corrige » la quarantaine par erreur.
+  - **CLAUDE.md** : nouvelle section « Gate typecheck & quarantaine `@ts-nocheck` » → `ui/**` vendored = `@ts-nocheck` VOLONTAIRE, jamais dans le gate, PAS une dette ; nos 4 composants maison PascalCase restent gatables ; reste à gater = pages/budget/calculators/layout ; abf hors gate (/analyse figé).
+  - **tsconfig.lib.json** : commentaire d'en-tête (le parseur tsconfig accepte le JSONC) rappelant de ne jamais ajouter `ui/**` ni `abf/**`.
+- **→ Pour tous les agents :** avant de « typer » un fichier `src/components/ui/*.tsx`, lire CLAUDE.md § quarantaine.
+
 ## 2026-06-30 22:15 — Claude Code (C2 tranche 2 : `functions.invoke` typé + `investments/` gaté — ⏳ BRANCHE `chore/typecheck-gate-investments`)
 - **Fait (branche, PAS main — attend merge Yuri ; type-only + config, zéro changement runtime/visuel) :**
   - **`appClient.functions.invoke`** ([usersClient.ts](src/api/usersClient.ts:114)) était un stub typé **0 arg / `data: {}`** → signature permissive `(_name?, _body?) => Promise<{ data: any; error? }>`. **Runtime identique** (renvoie toujours `{ data: {} }`). Débloque le typage des 4 appelants (InvestmentForm, Investments, AddressAutocomplete ×2).
