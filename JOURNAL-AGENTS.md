@@ -19,7 +19,14 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
-## 2026-07-01 04:50 — Claude Code (compte agent sans onglet « Dossiers clients » → PAS un bug + note UX — MERGÉ `main`)
+## 2026-07-01 05:10 — Claude Code (🐛 VRAI BUG trouvé : le hook JWT ne lit pas team_member (RLS) → SQL fix — POUR COWORK/YURI)
+- **Correction de l'entrée 04:50** (« pas un bug ») : c'EST un bug. Le diagnostic a continué : JWT agent (Andrew, lecapo387@gmail.com, actif) = **aucun `type_compte`** malgré une ligne team_member correcte ; JWT Yuri = `directeur`.
+- **RACINE :** `public.custom_access_token_hook` est `language plpgsql stable` **SANS `security definer`** → il tourne sous le rôle `supabase_auth_admin`. Or `team_member` a la **RLS activée** avec des policies **uniquement `to authenticated`** (`is_admin()`). Pas de policy pour `supabase_auth_admin` → son `SELECT ... FROM team_member` renvoie **0 ligne** → `type_compte` jamais injecté. **Yuri fonctionnait seulement grâce au bootstrap codé en dur** dans le hook (`if email = yuridufresne@gmail.com`), ce qui masquait le bug pour tous les autres. (Gotcha officiel Supabase des Auth Hooks : il faut une policy `to supabase_auth_admin`.)
+- **Fait :** créé [supabase_fix_hook_rls_team_member.sql](supabase_fix_hook_rls_team_member.sql) — ajoute `create policy team_member_auth_admin_read ... for select to supabase_auth_admin using (true)`. Idempotent, sans risque (lecture, rôle système du hook uniquement).
+- **→ POUR COWORK/YURI :** exécuter ce SQL dans l'éditeur SQL Supabase (prod), **puis Andrew se déconnecte/reconnecte** → son JWT aura `type_compte:"agent"` → l'onglet « Dossiers clients » apparaît. Vérif console (session Andrew) : le snippet doit afficher `"agent"`.
+- ℹ️ La note UX (04:50) « reconnexion requise » reste valable — mais insuffisante seule tant que ce SQL n'est pas passé.
+
+## 2026-07-01 04:50 — Claude Code (compte agent sans onglet « Dossiers clients » → note UX — MERGÉ `main`)
 - **Signalé (Yuri) :** après upgrade d'un client en agent, le compte agent ne voit pas l'onglet « Dossiers clients » (attendu « auto »).
 - **Diagnostic : PAS un bug.** L'onglet est bien gaté sur `user.type_compte === 'agent'` ([Navbar.tsx:56/63/105](src/components/layout/Navbar.tsx)). Mais `type_compte` est un **claim JWT** injecté par le hook `custom_access_token_hook` **à l'émission/refresh du jeton**. Un changement de rôle ne s'applique donc qu'au **prochain login** (ou ~1 h). L'agent déjà connecté garde son ancien jeton sans le claim → pas d'onglet. **Vérifié que ce n'est pas un souci de casse d'email** : AdminEquipe fait `trim().toLowerCase()` + trigger `team_member_lower_email` + hook `lower()` → matching robuste.
 - **✅ Solution immédiate :** l'agent doit **se déconnecter/reconnecter** → l'onglet apparaît.
