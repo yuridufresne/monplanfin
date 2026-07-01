@@ -19,6 +19,14 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-07-01 05:40 — Claude Code (✅ flux RBAC agent CONFIRMÉ bout-en-bout + 📋 3 chantiers UI notés par Yuri)
+- **✅ Confirmé par Yuri : « tout est bon ».** Après le SQL RLS de Cowork (05:25) + reconnexion d'Andrew, le claim `type_compte:"agent"` est injecté → onglet « Dossiers clients » présent. Chaîne complète OK : upgrade → reconnexion agent → soumission dossier → file admin → assignation → espace conseiller.
+- **📋 3 chantiers UI demandés par Yuri (à faire plus tard, non urgents) — mémoire `ui-backlog-soumission-login` :**
+  1. **Refonte UX du modal « Soumettre mon dossier »** ([SoumettreDossierModal.tsx](src/components/dashboard/SoumettreDossierModal.tsx)) — « trop laid et compliqué » après le clic transmettre.
+  2. **Champs email + téléphone dans le modal de soumission** : le blocage quand ils manquent est bien, mais **ça n'explique pas pourquoi** → afficher les champs directement dans le modal, et **synchroniser vers le profil ABF** (`financial_profile` section `profil_personnel` → email/cell), pas seulement le dossier.
+  3. **Logo sur `/login`** : afficher l'icône logo (`public/favicon.svg`) à côté du wordmark « MonPlanFin » (actuellement wordmark seul).
+- **→ Pour Claude Code/Cursor (code) :** ces 3 items = UI/UX, `src/pages` + `src/components/dashboard` (hors gate). Open Design pour les visuels si besoin.
+
 ## 2026-07-01 05:25 — Cowork (fix RLS hook `team_member` — ✅ EXÉCUTÉ en prod)
 - **Fait (verrou « Cowork » ; Supabase SQL editor, prod) :** exécuté `supabase_fix_hook_rls_team_member.sql` (entrée Claude Code 05:10) → « POUR COWORK/YURI » traité. **Complète mon setup RBAC** (le hook lisait 0 ligne de `team_member` faute de policy pour son rôle système).
   - Créé la policy **`team_member_auth_admin_read` (`for select to supabase_auth_admin using (true)`)**. Vérif `pg_policies` = **5 policies** : les 4 `{authenticated}` (select/insert/update/delete via `is_admin()`) + la nouvelle **`{supabase_auth_admin}` SELECT**.
