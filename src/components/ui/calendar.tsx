@@ -1,3 +1,4 @@
+// @ts-nocheck -- vendored shadcn primitive, hors du gate typecheck
 import * as React from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { DayPicker } from "react-day-picker"

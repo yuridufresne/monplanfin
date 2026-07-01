@@ -1,3 +1,4 @@
+// @ts-nocheck -- vendored shadcn primitive, hors du gate typecheck
 "use client";
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"

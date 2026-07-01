@@ -1,3 +1,4 @@
+// @ts-nocheck -- vendored shadcn primitive, hors du gate typecheck
 "use client";
 import * as React from "react"
 import * as ToggleGroupPrimitive from "@radix-ui/react-toggle-group"

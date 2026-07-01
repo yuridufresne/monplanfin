@@ -290,7 +290,7 @@ export default function BetaFeedbackButton({ user }) {
   );
 }
 
-function FieldGroup({ label, required, hint, children }) {
+function FieldGroup({ label, required = false, hint = "", children }) {
   return (
     <div style={{ marginBottom: 16 }}>
       <div style={{ fontSize: 11.5, fontWeight: 700, color: "rgba(255,255,255,0.85)", marginBottom: 7, display: "flex", justifyContent: "space-between" }}>

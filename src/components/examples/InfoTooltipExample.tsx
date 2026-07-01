@@ -16,9 +16,7 @@ export default function InfoTooltipExample() {
           <label style={{ display: "flex", alignItems: "center", fontSize: "14px", color: "#E5E7EB", marginBottom: "0.5rem" }}>
             Ratio d'amortissement
             <InfoTooltip
-              label="Ratio d'amortissement"
               explanation="Le ratio d'amortissement compare votre revenu brut mensuel au paiement hypothécaire. Un ratio sain est généralement ≤ 32%. Formule : (paiement hypothécaire ÷ revenu brut) × 100"
-              position="top"
             />
           </label>
           <input
@@ -41,9 +39,7 @@ export default function InfoTooltipExample() {
           <p style={{ display: "flex", alignItems: "center", fontSize: "14px", color: "#E5E7EB", marginBottom: "1rem" }}>
             Avez-vous un fonds de pension au travail ?
             <InfoTooltip
-              label="Fonds de pension"
               explanation="Un fonds de pension est un régime de retraite collectif offert par votre employeur. Il existe deux types : cotisation déterminée (vous connaissez votre contribution) ou prestation déterminée (vous connaissez votre revenu de retraite)."
-              position="right"
             />
           </p>
           <div style={{ display: "flex", gap: "1rem" }}>
@@ -69,7 +65,6 @@ export default function InfoTooltipExample() {
                 CELI
                 <InfoTooltip
                   explanation="Compte d'épargne libre d'impôt (CELI) — compte de placement enregistré au Canada. Les revenus générés ne sont pas imposés et vous pouvez retirer l'argent sans implications fiscales."
-                  position="bottom"
                 />
               </p>
             </div>
@@ -78,7 +73,6 @@ export default function InfoTooltipExample() {
                 REER
                 <InfoTooltip
                   explanation="Régime enregistré d'épargne-retraite (REER) — compte de retraite enregistré. Les cotisations sont déductibles du revenu imposable et la croissance est à l'abri de l'impôt jusqu'au retrait."
-                  position="bottom"
                 />
               </p>
             </div>
@@ -87,7 +81,6 @@ export default function InfoTooltipExample() {
                 NIF (Numéro d'Indépendance Financière)
                 <InfoTooltip
                   explanation="Le capital total nécessaire pour vivre de vos placements sans travailler. Calculé selon votre revenu mensuel désiré à la retraite et un taux de rendement estimé (généralement 4%)."
-                  position="bottom"
                 />
               </p>
             </div>
@@ -102,7 +95,6 @@ export default function InfoTooltipExample() {
             <span style={{ fontWeight: "700", color: "#5BC4A0" }}>45 000$</span>
             <InfoTooltip
               explanation="Somme de tous vos comptes d'épargne enregistrés et non enregistrés (CELI, REER, comptes non enregistrés, crypto, etc.)."
-              position="top"
             />
           </p>
         </div>

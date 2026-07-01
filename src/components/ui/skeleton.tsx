@@ -1,3 +1,4 @@
+// @ts-nocheck -- vendored shadcn primitive, hors du gate typecheck
 import { cn } from "@/lib/utils"
 
 function Skeleton({

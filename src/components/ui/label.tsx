@@ -1,3 +1,4 @@
+// @ts-nocheck -- vendored shadcn primitive, hors du gate typecheck
 import * as React from "react"
 import * as LabelPrimitive from "@radix-ui/react-label"
 import { cva } from "class-variance-authority";

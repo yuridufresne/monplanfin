@@ -1,3 +1,4 @@
+// @ts-nocheck -- vendored shadcn primitive, hors du gate typecheck
 "use client"
 
 import * as CollapsiblePrimitive from "@radix-ui/react-collapsible"

@@ -1,3 +1,4 @@
+// @ts-nocheck -- vendored shadcn primitive, hors du gate typecheck
 import { useToast } from "@/components/ui/use-toast";
 import {
   Toast,

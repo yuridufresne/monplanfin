@@ -1,3 +1,4 @@
+// @ts-nocheck -- vendored shadcn primitive, hors du gate typecheck
 // Inspired by react-hot-toast library
 import { useState, useEffect } from "react";
 

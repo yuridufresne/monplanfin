@@ -19,6 +19,17 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-06-30 21:37 — Claude Code (C2 suite : gate typecheck étendu à api/hooks/home/feedback/examples — ⏳ BRANCHE, PR à merger)
+- **Contexte :** [C2 suite] du backlog — étendre le gate typecheck CI (`npm run typecheck:lib`, doit rester à 0) au-delà de `src/lib` + `src/components/dashboard`. Bloqueur connu : les primitives shadcn *vendored* de `src/components/ui/**` « fuyaient » ~451 erreurs via les imports.
+- **Fait (branche `chore/typecheck-gate-ui`, PAS main — attend merge Yuri) :**
+  - **Quarantaine** : `// @ts-nocheck` ajouté aux **49 primitives shadcn vendored** (lowercase, `src/components/ui/*.tsx`). ⚠️ **Nos 4 composants maison** dans `ui/` (PascalCase : AddressAutocomplete, CookieConsent, FlipCard, InfoTooltip) **NON touchés**. → fuite ui 460→9.
+  - **Gate étendu** (`tsconfig.lib.json`) : ajout de `src/api`, `src/hooks`, `src/components/home`, `src/components/feedback`, `src/components/examples` (tous à 0 après quarantaine). Gate total **= 0 erreur**.
+  - **2 correctifs réels** (comportement identique) : `FieldGroup` de [BetaFeedbackButton.tsx](src/components/feedback/BetaFeedbackButton.tsx) → props `required`/`hint` avec défauts ; [InfoTooltipExample.tsx](src/components/examples/InfoTooltipExample.tsx) → retiré les props no-op `label`/`position` (n'existent pas sur InfoTooltip).
+  - ✅ lint · **typecheck:lib = 0** · **32/32 tests** · build OK.
+- **→ Pour Yuri :** brancher `chore/typecheck-gate-ui` → PR/merge. Config CI seulement + fixes mineurs, zéro régression visuelle.
+- **⚠️ NON inclus (volontaire) :** `src/pages` (~423 err) et `src/components/{budget,calculators,investments,layout}` + top-level (encore des erreurs réelles). **`src/components/abf/**` exclu par principe** (territoire `/analyse` figé). `investments/InvestmentForm.tsx` bloqué par le typage 0-arg de `appClient.functions.invoke` (chantier api à part). Prochaine tranche : ces dirs.
+- **RÈGLE maintenue :** `src/components/ui/**` = vendored, **jamais** dans le gate.
+
 ## 2026-07-01 01:22 — Cowork (RBAC équipe : SQL + hook JWT APPLIQUÉS en prod — ✅ FONCTIONNEL)
 - **Fait (prod Supabase, autorisé Yuri, via éditeur SQL + Dashboard) :** débloqué la feature « gestion d'équipe » de Claude Code (entrée 17:20).
   - **Exécuté `supabase_team_member.sql`** dans l'éditeur SQL (projet `Monplanfin` PRODUCTION). « Success. No rows returned ».

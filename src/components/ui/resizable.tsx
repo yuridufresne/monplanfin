@@ -1,3 +1,4 @@
+// @ts-nocheck -- vendored shadcn primitive, hors du gate typecheck
 "use client"
 
 import { GripVertical } from "lucide-react"
