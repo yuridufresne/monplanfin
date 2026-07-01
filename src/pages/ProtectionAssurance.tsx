@@ -144,10 +144,18 @@ export default function ProtectionAssurance() {
               De combien d'assurance votre famille a-t-elle besoin ?
             </div>
             <div style={{ fontSize: 13, color: "rgba(255,255,255,.45)", maxWidth: 720, lineHeight: 1.5 }}>
-              Philosophie : <i>« Achetez de la temporaire et investissez la différence »</i>. Chaque conjoint est assuré selon ses propres responsabilités, optimisé en plusieurs termes.
+              Approche répandue en éducation financière : <i>« acheter de la temporaire et investir la différence »</i>. Cet outil <b>estime le besoin</b> selon les responsabilités de chacun — il ne recommande aucun produit.
             </div>
           </div>
           <Link to="/dashboard" style={{ fontSize: 11, color: "rgba(255,255,255,.35)", textDecoration: "none", padding: "6px 12px", borderRadius: 8, border: "1px solid rgba(255,255,255,.08)", background: "rgba(255,255,255,.03)" }}>← Tableau de bord</Link>
+        </div>
+
+        {/* ─── Disclaimer AMF (visible) ─── */}
+        <div style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "12px 16px", marginBottom: 16, borderRadius: 12, border: "1px solid rgba(234,179,8,.28)", background: "rgba(234,179,8,.06)" }}>
+          <AlertTriangle size={16} color={COL.amber} style={{ flexShrink: 0, marginTop: 1 }} />
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,.7)", lineHeight: 1.55 }}>
+            <b style={{ color: COL.amber }}>Estimation éducative — ce n'est pas un conseil en assurance.</b> L'analyse des besoins et le choix d'un produit doivent être faits par un <b>représentant certifié en assurance de personnes</b> inscrit à l'AMF.
+          </div>
         </div>
 
         {/* ─── Sélecteur de scénario ─── */}
@@ -218,7 +226,7 @@ export default function ProtectionAssurance() {
 
         {/* ─── Disclaimer ─── */}
         <p style={{ fontSize: 11, color: "rgba(255,255,255,.25)", marginTop: 18, lineHeight: 1.7 }}>
-          Estimation du <b style={{ color: "rgba(255,255,255,.4)" }}>capital d'assurance vie requis</b> selon l'approche des besoins (dettes, hypothèque, remplacement de revenu net, études, frais de dernier recours), nette de l'épargne et de l'assurance déjà en vigueur. À titre indicatif — le besoin réel dépend de votre situation complète. En mode couple, chaque conjoint est assuré séparément pour ses propres responsabilités (le survivant est libéré au premier décès). Pour le coût d'une police et un devis ferme, consultez un courtier d'assurance autonome (ex. : <span style={{ color: COL.gold }}>term4sale.ca</span>).
+          Estimation du <b style={{ color: "rgba(255,255,255,.4)" }}>capital d'assurance vie requis</b> selon l'approche des besoins (dettes, hypothèque, remplacement de revenu net, études, frais de dernier recours), nette de l'épargne et de l'assurance déjà en vigueur. À titre indicatif — le besoin réel dépend de votre situation complète. En mode couple, chaque conjoint est assuré séparément pour ses propres responsabilités (le survivant est libéré au premier décès). Pour l'analyse des besoins, le choix d'un produit et un devis ferme, consultez un <span style={{ color: COL.gold }}>représentant certifié en assurance de personnes inscrit à l'AMF</span>.
         </p>
       </div>
     </div>
@@ -276,7 +284,7 @@ function BandeauPermanente({ perm }) {
         <div style={{ fontSize: 14, fontWeight: 700, color: COL.amber, marginBottom: 4 }}>Évaluer une assurance permanente (T100)</div>
         <div style={{ fontSize: 12.5, color: "rgba(255,255,255,.65)", lineHeight: 1.6, marginBottom: 8 }}>{perm.raison}</div>
         <div style={{ fontSize: 12, color: "#fff" }}>
-          Couverture permanente suggérée : <b style={{ color: COL.amber }}>{fmt(perm.couverture)}</b>
+          Couverture permanente à évaluer avec un représentant certifié : <b style={{ color: COL.amber }}>{fmt(perm.couverture)}</b>
           <span style={{ color: COL.dim }}> · couvre frais de dernier recours + impôt successoral du FERR</span>
         </div>
       </div>
@@ -295,7 +303,7 @@ function CartePalier({ palier, avenant, S }) {
       background: win ? "linear-gradient(150deg, rgba(201,160,99,.07), rgba(255,255,255,.02))" : S.card.background,
       display: "flex", flexDirection: "column",
     }}>
-      {win && <span style={{ position: "absolute", top: -11, left: "50%", transform: "translateX(-50%)", fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: "#1a1206", background: `linear-gradient(150deg, ${COL.gold}, ${COL.gold2})`, padding: "4px 14px", borderRadius: 14, fontWeight: 700, whiteSpace: "nowrap" }}>◆ Recommandée</span>}
+      {win && <span style={{ position: "absolute", top: -11, left: "50%", transform: "translateX(-50%)", fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: "#1a1206", background: `linear-gradient(150deg, ${COL.gold}, ${COL.gold2})`, padding: "4px 14px", borderRadius: 14, fontWeight: 700, whiteSpace: "nowrap" }}>◆ Selon vos réponses</span>}
       <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: "rgba(201,160,99,.55)", marginBottom: 4 }}>{palier.tagline}</div>
       <div style={{ fontSize: 18, fontWeight: 700, color: win ? COL.gold : COL.ivory, marginBottom: 12 }}>{palier.label}</div>
 
@@ -358,7 +366,7 @@ function CarteCouple({ palierA, palierB, nomA, nomB, avenant, S }) {
       boxShadow: win ? "0 18px 50px -20px rgba(201,160,99,.45)" : undefined,
       background: win ? "linear-gradient(150deg, rgba(201,160,99,.07), rgba(255,255,255,.02))" : S.card.background,
     }}>
-      {win && <span style={{ position: "absolute", top: -11, left: "50%", transform: "translateX(-50%)", fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: "#1a1206", background: `linear-gradient(150deg, ${COL.gold}, ${COL.gold2})`, padding: "4px 14px", borderRadius: 14, fontWeight: 700, whiteSpace: "nowrap" }}>◆ Recommandée</span>}
+      {win && <span style={{ position: "absolute", top: -11, left: "50%", transform: "translateX(-50%)", fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: "#1a1206", background: `linear-gradient(150deg, ${COL.gold}, ${COL.gold2})`, padding: "4px 14px", borderRadius: 14, fontWeight: 700, whiteSpace: "nowrap" }}>◆ Selon vos réponses</span>}
       <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: "rgba(201,160,99,.55)", marginBottom: 4 }}>{palierA.tagline}</div>
       <div style={{ fontSize: 18, fontWeight: 700, color: win ? COL.gold : COL.ivory, marginBottom: 12 }}>{palierA.label}</div>
 

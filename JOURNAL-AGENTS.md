@@ -19,6 +19,18 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-07-01 07:20 — Cowork (⚖️ conformité AMF page Protection : wording durci — édit working-tree, POUR CLAUDE CODE : relire + déployer)
+- **Contexte (demande Yuri) :** la page **Protection** (`src/pages/ProtectionAssurance.tsx`, PAS `/analyse`) glissait de « estimation éducative » vers du **conseil en assurance + reco de produit + orientation d'achat** → zone la plus exposée AMF. Vérifié le cadre (LDPSF + avis AMF 2019) : « l'offre d'assurance » est un **acte réservé** ; le conseil non-certifié n'est toléré que si on **n'offre pas** de produit et qu'on **ne se présente pas** en représentant. Le mot « Recommandée » + « Achetez de la temporaire » + T100 « suggérée » + lien term4sale.ca franchissaient la ligne (et contredisaient `CLAUDE.md` : jamais « toi, achète CE produit »).
+- **Fait (texte SEULEMENT, aucun changement au moteur `moteurProtection`/calculs ; verrou « Cowork » tenu) :**
+  1. En-tête : « Philosophie : *« Achetez de la temporaire… »* » → « **Approche répandue en éducation financière** : *« acheter… »*. Cet outil **estime le besoin** … — il **ne recommande aucun produit**. »
+  2. **Ajout d'un bandeau disclaimer VISIBLE en haut** (ambre) : « **Estimation éducative — ce n'est pas un conseil en assurance.** L'analyse des besoins et le choix d'un produit doivent être faits par un **représentant certifié en assurance de personnes** inscrit à l'AMF. »
+  3. Badge cartes « **◆ Recommandée** » → « **◆ Selon vos réponses** » (2 occurrences : CartePalier + CarteCouple) — plus d'endossement d'un produit.
+  4. BandeauPermanente : « Couverture permanente **suggérée** » → « **à évaluer avec un représentant certifié** ».
+  5. Disclaimer bas : lien commercial **term4sale.ca** retiré → « consultez un **représentant certifié en assurance de personnes inscrit à l'AMF** ».
+  - Vérif : plus aucun terme à risque (`grep` vide) ; changements texte → zéro risque build/CI (page hors gate).
+- **→ POUR CLAUDE CODE :** relire ces 5 diffs sur `ProtectionAssurance.tsx`, committer + déployer. **Sujet sensible (AMF)** → idéalement branche → Preview. Mon édit est dans le working tree ; s'il est écrasé par une bascule de branche, le spec ci-dessus suffit à le refaire à l'identique.
+- **→ Pour Yuri :** ⚠️ **à faire valider par avocat/AMF avant lancement.** Point ouvert = est-ce que MonPlanFin touche une **commission/rémunération** sur les renvois assurance ? Si oui → enjeu LDPSF (partage de commissions réservé aux inscrits).
+
 ## 2026-07-01 07:00 — Claude Code (chantier UI #1 : refonte modal « Soumettre mon dossier » (design Open Design) — ✅ MERGÉ `f7179e1`)
 - **Fait (branche, PAS main — DoD : pas de merge sans accord Yuri) :** réécrit [SoumettreDossierModal.tsx](src/components/dashboard/SoumettreDossierModal.tsx) selon la maquette Open Design `soumission-dossier.html` (récupérée via MCP). Deux états dans le composant : **formulaire** + **confirmation** (sceau ✓, récap dynamique, timeline Reçu→Jumelage→Contact, retour dashboard).
   - Style porté fidèlement (thème sombre, tokens, pills urgence, chips besoins/contact/moment, inputs coordonnées + **masque téléphone** live + erreurs inline, `<details>` précision, bloc réassurance) via un `<style>` scoped `sd-*` (zéro collision). Icônes = **lucide monoline** (pas d'emoji). En-tête = **BrandIcon** (cible) + wordmark.
