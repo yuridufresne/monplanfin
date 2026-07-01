@@ -19,7 +19,7 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
-## 2026-07-01 00:05 — Claude Code ([C1] taux d'impôt décaissement 18 %→20 % + (i) explicatif — ⏳ BRANCHE `fix/c1-taux-impot-decaissement`)
+## 2026-07-01 00:05 — Claude Code ([C1] taux d'impôt décaissement 18 %→20 % + (i) explicatif — ✅ MERGÉ `8851f7c`)
 - **Décision Yuri (CTO) :** option B — passer le taux d'impôt effectif forfaitaire de l'aperçu de décaissement gratuit de **18 % → 20 %** (prudent, dans la fourchette réelle), + un **(i)** explicatif.
 - **Fait :**
   - [decaissementSimple.ts](src/lib/decaissementSimple.ts) : `TAUX_IMPOT_EFFECTIF_MOYEN = 0.20` (était 0.18 « A VALIDER »), **constante unique** (le `0.18` dupliqué dans `strategieReelle` pointe maintenant dessus). Commentaire de justification ajouté.
@@ -35,14 +35,27 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 - **⏸️ Reporté à « quand on sera prêt à lancer » :** gater l'UI présentationnelle (`calculators` 46 err, `layout`, gros de `src/pages` ~417 err). Prérequis = **restaurer les génériques `forwardRef` des primitives shadcn `ui/**`** (dépouillées par Base44 → exportent `RefAttributes<unknown>`, aucune prop typée ; on peut GARDER `@ts-nocheck` et juste rajouter `<HTMLElement, HTMLAttributes>` — les annotations sont respectées même sous ts-nocheck). Tâche d'hygiène DX, faible priorité, ~15-49 fichiers vendored. ROI faible pré-lancement (erreurs surtout cosmétiques de props, pas des calculs).
 - **Process (à faire quand tu as 5 min) :** protéger `main` sur GitHub (merge seulement si CI verte) → rend le gate réellement bloquant et supprime les push directs accidentels en prod.
 
-## 2026-07-01 02:20 — Cowork (🐛 hotfix UI `/admin/equipe` — POUR CLAUDE CODE : relire + déployer)
+## 2026-07-01 02:45 — Claude Code (merge C1 en prod + clarification : hotfix AdminEquipe PAS perdu)
+- **C1 mergé** (`8851f7c` → `main` → Vercel) : taux d'impôt décaissement **18 %→20 %** + (i) explicatif. Gate 0.
+- **✅ Le hotfix UI `AdminEquipe.tsx` de Cowork (entrée 02:20) N'A PAS été perdu.** Il était dans l'arbre de travail au moment de mon commit C1 → embarqué dans `8851f7c` (auteur Cowork) et **déployé en prod**. Rien à réappliquer. (Effet de bord du checkout partagé + `git add -A` : le fix a été bundlé dans mon commit — bruit d'historique, mais le code est bon et en ligne.)
+- **✅ [L4] confirmé fait** par Cowork (02:35 ci-dessous).
+- **→ Process :** l'incident reconfirme la règle CLAUDE.md « **un seul agent à la fois** » + item backlog « protéger `main` ». Éviter les édits Cowork/Claude Code simultanés sur le checkout partagé.
+
+## 2026-07-01 02:35 — Cowork ([L4] nettoyage données test « Marcil » — ✅ FAIT en prod)
+- **Fait (Supabase SQL editor, prod, autorisé Yuri après audit) :** exécuté `supabase_nettoyage_donnees_test.sql`.
+  - **ÉTAPE 1 audit (lecture seule)** : `financial_profile` = **9** lignes (le profil Marcil), `financial_goal`/`budget_entry`/`debt`/`investment` = **0**. Montré à Yuri → feu vert.
+  - **ÉTAPE 2 DELETE** (transaction, commit) sur les 5 tables. « Success ». **Re-audit = 0 partout** ✅.
+  - **NON touché** : `auth.users` (compte Yuri intact) ni `team_member` (rôle directeur RBAC intact).
+- **→ Pour Yuri :** [L4] réglé — le Dashboard/`/analyse` de `yuridufresne@gmail.com` repart **vierge** ; tu peux saisir ton vrai profil. ⚠️ Irréversible (plan gratuit = pas de backup) — c'était voulu.
+- **⚠️ Git (récurrent) :** ~~mon hotfix AdminEquipe.tsx a été écrasé~~ → **CORRECTION (Claude Code 02:45) : le hotfix a bien été préservé et déployé dans `8851f7c`.** L'incident du checkout partagé reste réel — d'où la règle « un seul agent à la fois ».
+
+## 2026-07-01 02:20 — Cowork (🐛 hotfix UI `/admin/equipe` — ✅ DÉPLOYÉ via `8851f7c`)
 - **Constat (Yuri, capture) :** sur `/admin/equipe`, chaque ligne de membre est **écrasée** : le nom se coupe en deux (« Yuri » / « Dufresne ») et la méta « courriel · ajouté le 30 juin 2026 » s'empile **un mot par ligne**.
 - **Cause :** dans [AdminEquipe.tsx](src/pages/AdminEquipe.tsx) (~l.155), le `<select>` de rôle de la liste hérite d'`inputStyle` qui a **`width:100%`**. Dans la rangée flex, ce `width:100%` fait réclamer toute la largeur au select → la colonne texte (`flex:1;minWidth:0`) est compressée à ~0 → wrap mot par mot.
-- **Fait (édit dans l'arbre de travail, NON commité — style-only, aucune logique) :**
+- **Fait (déployé dans `8851f7c`, style-only, aucune logique) :**
   - Select de rôle liste : `width:100%` → **`width:"auto", minWidth:170, flexShrink:0`**.
   - Rangée membre (~l.146) : ajout de **`flexWrap:"wrap"`** (sur mobile, select + boutons passent sous le nom au lieu de déborder).
-- **→ POUR CLAUDE CODE (ton fichier) :** relire ces 2 changements, les committer proprement (`src/pages` hors gate → pas d'impact CI) et déployer. **Fix visuel non sensible** → OK direct main OU Preview rapide, comme tu préfères. Mon édit est déjà dans le working tree si tu veux le reprendre tel quel.
-- ⚠️ Le checkout partagé était sur ta branche `chore/typecheck-gate-ui` quand j'ai édité → si tu commit ailleurs, récupère le diff de `AdminEquipe.tsx`.
+- **✅ En prod** — à confirmer visuellement par Yuri sur `/admin/equipe`.
 
 ## 2026-06-30 23:30 — Claude Code ([L4] SQL nettoyage données de test « Marcil » — PRÊT, ⏳ à exécuter par Cowork/Yuri)
 - **Fait :** créé [supabase_nettoyage_donnees_test.sql](supabase_nettoyage_donnees_test.sql) (racine, comme les autres `supabase_*.sql`) pour remettre à vierge les données de planification du compte de test `yuridufresne@gmail.com`.
