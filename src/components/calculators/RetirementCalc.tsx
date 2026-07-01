@@ -18,10 +18,14 @@ export default function RetirementCalc() {
   const [returnRate, setReturnRate] = useState(6);
   const [retirementSpending, setRetirementSpending] = useState(3500);
 
+  // L'âge de retraite ne peut pas précéder l'âge actuel (curseurs qui se chevauchent).
+  const retireAgeEffectif = Math.max(retireAge, currentAge);
+  const INFLATION = 2.1; // % — norme IQPF 2025 (les dépenses de retraite sont indexées).
+
   const data = useMemo(() => {
     const points = [];
     let balance = currentSavings;
-    const yearsToRetire = retireAge - currentAge;
+    let depensesAnnuelles = retirementSpending * 12;
     const totalYears = 90 - currentAge;
 
     for (let y = 0; y <= totalYears; y++) {
@@ -31,17 +35,20 @@ export default function RetirementCalc() {
         Épargne: Math.round(Math.max(0, balance)),
       });
 
-      if (age < retireAge) {
+      if (age < retireAgeEffectif) {
         balance = balance * (1 + returnRate / 100) + monthlyContrib * 12;
+        // Les dépenses prévues (en $ d'aujourd'hui) sont indexées jusqu'à la retraite, puis pendant.
+        depensesAnnuelles *= 1 + INFLATION / 100;
       } else {
-        balance = balance * (1 + (returnRate - 1) / 100) - retirementSpending * 12;
+        balance = balance * (1 + (returnRate - 1) / 100) - depensesAnnuelles;
+        depensesAnnuelles *= 1 + INFLATION / 100;
       }
     }
     return points;
-  }, [currentAge, retireAge, currentSavings, monthlyContrib, returnRate, retirementSpending]);
+  }, [currentAge, retireAgeEffectif, currentSavings, monthlyContrib, returnRate, retirementSpending]);
 
-  const atRetirement = data.find((d) => d.âge === retireAge);
-  const runsOutAge = data.find((d) => d.âge > retireAge && d.Épargne <= 0);
+  const atRetirement = data.find((d) => d.âge === retireAgeEffectif);
+  const runsOutAge = data.find((d) => d.âge > retireAgeEffectif && d.Épargne <= 0);
 
   return (
     <Card className="border border-border/50 shadow-float bg-card">
@@ -92,7 +99,7 @@ export default function RetirementCalc() {
         <div className="grid grid-cols-2 gap-6 border-y border-border/50 py-6">
           <div className="text-center">
             <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase mb-2">
-              Capital à {retireAge} ans
+              Capital à {retireAgeEffectif} ans
             </p>
             <p className="text-[1.6rem] font-financial font-bold text-primary tracking-tight">
               {formatCurrency(atRetirement?.Épargne || 0)}
@@ -108,6 +115,11 @@ export default function RetirementCalc() {
           </div>
         </div>
 
+        <p className="text-[11.5px] text-muted-foreground font-light -mt-4">
+          Dépenses saisies en dollars d'aujourd'hui, indexées à l'inflation ({INFLATION.toFixed(1).replace(".", ",")} % — norme IQPF 2025).
+          Rendement réduit de 1 point à la retraite (portefeuille plus prudent). Estimation simplifiée, avant impôt.
+        </p>
+
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data}>
@@ -115,7 +127,7 @@ export default function RetirementCalc() {
               <XAxis dataKey="âge" tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}`} />
               <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
               <Tooltip formatter={(val) => formatCurrency(val)} contentStyle={{ borderRadius: "0.75rem", fontSize: 13 }} />
-              <ReferenceLine x={retireAge} stroke="hsl(var(--accent))" strokeDasharray="5 5" label={{ value: "Retraite", position: "top", fontSize: 11 }} />
+              <ReferenceLine x={retireAgeEffectif} stroke="hsl(var(--accent))" strokeDasharray="5 5" label={{ value: "Retraite", position: "top", fontSize: 11 }} />
               <Line type="monotone" dataKey="Épargne" stroke="hsl(var(--primary))" strokeWidth={2.5} dot={false} />
             </LineChart>
           </ResponsiveContainer>

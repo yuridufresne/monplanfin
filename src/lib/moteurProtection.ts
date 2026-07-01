@@ -312,7 +312,7 @@ export function calculerRecommandations(p) {
     {
       id: "securitaire",
       label: "Couverture Sécuritaire",
-      tagline: "Le standard recommandé",
+      tagline: "Le juste milieu",
       description: `Urgence + remplacement de revenu sur ${p.annees_remplacement_secur || 3} ans pour la transition.`,
       couverture: round25(securitaire),
       duree: dureePref,

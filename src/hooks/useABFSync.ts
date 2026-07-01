@@ -8,6 +8,7 @@
  * sont modifiés dans la grille budgétaire.
  */
 import { appClient } from "@/api/usersClient";
+import { calcNetPersonne } from "@/lib/calcRevenuNet";
 
 export async function syncABFToEntities() {
   const profiles = await appClient.entities.FinancialProfile.list();
@@ -17,16 +18,26 @@ export async function syncABFToEntities() {
   // ── 1. REVENUS : les revenus sont gérés uniquement dans l'ABF, pas dans BudgetEntry ──
 
   // ── 1b. IMPÔTS (ABF revenu → BudgetEntry dépense) ────────────────────────
+  // Impôt saisi prioritaire ; si le champ est laissé vide, on utilise l'estimation
+  // du moteur fiscal (calcNetPersonne — même logique que le placeholder de StepRevenu)
+  // au lieu de la jeter (bug « impôt retenu jeté » : budget sans ligne d'impôt
+  // face à des revenus BRUTS → surplus gonflé). Conjoint inclus.
   const revenuData = bySection["revenu"];
   if (revenuData) {
     const revData = revenuData.data || revenuData;
-    const emplois = revData.emplois || [];
-    let totalImpotMensuel = 0;
-    for (const e of emplois) {
-      const saisi = parseFloat(e.impot_saisi || e.impot_mensuel) || 0;
-      const freq = e.impot_freq || "mensuel";
-      totalImpotMensuel += freq === "annuel" ? saisi / 12 : saisi;
-    }
+    const impotMensuelPersonne = (d) => {
+      if (!d || typeof d !== "object") return 0;
+      let saisi = 0, brut = 0;
+      for (const e of (d.emplois || [])) {
+        const s = parseFloat(e.impot_saisi || e.impot_mensuel) || 0;
+        const freq = e.impot_freq || "mensuel";
+        saisi += freq === "annuel" ? s / 12 : s;
+        brut += parseFloat(e.revenu_brut) || 0;
+      }
+      if (saisi > 0) return saisi;
+      return brut > 0 ? calcNetPersonne(brut).impot / 12 : 0;
+    };
+    const totalImpotMensuel = Math.round(impotMensuelPersonne(revData) + impotMensuelPersonne(revData.conjoint));
     if (totalImpotMensuel > 0) {
       const label = "Impôts (retenues à la source)";
       const existing = await appClient.entities.BudgetEntry.filter({ label });

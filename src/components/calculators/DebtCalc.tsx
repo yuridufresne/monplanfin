@@ -33,7 +33,7 @@ export default function DebtCalc() {
   };
 
   const results = useMemo(() => {
-    if (debts.length === 0) return { months: 0, totalInterest: 0, data: [] };
+    if (debts.length === 0) return { months: 0, paidOff: true, totalInterest: 0, data: [] };
 
     // Stratégie avalanche: payer la dette au taux le plus élevé en premier
     let remaining = debts.map((d) => ({ ...d, currentBalance: d.balance }));
@@ -78,7 +78,10 @@ export default function DebtCalc() {
       }
     }
 
-    return { months: month, totalInterest: Math.round(totalInterest), data: monthlyData };
+    // Si le solde n'est pas remboursé après 30 ans (paiements < intérêts), le dire
+    // clairement au lieu d'afficher « Libre en 360 mois » alors que la dette grossit.
+    const paidOff = !remaining.some((d) => d.currentBalance > 0);
+    return { months: month, paidOff, totalInterest: Math.round(totalInterest), data: monthlyData };
   }, [debts, extraPayment]);
 
   const totalDebt = debts.reduce((sum, d) => sum + d.balance, 0);
@@ -171,7 +174,12 @@ export default function DebtCalc() {
           </div>
           <div className="text-center border-x border-border/40">
             <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase mb-2">Libre en</p>
-            <p className="text-[1.4rem] font-financial font-bold text-primary tracking-tight">{results.months} mois</p>
+            <p className={`text-[1.4rem] font-financial font-bold tracking-tight ${results.paidOff ? "text-primary" : "text-destructive"}`}>
+              {results.paidOff ? `${results.months} mois` : "30 ans +"}
+            </p>
+            {!results.paidOff && (
+              <p className="text-[11px] text-destructive mt-1">Paiements insuffisants pour rembourser — augmentez le paiement supplémentaire.</p>
+            )}
           </div>
           <div className="text-center">
             <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase mb-2">Intérêts payés</p>

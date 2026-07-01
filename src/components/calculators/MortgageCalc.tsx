@@ -19,32 +19,51 @@ export default function MortgageCalc() {
 
   const results = useMemo(() => {
     const monthlyIncome = income / 12;
-    // Règle ABD: max 32% du revenu brut
-    const maxGDS = monthlyIncome * 0.32;
-    // Règle ATD: max 40% du revenu brut
-    const maxTDS = monthlyIncome * 0.40 - otherDebts;
+    // Ratios SCHL (prêts assurés, 2021+) : ABD max 39 %, ATD max 44 % du revenu brut.
+    const maxGDS = monthlyIncome * 0.39;
+    const maxTDS = monthlyIncome * 0.44 - otherDebts;
     const maxMonthly = Math.min(maxGDS, maxTDS);
-    
-    // Estimer taxes et chauffage (~350$/mois)
+
+    // Estimer taxes et chauffage (~350$/mois) — inclus dans ABD/ATD.
     const monthlyExpenses = 350;
     const availableForMortgage = Math.max(0, maxMonthly - monthlyExpenses);
 
-    // Calculer le montant maximal d'hypothèque
-    const monthlyRate = (rate / 100) / 12;
+    // Test de résistance (B-20/SCHL) : qualification au plus élevé de (taux + 2 %) ou 5,25 %.
+    const qualifyingRate = Math.max(rate + 2, 5.25);
+    const qMonthlyRate = (qualifyingRate / 100) / 12;
     const n = amortization * 12;
-    const maxMortgage = monthlyRate > 0
-      ? availableForMortgage * (1 - Math.pow(1 + monthlyRate, -n)) / monthlyRate
+    const maxMortgageByRatios = qMonthlyRate > 0
+      ? availableForMortgage * (1 - Math.pow(1 + qMonthlyRate, -n)) / qMonthlyRate
       : availableForMortgage * n;
 
-    const maxPrice = maxMortgage + downPayment;
-    const totalInterest = (availableForMortgage * n) - maxMortgage;
+    // Mise de fonds minimale : 5 % ≤ 500 k$, 10 % sur l'excédent (< 1,5 M$) ; 20 % à partir de 1,5 M$.
+    const maxPriceByDown = (() => {
+      if (downPayment <= 0) return 0;
+      let price = downPayment <= 25000
+        ? downPayment / 0.05
+        : 500000 + (downPayment - 25000) / 0.10;
+      if (price >= 1500000) price = Math.max(downPayment / 0.20, 0); // ≥ 1,5 M$ → 20 % requis
+      return price;
+    })();
+
+    const maxPrice = Math.min(maxMortgageByRatios + downPayment, Math.max(maxPriceByDown, downPayment));
+    const maxMortgage = Math.max(0, maxPrice - downPayment);
+
+    // Paiement réel au taux contractuel (le test de résistance sert à qualifier, pas à payer).
+    const monthlyRate = (rate / 100) / 12;
+    const monthlyPayment = monthlyRate > 0
+      ? maxMortgage * monthlyRate / (1 - Math.pow(1 + monthlyRate, -n))
+      : maxMortgage / n;
+    const totalInterest = monthlyPayment * n - maxMortgage;
 
     return {
       maxPrice: Math.round(maxPrice),
       maxMortgage: Math.round(maxMortgage),
-      monthlyPayment: Math.round(availableForMortgage),
+      monthlyPayment: Math.round(monthlyPayment),
       totalInterest: Math.round(totalInterest),
-      totalPaid: Math.round(availableForMortgage * n),
+      totalPaid: Math.round(monthlyPayment * n),
+      qualifyingRate,
+      limitedByDown: maxPriceByDown > 0 && maxPriceByDown < maxMortgageByRatios + downPayment,
     };
   }, [income, downPayment, rate, amortization, otherDebts]);
 
@@ -141,6 +160,11 @@ export default function MortgageCalc() {
             <span className="font-financial font-semibold text-foreground">
               {formatCurrency(results.monthlyPayment)} / mois
             </span>
+          </p>
+          <p className="text-[11.5px] text-muted-foreground font-light mt-2">
+            Inclut le test de résistance (qualification à {results.qualifyingRate.toFixed(2).replace(".", ",")} %)
+            et la mise de fonds minimale{results.limitedByDown ? " (votre mise de fonds limite le prix)" : ""}.
+            Prime SCHL non incluse — estimation indicative, la qualification réelle appartient au prêteur.
           </p>
         </div>
 

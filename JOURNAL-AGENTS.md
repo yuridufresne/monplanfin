@@ -19,6 +19,15 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-07-01 (post-audit) — Cowork (🔧 6 correctifs de l'audit — wording, impôt jeté, calculatrices, purge DUFY)
+- **Fait (verrou « Cowork » ; demande Yuri, items 5-10 du rapport d'audit) :**
+  1. **Wording AMF** : `Home.tsx` « conseiller accrédité AMF » → « conseiller partenaire inscrit à l'AMF » ; `index.html` (4 occurrences : meta, og, twitter, JSON-LD) « plan révisé par un conseiller encadré par l'AMF » → « possibilité de relais vers un conseiller partenaire inscrit à l'AMF » ; `moteurProtection.ts` tagline « Le standard recommandé » → « Le juste milieu ».
+  2. **Bug « impôt retenu jeté » RÉSOLU** ([useABFSync.ts](src/hooks/useABFSync.ts) §1b — la vraie racine, pas FeuilleResume qui a déjà un fallback) : champ impôt vide → repli sur l'estimation `calcNetPersonne(brut).impot` (même logique que le placeholder de StepRevenu) au lieu de ne créer AUCUNE ligne « Impôts (retenues à la source) » au budget (surplus gonflé). **Conjoint désormais inclus** (avant : ignoré même saisi).
+  3. **Calculatrices natives** (⚠️ CHANGEMENTS DE CALCUL, à valider par Yuri sur `/calculatrices`) : **MortgageCalc** = test de résistance ajouté (max(taux+2 %, 5,25 %)), ratios 32/40 → **39/44** (SCHL 2021+), **mise de fonds minimale** appliquée (5 %/10 %/20 %, cap 1,5 M$), paiement affiché au taux contractuel, note explicative ; **RetirementCalc** = clamp retraite ≥ âge actuel + dépenses **indexées 2,1 %** (IQPF 2025) + note d'hypothèses ; **DebtCalc** = détection « paiements insuffisants » (avant : « Libre en 360 mois » alors que le solde grossit).
+  4. **[données prod] Dossier test « DUFY » supprimé** de `lead_dossier` (SQL editor, `returning` confirmé, table désormais vide).
+- ✅ gate typecheck 0 · lint 0. ⚠️ Push impossible depuis le sandbox (keychain) → **Yuri : `git push origin main`**. Non testé visuellement → QA Yuri sur `/calculatrices` (capacité hypothécaire plus basse qu'avant = voulu).
+- **→ Pour Yuri :** restent les 4 bloquants non-code du rapport (Supabase Pro, Vercel Pro, véracité AMF partenaires, rémunération référencement).
+
 ## 2026-07-01 (audit) — Cowork (🚦 AUDIT DE LANCEMENT complet — rapport `AUDIT-LANCEMENT-2026-07-01.md`)
 - **Fait (verrou « Cowork » tenu ; lecture seule sauf rapport + journal) :** audit complet demandé par Yuri. Vérifié EN DIRECT : CI GitHub (101 runs main, tous verts, HEAD `11a9a4c` déployé) · gate typecheck 0 + lint 0 (local) · prod monplanfin.ca (6 pages, 0 erreur console, CSP OK, SEO OK, wording AMF OK incl. `/protection` déployé) · Supabase (Healthy, hook JWT ENABLED, mais **plan FREE / No backups**) · Vercel (**plan Hobby**, dernier deploy = HEAD).
 - **Verdict : PRÊT techniquement, PAS commercialement.** 4 bloquants, tous côté Yuri : Supabase Pro (backups) · Vercel Pro · véracité claim AMF partenaires · rémunération référencement (avocat). Détails + 10 items 🟡 dans le rapport.
