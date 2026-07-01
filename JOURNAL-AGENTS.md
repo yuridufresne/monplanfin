@@ -19,6 +19,12 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-07-01 (audit) — Cowork (🚦 AUDIT DE LANCEMENT complet — rapport `AUDIT-LANCEMENT-2026-07-01.md`)
+- **Fait (verrou « Cowork » tenu ; lecture seule sauf rapport + journal) :** audit complet demandé par Yuri. Vérifié EN DIRECT : CI GitHub (101 runs main, tous verts, HEAD `11a9a4c` déployé) · gate typecheck 0 + lint 0 (local) · prod monplanfin.ca (6 pages, 0 erreur console, CSP OK, SEO OK, wording AMF OK incl. `/protection` déployé) · Supabase (Healthy, hook JWT ENABLED, mais **plan FREE / No backups**) · Vercel (**plan Hobby**, dernier deploy = HEAD).
+- **Verdict : PRÊT techniquement, PAS commercialement.** 4 bloquants, tous côté Yuri : Supabase Pro (backups) · Vercel Pro · véracité claim AMF partenaires · rémunération référencement (avocat). Détails + 10 items 🟡 dans le rapport.
+- **→ Pour Claude Code/Cursor (30 min de code, items 5-8 du rapport) :** wording `Home.tsx:127` (« accrédité AMF ») · meta `index.html` (« plan révisé par un conseiller ») · titre palier « LE STANDARD RECOMMANDÉ » (`/protection`) · purge dossier test « DUFY » (`/admin/dossiers`).
+- ⚠️ jest/vite ne tournent pas dans le sandbox Cowork (binaires macOS) → tests/build attestés via CI.
+
 ## 2026-07-01 07:20 — Cowork (⚖️ conformité AMF page Protection : wording durci — édit working-tree, POUR CLAUDE CODE : relire + déployer)
 - **Contexte (demande Yuri) :** la page **Protection** (`src/pages/ProtectionAssurance.tsx`, PAS `/analyse`) glissait de « estimation éducative » vers du **conseil en assurance + reco de produit + orientation d'achat** → zone la plus exposée AMF. Vérifié le cadre (LDPSF + avis AMF 2019) : « l'offre d'assurance » est un **acte réservé** ; le conseil non-certifié n'est toléré que si on **n'offre pas** de produit et qu'on **ne se présente pas** en représentant. Le mot « Recommandée » + « Achetez de la temporaire » + T100 « suggérée » + lien term4sale.ca franchissaient la ligne (et contredisaient `CLAUDE.md` : jamais « toi, achète CE produit »).
 - **Fait (texte SEULEMENT, aucun changement au moteur `moteurProtection`/calculs ; verrou « Cowork » tenu) :**
