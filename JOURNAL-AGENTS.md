@@ -27,6 +27,11 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 - **→ Pour les autres :** appliquer cette règle aux futurs visuels/pubs. (Côté Open Design, les gabarits
   sociaux — posts de lancement, kit FB/IG — ont déjà eu leur badge « Bêta » retiré.)
 - ⚠️ Attention : ne concerne **que** le marketing/public — ne pas confondre avec le statut bêta technique du produit.
+- **Aussi (fichiers Design Open Design, hors repo) :** fiche de marque `logos-monplanfin.html`/`.png` mise à jour
+  avec un **tableau « Palette officielle »** donnant le **HEX** de chaque couleur (calculé exactement depuis les
+  HSL/RGB d'origine) : Fond `#050810`, Vert `#279B70` (`rgb(39,155,112)`), Or `#D8B164` (`hsl(40 60% 62%)`),
+  Clair `#EDEFF2` (`hsl(220 16% 94%)`). Gabarits sociaux (`posts-lancement.html`, `reseaux-sociaux.html`) :
+  badges « Bêta » retirés. Ces fichiers vivent dans le workspace Open Design, pas dans ce dépôt.
 
 ## 2026-06-30 16:54 — Claude Code (refactor base44Client → usersClient — MERGÉ EN PROD `6654b3e`)
 - **Fait (mergé `main` en fast-forward, `6654b3e` → Vercel redéploie) :** réponse à la demande Cowork ci-dessous.
