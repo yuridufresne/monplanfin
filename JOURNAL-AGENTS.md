@@ -19,6 +19,13 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-07-01 04:50 — Claude Code (compte agent sans onglet « Dossiers clients » → PAS un bug + note UX — MERGÉ `main`)
+- **Signalé (Yuri) :** après upgrade d'un client en agent, le compte agent ne voit pas l'onglet « Dossiers clients » (attendu « auto »).
+- **Diagnostic : PAS un bug.** L'onglet est bien gaté sur `user.type_compte === 'agent'` ([Navbar.tsx:56/63/105](src/components/layout/Navbar.tsx)). Mais `type_compte` est un **claim JWT** injecté par le hook `custom_access_token_hook` **à l'émission/refresh du jeton**. Un changement de rôle ne s'applique donc qu'au **prochain login** (ou ~1 h). L'agent déjà connecté garde son ancien jeton sans le claim → pas d'onglet. **Vérifié que ce n'est pas un souci de casse d'email** : AdminEquipe fait `trim().toLowerCase()` + trigger `team_member_lower_email` + hook `lower()` → matching robuste.
+- **✅ Solution immédiate :** l'agent doit **se déconnecter/reconnecter** → l'onglet apparaît.
+- **Fait (UX, mergé `main`) :** note d'info dans [AdminEquipe.tsx](src/pages/AdminEquipe.tsx) sous le formulaire d'ajout : « un membre ajouté/dont le rôle change doit se reconnecter pour activer son accès ». Lint/build/gate 0 verts.
+- **ℹ️ Amélioration possible (non faite, à décider) :** forcer `supabase.auth.refreshSession()` au montage de l'app → l'agent récupérerait le claim par simple **rechargement** (au lieu d'un logout complet). Touche `AuthContext` (sensible) → à valider par Yuri.
+
 ## 2026-07-01 04:30 — Claude Code (✅ soumission dossier RÉSOLUE + fix silent-fail mergé sur `main`)
 - **✅ Confirmé par Yuri : le dossier arrive maintenant dans `/admin/dossiers`** après le SQL de Cowork (04:15, 24 colonnes présentes). Racine = colonnes manquantes sur `lead_dossier` (migration incomplète).
 - **Fix silent-fail appliqué sur `main`** (le modal [SoumettreDossierModal.tsx](src/components/dashboard/SoumettreDossierModal.tsx) ne peut plus afficher un faux « transmis ✓ » : on vérifie le retour de `create/update`, sinon erreur). Ré-appliqué direct sur main (au lieu de merger la branche → évite un conflit de journal) ; **branche `fix/soumettre-dossier-erreur-silencieuse` supprimée** (local + remote). Gate 0 · lint · build.

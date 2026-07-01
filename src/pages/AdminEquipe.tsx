@@ -123,6 +123,11 @@ export default function AdminEquipe() {
         </div>
       </form>
 
+      {/* Rappel : le rôle est un claim JWT injecté à la connexion → prend effet au prochain login. */}
+      <div style={{ background: "rgba(107,142,214,0.1)", border: "1px solid rgba(107,142,214,0.3)", borderRadius: 10, padding: "10px 14px", color: "#93b4ea", fontSize: 12.5, lineHeight: 1.5, marginBottom: 18 }}>
+        ⏱ Un membre ajouté (ou dont le rôle change) doit se <strong>déconnecter puis se reconnecter</strong> pour activer son accès (l'onglet « Dossiers clients », etc.). Le changement s'applique sinon automatiquement à la prochaine actualisation de session (~1 h).
+      </div>
+
       {erreur && (
         <div style={{ background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 10, padding: "10px 14px", color: "#f87171", fontSize: 13, marginBottom: 18 }}>
           {erreur}
