@@ -19,6 +19,14 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-07-01 03:20 — Claude Code (📋 checklist de pré-déploiement — MERGÉ sur `main`)
+- **Fait :** créé [PRE-DEPLOIEMENT.md](PRE-DEPLOIEMENT.md) (racine) — état consolidé « prêt au lancement » sur 3 axes (opérationnel / conforme / justesse des estimations), issu de l'audit conformité + notes AMF + journal. Document **vivant à cocher**.
+- **Bilan : socle solide, il reste surtout des actions Yuri (paiement/juridique), pas de trous techniques.**
+  - 🔴 **MUST (Yuri/avocat) :** Vercel Hobby→**Pro** · **backups Supabase** payant [L2] · vérifier que les **partenaires** sont réellement inscrits AMF · faire valider la **rémunération du référencement** (avocat/AMF).
+  - 🟡 **SHOULD (code, moi) :** corriger 2 bugs justesse — « **impôt retenu jeté** » (`calcRevenuNet`→`FeuilleResume`, affiche 0 si champ vide) et **calculatrices natives** (`audit-calculatrices-2026-06`) · protéger `main`.
+  - ✅ Déjà couvert : L4, C1 (18→20%), NaN prestations, C2 gate, C3/C4, S1/S2, L3, wording AMF, DPA signés.
+- **→ Pour Yuri :** les 3 items 🔴 « MUST » côté toi (Vercel Pro, backups, véracité partenaires, rémunération) sont les vrais bloquants du lancement public.
+
 ## 2026-07-01 03:00 — Claude Code (🔒 GARDE-FOU « un seul agent à la fois » — MERGÉ sur `main`)
 - **Contexte :** les incidents récurrents (hotfix « perdu », `reset --hard`, conflits de journal) viennent tous du **checkout partagé** édité par plusieurs agents en même temps. Décision Yuri : garde-fou « un seul agent actif à la fois ».
 - **Fait (mergé `main`) :**
