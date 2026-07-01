@@ -19,6 +19,19 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-07-01 07:00 — Claude Code (chantier UI #1 : refonte modal « Soumettre mon dossier » (design Open Design) — ⏳ BRANCHE `od/soumission-dossier`, NON mergée)
+- **Fait (branche, PAS main — DoD : pas de merge sans accord Yuri) :** réécrit [SoumettreDossierModal.tsx](src/components/dashboard/SoumettreDossierModal.tsx) selon la maquette Open Design `soumission-dossier.html` (récupérée via MCP). Deux états dans le composant : **formulaire** + **confirmation** (sceau ✓, récap dynamique, timeline Reçu→Jumelage→Contact, retour dashboard).
+  - Style porté fidèlement (thème sombre, tokens, pills urgence, chips besoins/contact/moment, inputs coordonnées + **masque téléphone** live + erreurs inline, `<details>` précision, bloc réassurance) via un `<style>` scoped `sd-*` (zéro collision). Icônes = **lucide monoline** (pas d'emoji). En-tête = **BrandIcon** (cible) + wordmark.
+  - **Logique PRÉSERVÉE** (rien recalculé) : trigger/props (Dashboard), persistance `LeadDossier`, **`snapshot_profil` = buildPayload/sections (SSOT)**, validation email+tél, **synchro profil ABF** (`profil_personnel`), garde silent-fail.
+- **Décisions (à confirmer par Yuri) :**
+  - **Ids backend conservés** (BESOINS/URGENCES/MODES/MOMENTS) — seuls libellés/icônes changent → aucune casse admin/RLS.
+  - **Validation bloquante = email + tél + consentement** uniquement (urgence/besoins/moment facultatifs), conforme au brief §2.
+  - **Consentement Loi 25 = vraie case à cocher explicite** (la maquette n'avait qu'un texte de réassurance ; obligation légale → je l'ai gardée, requise avant envoi).
+  - **Langage AMF** : « conseiller partenaire **inscrit à l'AMF** », « outil éducatif d'estimation » ; aucun « planificateur » ni « Bêta ».
+- **⚠️ NON fait / à clarifier (DoD §7/§9) :** l'**accusé courriel** + **notification back-office de jumelage** — je n'ai pas trouvé de mécanisme existant ; actuellement le dossier arrive `statut:"nouveau"` dans `/admin/dossiers` (file admin), ce qui EST la voie de notification actuelle. À décider avec Yuri si on ajoute un vrai email d'accusé.
+- ✅ gate 0 · lint · build (tous les imports lucide résolus). ⚠️ **Non testé visuellement** (modal derrière login) → **QA Yuri sur preview Vercel avant merge.**
+- **→ Pour Yuri :** ouvrir une PR/preview depuis `od/soumission-dossier`, tester le rendu + le flux (soumission → `/admin/dossiers` → synchro profil). Dire « merge » si OK.
+
 ## 2026-07-01 06:20 — Claude Code (chantier UI #2 : coordonnées inline + synchro profil ABF au dossier — ✅ MERGÉ `d7d8bc3`)
 - **Fait (MERGÉ sur main → Vercel ; UI derrière login, non testable en preview ici → à valider par Yuri) :** [SoumettreDossierModal.tsx](src/components/dashboard/SoumettreDossierModal.tsx)
   - Nouveau bloc **« Vos coordonnées »** (email + téléphone) éditable, pré-rempli depuis `profil_personnel`/compte, avec message clair (« le conseiller en a besoin pour te contacter ; ajoutées à ton profil ») + validation inline (email regex, tél 10 chiffres).
