@@ -19,6 +19,17 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-06-30 17:20 — Claude Code (gestion équipe admin — conseillers/admins pilotés depuis l'admin — EN PR + SQL Cowork)
+- **Contexte / demande Yuri :** pouvoir créer des comptes **conseiller** (agent) et **admin** (directeur) **depuis l'UI admin**, propre et scalable — sans push de code. Choix validé : **pattern RBAC officiel Supabase (JWT / Custom Access Token Hook)**.
+- **Fait (branche `feat/admin-gestion-equipe`, EN PR, PAS main) :**
+  - **Rôle métier sorti du code figé** : plus de rôle déduit d'`ADMIN_EMAILS` seul → lu depuis un **claim `type_compte` signé dans le JWT** (injecté par un hook Supabase qui lit la table `team_member`). `ADMIN_EMAILS` reste un **bootstrap racine anti-lockout**.
+  - Code : `roleFromToken()` (décode le claim, [usersClient.ts](src/api/usersClient.ts)), `mapUser(u, claim)`, `AuthContext` passe le claim (décodage **synchrone** → pas de deadlock `onAuthStateChange`), `User.list()`/`chargerAgents()` lisent `team_member`, entité `TeamMember`.
+  - **Page admin « Équipe »** ([src/pages/AdminEquipe.tsx](src/pages/AdminEquipe.tsx), route `/admin/equipe`, lien depuis AdminDossiers) : ajouter/activer/désactiver/changer le rôle/retirer. Wording **AMF** : « conseiller partenaire », jamais « planificateur ».
+  - ✅ lint · typecheck gate 0 · 32/32 tests · build · **smoke test preview** (app démarre, 0 erreur console, auth intacte).
+  - **Dégradation gracieuse** : tant que la table/hook n'existent pas, `ADMIN_EMAILS` te garde admin, la page affiche un message propre. **Zéro régression.**
+- **→ POUR COWORK (bloquant pour activer la feature) :** exécuter **`supabase_team_member.sql`** (racine) dans l'éditeur SQL Supabase (table + RLS + `is_admin()` + hook + seed ton email), **PUIS** Dashboard → Authentication → Hooks → activer **Custom Access Token** = `public.custom_access_token_hook`. (instructions détaillées en bas du fichier SQL)
+- **→ Pour Yuri :** une fois le SQL+hook en place, un changement de rôle s'applique au **prochain refresh de jeton** (re-login ou ~1 h). Merge du code possible avant ou après (dégradation gracieuse).
+
 ## 2026-06-30 16:54 — Claude Code (refactor base44Client → usersClient — MERGÉ EN PROD `6654b3e`)
 - **Fait (mergé `main` en fast-forward, `6654b3e` → Vercel redéploie) :** réponse à la demande Cowork ci-dessous.
   - `git mv src/api/base44Client.ts` → **`src/api/usersClient.ts`** (`supabaseClient.ts` était déjà pris).

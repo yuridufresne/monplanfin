@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { supabase } from '@/api/supabaseClient';
-import { mapUser, type AppUser } from '@/api/usersClient';
+import { mapUser, roleFromToken, type AppUser } from '@/api/usersClient';
 
 type SignUpResult = ReturnType<typeof supabase.auth.signUp>;
 type SignInResult = ReturnType<typeof supabase.auth.signInWithPassword>;
@@ -41,13 +41,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     let monte = true;
     supabase.auth.getSession().then(({ data }) => {
       if (!monte) return;
-      setUser(mapUser(data.session?.user));
+      setUser(mapUser(data.session?.user, roleFromToken(data.session?.access_token)));
       setIsLoadingAuth(false);
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       // Arrivée via le lien « mot de passe oublié » → écran de nouveau mot de passe.
       if (event === 'PASSWORD_RECOVERY') setRecoveryMode(true);
-      setUser(mapUser(session?.user));
+      // roleFromToken = décodage SYNCHRONE du JWT (aucun appel async ici → pas de
+      // deadlock dans onAuthStateChange, contrainte Supabase).
+      setUser(mapUser(session?.user, roleFromToken(session?.access_token)));
       setIsLoadingAuth(false);
     });
     return () => { monte = false; sub.subscription.unsubscribe(); };

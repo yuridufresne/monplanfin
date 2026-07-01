@@ -80,4 +80,6 @@ export const supabaseEntities = {
   UserConsent: makeEntity('user_consent'),
   BetaFeedback: makeEntity('beta_feedback'),
   EducationProgress: makeEntity('education_progress'),
+  // Équipe (admins/conseillers) — rôle métier piloté depuis l'admin. RLS = admin only.
+  TeamMember: makeEntity('team_member'),
 };
