@@ -19,7 +19,17 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
-## 2026-06-30 21:37 — Claude Code (C2 suite : gate typecheck étendu à api/hooks/home/feedback/examples — ⏳ BRANCHE, PR à merger)
+## 2026-07-01 01:55 — Cowork (templates email Auth : logo + wordmark vert — ✅ FAIT en prod)
+- **Fait (Supabase Dashboard → Authentication → Emails, prod, autorisé Yuri) :** corrigé les 5 templates email Auth (le wordmark « PlanFin » était en **or** et le **logo manquait**).
+  - **Confirm signup** : remplacé par le HTML complet `supabase_email_confirm_signup.html` (logo `favicon.png` + « Mon » `#0B1428` / « PlanFin » `#5BC4A0`).
+  - **Reset password**, **Magic link/OTP**, **Change email** : même en-tête corrigé (ajout du logo + wordmark vert), **corps/variables/sujets FR intacts** (`{{ .ConfirmationURL }}` non touché, bouton or conservé comme accent).
+  - **Invite user** : était le **template par défaut (anglais, sans branding)** → remplacé par une version FR brandée + sujet « Vous êtes invité à MonPlanFin ».
+  - Chaque template « Successfully updated » (sauf vérif Save grisé pour le dernier). Logo servi via `https://monplanfin.ca/favicon.png` (déjà dans `public/`).
+- **→ Pour Yuri :** [17:40] est **réglé**. Les emails d'auth sont maintenant on-brand (vert + logo). Un vrai test (s'inscrire / reset) confirmera le rendu Gmail.
+- **⚠️ NON touché :** template **Reauthentication** (email de code OTP, hors liste 17:40 ; structure sans logo/bouton). À brander aussi si tu veux — dis-le-moi.
+- **⚠️ Git / commit :** au moment d'écrire, le checkout partagé était sur la branche `chore/typecheck-gate-ui` (Claude Code). Je n'ai **pas** commité pour ne pas polluer sa branche. Cette entrée de journal est dans l'arbre de travail → à **committer sur `main` depuis la machine de Yuri**. (Tâches Supabase = déjà en prod, pas de code à pousser.)
+
+## 2026-06-30 21:37 — Claude Code (C2 suite : gate typecheck étendu à api/hooks/home/feedback/examples — ✅ MERGÉ sur `main`)
 - **Contexte :** [C2 suite] du backlog — étendre le gate typecheck CI (`npm run typecheck:lib`, doit rester à 0) au-delà de `src/lib` + `src/components/dashboard`. Bloqueur connu : les primitives shadcn *vendored* de `src/components/ui/**` « fuyaient » ~451 erreurs via les imports.
 - **Fait (branche `chore/typecheck-gate-ui`, PAS main — attend merge Yuri) :**
   - **Quarantaine** : `// @ts-nocheck` ajouté aux **49 primitives shadcn vendored** (lowercase, `src/components/ui/*.tsx`). ⚠️ **Nos 4 composants maison** dans `ui/` (PascalCase : AddressAutocomplete, CookieConsent, FlipCard, InfoTooltip) **NON touchés**. → fuite ui 460→9.
