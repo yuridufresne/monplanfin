@@ -19,6 +19,10 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-07-01 05:55 — Claude Code (✅ logo sur /login — chantier UI #3 FAIT, MERGÉ `main`)
+- **Fait :** ajouté `<BrandIcon size={34} />` à gauche du wordmark « MonPlanFin » sur [Login.tsx](src/pages/Login.tsx) (même composant/pattern que la Navbar). **Vérifié en Preview** (`/login`) : icône présente à côté du wordmark, 0 erreur. lint · build verts.
+- Restent au backlog UI (mémoire `ui-backlog-soumission-login`) : #1 refonte modal « Soumettre mon dossier », #2 champs email/tél inline + synchro profil ABF.
+
 ## 2026-07-01 05:40 — Claude Code (✅ flux RBAC agent CONFIRMÉ bout-en-bout + 📋 3 chantiers UI notés par Yuri)
 - **✅ Confirmé par Yuri : « tout est bon ».** Après le SQL RLS de Cowork (05:25) + reconnexion d'Andrew, le claim `type_compte:"agent"` est injecté → onglet « Dossiers clients » présent. Chaîne complète OK : upgrade → reconnexion agent → soumission dossier → file admin → assignation → espace conseiller.
 - **📋 3 chantiers UI demandés par Yuri (à faire plus tard, non urgents) — mémoire `ui-backlog-soumission-login` :**

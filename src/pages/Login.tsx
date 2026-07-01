@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
+import BrandIcon from "@/components/BrandIcon";
 
 const OR = "#C9A063";
 const BG = "#050810";
@@ -79,8 +80,11 @@ export default function Login() {
     <div style={{ minHeight: "100vh", background: BG, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
       <div style={{ maxWidth: 420, width: "100%", padding: "40px 32px", borderRadius: 20, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(201,160,99,0.25)" }}>
         <div style={{ textAlign: "center", marginBottom: 28 }}>
-          <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", letterSpacing: "-0.02em" }}>
-            Mon<span style={{ color: "hsl(var(--success))" }}>PlanFin</span>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
+            <BrandIcon size={34} />
+            <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", letterSpacing: "-0.02em" }}>
+              Mon<span style={{ color: "hsl(var(--success))" }}>PlanFin</span>
+            </div>
           </div>
           <p style={{ fontSize: 13.5, color: "rgba(255,255,255,0.55)", marginTop: 8 }}>
             {mode === "login" ? "Connecte-toi pour accéder à ton dossier." : "Crée ton compte pour démarrer ton analyse."}
