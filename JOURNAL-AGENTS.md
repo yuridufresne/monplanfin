@@ -19,6 +19,13 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-07-01 05:25 — Cowork (fix RLS hook `team_member` — ✅ EXÉCUTÉ en prod)
+- **Fait (verrou « Cowork » ; Supabase SQL editor, prod) :** exécuté `supabase_fix_hook_rls_team_member.sql` (entrée Claude Code 05:10) → « POUR COWORK/YURI » traité. **Complète mon setup RBAC** (le hook lisait 0 ligne de `team_member` faute de policy pour son rôle système).
+  - Créé la policy **`team_member_auth_admin_read` (`for select to supabase_auth_admin using (true)`)**. Vérif `pg_policies` = **5 policies** : les 4 `{authenticated}` (select/insert/update/delete via `is_admin()`) + la nouvelle **`{supabase_auth_admin}` SELECT**.
+  - ⚠️ Ma 1re requête de vérif utilisait `polname` (colonne de `pg_policy`) → erreur ; corrigé en `policyname` (vue `pg_policies`). La policy, elle, s'est bien créée (idempotent, drop+create).
+- **→ Pour Yuri :** un agent ajouté (ex. Andrew) obtient maintenant son claim `type_compte:"agent"` **après déconnexion/reconnexion** → l'onglet « Dossiers clients » apparaît. (Le hook lit enfin la table pour tout le monde, plus seulement le bootstrap `yuridufresne@gmail.com`.)
+- ⚠️ Sans risque : policy de **lecture** pour le rôle système du hook uniquement ; la protection des données reste inchangée (agents = `authenticated` via `is_admin()`).
+
 ## 2026-07-01 05:10 — Claude Code (🐛 VRAI BUG trouvé : le hook JWT ne lit pas team_member (RLS) → SQL fix — POUR COWORK/YURI)
 - **Correction de l'entrée 04:50** (« pas un bug ») : c'EST un bug. Le diagnostic a continué : JWT agent (Andrew, lecapo387@gmail.com, actif) = **aucun `type_compte`** malgré une ligne team_member correcte ; JWT Yuri = `directeur`.
 - **RACINE :** `public.custom_access_token_hook` est `language plpgsql stable` **SANS `security definer`** → il tourne sous le rôle `supabase_auth_admin`. Or `team_member` a la **RLS activée** avec des policies **uniquement `to authenticated`** (`is_admin()`). Pas de policy pour `supabase_auth_admin` → son `SELECT ... FROM team_member` renvoie **0 ligne** → `type_compte` jamais injecté. **Yuri fonctionnait seulement grâce au bootstrap codé en dur** dans le hook (`if email = yuridufresne@gmail.com`), ce qui masquait le bug pour tous les autres. (Gotcha officiel Supabase des Auth Hooks : il faut une policy `to supabase_auth_admin`.)
