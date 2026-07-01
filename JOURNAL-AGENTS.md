@@ -19,11 +19,30 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-07-01 00:05 — Claude Code ([C1] taux d'impôt décaissement 18 %→20 % + (i) explicatif — ⏳ BRANCHE `fix/c1-taux-impot-decaissement`)
+- **Décision Yuri (CTO) :** option B — passer le taux d'impôt effectif forfaitaire de l'aperçu de décaissement gratuit de **18 % → 20 %** (prudent, dans la fourchette réelle), + un **(i)** explicatif.
+- **Fait :**
+  - [decaissementSimple.ts](src/lib/decaissementSimple.ts) : `TAUX_IMPOT_EFFECTIF_MOYEN = 0.20` (était 0.18 « A VALIDER »), **constante unique** (le `0.18` dupliqué dans `strategieReelle` pointe maintenant dessus). Commentaire de justification ajouté.
+  - [Dashboard.tsx](src/pages/Dashboard.tsx:292) : légende « impôt effectif moyen 18 % » → « 20 % » + **InfoTooltip (i)** honnête : hypothèse simplifiée, taux réel ~15–25 % selon le revenu, CELI non imposé, **pas une norme réglementaire**, l'analyse complète calcule le vrai impôt.
+  - Attribution corrigée : « moteur aligné IQPF » désormais rattaché aux rendements/inflation/longévité (vrai), **plus** à l'impôt.
+- **🔎 Recherche source (demandée) :** **il n'existe PAS de norme d'industrie pour un taux d'impôt forfaitaire.** Les Normes IQPF/FP Canada (Projection Assumption Guidelines) standardisent inflation/rendements/mortalité (CPM2014), **pas** un taux d'impôt — qui doit être calculé selon la situation. → donc **aucune source citée** pour le 20 % (ç'aurait été faux). Repère réel : retenue FERR/REER au QC ≈ 24 % combiné au-delà du minimum (retenue ≠ impôt effectif final).
+- ✅ gate 0 · lint · 32/32 tests · build. ⚠️ Vérif visuelle du (i) non faite (Dashboard derrière login) — **à confirmer par Yuri connecté**.
+- **→ Pour Yuri :** merger `fix/c1-taux-impot-decaissement` (changement de CALCUL léger : la trajectoire de décaissement épuise le capital un poil plus vite qu'avant).
+
 ## 🎯 BACKLOG POST-LANCEMENT (décidé par Yuri, CTO — 2026-06-30) — NE PAS traiter avant le lancement
 - **Gate typecheck = STOP à la couche logique.** Le gate couvre maintenant toute la couche calcul + composants sûrs (`lib`, `utils`, `api`, `hooks`, `dashboard`, `home`, `feedback`, `examples`, `investments`, composants top-level). C'est le **joyau** : une erreur de type = un calcul faux = risque produit/AMF. **Verrouillé, à garder à 0.**
 - **Règle de discipline (dès maintenant) :** tout **code neuf** ou **fichier qu'on modifie** doit être gate-clean. On ne retrofite PAS l'existant présentationnel.
 - **⏸️ Reporté à « quand on sera prêt à lancer » :** gater l'UI présentationnelle (`calculators` 46 err, `layout`, gros de `src/pages` ~417 err). Prérequis = **restaurer les génériques `forwardRef` des primitives shadcn `ui/**`** (dépouillées par Base44 → exportent `RefAttributes<unknown>`, aucune prop typée ; on peut GARDER `@ts-nocheck` et juste rajouter `<HTMLElement, HTMLAttributes>` — les annotations sont respectées même sous ts-nocheck). Tâche d'hygiène DX, faible priorité, ~15-49 fichiers vendored. ROI faible pré-lancement (erreurs surtout cosmétiques de props, pas des calculs).
 - **Process (à faire quand tu as 5 min) :** protéger `main` sur GitHub (merge seulement si CI verte) → rend le gate réellement bloquant et supprime les push directs accidentels en prod.
+
+## 2026-07-01 02:20 — Cowork (🐛 hotfix UI `/admin/equipe` — POUR CLAUDE CODE : relire + déployer)
+- **Constat (Yuri, capture) :** sur `/admin/equipe`, chaque ligne de membre est **écrasée** : le nom se coupe en deux (« Yuri » / « Dufresne ») et la méta « courriel · ajouté le 30 juin 2026 » s'empile **un mot par ligne**.
+- **Cause :** dans [AdminEquipe.tsx](src/pages/AdminEquipe.tsx) (~l.155), le `<select>` de rôle de la liste hérite d'`inputStyle` qui a **`width:100%`**. Dans la rangée flex, ce `width:100%` fait réclamer toute la largeur au select → la colonne texte (`flex:1;minWidth:0`) est compressée à ~0 → wrap mot par mot.
+- **Fait (édit dans l'arbre de travail, NON commité — style-only, aucune logique) :**
+  - Select de rôle liste : `width:100%` → **`width:"auto", minWidth:170, flexShrink:0`**.
+  - Rangée membre (~l.146) : ajout de **`flexWrap:"wrap"`** (sur mobile, select + boutons passent sous le nom au lieu de déborder).
+- **→ POUR CLAUDE CODE (ton fichier) :** relire ces 2 changements, les committer proprement (`src/pages` hors gate → pas d'impact CI) et déployer. **Fix visuel non sensible** → OK direct main OU Preview rapide, comme tu préfères. Mon édit est déjà dans le working tree si tu veux le reprendre tel quel.
+- ⚠️ Le checkout partagé était sur ta branche `chore/typecheck-gate-ui` quand j'ai édité → si tu commit ailleurs, récupère le diff de `AdminEquipe.tsx`.
 
 ## 2026-06-30 23:30 — Claude Code ([L4] SQL nettoyage données de test « Marcil » — PRÊT, ⏳ à exécuter par Cowork/Yuri)
 - **Fait :** créé [supabase_nettoyage_donnees_test.sql](supabase_nettoyage_donnees_test.sql) (racine, comme les autres `supabase_*.sql`) pour remettre à vierge les données de planification du compte de test `yuridufresne@gmail.com`.

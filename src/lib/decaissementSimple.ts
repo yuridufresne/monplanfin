@@ -6,7 +6,12 @@ import { RENDEMENT_ACCUM, RENDEMENT_DECAISS, INFLATION } from "@/lib/calcNIF";
 import { buildPayload } from "@/lib/clientPayload";
 
 const TAUX_RETRAIT = 0.04;
-const TAUX_IMPOT_EFFECTIF_MOYEN = 0.18; // A VALIDER
+// Taux d'impôt effectif moyen supposé sur les retraits IMPOSABLES (REER/FERR).
+// Hypothèse simplifiée de l'aperçu gratuit : ~20 % correspond au taux effectif
+// d'un retraité à revenu moyen au Québec (fourchette réelle ~15-25 % selon le
+// revenu). Ce N'EST PAS une norme réglementaire — l'analyse complète calcule
+// l'impôt réel selon la situation. Les retraits CELI ne sont pas imposés.
+const TAUX_IMPOT_EFFECTIF_MOYEN = 0.20;
 const RRQ_REDUCTION_PAR_MOIS_AVANT_65 = 0.006;
 const RRQ_BONIF_PAR_MOIS_APRES_65     = 0.007;
 const PSV_BONIF_PAR_MOIS_APRES_65     = 0.006;
@@ -78,7 +83,7 @@ export function strategieReelle(profiles, delta, rendAccum) {
     const esp = (typeof hyp.esperance_vie === "number") ? hyp.esperance_vie : 95;
     const inf = (typeof hyp.inflation === "number") ? hyp.inflation : 0.025;
     const rendDec = (typeof hyp.rendement_decaissement === "number") ? hyp.rendement_decaissement : 0.05;
-    const TAUX_IMPOT = 0.18;
+    const TAUX_IMPOT = TAUX_IMPOT_EFFECTIF_MOYEN;
     const cibleRet = (typeof k.cible_annuelle_idx === "number") ? k.cible_annuelle_idx : (obj.cible_annuelle || 0);
     let rrq = (gar.rrq_a_idx || 0) + (gar.rrq_b_idx || 0);
     let psv = (gar.sv_a_idx || 0) + (gar.sv_b_idx || 0);

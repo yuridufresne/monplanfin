@@ -289,7 +289,7 @@ function VersoDecaissement({ nif, profiles }) {
         <p style={{ fontSize: 12, fontWeight: 700, color: OR, marginBottom: 6 }}>🔒 Débloquez l’analyse complète</p>
         <p style={{ fontSize: 11, color: SEC }}>Ordre de décaissement fiscalement optimal · fractionnement de revenu · gestion de la récupération PSV</p>
       </div>
-      <p style={{ fontSize: 10, color: SEC, lineHeight: 1.5, marginTop: 12 }}>Hypothèses : rendement décaissement 5 %, inflation 2,5 %, impôt effectif moyen 18 %. Source : moteur IQPF (même que la carte NIF).</p>
+      <p style={{ fontSize: 10, color: SEC, lineHeight: 1.5, marginTop: 12 }}>Hypothèses : rendement décaissement 5 %, inflation 2,5 %, espérance de vie — moteur aligné sur les normes IQPF (même que la carte NIF). Impôt : taux effectif moyen de 20 % sur les retraits imposables <InfoTooltip text="Hypothèse simplifiée : on suppose un taux d'impôt effectif moyen de 20 % sur les retraits imposables (REER/FERR). Votre taux réel varie selon votre revenu de retraite (fourchette typique ~15–25 % au Québec) ; les retraits CELI ne sont pas imposés. Ce taux forfaitaire n'est pas une norme réglementaire — l'analyse complète calcule l'impôt réel selon votre situation." />.</p>
       <p style={{ fontSize: 10, color: SEC, marginTop: 8, fontStyle: "italic" }}>Projection à titre indicatif — MonPlanFin n’est pas un planificateur financier agréé. À valider avec un professionnel.</p>
     </div>
   );

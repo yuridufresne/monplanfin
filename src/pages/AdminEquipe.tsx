@@ -143,7 +143,7 @@ export default function AdminEquipe() {
             const Icon = meta.Icon;
             const busy = busyId === m.id;
             return (
-              <div key={m.id} style={{ ...card, padding: "14px 16px", display: "flex", alignItems: "center", gap: 14, opacity: m.actif === false ? 0.55 : 1 }}>
+              <div key={m.id} style={{ ...card, padding: "14px 16px", display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", opacity: m.actif === false ? 0.55 : 1 }}>
                 <div style={{ width: 38, height: 38, borderRadius: 10, background: meta.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                   <Icon size={18} color={meta.color} />
                 </div>
@@ -153,7 +153,7 @@ export default function AdminEquipe() {
                 </div>
 
                 <select value={m.type_compte} disabled={busy} onChange={(e) => majMembre(m, { type_compte: e.target.value })}
-                  style={{ ...inputStyle, padding: "6px 10px", fontSize: 12.5, cursor: "pointer" }}>
+                  style={{ ...inputStyle, width: "auto", minWidth: 170, flexShrink: 0, padding: "6px 10px", fontSize: 12.5, cursor: "pointer" }}>
                   <option value="agent">Conseiller partenaire</option>
                   <option value="directeur">Direction / Admin</option>
                 </select>
