@@ -19,9 +19,10 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
-## 2026-06-30 17:20 — Claude Code (gestion équipe admin — conseillers/admins pilotés depuis l'admin — EN PR + SQL Cowork)
+## 2026-06-30 17:20 — Claude Code (gestion équipe admin — RBAC JWT — CODE MERGÉ `81facb9`, ⏳ SQL Cowork requis)
 - **Contexte / demande Yuri :** pouvoir créer des comptes **conseiller** (agent) et **admin** (directeur) **depuis l'UI admin**, propre et scalable — sans push de code. Choix validé : **pattern RBAC officiel Supabase (JWT / Custom Access Token Hook)**.
-- **Fait (branche `feat/admin-gestion-equipe`, EN PR, PAS main) :**
+- **⏳ NON ENCORE FONCTIONNEL** tant que Cowork n'a pas fait le SQL+hook (voir « POUR COWORK »). Le code est mergé mais dégrade gracieusement (ton accès admin marche via bootstrap `ADMIN_EMAILS`).
+- **Fait (code mergé sur `main` en FF, `81facb9` → Vercel redéploie) :**
   - **Rôle métier sorti du code figé** : plus de rôle déduit d'`ADMIN_EMAILS` seul → lu depuis un **claim `type_compte` signé dans le JWT** (injecté par un hook Supabase qui lit la table `team_member`). `ADMIN_EMAILS` reste un **bootstrap racine anti-lockout**.
   - Code : `roleFromToken()` (décode le claim, [usersClient.ts](src/api/usersClient.ts)), `mapUser(u, claim)`, `AuthContext` passe le claim (décodage **synchrone** → pas de deadlock `onAuthStateChange`), `User.list()`/`chargerAgents()` lisent `team_member`, entité `TeamMember`.
   - **Page admin « Équipe »** ([src/pages/AdminEquipe.tsx](src/pages/AdminEquipe.tsx), route `/admin/equipe`, lien depuis AdminDossiers) : ajouter/activer/désactiver/changer le rôle/retirer. Wording **AMF** : « conseiller partenaire », jamais « planificateur ».
