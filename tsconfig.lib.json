@@ -14,6 +14,7 @@
     "src/components/home",
     "src/components/feedback",
     "src/components/examples",
+    "src/components/investments",
     "src/vite-env.d.ts"
   ]
 }

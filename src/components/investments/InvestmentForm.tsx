@@ -40,7 +40,7 @@ function FieldLabel({ children }) {
   return <label className="block text-[12px] font-semibold mb-1.5" style={{ color: "#94A3B8" }}>{children}</label>;
 }
 
-function TextInput({ value, onChange, placeholder, type = "text", className = "" }) {
+function TextInput({ value, onChange, placeholder = "", type = "text", className = "" }) {
   return (
     <input type={type} value={value || ""} onChange={e => onChange(e.target.value)} placeholder={placeholder}
       className={`w-full px-3 py-2.5 rounded-xl text-[13px] outline-none transition-all ${className}`}

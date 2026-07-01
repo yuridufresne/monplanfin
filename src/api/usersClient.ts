@@ -111,6 +111,6 @@ export const appClient = {
     // Anciennes fonctions backend Base44 (canadaPostAddress, getStockPrice) absentes
     // après migration. On renvoie { data: {} } — et non null — pour que les appelants
     // (res.data.Items / res.data?.results / res.data?.price) dégradent sans planter.
-    invoke: async () => ({ data: {} }),
+    invoke: async (_name?: string, _body?: any): Promise<{ data: any; error?: any }> => ({ data: {} }),
   },
 };

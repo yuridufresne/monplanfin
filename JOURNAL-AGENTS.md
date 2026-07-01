@@ -19,6 +19,17 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-06-30 22:15 — Claude Code (C2 tranche 2 : `functions.invoke` typé + `investments/` gaté — ⏳ BRANCHE `chore/typecheck-gate-investments`)
+- **Fait (branche, PAS main — attend merge Yuri ; type-only + config, zéro changement runtime/visuel) :**
+  - **`appClient.functions.invoke`** ([usersClient.ts](src/api/usersClient.ts:114)) était un stub typé **0 arg / `data: {}`** → signature permissive `(_name?, _body?) => Promise<{ data: any; error? }>`. **Runtime identique** (renvoie toujours `{ data: {} }`). Débloque le typage des 4 appelants (InvestmentForm, Investments, AddressAutocomplete ×2).
+  - **`TextInput`** de [InvestmentForm.tsx](src/components/investments/InvestmentForm.tsx:43) → défaut `placeholder = ""` (comportement identique).
+  - **Gate étendu** (`tsconfig.lib.json`) : ajout de `src/components/investments` (désormais 0 err). Gate = **0**.
+  - ✅ lint · typecheck:lib = 0 · 32/32 tests · build OK.
+- **→ Pour Yuri :** merger `chore/typecheck-gate-investments` (contient aussi ton édit journal Reauthentication de Cowork, non encore sur main).
+- **⚠️ `layout/Navbar.tsx`** garde 1 err (TooltipContent → props `unknown`) : **pré-existante** (vérifié : persiste sans la quarantaine) — pas une régression. `layout/` hors gate (composant global sensible).
+- **Reste gate** : `src/pages` (~423 err) + `src/components/{budget,calculators,layout}` + top-level. **`src/components/abf/**` exclu** (/analyse figé).
+- **ℹ️ Incident git (résolu) :** un `git reset --hard` a effacé une 1re passe non commitée de cette tranche → refaite ici. origin/main (`3eb74f1`, tranche 1) est resté intact.
+
 ## 2026-07-01 01:55 — Cowork (templates email Auth : logo + wordmark vert — ✅ FAIT en prod)
 - **Fait (Supabase Dashboard → Authentication → Emails, prod, autorisé Yuri) :** corrigé les 5 templates email Auth (le wordmark « PlanFin » était en **or** et le **logo manquait**).
   - **Confirm signup** : remplacé par le HTML complet `supabase_email_confirm_signup.html` (logo `favicon.png` + « Mon » `#0B1428` / « PlanFin » `#5BC4A0`).
@@ -26,7 +37,7 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
   - **Invite user** : était le **template par défaut (anglais, sans branding)** → remplacé par une version FR brandée + sujet « Vous êtes invité à MonPlanFin ».
   - Chaque template « Successfully updated » (sauf vérif Save grisé pour le dernier). Logo servi via `https://monplanfin.ca/favicon.png` (déjà dans `public/`).
 - **→ Pour Yuri :** [17:40] est **réglé**. Les emails d'auth sont maintenant on-brand (vert + logo). Un vrai test (s'inscrire / reset) confirmera le rendu Gmail.
-- **⚠️ NON touché :** template **Reauthentication** (email de code OTP, hors liste 17:40 ; structure sans logo/bouton). À brander aussi si tu veux — dis-le-moi.
+- **✅ Reauthentication** aussi brandé (à la demande de Yuri) : en-tête logo + wordmark vert, code `{{ .Token }}` mis en valeur dans un cadre, sujet FR « {{ .Token }} — votre code de vérification MonPlanFin ». → **les 6 templates Auth sont désormais on-brand.**
 - **⚠️ Git / commit :** au moment d'écrire, le checkout partagé était sur la branche `chore/typecheck-gate-ui` (Claude Code). Je n'ai **pas** commité pour ne pas polluer sa branche. Cette entrée de journal est dans l'arbre de travail → à **committer sur `main` depuis la machine de Yuri**. (Tâches Supabase = déjà en prod, pas de code à pousser.)
 
 ## 2026-06-30 21:37 — Claude Code (C2 suite : gate typecheck étendu à api/hooks/home/feedback/examples — ✅ MERGÉ sur `main`)
