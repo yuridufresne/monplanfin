@@ -19,6 +19,16 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-07-01 06:20 — Claude Code (chantier UI #2 : coordonnées inline + synchro profil ABF au dossier — ⏳ BRANCHE `feat/soumission-coordonnees-inline`)
+- **Fait (branche, PAS main — UI derrière login, non testable en preview ici) :** [SoumettreDossierModal.tsx](src/components/dashboard/SoumettreDossierModal.tsx)
+  - Nouveau bloc **« Vos coordonnées »** (email + téléphone) éditable, pré-rempli depuis `profil_personnel`/compte, avec message clair (« le conseiller en a besoin pour te contacter ; ajoutées à ton profil ») + validation inline (email regex, tél 10 chiffres).
+  - **`canSubmit` exige désormais email valide + tél** (avant : ni l'un ni l'autre requis → dossiers « Tél. non fourni »). → règle la demande Yuri « pas de soumission sans email/tél, mais dire pourquoi ».
+  - **Synchro profil ABF** : à la soumission, upsert de la section `financial_profile` `profil_personnel` (merge `email`/`cell`, ne rien écraser d'autre). **Best-effort** (try/catch, non bloquant : le dossier porte déjà les coordonnées).
+  - État `contact` remplace les const `clientCourriel`/`clientTel` ; récap mis à jour.
+  - ✅ gate 0 · lint · build. ⚠️ **Non testé visuellement** (modal derrière login) → à valider par Yuri (preview Vercel ou après merge).
+- **→ Pour Yuri :** merger `feat/soumission-coordonnees-inline` puis tester : soumettre un dossier → doit exiger email+tél, apparaître dans `/admin/dossiers` avec les coordonnées, et les coordonnées doivent se retrouver dans le profil ABF (`/analyse` section profil).
+- **Reste chantier UI #1** (refonte visuelle du modal) — à faire avec ton œil / Open Design.
+
 ## 2026-07-01 05:55 — Claude Code (✅ logo sur /login — chantier UI #3 FAIT, MERGÉ `main`)
 - **Fait :** ajouté `<BrandIcon size={34} />` à gauche du wordmark « MonPlanFin » sur [Login.tsx](src/pages/Login.tsx) (même composant/pattern que la Navbar). **Vérifié en Preview** (`/login`) : icône présente à côté du wordmark, 0 erreur. lint · build verts.
 - Restent au backlog UI (mémoire `ui-backlog-soumission-login`) : #1 refonte modal « Soumettre mon dossier », #2 champs email/tél inline + synchro profil ABF.

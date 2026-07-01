@@ -58,6 +58,15 @@ export default function SoumettreDossierModal({ onClose, profiles, user }) {
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
+  // Coordonnées éditables, pré-remplies depuis le profil ABF (profil_personnel)
+  // ou le compte. Requises (le conseiller doit pouvoir contacter le client) et
+  // synchronisées vers le profil ABF à la soumission.
+  const [contact, setContact] = useState(() => {
+    const unwrap = (raw) => raw?.data?.data || raw?.data || raw || {};
+    const row = (profiles || []).find(p => p?.section === "profil_personnel");
+    const pp = row ? unwrap(row) : {};
+    return { email: pp.email || user?.email || "", tel: pp.cell || "" };
+  });
 
   const toggleBesoin = (id) => {
     setForm(p => ({
@@ -76,13 +85,13 @@ export default function SoumettreDossierModal({ onClose, profiles, user }) {
     return m;
   };
 
-  // Extraire nom/email/téléphone du profil
+  // Nom depuis le profil ; email/tél gérés dans le state `contact` (éditable).
   const profil = buildSnapshot().profil_personnel || {};
   const clientNom = profil.nom || user?.full_name || "Client";
-  const clientCourriel = profil.email || user?.email || "";
-  const clientTel = profil.cell || "";
+  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((contact.email || "").trim());
+  const telOk = (contact.tel || "").replace(/\D/g, "").length >= 10;
 
-  const canSubmit = form.besoins_principaux.length > 0 && form.priorite_urgence && form.consentement;
+  const canSubmit = form.besoins_principaux.length > 0 && form.priorite_urgence && form.consentement && emailOk && telOk;
 
   const submit = async () => {
     if (!canSubmit) { setError("Veuillez compléter tous les champs requis."); return; }
@@ -91,8 +100,8 @@ export default function SoumettreDossierModal({ onClose, profiles, user }) {
       // Données à envoyer
       const data = {
         client_nom: clientNom,
-        client_courriel: clientCourriel,
-        client_telephone: clientTel,
+        client_courriel: contact.email.trim(),
+        client_telephone: contact.tel.trim(),
         besoins_principaux: form.besoins_principaux,
         priorite_urgence: form.priorite_urgence,
         delai_action_libre: form.delai_action_libre,
@@ -106,7 +115,7 @@ export default function SoumettreDossierModal({ onClose, profiles, user }) {
       };
 
       // Upsert : chercher un dossier existant pour ce user
-      const userEmail = user?.email || clientCourriel;
+      const userEmail = user?.email || contact.email;
       const myDossiers = await appClient.entities.LeadDossier.list();
       const existing = (myDossiers || []).find(d => d.created_by === userEmail);
 
@@ -119,6 +128,18 @@ export default function SoumettreDossierModal({ onClose, profiles, user }) {
       if (!saved) {
         throw new Error("Enregistrement du dossier échoué (aucune ligne écrite — vérifier RLS/colonnes lead_dossier).");
       }
+
+      // Synchroniser les coordonnées dans le profil ABF (section profil_personnel).
+      // Best-effort : ne doit PAS bloquer la soumission (le dossier porte déjà
+      // client_courriel/client_telephone). On merge pour ne pas écraser les autres champs.
+      try {
+        const unwrap = (raw) => raw?.data?.data || raw?.data || raw || {};
+        const ppRow = (profiles || []).find(p => p?.section === "profil_personnel");
+        const ppData = { ...(ppRow ? unwrap(ppRow) : {}), email: contact.email.trim(), cell: contact.tel.trim() };
+        if (ppRow?.id) await appClient.entities.FinancialProfile.update(ppRow.id, { data: ppData });
+        else await appClient.entities.FinancialProfile.create({ section: "profil_personnel", data: ppData, completed: false });
+      } catch (e) { console.error("Sync profil_personnel (non bloquant):", e); }
+
       setSent(true);
     } catch (e) {
       console.error(e);
@@ -290,6 +311,28 @@ export default function SoumettreDossierModal({ onClose, profiles, user }) {
               </div>
             </div>
 
+            {/* ─── Coordonnées (requises : le conseiller doit pouvoir te contacter) ─── */}
+            <div style={{ marginTop: 20, padding: "14px 16px", borderRadius: 12, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.1)" }}>
+              <p style={{ fontSize: 12.5, fontWeight: 700, color: "#fff", marginBottom: 4 }}>Vos coordonnées</p>
+              <p style={{ fontSize: 11.5, color: "rgba(255,255,255,0.55)", lineHeight: 1.5, marginBottom: 12 }}>
+                Le conseiller partenaire en a besoin pour te contacter. Elles seront aussi ajoutées à ton profil.
+              </p>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <div>
+                  <input type="email" value={contact.email} onChange={e => setContact(c => ({ ...c, email: e.target.value }))}
+                    placeholder="Courriel" autoComplete="email"
+                    style={{ width: "100%", padding: "10px 12px", borderRadius: 10, fontSize: 13, color: "#fff", background: "rgba(255,255,255,0.05)", border: `1px solid ${contact.email && !emailOk ? "rgba(248,113,113,0.6)" : "rgba(255,255,255,0.12)"}`, outline: "none" }} />
+                  {contact.email && !emailOk && <p style={{ fontSize: 10.5, color: "#f87171", marginTop: 4 }}>Courriel invalide</p>}
+                </div>
+                <div>
+                  <input type="tel" value={contact.tel} onChange={e => setContact(c => ({ ...c, tel: e.target.value }))}
+                    placeholder="Téléphone" autoComplete="tel"
+                    style={{ width: "100%", padding: "10px 12px", borderRadius: 10, fontSize: 13, color: "#fff", background: "rgba(255,255,255,0.05)", border: `1px solid ${contact.tel && !telOk ? "rgba(248,113,113,0.6)" : "rgba(255,255,255,0.12)"}`, outline: "none" }} />
+                  {contact.tel && !telOk && <p style={{ fontSize: 10.5, color: "#f87171", marginTop: 4 }}>Numéro à 10 chiffres</p>}
+                </div>
+              </div>
+            </div>
+
             {/* ─── Consentement explicite (Loi 25) ─── */}
             <div style={{ marginTop: 20, padding: "14px 16px", borderRadius: 12, background: "rgba(201,160,99,0.05)", border: "1px solid rgba(201,160,99,0.2)" }}>
               <label style={{ display: "flex", gap: 12, cursor: "pointer", alignItems: "flex-start" }}>
@@ -312,7 +355,7 @@ export default function SoumettreDossierModal({ onClose, profiles, user }) {
               <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: "rgba(91,196,160,0.08)", border: "1px solid rgba(91,196,160,0.25)" }}>
                 <p style={{ fontSize: 12, fontWeight: 700, color: "#5BC4A0", marginBottom: 10 }}>📋 Récapitulatif de votre demande</p>
                 <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.7)", lineHeight: 1.8 }}>
-                  <p>👤 <strong>{clientNom}</strong> · {clientCourriel || "Email non fourni"} · {clientTel || "Tél. non fourni"}</p>
+                  <p>👤 <strong>{clientNom}</strong> · {contact.email} · {contact.tel}</p>
                   <p>⏱ Urgence : <strong style={{ color: URGENCES.find(u => u.id === form.priorite_urgence)?.color }}>{URGENCES.find(u => u.id === form.priorite_urgence)?.label || "Non précisée"}</strong></p>
                   <p>🎯 Besoins : {form.besoins_principaux.map(b => BESOINS.find(x => x.id === b)?.emoji + " " + BESOINS.find(x => x.id === b)?.label).join(", ") || "Aucun"}</p>
                   <p>📞 Contact : {MODES.find(m => m.id === form.mode_contact_prefere)?.label} · {MOMENTS.find(m => m.id === form.meilleur_moment_contact)?.label}</p>
