@@ -19,6 +19,13 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-07-01 03:55 — Claude Code (🐛 dossier soumis absent de /admin/dossiers → SQL colonnes lead_dossier — POUR COWORK/YURI)
+- **Confirmé (Yuri) :** le dossier soumis n'est **PAS** dans « Espace administrateur → Dossiers reçus ». Or le code admin affiche bien les dossiers `nouveau`/non assignés (compteur « Nouveaux » qui pulse). → donc **la ligne n'a jamais été écrite** = INSERT rejeté silencieusement.
+- **Cause probable :** `lead_dossier` créée incomplète à la migration (comme pour `supabase_reparation_schema.sql`). Le modal écrit des colonnes absentes → Postgres rejette toute la ligne → `supabaseEntities` avale l'erreur → faux « transmis ✓ ». (RLS peu probable : la policy INSERT passe car `created_by = auth.email()`.)
+- **Fait :** créé [supabase_fix_lead_dossier_colonnes.sql](supabase_fix_lead_dossier_colonnes.sql) — ajoute (idempotent) TOUTES les colonnes que l'app écrit/lit sur `lead_dossier` (client_*, besoins_principaux jsonb, priorite_urgence, delai/moment/mode contact, notes_client, consentement_explicite bool, snapshot_profil jsonb, statut, agent_assigne_*, created_by/date). Sans risque (ne touche rien d'existant). + requête de vérif des colonnes.
+- **→ POUR COWORK/YURI :** exécuter ce SQL dans l'éditeur SQL Supabase (prod), puis **re-tester** la soumission → le dossier doit apparaître dans /admin/dossiers. Si ça échoue encore : la requête de vérif liste les colonnes réelles, et la console DevTools (`[supabase] create lead_dossier: …`) donnera le détail.
+- **→ Voir aussi branche `fix/soumettre-dossier-erreur-silencieuse`** (entrée 03:40) : à merger pour que le modal **cesse d'afficher un faux succès** quand l'écriture échoue.
+
 ## 2026-07-01 03:20 — Claude Code (📋 checklist de pré-déploiement — MERGÉ sur `main`)
 - **Fait :** créé [PRE-DEPLOIEMENT.md](PRE-DEPLOIEMENT.md) (racine) — état consolidé « prêt au lancement » sur 3 axes (opérationnel / conforme / justesse des estimations), issu de l'audit conformité + notes AMF + journal. Document **vivant à cocher**.
 - **Bilan : socle solide, il reste surtout des actions Yuri (paiement/juridique), pas de trous techniques.**
