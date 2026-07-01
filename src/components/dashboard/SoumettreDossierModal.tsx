@@ -110,12 +110,14 @@ export default function SoumettreDossierModal({ onClose, profiles, user }) {
       const myDossiers = await appClient.entities.LeadDossier.list();
       const existing = (myDossiers || []).find(d => d.created_by === userEmail);
 
-      if (existing) {
-        // Le client resoumet → on met à jour l'existant (pas de doublon)
-        await appClient.entities.LeadDossier.update(existing.id, data);
-      } else {
-        // Première soumission → on crée
-        await appClient.entities.LeadDossier.create(data);
+      // ⚠️ supabaseEntities.create/update N'THROW PAS : sur erreur (RLS, colonne
+      // absente…) ils loguent et renvoient undefined. On VÉRIFIE le retour, sinon
+      // le client verrait « transmis ✅ » alors que RIEN n'a été enregistré (dossier perdu).
+      const saved = existing
+        ? await appClient.entities.LeadDossier.update(existing.id, data)
+        : await appClient.entities.LeadDossier.create(data);
+      if (!saved) {
+        throw new Error("Enregistrement du dossier échoué (aucune ligne écrite — vérifier RLS/colonnes lead_dossier).");
       }
       setSent(true);
     } catch (e) {

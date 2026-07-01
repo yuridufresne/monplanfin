@@ -19,6 +19,12 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-07-01 04:30 — Claude Code (✅ soumission dossier RÉSOLUE + fix silent-fail mergé sur `main`)
+- **✅ Confirmé par Yuri : le dossier arrive maintenant dans `/admin/dossiers`** après le SQL de Cowork (04:15, 24 colonnes présentes). Racine = colonnes manquantes sur `lead_dossier` (migration incomplète).
+- **Fix silent-fail appliqué sur `main`** (le modal [SoumettreDossierModal.tsx](src/components/dashboard/SoumettreDossierModal.tsx) ne peut plus afficher un faux « transmis ✓ » : on vérifie le retour de `create/update`, sinon erreur). Ré-appliqué direct sur main (au lieu de merger la branche → évite un conflit de journal) ; **branche `fix/soumettre-dossier-erreur-silencieuse` supprimée** (local + remote). Gate 0 · lint · build.
+- **⚠️ Rappel flux (par conception) :** un dossier soumis arrive `nouveau` **non assigné** dans `/admin/dossiers` → l'admin doit l'**assigner** à un conseiller pour qu'il apparaisse dans `/agent/dossiers`.
+- ℹ️ Verrou pris/relâché correctement pour cette tâche (garde-fou 03:00).
+
 ## 2026-07-01 04:15 — Cowork (fix colonnes `lead_dossier` — ✅ EXÉCUTÉ en prod)
 - **Fait (verrou pris « Cowork » ; Supabase SQL editor, prod) :** exécuté `supabase_fix_lead_dossier_colonnes.sql` (entrée Claude Code 03:55) → « POUR COWORK/YURI » traité.
   - Les 16 `alter table ... add column if not exists` ont passé **sans erreur** ; la requête de vérif renvoie **24 colonnes** présentes (client_nom/courriel/telephone, besoins_principaux, priorite_urgence, delai/moment/mode contact, notes_client, consentement_explicite, snapshot_profil, statut, agent_assigne_*, created_by/date, etc.).
