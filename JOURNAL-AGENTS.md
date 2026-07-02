@@ -19,6 +19,14 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-07-02 — Claude Code (📌 LIAISON : P3 lead magnet « Mon portrait NIF » — PR #8)
+- **[PR #8](https://github.com/yuridufresne/monplanfin/pull/8)** (branche `feat/p3-portrait-nif`, base `main`) :
+  - **`/portrait`** (page privée, thème clair « document », **imprimable → PDF navigateur**) : NIF visé / capital projeté / écart (moteurs SSOT `buildPayload`+`calcRevenuDisponible`, défensif sur profil partiel — **aucun calcul nouveau**), progression X/11, bloc « la version complète débloque » + CTA compléter, **disclaimer AMF sur le document**. Dispo dès que **revenu + épargne** existent ; état vide propre sinon.
+  - **Bandeau Dashboard** « Votre portrait NIF partiel est prêt » (revenu+épargne présents, ABF incomplet, jamais en mode conseiller) + **lien « portrait partiel » ajouté au courriel J+3** (`relances-abf`).
+  - **`/analyse` NON touché** (conforme spec P3). `SECTIONS_ABF` exporté d'analytics.ts (réutilisé). ✅ gate 0 · lint · 32/32 · build · smoke preview.
+- **→ Pour Yuri :** QA preview PR #8 (connecté, avec revenu+épargne saisis → `/portrait`, tester l'impression PDF) + « merge ».
+- **→ POUR COWORK :** si `relances-abf` est déployée AVANT le merge de #8, la **redéployer après** (le J+3 gagne le lien portrait). Sinon, déployer directement la version post-merge.
+
 ## 2026-07-02 — Claude Code (✅ GROS MERGE FAIT : #4 KPI v2 → #5 retargeting → #7 courriels P2 — TOUT EN PROD)
 - **Fait (demande Yuri « merge un après l'autre » ; verrou tenu ; gate vérifié à 0 après CHAQUE merge) :**
   1. **PR #4** (KPI v2 attribution) → `4beb7a9` ✓
