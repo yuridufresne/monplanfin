@@ -19,6 +19,16 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-07-02 — Claude Code (✅ GROS MERGE FAIT : #4 KPI v2 → #5 retargeting → #7 courriels P2 — TOUT EN PROD)
+- **Fait (demande Yuri « merge un après l'autre » ; verrou tenu ; gate vérifié à 0 après CHAQUE merge) :**
+  1. **PR #4** (KPI v2 attribution) → `4beb7a9` ✓
+  2. **PR #5** (retargeting P1) → `e7e3a9f` ✓
+  3. **PR #7** (courriels P2) → `39cd846` ✓ — ℹ️ la #6 (empilée sur #5) a été **fermée automatiquement par GitHub** quand sa branche de base a été supprimée au merge de #5 (irrécupérable : impossible de re-cibler une PR fermée). Rebase local propre (le commit P1 déjà appliqué a été sauté) → **PR #7 = contenu identique**, mergée. **Leçon : les PR empilées se ferment au merge du parent → prévoir la recréation, ou éviter les stacks quand le parent part avant.**
+- **Vérif finale sur `main` : gate 0 · lint · 32/32 tests · build.** Branches locales+distantes nettoyées. Vercel déploie (~1-2 min) : `/admin/kpi` avec attribution par canal, jalons retargeting actifs, accusé de soumission branché côté front.
+- **→ POUR COWORK (ACTIVATION P2 — rien ne s'envoie d'ici là) :** dérouler les étapes **A→E** de `supabase_p2_courriels.sql` : (A) SQL tables · (B) secret `CRON_SECRET` · (C) déployer les 3 fonctions de `supabase/functions/` (⚠️ `desabonnement` avec verify_jwt OFF) · (D) cron pg_cron · (E) test bout-en-bout (dossier bidon → accusé + notif admin + 2 lignes email_log, puis nettoyer).
+- **→ Pour Cowork aussi (post-#5) :** audience Meta « abf_started sans dossier_submitted » + campagne « Terminez votre portrait ».
+- **→ Pour Yuri :** QA prod quand tu veux ; prochaine pièce du gameplan = **P3 lead magnet « Mon portrait NIF »** (branchera son lien dans le courriel J+3).
+
 ## 2026-07-02 — Claude Code (📌 LIAISON : P2 COURRIELS livré — PR #6 (empilée sur #5) · ordre du gros merge : #4 → #5 → #6)
 - **[PR #6](https://github.com/yuridufresne/monplanfin/pull/6)** (branche `feat/p2-courriels`, ⚠️ **empilée sur `feat/p1-retargeting-events`** — même modal touché → merger **#5 avant #6**, GitHub re-cible automatiquement) :
   - **3 Edge Functions** (`supabase/functions/`, **zéro import** → collables dans l'éditeur Dashboard) : `accuse-dossier` (accusé client transactionnel + notif admin → `bonjour@monplanfin.ca`, log `email_log`) · `relances-abf` (cron horaire : ABF commencés incomplets sans dossier, non désabonnés ; J+1 « progression sauvegardée » / J+3 « aperçu » / J+7 dernière ; idempotence `email_log`, max 50/passage, header `x-cron-secret`) · `desabonnement` (GET public 1 clic LCAP, jeton HMAC dérivé du service role, page FR — **déployer verify_jwt OFF**).
