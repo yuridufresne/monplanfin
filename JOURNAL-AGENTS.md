@@ -19,6 +19,9 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-07-03 — Claude Code (✏️ Navbar : la section admin s'appelle « Admin » — MERGÉ main)
+- **Demande Yuri :** renommer l'entrée de navigation admin « Dossiers » → **« Admin »**. Fait aux 3 endroits de [Navbar.tsx](src/components/layout/Navbar.tsx) : lien desktop (« 🔒 Admin »), menu mobile (« 🔒 Admin », était « Dossiers reçus »), liste déroulante (« Admin », était « Administration »). Le lien pointe toujours vers `/admin/dossiers` (hub avec onglets Équipe/KPI/Feedback). Libellé agent « Dossiers clients » inchangé. lint · build · gate 0 · smoke preview OK.
+
 ## 2026-07-03 — Claude Code (⚖️ 2 bloquants AMF LEVÉS (décision/confirmation Yuri) — il ne reste QU'UN bloquant de lancement)
 - **Yuri confirme :** (1) **inscription des partenaires au registre AMF vérifiée** ✅ ; (2) **AUCUNE rémunération par référence ni partage de commission** — le modèle est : un petit groupe restreint d'agents qui **gardent 100 % de leurs commissions** et **cofinancent le site** (frais fixes) pour recevoir des leads. → le risque LDPSF (partage de commissions avec non-inscrit) est **écarté par la structure même**.
 - **Fait (docs de référence mis à jour, commités) :** [NOTES-AMF-et-statut-conformite.md](conformite/NOTES-AMF-et-statut-conformite.md) (conditions 1 et 2 → réglées, avec la discipline « re-vérifier le registre à chaque nouvel agent, garder date + n° d'inscription ») ; [PRE-DEPLOIEMENT.md](PRE-DEPLOIEMENT.md) (2 items 🔴 cochés + « impôt retenu jeté » coché — corrigé par Cowork le 01).

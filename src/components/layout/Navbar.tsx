@@ -61,7 +61,7 @@ export default function Navbar() {
         ...publicLinks,
         ...privateLinks,
         ...(isAgent ? [{ label: "Dossiers clients", path: "/agent/dossiers" }] : []),
-        ...(isAdmin ? [{ label: "Administration", path: "/admin/dossiers" }] : []),
+        ...(isAdmin ? [{ label: "Admin", path: "/admin/dossiers" }] : []),
       ];
 
   return (
@@ -122,7 +122,7 @@ export default function Navbar() {
                     }}
                     onMouseEnter={e => { e.currentTarget.style.color = "#C9A063"; e.currentTarget.style.background = "rgba(201,160,99,0.08)"; }}
                     onMouseLeave={e => { e.currentTarget.style.color = "rgba(148,163,184,0.65)"; e.currentTarget.style.background = "transparent"; }}>
-                      🔒 Dossiers
+                      🔒 Admin
                     </Link>
                     <Link to="/admin/feedback" style={{
                       display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "rgba(148,163,184,0.65)",
@@ -215,7 +215,7 @@ export default function Navbar() {
                            ? { background: "linear-gradient(135deg, #C9A063, #e6c07a)", color: "#050810", fontWeight: 700, boxShadow: "0 4px 12px rgba(201,160,99,0.25)" }
                            : { color: "rgba(148,163,184,0.8)" })
                        }}>
-                         🔒 Dossiers reçus
+                         🔒 Admin
                          <ChevronRight style={{ width: 13, height: 13, opacity: 0.4 }} />
                        </Link>
                        <Link to="/admin/feedback" onClick={() => setOpen(false)} style={{
