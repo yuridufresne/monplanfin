@@ -5,6 +5,7 @@ import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/lib/AuthContext";
 import { clearConsent } from "@/lib/consent";
 import { trackOnce, abfComplet } from "@/lib/analytics";
+import { getMonParrainage } from "@/lib/parrainage";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { ArrowRight, Settings, Home, Send } from "lucide-react";
@@ -380,6 +381,9 @@ export default function Dashboard() {
   const [immoFlipped, setImmoFlipped] = useState(false);
   const [immoPctSelected, setImmoPctSelected] = useState("5");
   const [showSoumettre, setShowSoumettre] = useState(false);
+  // [P4] Parrainage : code + compteurs (null si le backend n'est pas encore en place → carte masquée).
+  const [parrainage, setParrainage] = useState<any>(null);
+  const [refCopie, setRefCopie] = useState(false);
 
   useEffect(() => {
     setSynced(true)
@@ -389,6 +393,11 @@ export default function Dashboard() {
   const clientCible = new URLSearchParams(window.location.search).get("client");
   const nomCible = new URLSearchParams(window.location.search).get("nom");
   const modeConseiller = !!clientCible && !!user && (user.type_compte === "agent" || user.role === "admin" || user.type_compte === "directeur");
+
+  // [P4] Charger mon code de parrainage (jamais en mode conseiller).
+  useEffect(() => {
+    if (user && !clientCible) getMonParrainage().then(setParrainage);
+  }, [user, clientCible]);
   const cible = modeConseiller ? clientCible : user?.email;
   const filtreCible = (rows) => (rows || []).filter(r => r.created_by === cible || r.client_courriel === cible);
 
@@ -688,6 +697,33 @@ export default function Dashboard() {
               </div>
               <span style={{ fontSize: 12, fontWeight: 700, color: "#5BC4A0" }}>Voir mon portrait →</span>
             </Link>
+          </motion.div>
+        )}
+
+        {/* ─── [P4] Parrainage : « Invitez un proche » (aucun envoi de courriel — LCAP) ─── */}
+        {!modeConseiller && parrainage?.code && (
+          <motion.div {...fadeUp(0.05)} className="mb-5" style={{
+            padding: "14px 20px", borderRadius: 14,
+            background: "linear-gradient(135deg, rgba(107,142,214,0.10), rgba(107,142,214,0.03))",
+            border: "1px solid rgba(107,142,214,0.28)",
+            display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, flexWrap: "wrap",
+          }}>
+            <div style={{ minWidth: 220 }}>
+              <p style={{ fontSize: 13.5, fontWeight: 700, color: "#8fa9e8" }}>🤝 Invitez un proche</p>
+              <p style={{ fontSize: 11.5, color: "rgba(255,255,255,0.55)", marginTop: 2 }}>
+                1 proche inscrit = <strong style={{ color: "#fff" }}>1 mois de Studio</strong> · 3 = <strong style={{ color: "#fff" }}>1 an</strong> (max 2 ans).
+                {parrainage.filleuls_valides > 0 && <> Validés : <strong style={{ color: "#5BC4A0" }}>{parrainage.filleuls_valides}</strong>{parrainage.filleuls_en_attente > 0 && <> · en attente : {parrainage.filleuls_en_attente}</>} · gagnés : <strong style={{ color: "#C9A063" }}>{parrainage.mois_attribues} mois</strong>.</>}
+              </p>
+            </div>
+            <button onClick={() => {
+              try { navigator.clipboard.writeText(`https://monplanfin.ca/?ref=${parrainage.code}`); setRefCopie(true); setTimeout(() => setRefCopie(false), 2200); } catch (e) { console.error(e); }
+            }} style={{
+              fontSize: 12, fontWeight: 700, color: refCopie ? "#5BC4A0" : "#8fa9e8", cursor: "pointer",
+              background: "rgba(107,142,214,0.12)", border: "1px solid rgba(107,142,214,0.35)",
+              padding: "9px 16px", borderRadius: 10, fontFamily: "var(--font-mono)",
+            }}>
+              {refCopie ? "✓ Lien copié !" : `Copier mon lien · ${parrainage.code}`}
+            </button>
           </motion.div>
         )}
 
