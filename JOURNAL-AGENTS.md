@@ -19,6 +19,13 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-07-02 — Claude Code (📌 LIAISON : P1 retargeting livré — PR #5 · état pour le « gros merge » Yuri)
+- **[PR #5](https://github.com/yuridufresne/monplanfin/pull/5)** (branche `feat/p1-retargeting-events`) : les 3 jalons du gameplan P1 — `abf_started` (montage route /analyse, wrapper App.tsx), `abf_completed` (Dashboard à 11/11 sections, **jamais en mode conseiller**), `dossier_submitted` (modal après enregistrement réussi). Module [analytics.ts](src/lib/analytics.ts) : consent-gated (fbq+gtag), **aucune donnée perso** (Loi 25), `trackOnce` anti-doublon. **Rien dans `src/components/abf/**`.** Aucun SQL requis.
+- **🧾 ÉTAT POUR LE MERGE (2 PR ouvertes, indépendantes — fichiers disjoints, journal non touché sur branches → mergeables dans n'importe quel ordre) :** [PR #4](https://github.com/yuridufresne/monplanfin/pull/4) KPI v2 attribution · [PR #5](https://github.com/yuridufresne/monplanfin/pull/5) retargeting P1.
+- **→ POUR COWORK :** (1) exécuter `supabase_kpi_admin_v2.sql` (PR #4). (2) Hors code, après merge PR #5 : audience Meta « abf_started sans dossier_submitted » + campagne « Terminez votre portrait ».
+- **→ Pour Yuri :** ⚠️ **P2 (Resend — accusé courriel + relances) a un PRÉREQUIS côté toi** : créer le compte Resend + vérifier le domaine monplanfin.ca (DNS chez WHC). Je ne peux pas commencer P2 sans la clé API.
+- **ℹ️ Process affiné (anti-conflit merge) :** plus AUCUN édit de journal sur les branches — tout va en liaison sur `main`. Tes merges GitHub passeront sans conflit.
+
 ## 2026-07-02 — Claude Code (📌 LIAISON : KPI v2 — Attribution par canal + portes d'entrée — PR #4 + SQL v2 POUR COWORK)
 - **[PR #4](https://github.com/yuridufresne/monplanfin/pull/4)** (branche `feat/kpi-attribution-v2`) : boucle P0+P1b — le RPC `get_admin_kpi()` passe en **v2** (`supabase_kpi_admin_v2.sql`, create or replace) et renvoie `attribution_comptes` / `attribution_dossiers` / `portes_entree` ; la page KPI affiche la **table Attribution par canal** (Source/Campagne/Comptes/Dossiers/Convertis) + la carte **Portes d'entrée**, ajoutées aussi au CSV. **Repli gracieux** si le RPC prod est encore en v1.
 - **→ POUR COWORK :** exécuter **`supabase_kpi_admin_v2.sql`** (après les 2 SQL déjà passés ; avant ou après merge — fallback propre). ℹ️ CPL/CAC **par canal** viendra quand la dépense pub sera saisie **par canal** (globale/mois pour l'instant).
