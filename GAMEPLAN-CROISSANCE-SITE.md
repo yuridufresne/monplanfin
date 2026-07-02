@@ -36,10 +36,15 @@ Budget associé : ligne courriel ~28 $/mois ajoutée au classeur (total An 1 = 1
 **Livrable :** portrait partiel téléchargeable + CTA « complétez pour la version complète ».
 
 ## P4 — Parrainage (S2-S3, ~1-2 jours)
-**Quoi :** lien référent `monplanfin.ca/?ref=<code>` ; récompense = **accès premium temporaire** (logiciel — pas de rémunération de référencement).
-- Code : capture du `ref` à l'inscription (colonne sur le profil), compteur, et attribution de l'entitlement Studio (l'infrastructure d'entitlement serveur existe déjà — item #7 de juin).
-- UI : petite section « Invitez un proche » au Dashboard.
-**Livrable :** lien de parrainage fonctionnel + récompense automatique.
+**Quoi :** lien référent `monplanfin.ca/?ref=<code>` ; récompense = **accès Studio temporaire** (logiciel — pas de rémunération de référencement).
+- **Barème (décision Yuri 2026-07-01) — récompense à l'INSCRIPTION RÉUSSIE, jamais à l'envoi :**
+  - 1 ami inscrit (compte + courriel vérifié + 1re étape ABF commencée) → **1 mois de Studio** ;
+  - 3 amis inscrits → **1 an de Studio** ; plafond de cumul : 2 ans.
+  - Anti-abus : validation courriel obligatoire, l'étape ABF élimine les inscriptions fantômes, garde-fou même IP/domaines jetables.
+- **⚠️ LCAP : AUCUN envoi de courriel par la plateforme aux personnes invitées.** Le mécanisme = lien personnel que l'utilisateur partage lui-même (texto/Messenger/courriel perso). Pas de champ « entrez les adresses de vos amis ».
+- Code : capture du `ref` à l'inscription (colonne sur le profil), compteur, attribution de l'entitlement Studio (l'infrastructure d'entitlement serveur existe déjà — item #7 de juin).
+- UI : petite section « Invitez un proche » au Dashboard (lien + bouton copier + décompte vers la prochaine récompense).
+**Livrable :** lien de parrainage fonctionnel + récompense automatique au barème ci-dessus.
 
 ## P5 — SEO / pré-rendu (T2, ~1 semaine — le plus gros chantier)
 **Quoi :** la SPA n'expose qu'un `index.html` : les pages publiques n'ont ni title/meta/H1 propres ni schema → quasi invisibles en organique.
@@ -49,10 +54,8 @@ Budget associé : ligne courriel ~28 $/mois ajoutée au classeur (total An 1 = 1
 - ⚠️ Wording AMF sur chaque nouvelle page guide.
 **Livrable :** pages publiques indexables + 3-5 guides initiaux.
 
-## P6 — Webinaires (T2+, ~1 jour de code)
-**Quoi :** page d'atterrissage « Webinaire : votre NIF en 60 minutes » + formulaire d'inscription (courriel → P2).
-- **Animation par un agent INSCRIT à l'AMF** (pas Yuri) ; contenu strictement éducatif ; replay = contenu organique.
-**Livrable :** page + inscriptions + rappels courriel.
+## ~~P6 — Webinaires~~ — ❌ RETIRÉ (décision Yuri 2026-07-01)
+Non retenu pour l'An 1. Ne pas développer.
 
 ---
 
@@ -61,6 +64,6 @@ Budget associé : ligne courriel ~28 $/mois ajoutée au classeur (total An 1 = 1
 2. **CGU §5 / consentement** : le bassin secondaire (relance des comptes sans dossier) repose sur ce consentement → relecture juridique recommandée même sans mandat d'avocat au budget.
 3. Push des commits en attente + protection de `main` (checklist PRE-DEPLOIEMENT).
 
-## Ordre d'exécution suggéré
-S1 : P1 + début P2 → S2 : fin P2 + P3 → S3-S4 : P4 → T2 : P5 + P6.
+## Ordre d'exécution (validé par Yuri 2026-07-01)
+S1 : P1 + début P2 → S2 : fin P2 + P3 → S3-S4 : P4 (barème ci-dessus) → T2 : P5. (P6 retiré.)
 Chaque item = branche + preview + entrée `JOURNAL-AGENTS.md` (protocole habituel).
