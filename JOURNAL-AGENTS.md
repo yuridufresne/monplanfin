@@ -19,7 +19,7 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
-## 2026-07-03 — Claude Code (📌 LIAISON : P4 PARRAINAGE livré — PR #9 + SQL POUR COWORK)
+## 2026-07-03 — Claude Code (📌 LIAISON : P4 PARRAINAGE — ✅ PR #9 MERGÉE `2f4fac6` · SQL POUR COWORK)
 - **[PR #9](https://github.com/yuridufresne/monplanfin/pull/9)** (branche `feat/p4-parrainage`) : lien `monplanfin.ca/?ref=<code>`, récompense = **Studio temporaire** (barème Yuri : 1 filleul validé = 1 mois · 3 = 1 an · plafond 24 mois ; « validé » = courriel vérifié + 1re section ABF ; récompense à l'inscription réussie, jamais à l'envoi — **LCAP : aucun courriel plateforme aux invités, pas de champ adresses**).
   - **[supabase_parrainage.sql](supabase_parrainage.sql)** (SQL pur, pas d'Edge Function) : tables `parrainage`/`parrainage_filleul`, **colonne `expire_le` sur `studio_entitlement`** (null = permanent → codes existants inchangés), RPC `get_mon_parrainage()`, fonction cron `attribuer_recompenses_parrainage()` (anti auto-parrainage, idempotente, ne rétrograde jamais un permanent).
   - **Front** : capture `?ref=` first-touch + sync filleul à l'auth ; **gate Studio respecte `expire_le`** ; carte Dashboard « Invitez un proche » (lien + copier + compteurs, masquée sans le SQL, jamais en mode conseiller).
