@@ -1,8 +1,11 @@
 // ============================================================================
 // [P2 gameplan] Edge Function `accuse-dossier` — accusé de soumission (Resend)
 // ----------------------------------------------------------------------------
-// Invoquée par le front (utilisateur AUTHENTIFIÉ — verify_jwt ON, défaut) juste
-// après l'enregistrement réussi d'un LeadDossier. Envoie :
+// Invoquée par le front (utilisateur AUTHENTIFIÉ) juste après l'enregistrement
+// réussi d'un LeadDossier. ⚠️ DÉPLOYER verify_jwt OFF : le projet utilise les
+// clés JWT ASYMÉTRIQUES et la vérif plateforme « legacy secret » rejette les
+// jetons (UNAUTHORIZED_ASYMMETRIC_JWT) — l'auth est faite IN-FUNCTION via
+// GoTrue /auth/v1/user (401 sinon). Envoie :
 //   1. l'ACCUSÉ DE RÉCEPTION au client (transactionnel, FR, brandé) ;
 //   2. la NOTIFICATION à l'admin (nouveau dossier dans /admin/dossiers).
 // Trace les deux envois dans `email_log` (idempotence + preuve — Loi 25/LCAP).
@@ -77,6 +80,22 @@ Deno.serve(async (req) => {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
     const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
     const ADMIN = Deno.env.get("ADMIN_NOTIF_COURRIEL") || "bonjour@monplanfin.ca";
+
+    // ── AUTH IN-FUNCTION (bug UNAUTHORIZED_ASYMMETRIC_JWT, journal 2026-07-02) ──
+    // Le projet utilise les clés JWT ASYMÉTRIQUES : la vérif plateforme « Verify
+    // JWT with legacy secret » rejette les jetons de session → la fonction est
+    // déployée verify_jwt OFF (assumé) et valide ELLE-MÊME le jeton : GoTrue
+    // /auth/v1/user avec l'Authorization reçu (supabase-js l'envoie d'office).
+    // 401 si absent/invalide → l'endpoint n'est PAS public pour autant.
+    const authHeader = req.headers.get("Authorization") ?? "";
+    const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+    const uRes = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: { Authorization: authHeader, apikey: ANON_KEY },
+    });
+    if (!uRes.ok) {
+      return new Response(JSON.stringify({ ok: false, erreur: "non authentifié" }),
+        { status: 401, headers: { ...cors, "Content-Type": "application/json" } });
+    }
 
     const b = await req.json();
     const courriel = String(b.client_courriel || "").trim();
