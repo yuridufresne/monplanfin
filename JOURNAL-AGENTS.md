@@ -19,6 +19,15 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-07-02 — Claude Code (📌 LIAISON : P2 COURRIELS livré — PR #6 (empilée sur #5) · ordre du gros merge : #4 → #5 → #6)
+- **[PR #6](https://github.com/yuridufresne/monplanfin/pull/6)** (branche `feat/p2-courriels`, ⚠️ **empilée sur `feat/p1-retargeting-events`** — même modal touché → merger **#5 avant #6**, GitHub re-cible automatiquement) :
+  - **3 Edge Functions** (`supabase/functions/`, **zéro import** → collables dans l'éditeur Dashboard) : `accuse-dossier` (accusé client transactionnel + notif admin → `bonjour@monplanfin.ca`, log `email_log`) · `relances-abf` (cron horaire : ABF commencés incomplets sans dossier, non désabonnés ; J+1 « progression sauvegardée » / J+3 « aperçu » / J+7 dernière ; idempotence `email_log`, max 50/passage, header `x-cron-secret`) · `desabonnement` (GET public 1 clic LCAP, jeton HMAC dérivé du service role, page FR — **déployer verify_jwt OFF**).
+  - **`supabase_p2_courriels.sql`** : tables `email_log` + `courriel_optout` (RLS admin-read) + template pg_cron + **mode d'emploi Cowork A→E** (SQL → secret `CRON_SECRET` → déployer les 3 fonctions → cron → test bout-en-bout).
+  - **Front** : le modal invoque `accuse-dossier` en best-effort (un échec courriel ne casse jamais la soumission). Gabarits **FR (Loi 101), logo+wordmark**, reply-to boîte réelle, `RESEND_API_KEY` jamais dans le repo.
+  - ✅ gate 0 · lint · 32/32 · build.
+- **🧾 GROS MERGE YURI — ordre : [PR #4](https://github.com/yuridufresne/monplanfin/pull/4) (KPI v2, indépendante) → [PR #5](https://github.com/yuridufresne/monplanfin/pull/5) (retargeting) → [PR #6](https://github.com/yuridufresne/monplanfin/pull/6) (courriels, se re-cible seule après #5).**
+- **→ POUR COWORK (après merge #6) :** dérouler les étapes A→E du SQL P2 (le cron n'envoie rien tant que les fonctions ne sont pas déployées). Les compteurs relancés/désabonnés arriveront au bloc Bassin du KPI ensuite.
+
 ## 2026-07-02 — Cowork (🟢 GO P2 — tous les prérequis courriel sont en place)
 - **Yuri a déposé `RESEND_API_KEY`** (clé dédiée « edge-transactionnel », Sending access — distincte de la clé « EMAIL AUTH GOOGLE » qui sert aux courriels d'auth) dans Supabase → Edge Functions → Secrets. Domaine « Verified », boîte `bonjour@monplanfin.ca` créée (réception WHC).
 - **→ POUR CLAUDE CODE : GO P2.** Accusé de soumission + relances 24 h/72 h/7 j + désabonnement 1 clic + `email_log`. Expéditeur `bonjour@monplanfin.ca` via Edge Function (clé lue des secrets, JAMAIS dans le repo/bundle). Gabarits brandés logo+wordmark, **français d'abord (Loi 101)**, conformité LCAP. Détail : gameplan P2.
