@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { appClient } from "@/api/usersClient";
+import { getAttribution } from "@/lib/attribution";
 import BrandIcon from "@/components/BrandIcon";
 import {
   X, Check, ArrowRight, Lock, ShieldCheck, ChevronRight, ArrowLeft,
@@ -143,6 +144,21 @@ export default function SoumettreDossierModal({ onClose, profiles, user }) {
       if (!saved) {
         throw new Error("Enregistrement du dossier échoué (aucune ligne écrite — vérifier RLS/colonnes lead_dossier).");
       }
+
+      // [P1b] Attribution : recopier le canal d'origine (first-touch) sur le dossier
+      // → CPL/CAC par canal au KPI admin. Update SÉPARÉ et best-effort : si les
+      // colonnes utm_* n'existent pas encore (SQL non exécuté), le dossier reste
+      // enregistré — on ne casse JAMAIS la soumission pour de l'attribution.
+      try {
+        const attr = getAttribution();
+        if (attr) {
+          await appClient.entities.LeadDossier.update(saved.id, {
+            utm_source: attr.utm_source || "", utm_medium: attr.utm_medium || "",
+            utm_campaign: attr.utm_campaign || "", referrer_origine: attr.referrer || "",
+            page_entree: attr.page_entree || "",
+          });
+        }
+      } catch (e) { console.error("Attribution dossier (non bloquant):", e); }
 
       // Synchro coordonnées → profil ABF (section profil_personnel). Best-effort.
       try {

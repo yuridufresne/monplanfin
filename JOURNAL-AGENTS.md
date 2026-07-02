@@ -41,6 +41,15 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
   - ✅ gate 0 · lint · 32/32 tests · build.
 - **→ POUR COWORK/YURI :** exécuter `supabase_kpi_admin.sql` dans l'éditeur SQL Supabase (avant ou après merge — la page dégrade proprement). Puis Yuri : « merge » + QA sur `/admin/kpi`.
 - **⚠️ Notes :** taux d'inscription 8 % du deck (visiteurs→comptes) non calculable sans données de trafic (noté sur la page). `kpi_depense_pub` s'écrit via `supabase.from().upsert` direct (PK = mois, pas d'id → makeEntity inutilisable). Blocs CMO viendront avec P1b/P2.
+## 2026-07-02 — Claude Code ([P1b gameplan] Attribution UTM first-touch — détail ; livré via PR #3)
+- **Fait (branche, PAS main) — « à faire AVANT de dépenser la pub » :**
+  - **[src/lib/attribution.ts](src/lib/attribution.ts)** (gaté, typé) : `captureAttribution()` au chargement → lit `utm_source/medium/campaign(/term/content)` + **referrer externe** + page d'entrée → localStorage **first-touch** (jamais écrasé ; rien n'est stocké pour une visite directe). `syncAttributionCompte()` à l'authentification → écrit UNE fois `compte_attribution` (upsert `ignoreDuplicates` → first-touch aussi côté serveur ; marche pour courriel ET OAuth Google). `getAttribution()` pour la recopie.
+  - **[App.tsx](src/App.tsx)** : capture au montage + sync quand `isAuthenticated`.
+  - **[SoumettreDossierModal.tsx](src/components/dashboard/SoumettreDossierModal.tsx)** : recopie des UTM sur le `lead_dossier` par un **update SÉPARÉ best-effort APRÈS l'enregistrement** — si les colonnes n'existent pas encore, la soumission n'est JAMAIS cassée (leçon du bug lead_dossier).
+  - **[supabase_attribution_utm.sql](supabase_attribution_utm.sql)** (racine, POUR COWORK/YURI) : table `compte_attribution` (PK user_id, **insert-only** = first-touch immuable, select = soi/admin) + colonnes `utm_source/utm_medium/utm_campaign/referrer_origine/page_entree` sur `lead_dossier`. Idempotent.
+  - **✅ Vérifié en preview (serveur propre)** : capture `?utm_source=meta&utm_medium=cpc&utm_campaign=…` OK · **first-touch confirmé** (2ᵉ visite `google` n'écrase pas) · 0 erreur console. Gate 0 · lint · 32/32 · build.
+- **→ POUR COWORK/YURI :** exécuter `supabase_attribution_utm.sql` (avant ou après merge — tout est best-effort avant ça). Convention UTM des pubs/posts : `meta/cpc/<campagne>`, `google/cpc/<campagne>`, `agent/<code>`.
+- **⚠️ Notes :** (1) le bloc **Attribution du KPI** (P0) se branchera sur ces données une fois P0+P1b mergés (petite extension du RPC à prévoir). (2) **Loi 25** : données d'origine de visite liées au compte (aucun contenu financier) → prévoir une ligne dans la politique de confidentialité (avocat). (3) Les branches `feat/p0-kpi-admin` et `feat/p1b-attribution-utm` partent toutes deux de `main` → la 2ᵉ à merger devra être rebasée (je m'en occupe au merge).
 
 ## 2026-07-01 (soir) — Cowork (📈 GAMEPLAN croissance + dossier partenaires finalisé)
 - **Fait (verrou « Cowork » ; session dossier partenaires avec Yuri) :**
