@@ -34,12 +34,13 @@ rétention, incidents, section mineurs <14).
 - ✅ Wording AMF corrigé (plus de « du cabinet » / « Planification financière » / « accrédités AMF »).
 - ✅ [L3] « Supprimer mon compte » + export JSON/CSV (RPC `delete_my_account`, Cowork).
 - ✅ [S1] `REVOKE anon` appliqué en prod (Cowork). [S2] CSP `script-src` durci, validé en prod.
-- ☐ 🔴 👤 **Véracité des partenaires.** Le footer affiche « Tous nos conseillers partenaires sont
-  accrédités par l'AMF » → **chaque** partenaire affiché doit être **réellement inscrit** au registre AMF,
-  sinon fausse représentation. Vérifier/documenter, ou masquer le claim tant que non prouvé.
-- ☐ 🔴 ⚖️ **Rémunération du référencement.** Si des conseillers paient au lead / partage de commission →
-  l'AMF encadre le partage de commissions (souvent réservé aux inscrits). **Faire valider par avocat/AMF
-  avant de facturer le référencement** — c'est le point qui peut faire basculer le statut « hors régime ».
+- ✅ **Véracité des partenaires** — inscription au **registre AMF vérifiée** (Yuri, 2026-07-03).
+  Discipline continue : re-vérifier à chaque nouvel agent (trace : date + n° d'inscription).
+- ✅ **Rémunération du référencement — réglé PAR CONCEPTION** (Yuri, 2026-07-03) : **aucun paiement
+  par référence, aucun partage de commission**. Les agents (groupe restreint) gardent 100 % de leurs
+  commissions et **cofinancent le site** (frais fixes) pour les leads → le risque LDPSF (partage de
+  commissions avec non-inscrit) est écarté structurellement. *(Relecture avocat des ententes agents =
+  bonne pratique, plus un bloquant.)*
 - ☐ 🟡 ⚖️ **Relire les 3 docs Loi 25** (EFVP, incidents+registre, rétention — brouillons) par conseiller RP/avocat.
 - ✅ **[L1] Hébergement de la BD au Canada** — vérifié 2026-07-02 (`supabase projects list`, Claude Code) : le projet est DÉJÀ en `ca-central-1` (Montréal). Nuance : des sous-traitants traitent encore des données hors Canada (CDN Vercel, Resend us-east-1 pour les courriels) → l'EFVP reste pertinente et conservée.
 
@@ -52,8 +53,8 @@ rétention, incidents, section mineurs <14).
 - ✅ Bug **NaN des prestations** corrigé (ACE/famille/solidarité/REEE dans SimulateurImpot — `fiscalQC` → `rfnr`).
 - ✅ [C3] Formule SRG + [C4] clamp des négatifs.
 - ✅ [C2] Gate typecheck bloquant, étendu à toute la couche calcul (`lib`/`utils`/`api`/`hooks` + composants sûrs).
-- ☐ 🟡 💻 **Bug « impôt retenu jeté »** : l'estimation auto d'impôt est calculée puis jetée → affiche 0 si
-  champ vide (`calcRevenuNet` → `FeuilleResume`). Impact direct sur un chiffre montré au client. À confirmer/corriger.
+- ✅ **Bug « impôt retenu jeté »** — corrigé par Cowork (2026-07-01, racine dans `useABFSync` §1b :
+  repli sur l'estimation `calcNetPersonne`, conjoint inclus).
 - ☐ 🟡 💻 **Calculatrices natives** (`audit-calculatrices-2026-06`) : bugs/constantes de la page Calculators à revoir.
 - ☐ 🟡 👤 **Passe de validation** : relire quelques cas types (SimulateurImpot : ACE/famille/solidarité)
   avec un fiscaliste pour confirmer que les montants « sonnent juste ».
@@ -62,13 +63,14 @@ rétention, incidents, section mineurs <14).
 
 ## 🎯 Chemin le plus court vers « prêt au lancement »
 
-**MUST (bloquant) :**
-1. 👤 Vercel Pro + backups Supabase (opérationnel + Loi 25).
-2. 👤 Vérifier l'inscription AMF réelle des partenaires (ou masquer le claim).
-3. ⚖️ Valider la rémunération du référencement (avant de monétiser).
+**MUST (bloquant — il n'en reste qu'UN) :**
+1. 👤 **Vercel Pro + backups Supabase** (opérationnel + Loi 25). C'est le dernier bloquant de lancement.
+2. ~~Vérifier l'inscription AMF des partenaires~~ ✅ fait (2026-07-03).
+3. ~~Valider la rémunération du référencement~~ ✅ réglé par conception : aucun partage de commission (2026-07-03).
 
 **SHOULD (code, je peux les faire) :**
-4. 💻 Corriger les 2 bugs de calcul (impôt retenu jeté, calculatrices natives).
+4. 💻 Revalider les calculatrices natives (corrections SCHL/IQPF de Cowork — passe fiscaliste/Yuri).
+   *(« Impôt retenu jeté » : ✅ corrigé par Cowork le 2026-07-01, `useABFSync`.)*
 5. 💻/👤 Protéger `main`.
 
-**Répartition :** 1-2-3 = Yuri (paiements + juridique) · 4-5 = Claude Code (code).
+**Répartition :** 1 = Yuri (paiements) · 4-5 = Claude Code (code).

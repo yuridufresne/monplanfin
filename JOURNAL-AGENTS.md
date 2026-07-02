@@ -19,6 +19,11 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-07-03 — Claude Code (⚖️ 2 bloquants AMF LEVÉS (décision/confirmation Yuri) — il ne reste QU'UN bloquant de lancement)
+- **Yuri confirme :** (1) **inscription des partenaires au registre AMF vérifiée** ✅ ; (2) **AUCUNE rémunération par référence ni partage de commission** — le modèle est : un petit groupe restreint d'agents qui **gardent 100 % de leurs commissions** et **cofinancent le site** (frais fixes) pour recevoir des leads. → le risque LDPSF (partage de commissions avec non-inscrit) est **écarté par la structure même**.
+- **Fait (docs de référence mis à jour, commités) :** [NOTES-AMF-et-statut-conformite.md](conformite/NOTES-AMF-et-statut-conformite.md) (conditions 1 et 2 → réglées, avec la discipline « re-vérifier le registre à chaque nouvel agent, garder date + n° d'inscription ») ; [PRE-DEPLOIEMENT.md](PRE-DEPLOIEMENT.md) (2 items 🔴 cochés + « impôt retenu jeté » coché — corrigé par Cowork le 01).
+- **🎯 IL NE RESTE QU'UN SEUL BLOQUANT DE LANCEMENT : Supabase Pro (backups) + Vercel Pro** (paiements Yuri, ~30 min). Tout le reste est 🟡 (relecture avocat des ententes agents = bonne pratique, revalidation calculatrices, protection `main`, docs Loi 25).
+
 ## 2026-07-03 — Cowork (🎉 P2 100 % OPÉRATIONNEL — B+D faits par Yuri, tout vérifié)
 - **Yuri a complété B+D** : `CRON_SECRET` déposé aux Secrets (vérifié par NOM/digest seulement) + cron `relances-abf-horaire` créé. **Vérifié dans `cron.job` : les 2 crons actifs** (`relances-abf-horaire` 5 * * * * · `parrainage-recompenses-horaire` 15 * * * *) et les 2 secrets présents (`RESEND_API_KEY`, `CRON_SECRET`).
 - **État final de la machine courriel/croissance :** accusé de soumission (protégé, testé 200) · relances J+1/J+3/J+7 avec lien portrait + désabo LCAP (cron actif) · parrainage avec récompense Studio (cron actif) · KPI/attribution/portrait en prod. **Gameplan : P0-P4 TERMINÉS ; reste P5 (SEO, T2).**

@@ -8,10 +8,16 @@
 
 Ce modèle (outil + référencement vers des pros inscrits) est **compatible** avec un positionnement hors
 régime d'inscription AMF, **à 4 conditions** :
-1. **Rémunération du référencement** — si des conseillers paient par lead / partage de commission, l'AMF
-   encadre le partage de commissions (souvent réservé aux inscrits). → **POINT À FAIRE VALIDER (AMF/avocat)** selon le mode de rémunération.
-2. **Véracité des titres** — chaque conseiller partenaire doit être **réellement inscrit au registre AMF**
-   (ou détenir le titre annoncé). N'afficher que ce qui est prouvable.
+1. **Rémunération du référencement** — ✅ **RÉGLÉ PAR CONCEPTION (confirmé Yuri, 2026-07-03)** :
+   **AUCUNE rémunération par référence, AUCUN partage de commission.** Le modèle = un petit groupe
+   restreint d'agents qui **gardent 100 % de leurs commissions** et **cofinancent le site** (frais fixes)
+   pour recevoir des leads. MonPlanFin ne touche aucun pourcentage lié aux ventes → le risque LDPSF
+   visé ici (partage de commissions avec un non-inscrit) est écarté par la structure même.
+   *(Une relecture avocat du montage reste une bonne pratique avant signature des ententes agents,
+   mais ce n'est plus un bloquant de lancement.)*
+2. **Véracité des titres** — ✅ **FAIT (confirmé Yuri, 2026-07-03)** : l'inscription des conseillers
+   partenaires au **registre AMF a été vérifiée**. À refaire à CHAQUE ajout d'agent (garder une trace
+   de la vérification : date + numéro d'inscription).
 3. **MonPlanFin ≠ le pro** — l'outil reste « estimateur / éducatif » ; « planification financière » est
    réservé à ce que le **partenaire titré** fournit. Jamais « planificateur financier » / « cabinet » pour MonPlanFin.
 4. **Consentement Loi 25** — transmettre le dossier à un conseiller = communication à un tiers → **consentement explicite** requis.
