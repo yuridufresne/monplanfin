@@ -16,6 +16,7 @@ import FinancialPlan from '@/pages/FinancialPlan';
 import Investments from '@/pages/Investments';
 import StudioDecaissement from '@/pages/StudioDecaissement';
 import { supabase } from '@/api/supabaseClient';
+import { captureAttribution, syncAttributionCompte } from '@/lib/attribution';
 import DisclaimerAMF from '@/components/DisclaimerAMF';
 
 // Pages de RÉSULTATS : avertissement AMF « pas un conseil personnalisé » en bas.
@@ -72,6 +73,11 @@ function AuthenticatedApp() {
   const isAdmin = user?.role === "admin"; // accès Studio sans entitlement (travail interne)
   const [studioUnlocked, setStudioUnlocked] = useState(false);
   const [studioChecked, setStudioChecked] = useState(false);
+
+  // [P1b] Attribution first-touch : capter l'origine (UTM/referrer) au chargement,
+  // puis la rattacher UNE fois au compte dès qu'une session existe.
+  useEffect(() => { captureAttribution(); }, []);
+  useEffect(() => { if (isAuthenticated) syncAttributionCompte(); }, [isAuthenticated]);
 
   // Entitlement Studio lu côté SERVEUR : via la RLS, l'utilisateur ne voit que
   // sa propre ligne. Plus de flag localStorage contournable côté client.
