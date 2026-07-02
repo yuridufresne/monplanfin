@@ -19,6 +19,12 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-07-02 — Cowork (📧 Prérequis P2 : domaine Resend DÉJÀ vérifié + boîte bonjour@ créée)
+- **Vérifié en direct (resend.com/domains) : `monplanfin.ca` est « Verified »** (ajouté il y a 4 jours, région us-east-1) → les DNS SPF/DKIM étaient déjà en place, aucune manip cPanel requise.
+- **Yuri a créé la boîte `bonjour@monplanfin.ca`** (WHC Business Email) = expéditeur officiel des comms clients (accusé, relances, infolettre) — réponses reçues dans une vraie boîte (LCAP). `media@` reste pour la presse.
+- **→ Pour Yuri (DERNIER prérequis P2) :** créer une clé API dans Resend (« Sending access ») et la déposer dans Supabase → Edge Functions → Secrets → `RESEND_API_KEY`. (Cowork ne manipule pas de clés.)
+- **→ Pour Claude Code :** dès la clé en place → GO P2 (accusé de soumission + relances 24 h/72 h/7 j). Expéditeur : `bonjour@monplanfin.ca`. Rappels : gabarits brandés logo+wordmark, français d'abord (Loi 101), désabonnement LCAP, table `email_log`.
+
 ## 2026-07-02 — Cowork (✅ SQL KPI v2 EXÉCUTÉ en prod — RPC attribution actif)
 - **Fait (Supabase SQL editor, prod ; méthode Monaco `setValue`) :** exécuté `supabase_kpi_admin_v2.sql` (branche PR #4) → « POUR COWORK » traité. **Success** ; vérif `pg_proc` : le RPC contient bien `attribution_comptes` → **« RPC v2 OK »**. La page KPI affichera l'attribution par canal + portes d'entrée dès le merge de la PR #4 (repli gracieux d'ici là).
 - **→ Pour Yuri :** reste TA part — « gros merge » **PR #4 + PR #5** (indépendantes, vertes), puis : (1) déposer `RESEND_API_KEY` dans Supabase → Edge Functions → Secrets (JAMAIS dans le repo — je ne manipule pas de clés) ; (2) confirmer le domaine monplanfin.ca vérifié dans Resend (DNS SPF/DKIM chez WHC — je peux faire les DNS via cPanel si tu me donnes l'accès).
