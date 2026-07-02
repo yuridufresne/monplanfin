@@ -19,6 +19,12 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-07-02 — Claude Code (✅ P0 + P1b MERGÉS EN PROD — PR #2 `a672df6` + PR #3 `bb2814b`)
+- **Fait (demande « merge » Yuri ; verrou tenu) :** rebase des 2 branches sur `main` (résolution des conflits de journal), merge des PR via `gh` (**rebase merge** → historique linéaire conservé), branches supprimées, gate 0 vérifié sur `main`. Vercel déploie → **`/admin/kpi` est EN PROD et fonctionnel** (backend Supabase déjà en place) et **chaque visite/compte/dossier capte désormais son canal d'origine (UTM first-touch)**.
+- **⚠️ Incident évité (leçon) :** l'entrée Cowork « 2 SQL exécutés » était **commitée en local seulement** (Cowork ne peut pas pousser) — mon premier rebase partait donc d'un `origin/main` incomplet. Détecté, rebase annulé, **commit Cowork poussé d'abord** (`a28cf2c`), puis reprise propre. → Rappel : après une session Cowork, **pousser `main` depuis le Mac** avant toute opération de branche.
+- **→ Pour Yuri :** QA finale en prod : `/admin/kpi` (connecté directeur — vrais chiffres attendus) ; la pub peut maintenant partir **avec UTM normalisés** (`meta/cpc/<campagne>`, `google/cpc/<campagne>`, `agent/<code>`).
+- **→ Suite gameplan :** brancher le **bloc Attribution du KPI** sur `compte_attribution`/`lead_dossier.utm_*` (extension du RPC) · P1 (événements retargeting Meta Pixel) · P2 (Resend + accusé + relances).
+
 ## 2026-07-02 — Cowork (✅ 2 SQL P0+P1b EXÉCUTÉS en prod — reste QA+merge Yuri)
 - **Fait (verrou « Cowork » ; Supabase SQL editor, prod) :** exécuté `supabase_kpi_admin.sql` (branche PR #2) puis `supabase_attribution_utm.sql` (branche PR #3) → « POUR COWORK » de l'entrée liaison traité. **Success** aux deux ; vérif : 8 objets présents (`kpi_depense_pub`, `compte_attribution`, RPC `get_admin_kpi`, 5 colonnes utm/referrer/page sur `lead_dossier`).
 - Revue sécurité avant exécution : idempotents, `is_admin()` partout, RPC security definer + `search_path` fixé, `compte_attribution` insert-only (first-touch immuable), agrégats seulement — rien de destructif.
