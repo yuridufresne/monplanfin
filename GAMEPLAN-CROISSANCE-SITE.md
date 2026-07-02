@@ -12,6 +12,28 @@ Budget associé : ligne courriel ~28 $/mois ajoutée au classeur (total An 1 = 1
 
 ---
 
+## P0 — Tableau de bord KPI dans l'espace admin (S1, ~2 jours) — demande Yuri 2026-07-01
+**Quoi :** une page `/admin/kpi` (onglet « KPI » à côté de Dossiers/Équipe) qui donne les outils de contrôle
+ET alimente le rapport mensuel promis aux partenaires (FAQ investisseurs Q6). Métriques :
+
+| Bloc | Métriques |
+|---|---|
+| **Comptes** | Total comptes créés · nouveaux ce mois · courbe par mois (12 mois) |
+| **Entonnoir** | ABF commencées · ABF complétées (11/11 sections) · taux de complétion · dossiers soumis · taux de soumission |
+| **Dossiers** | Par statut (nouveau/vu/contacté/en cours/converti/perdu) · par agent · délai moyen d'attribution · **taux de conversion par agent** |
+| **Abonnés** | Nb d'entitlements Studio actifs (source : entitlement serveur #7) · dont via parrainage (P4) |
+| **Bassin secondaire** | Comptes SANS dossier soumis (la cible des relances P2) · dont relancés/désabonnés (`email_log`, après P2) |
+| **Coûts (saisie manuelle)** | Dépense pub du mois (champ admin) → CPL calculé = dépense ÷ dossiers soumis · coût/client = dépense ÷ convertis |
+
+- **Backend :** vues SQL agrégées `admin_kpi_*` (ou RPC `get_admin_kpi()`) **security definer + check `is_admin()`** —
+  ne JAMAIS exposer de lignes individuelles, seulement des agrégats. Compter les comptes via `financial_profile`
+  (distinct user) ou une vue sur `auth.users` réservée à l'admin.
+- **Frontend :** `src/pages/AdminKpi.tsx` (hors gate au début, même modèle qu'AdminDossiers), cartes + petits
+  graphiques (recharts déjà dans le repo). Bouton « Exporter le mois (CSV) » pour le rapport partenaires.
+- ⚠️ Comparer les chiffres affichés aux hypothèses du deck (8 % inscription, 50 % complétion, 75 % soumission,
+  20 % conversion) : c'est l'outil de recalibration trimestrielle.
+**Livrable :** page KPI admin + export CSV mensuel.
+
 ## P1 — Retargeting des abandonneurs (S1, ~½ jour)
 **Quoi :** exploiter le Meta Pixel (déjà consenti/gaté) pour recibler ceux qui ont commencé sans soumettre.
 - Code : émettre des événements GÉNÉRIQUES au niveau des routes (`analytics.ts`) : `abf_started`, `abf_completed`, `dossier_submitted`. **Aucune donnée financière dans les événements** (Loi 25) — juste le jalon.
@@ -65,5 +87,5 @@ Non retenu pour l'An 1. Ne pas développer.
 3. Push des commits en attente + protection de `main` (checklist PRE-DEPLOIEMENT).
 
 ## Ordre d'exécution (validé par Yuri 2026-07-01)
-S1 : P1 + début P2 → S2 : fin P2 + P3 → S3-S4 : P4 (barème ci-dessus) → T2 : P5. (P6 retiré.)
+S1 : **P0 (KPI admin)** + P1 → S2 : P2 + P3 → S3-S4 : P4 (barème ci-dessus) → T2 : P5. (P6 retiré.)
 Chaque item = branche + preview + entrée `JOURNAL-AGENTS.md` (protocole habituel).
