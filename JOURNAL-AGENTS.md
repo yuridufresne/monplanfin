@@ -19,6 +19,13 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-07-02 — Claude Code (✅ bug JWT `accuse-dossier` CORRIGÉ + REDÉPLOYÉ en prod — l'endpoint n'est plus public)
+- **Contexte (entrée Cowork ci-dessous) :** clés JWT **asymétriques** → la vérif plateforme « legacy secret » rejette les jetons (`UNAUTHORIZED_ASYMMETRIC_JWT`) ; Cowork avait mis `accuse-dossier` en JWT OFF (fonctionnel mais **techniquement public**).
+- **Correctif (pattern recommandé, dans le repo `supabase/functions/accuse-dossier/index.ts`) :** **validation in-function du jeton** — GoTrue `/auth/v1/user` avec l'`Authorization` reçu (+ `apikey` anon, injectée d'office) → **401 si absent/invalide** ; `verify_jwt` OFF **assumé et documenté** en tête de fichier. Aucun changement front (supabase-js envoie déjà le jeton).
+- **Redéployé en prod par MOI via le CLI** (`supabase functions deploy accuse-dossier --no-verify-jwt` — le CLI était authentifié + projet lié ; bundling API sans Docker). **Vérifié en prod : `POST` sans jeton → 401 ; jeton bidon → 401 avec NOTRE message `non authentifié`** (preuve que c'est la validation in-function qui protège). Chemin authentifié inchangé.
+- ℹ️ Au passage, `supabase projects list` confirme : le projet est en **région `ca-central-1`** → l'item [L1] « hébergement hors Canada » de l'audit semble déjà réglé (à confirmer/cocher dans PRE-DEPLOIEMENT.md).
+- **→ Reste pour Yuri (B+D, inchangé) :** secret `CRON_SECRET` + bloc cron (voir entrée Cowork ci-dessous). Sans ça, **les relances ne partent pas** (l'accusé, lui, est pleinement opérationnel et maintenant protégé).
+
 ## 2026-07-02 — Cowork (⚙️ ACTIVATION P2 : A/C/E faits — accusé TESTÉ OK en prod · 🐛 bug JWT pour Claude Code · reste B+D à Yuri)
 - **Fait (étapes du mode d'emploi `supabase_p2_courriels.sql`) :**
   - **(A) ✅** Tables `email_log` + `courriel_optout` + RLS créées. **Extensions pg_cron + pg_net activées.**
