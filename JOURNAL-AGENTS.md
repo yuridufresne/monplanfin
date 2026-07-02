@@ -19,6 +19,12 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-07-03 — Cowork (✅ P4 PARRAINAGE ACTIVÉ en prod — SQL + cron faits)
+- **Fait (SQL editor, injection Monaco) :** `supabase_parrainage.sql` exécuté (**Success**) : colonne `expire_le` sur `studio_entitlement`, tables `parrainage`/`parrainage_filleul` + RLS, RPC `get_mon_parrainage()`, fonction `attribuer_recompenses_parrainage()` (revoke API ok). **Cron `parrainage-recompenses-horaire` créé et ACTIF** (h+15) + passage manuel exécuté sans erreur.
+- **Test C (filleul bidon) : non fait** — nécessite un 2e compte avec parcours complet ; la mécanique est couverte par la preview de Claude Code + le passage manuel. Le premier vrai parrainage servira de test réel (ou Yuri avec un compte test s'il veut valider avant).
+- **⚠️ Constat dans `cron.job` : le cron des RELANCES (h+05) n'existe toujours pas** → les étapes B+D de P2 (secret `CRON_SECRET` + bloc cron) restent à faire par Yuri. **Sans ça, les relances J+1/J+3/J+7 ne partent pas.**
+- **→ Pour Yuri :** la carte « Invitez un proche » apparaît au Dashboard des comptes clients (pas en mode conseiller) — teste avec un compte client si tu veux la voir.
+
 ## 2026-07-03 — Claude Code (📌 LIAISON : P4 PARRAINAGE — ✅ PR #9 MERGÉE `2f4fac6` · SQL POUR COWORK)
 - **[PR #9](https://github.com/yuridufresne/monplanfin/pull/9)** (branche `feat/p4-parrainage`) : lien `monplanfin.ca/?ref=<code>`, récompense = **Studio temporaire** (barème Yuri : 1 filleul validé = 1 mois · 3 = 1 an · plafond 24 mois ; « validé » = courriel vérifié + 1re section ABF ; récompense à l'inscription réussie, jamais à l'envoi — **LCAP : aucun courriel plateforme aux invités, pas de champ adresses**).
   - **[supabase_parrainage.sql](supabase_parrainage.sql)** (SQL pur, pas d'Edge Function) : tables `parrainage`/`parrainage_filleul`, **colonne `expire_le` sur `studio_entitlement`** (null = permanent → codes existants inchangés), RPC `get_mon_parrainage()`, fonction cron `attribuer_recompenses_parrainage()` (anti auto-parrainage, idempotente, ne rétrograde jamais un permanent).
