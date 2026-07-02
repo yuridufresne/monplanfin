@@ -195,6 +195,11 @@ export default function AdminDossiers() {
               background: "rgba(201,160,99,0.1)", color: "#C9A063", fontSize: 12, fontWeight: 600,
               textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6,
             }}><Users size={14} /> Équipe</Link>
+            <Link to="/admin/kpi" style={{
+              padding: "8px 14px", borderRadius: 10, border: "1px solid rgba(201,160,99,0.35)",
+              background: "rgba(201,160,99,0.1)", color: "#C9A063", fontSize: 12, fontWeight: 600,
+              textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6,
+            }}><FileText size={14} /> KPI</Link>
             <button onClick={refresh} style={{
               padding: "8px 14px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.1)",
               background: "rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.7)", fontSize: 12, cursor: "pointer",
