@@ -19,6 +19,14 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-07-02 — Claude Code (📌 LIAISON : P0 + P1b du gameplan livrés en PR — 2 SQL POUR COWORK)
+- **Contexte :** les entrées détaillées de P0 et P1b sont dans le journal **des branches** (visibles au merge). Cette entrée-ci rend l'essentiel visible sur `main` tout de suite.
+- **PR #2 — P0 Tableau de bord KPI `/admin/kpi`** ([pull/2](https://github.com/yuridufresne/monplanfin/pull/2), branche `feat/p0-kpi-admin`) : RPC `get_admin_kpi()` (agrégats seulement, `is_admin()`), page KPI (entonnoir vs cibles deck 50/75/20, graphiques, table agents, CPL/coût-client, export CSV), dégradation gracieuse sans le SQL.
+- **PR #3 — P1b Attribution UTM first-touch** ([pull/3](https://github.com/yuridufresne/monplanfin/pull/3), branche `feat/p1b-attribution-utm`) : capture utm/referrer/page d'entrée au chargement, rattachée au compte à l'auth (`compte_attribution`, insert-only), recopiée sur `lead_dossier` en best-effort. **À merger avant toute dépense pub.**
+- **→ POUR COWORK (2 SQL, avant ou après merge — tout dégrade proprement) :** exécuter **`supabase_kpi_admin.sql`** puis **`supabase_attribution_utm.sql`** dans l'éditeur SQL Supabase (prod).
+- **→ Pour Yuri :** QA + merge des 2 PR (les branches partent toutes deux de `main` → merger l'une, je rebase l'autre ; ou « merge commit » côté GitHub). ℹ️ `gh` est désormais **authentifié** sur le Mac → je crée/gère les PR directement.
+- **ℹ️ Leçon process :** une entrée de journal commitée sur une branche est invisible des autres agents jusqu'au merge → désormais, pour tout travail livré en branche/PR, **une entrée de liaison est ajoutée sur `main`** (comme celle-ci).
+
 ## 2026-07-01 (soir) — Cowork (📈 GAMEPLAN croissance + dossier partenaires finalisé)
 - **Fait (verrou « Cowork » ; session dossier partenaires avec Yuri) :**
   1. **`GAMEPLAN-CROISSANCE-SITE.md`** (racine, committé) : plan de dev priorisé P1-P6 — retargeting (événements génériques, PAS dans `/analyse`), infra courriel Resend + séquences relance 24 h/72 h/7 j + accusé de soumission (comble l'item ouvert), lead magnet « portrait NIF partiel », parrainage (récompense = entitlement premium), chantier SEO/pré-rendu des pages publiques (la SPA n'est pas indexable page par page), webinaires animés par les agents. Garde-fous AMF/Loi 25/LCAP par item.
