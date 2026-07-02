@@ -17,6 +17,7 @@ import Investments from '@/pages/Investments';
 import StudioDecaissement from '@/pages/StudioDecaissement';
 import { supabase } from '@/api/supabaseClient';
 import { captureAttribution, syncAttributionCompte } from '@/lib/attribution';
+import { captureParrainage, syncParrainage } from '@/lib/parrainage';
 import { trackOnce } from '@/lib/analytics';
 import DisclaimerAMF from '@/components/DisclaimerAMF';
 
@@ -84,8 +85,9 @@ function AuthenticatedApp() {
 
   // [P1b] Attribution first-touch : capter l'origine (UTM/referrer) au chargement,
   // puis la rattacher UNE fois au compte dès qu'une session existe.
-  useEffect(() => { captureAttribution(); }, []);
-  useEffect(() => { if (isAuthenticated) syncAttributionCompte(); }, [isAuthenticated]);
+  // [P4] Idem pour le lien de parrainage (?ref=<code>).
+  useEffect(() => { captureAttribution(); captureParrainage(); }, []);
+  useEffect(() => { if (isAuthenticated) { syncAttributionCompte(); syncParrainage(); } }, [isAuthenticated]);
 
   // Entitlement Studio lu côté SERVEUR : via la RLS, l'utilisateur ne voit que
   // sa propre ligne. Plus de flag localStorage contournable côté client.
@@ -93,8 +95,14 @@ function AuthenticatedApp() {
     let alive = true;
     if (!isAuthenticated) { setStudioUnlocked(false); setStudioChecked(true); return; }
     setStudioChecked(false);
-    supabase.from("studio_entitlement").select("user_id").maybeSingle()
-      .then(({ data }) => { if (alive) { setStudioUnlocked(!!data); setStudioChecked(true); } });
+    // [P4] L'entitlement peut être TEMPORAIRE (parrainage) : expire_le non nul
+    // = date de fin ; nul = permanent (codes d'accès, comportement historique).
+    supabase.from("studio_entitlement").select("user_id, expire_le").maybeSingle()
+      .then(({ data }) => {
+        if (!alive) return;
+        const actif = !!data && (!data.expire_le || new Date(data.expire_le).getTime() > Date.now());
+        setStudioUnlocked(actif); setStudioChecked(true);
+      });
     return () => { alive = false; };
   }, [isAuthenticated]);
 
