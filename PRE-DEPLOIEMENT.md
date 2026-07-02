@@ -41,7 +41,7 @@ rétention, incidents, section mineurs <14).
   l'AMF encadre le partage de commissions (souvent réservé aux inscrits). **Faire valider par avocat/AMF
   avant de facturer le référencement** — c'est le point qui peut faire basculer le statut « hors régime ».
 - ☐ 🟡 ⚖️ **Relire les 3 docs Loi 25** (EFVP, incidents+registre, rétention — brouillons) par conseiller RP/avocat.
-- ☐ 🟡 👤 **[L1] Hébergement hors Canada** → évaluer migration `ca-central-1` (EFVP déjà fait → optionnel).
+- ✅ **[L1] Hébergement de la BD au Canada** — vérifié 2026-07-02 (`supabase projects list`, Claude Code) : le projet est DÉJÀ en `ca-central-1` (Montréal). Nuance : des sous-traitants traitent encore des données hors Canada (CDN Vercel, Resend us-east-1 pour les courriels) → l'EFVP reste pertinente et conservée.
 
 ## 3. 📊 Juste dans les estimations
 
