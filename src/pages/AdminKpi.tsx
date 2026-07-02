@@ -105,6 +105,19 @@ export default function AdminKpi() {
     }));
   }, [kpi]);
 
+  // [v2] Attribution : fusionne comptes (compte_attribution) et dossiers/convertis
+  // (lead_dossier.utm_*) par canal (source + campagne), tri par volume.
+  const attributionRows = useMemo(() => {
+    const m = new Map<string, any>();
+    const cle = (r: any) => `${r.source}|${r.campagne}`;
+    (kpi?.attribution_comptes || []).forEach((r: any) => m.set(cle(r), { cle: cle(r), source: r.source, campagne: r.campagne, comptes: r.comptes || 0 }));
+    (kpi?.attribution_dossiers || []).forEach((r: any) => {
+      const row = m.get(cle(r)) || { cle: cle(r), source: r.source, campagne: r.campagne, comptes: 0 };
+      m.set(cle(r), { ...row, dossiers: r.dossiers || 0, convertis: r.convertis || 0 });
+    });
+    return Array.from(m.values()).sort((a, b) => ((b.comptes || 0) + (b.dossiers || 0)) - ((a.comptes || 0) + (a.dossiers || 0)));
+  }, [kpi]);
+
   const exportCsv = () => {
     const L: string[][] = [["Métrique", "Valeur"]];
     L.push(["Généré le", kpi?.genere_le || ""]);
@@ -119,6 +132,14 @@ export default function AdminKpi() {
     (kpi?.dossiers_agents || []).forEach((a: any) => L.push([a.nom || a.agent, a.total, a.actifs, a.convertis]));
     L.push([], ["Étape ABF (profils incomplets)", "Utilisateurs"]);
     abandonData.forEach(r => L.push([r.section, r.utilisateurs]));
+    if (attributionRows.length) {
+      L.push([], ["Canal (source)", "Campagne", "Comptes", "Dossiers", "Convertis"]);
+      attributionRows.forEach(r => L.push([r.source, r.campagne, r.comptes || 0, r.dossiers || 0, r.convertis || 0]));
+    }
+    if ((kpi?.portes_entree || []).length) {
+      L.push([], ["Page d'entrée", "Comptes"]);
+      (kpi.portes_entree || []).forEach((p: any) => L.push([p.page, p.comptes]));
+    }
     const csv = "﻿" + L.map(r => (r || []).map(c => `"${String(c ?? "")}"`).join(";")).join("\n");
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
@@ -266,12 +287,58 @@ export default function AdminKpi() {
               <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.35)", marginTop: 8 }}>CPL = dépense ÷ dossiers soumis du mois ({e.dossiers_soumis_mois ?? 0}) · coût/client = dépense ÷ convertis du mois ({e.convertis_mois ?? 0}).</p>
             </div>
 
+            {/* ── Attribution par canal + portes d'entrée (données P1b) ── */}
+            {Array.isArray(kpi.attribution_comptes) ? (
+              <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 20, marginBottom: 20 }}>
+                <div style={card}>
+                  <p style={sectionTitle}>Attribution par canal (UTM first-touch)</p>
+                  {attributionRows.length === 0 ? (
+                    <p style={{ fontSize: 12, color: SEC }}>Aucune donnée encore — les canaux apparaîtront dès les premières visites avec UTM (ou referrer externe).</p>
+                  ) : (
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
+                      <thead>
+                        <tr style={{ color: "rgba(255,255,255,0.4)", textAlign: "left" }}>
+                          <th style={th}>Source</th><th style={th}>Campagne</th><th style={th}>Comptes</th><th style={th}>Dossiers</th><th style={th}>Convertis</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {attributionRows.map((r) => (
+                          <tr key={r.cle} style={{ borderTop: "1px solid rgba(255,255,255,0.05)", color: "#fff" }}>
+                            <td style={td}>{r.source}</td>
+                            <td style={{ ...td, color: SEC }}>{r.campagne}</td>
+                            <td style={td}>{r.comptes || 0}</td>
+                            <td style={td}>{r.dossiers || 0}</td>
+                            <td style={{ ...td, color: VERT }}>{r.convertis || 0}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                  <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.35)", marginTop: 8 }}>CPL/CAC par canal viendra avec la saisie de la dépense PAR canal (globale par mois pour l'instant).</p>
+                </div>
+                <div style={card}>
+                  <p style={sectionTitle}>Portes d'entrée (page d'arrivée)</p>
+                  {(kpi.portes_entree || []).length === 0 ? (
+                    <p style={{ fontSize: 12, color: SEC }}>Aucune donnée encore.</p>
+                  ) : (kpi.portes_entree || []).map((p: any) => (
+                    <div key={p.page} style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, padding: "6px 0", borderTop: "1px solid rgba(255,255,255,0.05)", color: "#fff" }}>
+                      <span style={{ color: SEC }}>{p.page}</span><strong>{p.comptes}</strong>
+                    </div>
+                  ))}
+                  <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.35)", marginTop: 8 }}>Quelle page convertit en comptes → priorise le SEO (P5).</p>
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: 12, marginBottom: 20 }}>
+                <AVenir titre="Attribution par canal (UTM)" detail="Exécuter supabase_kpi_admin_v2.sql pour activer (RPC v1 détecté)." />
+                <AVenir titre="Portes d'entrée (calculatrices)" detail="Exécuter supabase_kpi_admin_v2.sql pour activer (RPC v1 détecté)." />
+              </div>
+            )}
+
             {/* ── Blocs CMO à venir ── */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: 12 }}>
-              <AVenir titre="Attribution par canal (UTM)" detail="Disponible après P1b — capture utm_source/medium/campaign sur comptes et dossiers." />
               <AVenir titre="Boucle agents (motif de perte, speed-to-lead)" detail="Nécessite le motif de fermeture + horodatage du 1er contact (gameplan P0-CMO)." />
               <AVenir titre="Persona agrégé convertis vs perdus" detail="Agrégats par tranches (âge, région, revenu, besoin) — jamais de lignes individuelles." />
-              <AVenir titre="Portes d'entrée (calculatrices)" detail="Disponible après P1b — page d'origine à l'inscription." />
             </div>
           </>
         )}
