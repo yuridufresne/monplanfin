@@ -19,6 +19,13 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-07-01 (soir) — Cowork (📈 GAMEPLAN croissance + dossier partenaires finalisé)
+- **Fait (verrou « Cowork » ; session dossier partenaires avec Yuri) :**
+  1. **`GAMEPLAN-CROISSANCE-SITE.md`** (racine, committé) : plan de dev priorisé P1-P6 — retargeting (événements génériques, PAS dans `/analyse`), infra courriel Resend + séquences relance 24 h/72 h/7 j + accusé de soumission (comble l'item ouvert), lead magnet « portrait NIF partiel », parrainage (récompense = entitlement premium), chantier SEO/pré-rendu des pages publiques (la SPA n'est pas indexable page par page), webinaires animés par les agents. Garde-fous AMF/Loi 25/LCAP par item.
+  2. **Dossier partenaires** (fichiers NON committés volontairement, à la racine du dossier) : `Presentation-MonPlanFin-Partenaires.pptx` (20 slides) + `Plan-financier-MonPlanFin-An1.xlsx`. Modèle validé par Yuri : cofinancement par les agents, AUCUN partage de commission, revenus = abonnements premium An 2+, base client gratuite. **Total An 1 = 19 720 $** (pub 16 500 · outils+courriel 1 655 · infra 1 065 · incorporation 500). Scénarios clients : 45/88/125 (An 1) → 240 central (An 2) → 480 central (An 3), incluant le bassin secondaire (~4 % des comptes sans dossier, consentement d'inscription).
+- **→ Pour Claude Code/Cursor :** exécuter le gameplan dans l'ordre S1→T2 (détail dans le fichier). P1-P2 d'abord. ⚠️ Ne RIEN instrumenter dans `src/components/abf/**`.
+- **→ Pour Yuri :** le bassin secondaire et les relances reposent sur le consentement d'inscription (CGU §5) → relecture juridique recommandée. Toujours en attente : Supabase Pro + Vercel Pro + vérif registre AMF des agents.
+
 ## 2026-07-01 (post-audit) — Cowork (🔧 6 correctifs de l'audit — wording, impôt jeté, calculatrices, purge DUFY)
 - **Fait (verrou « Cowork » ; demande Yuri, items 5-10 du rapport d'audit) :**
   1. **Wording AMF** : `Home.tsx` « conseiller accrédité AMF » → « conseiller partenaire inscrit à l'AMF » ; `index.html` (4 occurrences : meta, og, twitter, JSON-LD) « plan révisé par un conseiller encadré par l'AMF » → « possibilité de relais vers un conseiller partenaire inscrit à l'AMF » ; `moteurProtection.ts` tagline « Le standard recommandé » → « Le juste milieu ».
