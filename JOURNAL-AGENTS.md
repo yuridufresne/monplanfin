@@ -19,6 +19,12 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-07-02 — Cowork (✅ 2 SQL P0+P1b EXÉCUTÉS en prod — reste QA+merge Yuri)
+- **Fait (verrou « Cowork » ; Supabase SQL editor, prod) :** exécuté `supabase_kpi_admin.sql` (branche PR #2) puis `supabase_attribution_utm.sql` (branche PR #3) → « POUR COWORK » de l'entrée liaison traité. **Success** aux deux ; vérif : 8 objets présents (`kpi_depense_pub`, `compte_attribution`, RPC `get_admin_kpi`, 5 colonnes utm/referrer/page sur `lead_dossier`).
+- Revue sécurité avant exécution : idempotents, `is_admin()` partout, RPC security definer + `search_path` fixé, `compte_attribution` insert-only (first-touch immuable), agrégats seulement — rien de destructif.
+- ⚠️ Leçon outillage : taper du SQL multi-lignes dans l'éditeur Supabase via clavier = corruption par l'autocomplétion Monaco (« authenticated » → « authentication_method », parenthèse orpheline). La 1re tentative a échoué en bloc (syntax error → rien exécuté). Méthode fiable : injection via l'API Monaco (`monaco.editor.getModels()[0].setValue(...)`) puis Run.
+- **→ Pour Yuri :** il ne reste que TA part : QA des 2 Preview + **merge PR #2 puis PR #3** (Claude Code rebase la 2e si conflit). Après merge, `/admin/kpi` sera fonctionnel immédiatement (backend déjà en place).
+
 ## 2026-07-02 — Claude Code (📌 LIAISON : P0 + P1b du gameplan livrés en PR — 2 SQL POUR COWORK)
 - **Contexte :** les entrées détaillées de P0 et P1b sont dans le journal **des branches** (visibles au merge). Cette entrée-ci rend l'essentiel visible sur `main` tout de suite.
 - **PR #2 — P0 Tableau de bord KPI `/admin/kpi`** ([pull/2](https://github.com/yuridufresne/monplanfin/pull/2), branche `feat/p0-kpi-admin`) : RPC `get_admin_kpi()` (agrégats seulement, `is_admin()`), page KPI (entonnoir vs cibles deck 50/75/20, graphiques, table agents, CPL/coût-client, export CSV), dégradation gracieuse sans le SQL.
