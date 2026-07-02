@@ -11,7 +11,7 @@ import Login from '@/pages/Login';
 import ResetPassword from '@/pages/ResetPassword';
 import SeoManager from '@/lib/SeoManager';
 import CookieConsent from '@/components/ui/CookieConsent';
-import { Home, Calculators, Dashboard, Budget, AnalyseABF, FeuilleResume, AdvancedMode, ProtectionAssurance, Immobilier, Conditions, Confidentialite, Methodologie, Contact, AdminDossiers, AdminEquipe, AdminKpi, AdminFeedback, AgentDossiers, EducationFinanciere } from "./App-pages";
+import { Home, Calculators, Dashboard, Budget, AnalyseABF, FeuilleResume, AdvancedMode, ProtectionAssurance, Immobilier, Conditions, Confidentialite, Methodologie, Contact, AdminDossiers, AdminEquipe, AdminKpi, AdminFeedback, AgentDossiers, EducationFinanciere, PortraitNif } from "./App-pages";
 import FinancialPlan from '@/pages/FinancialPlan';
 import Investments from '@/pages/Investments';
 import StudioDecaissement from '@/pages/StudioDecaissement';
@@ -131,6 +131,7 @@ function AuthenticatedApp() {
           <Route path="/analyse-classique" element={<TrackAbfStart><AnalyseABF /></TrackAbfStart>} />
           <Route path="/budget" element={<Budget />} />
           <Route path="/resume" element={<AvecDisclaimer><FeuilleResume /></AvecDisclaimer>} />
+          <Route path="/portrait" element={<PortraitNif />} />
           <Route path="/avance" element={<AvecDisclaimer><AdvancedMode /></AvecDisclaimer>} />
           <Route path="/protection" element={<AvecDisclaimer><ProtectionAssurance /></AvecDisclaimer>} />
           <Route path="/immobilier" element={<AvecDisclaimer><Immobilier /></AvecDisclaimer>} />

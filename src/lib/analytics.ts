@@ -18,7 +18,8 @@ import { getConsent } from "@/lib/consent";
 export type EvenementMarketing = "abf_started" | "abf_completed" | "dossier_submitted";
 
 // Les 11 sections canoniques de l'ABF (jalon « complété » = les 11 présentes).
-const SECTIONS_ABF = ["profil_personnel", "revenu", "allocations", "epargne", "dettes",
+// Exportée : réutilisée par le portrait NIF partiel (P3) pour la progression.
+export const SECTIONS_ABF = ["profil_personnel", "revenu", "allocations", "epargne", "dettes",
   "immobilier", "assurance", "etudes", "budget", "objectifs", "fonds_urgence"];
 
 /** Émet un jalon vers Meta Pixel + GA — seulement si consenti et chargés. */

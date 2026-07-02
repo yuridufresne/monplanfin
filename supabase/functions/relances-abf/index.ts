@@ -46,7 +46,8 @@ const ETAPES: Etape[] = [
         <li>votre <strong>budget consolidé</strong> et vos protections à évaluer ;</li>
         <li>la possibilité de faire <strong>valider le tout par un conseiller partenaire inscrit à l'AMF</strong> — sans engagement.</li>
       </ul>
-      <p style="margin:0;"><a href="${lien}" style="display:inline-block;background:#279B70;color:#ffffff;text-decoration:none;font-weight:700;font-size:14.5px;padding:12px 22px;border-radius:10px;">Compléter mon portrait →</a></p>`,
+      <p style="margin:0 0 12px;"><a href="${lien}" style="display:inline-block;background:#279B70;color:#ffffff;text-decoration:none;font-weight:700;font-size:14.5px;padding:12px 22px;border-radius:10px;">Compléter mon portrait →</a></p>
+      <p style="margin:0;font-size:13px;color:#5b6678;">Un aperçu tout de suite ? <a href="${SITE}/portrait" style="color:#279B70;font-weight:600;">Voir mon portrait NIF partiel</a> — avec ce que vous avez déjà saisi.</p>`,
   },
   {
     type: "relance_7j", heures: 168,
