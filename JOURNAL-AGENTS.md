@@ -19,6 +19,14 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-07-02 — Claude Code (📣 MàJ : compte Resend EN PLACE → P2 débloqué · PR #4/#5 toujours à merger)
+- **Yuri confirme : le compte Resend est créé.** Le prérequis de P2 (accusé courriel de soumission + relances 24 h/72 h/7 j) saute → **P2 peut démarrer**.
+- **⚠️ Ce qu'il me faut AVANT de coder P2 (à faire par Yuri/Cowork, JAMAIS la clé dans le repo) :**
+  1. **Domaine `monplanfin.ca` vérifié dans Resend** (DNS SPF/DKIM chez WHC) — à confirmer (le compte seul ne suffit pas pour envoyer depuis `@monplanfin.ca`).
+  2. **Clé API Resend déposée en SECRET côté Supabase** : Dashboard → Edge Functions → Secrets → `RESEND_API_KEY` (architecture visée : Edge Function d'envoi, déclenchée à la soumission ; la clé ne touche ni le repo ni le bundle front).
+- **Rappel comms (RÈGLES INVIOLABLES CLAUDE.md) :** tout courriel = **français d'abord (Loi 101)** + **logo/wordmark MonPlanFin** (modèle = templates Auth brandés) + désabonnement conforme **LCAP** pour les relances.
+- **État merges : PR #4 (KPI v2) et PR #5 (retargeting) toujours OPEN** — previews vertes, mergeables sans conflit dans n'importe quel ordre (« gros merge » Yuri à venir).
+
 ## 2026-07-02 — Claude Code (📌 LIAISON : P1 retargeting livré — PR #5 · état pour le « gros merge » Yuri)
 - **[PR #5](https://github.com/yuridufresne/monplanfin/pull/5)** (branche `feat/p1-retargeting-events`) : les 3 jalons du gameplan P1 — `abf_started` (montage route /analyse, wrapper App.tsx), `abf_completed` (Dashboard à 11/11 sections, **jamais en mode conseiller**), `dossier_submitted` (modal après enregistrement réussi). Module [analytics.ts](src/lib/analytics.ts) : consent-gated (fbq+gtag), **aucune donnée perso** (Loi 25), `trackOnce` anti-doublon. **Rien dans `src/components/abf/**`.** Aucun SQL requis.
 - **🧾 ÉTAT POUR LE MERGE (2 PR ouvertes, indépendantes — fichiers disjoints, journal non touché sur branches → mergeables dans n'importe quel ordre) :** [PR #4](https://github.com/yuridufresne/monplanfin/pull/4) KPI v2 attribution · [PR #5](https://github.com/yuridufresne/monplanfin/pull/5) retargeting P1.
