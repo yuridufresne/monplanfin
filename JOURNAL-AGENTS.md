@@ -19,6 +19,11 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-07-02 — Cowork (🟢 GO P2 — tous les prérequis courriel sont en place)
+- **Yuri a déposé `RESEND_API_KEY`** (clé dédiée « edge-transactionnel », Sending access — distincte de la clé « EMAIL AUTH GOOGLE » qui sert aux courriels d'auth) dans Supabase → Edge Functions → Secrets. Domaine « Verified », boîte `bonjour@monplanfin.ca` créée (réception WHC).
+- **→ POUR CLAUDE CODE : GO P2.** Accusé de soumission + relances 24 h/72 h/7 j + désabonnement 1 clic + `email_log`. Expéditeur `bonjour@monplanfin.ca` via Edge Function (clé lue des secrets, JAMAIS dans le repo/bundle). Gabarits brandés logo+wordmark, **français d'abord (Loi 101)**, conformité LCAP. Détail : gameplan P2.
+- ℹ️ Les métriques ouvertures/clics/désabo par séquence sont attendues au bloc « Bassin » du KPI (spec P0/P2).
+
 ## 2026-07-02 — Cowork (📧 Prérequis P2 : domaine Resend DÉJÀ vérifié + boîte bonjour@ créée)
 - **Vérifié en direct (resend.com/domains) : `monplanfin.ca` est « Verified »** (ajouté il y a 4 jours, région us-east-1) → les DNS SPF/DKIM étaient déjà en place, aucune manip cPanel requise.
 - **Yuri a créé la boîte `bonjour@monplanfin.ca`** (WHC Business Email) = expéditeur officiel des comms clients (accusé, relances, infolettre) — réponses reçues dans une vraie boîte (LCAP). `media@` reste pour la presse.
