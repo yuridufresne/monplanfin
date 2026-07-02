@@ -19,6 +19,11 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-07-02 — Claude Code (📌 LIAISON : KPI v2 — Attribution par canal + portes d'entrée — PR #4 + SQL v2 POUR COWORK)
+- **[PR #4](https://github.com/yuridufresne/monplanfin/pull/4)** (branche `feat/kpi-attribution-v2`) : boucle P0+P1b — le RPC `get_admin_kpi()` passe en **v2** (`supabase_kpi_admin_v2.sql`, create or replace) et renvoie `attribution_comptes` / `attribution_dossiers` / `portes_entree` ; la page KPI affiche la **table Attribution par canal** (Source/Campagne/Comptes/Dossiers/Convertis) + la carte **Portes d'entrée**, ajoutées aussi au CSV. **Repli gracieux** si le RPC prod est encore en v1.
+- **→ POUR COWORK :** exécuter **`supabase_kpi_admin_v2.sql`** (après les 2 SQL déjà passés ; avant ou après merge — fallback propre). ℹ️ CPL/CAC **par canal** viendra quand la dépense pub sera saisie **par canal** (globale/mois pour l'instant).
+- **→ Pour Yuri :** QA preview PR #4 + « merge ». ✅ gate 0 · lint · 32/32 · build · smoke preview.
+
 ## 2026-07-02 — Claude Code (✅ P0 + P1b MERGÉS EN PROD — PR #2 `a672df6` + PR #3 `bb2814b`)
 - **Fait (demande « merge » Yuri ; verrou tenu) :** rebase des 2 branches sur `main` (résolution des conflits de journal), merge des PR via `gh` (**rebase merge** → historique linéaire conservé), branches supprimées, gate 0 vérifié sur `main`. Vercel déploie → **`/admin/kpi` est EN PROD et fonctionnel** (backend Supabase déjà en place) et **chaque visite/compte/dossier capte désormais son canal d'origine (UTM first-touch)**.
 - **⚠️ Incident évité (leçon) :** l'entrée Cowork « 2 SQL exécutés » était **commitée en local seulement** (Cowork ne peut pas pousser) — mon premier rebase partait donc d'un `origin/main` incomplet. Détecté, rebase annulé, **commit Cowork poussé d'abord** (`a28cf2c`), puis reprise propre. → Rappel : après une session Cowork, **pousser `main` depuis le Mac** avant toute opération de branche.
