@@ -74,6 +74,14 @@ les agents du même répertoire). Il s'auto-expire après 120 min.
 - **NE PAS** afficher « Membre AMF » (faux : non inscrit). Pas de promesse de rendement.
 - Détails + statut Loi 25/sécu : voir `conformite/NOTES-AMF-et-statut-conformite.md`.
 
+## Communications clients (RÈGLES INVIOLABLES — décision Yuri 2026-07-01)
+- **Loi 101 (Charte de la langue française) : le français PRIME sur toute communication.** Courriels,
+  notifications, PDF, pages, publicités : français d'abord, toujours. Si une autre langue est offerte un jour,
+  le français reste au moins équivalent et affiché en premier. Aucune comm client unilingue anglaise.
+- **Toute communication qui part vers un client porte la marque : icône (`public/favicon.svg`) + wordmark
+  « MonPlanFin » (« Mon » + « PlanFin » vert).** Courriels (modèle = templates Auth brandés), PDF/exports,
+  notifications, documents. Aucune comm « nue ».
+
 ## Outils & rôles
 - Open Design (Opus 4.8) = conception/prototypage. Cursor / Claude Code = code dans ce dépôt.
   Cowork = navigateur (Google/Supabase/Vercel), vérifs, visuels.

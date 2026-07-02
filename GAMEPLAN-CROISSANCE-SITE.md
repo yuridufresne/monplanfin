@@ -6,6 +6,12 @@ Budget associé : ligne courriel ~28 $/mois ajoutée au classeur (total An 1 = 1
 
 **Garde-fous transverses (s'appliquent à CHAQUE item) :**
 - ⚖️ AMF : jamais « planificateur/conseiller financier », aucun conseil personnalisé, ton éducatif, disclaimers conservés.
+- 🇫🇷 **Loi 101 (Charte de la langue française) — RÈGLE INVIOLABLE : le français PRIME sur toute communication.**
+  Courriels, notifications, PDF, pages, pubs : rédigés en français d'abord ; si une autre langue est offerte un jour,
+  le français reste au moins équivalent et affiché en premier. Aucune comm client unilingue anglaise, jamais.
+- 🎨 **Marque — RÈGLE INVIOLABLE : toute communication qui part vers un client porte le logo (icône `public/favicon.svg`)
+  + le wordmark « MonPlanFin » (« Mon » + « PlanFin » vert).** Courriels (modèle = templates Auth déjà brandés),
+  PDF (portrait NIF, exports), notifications, documents. Aucune comm « nue ».
 - 🔒 `/analyse` (ABF 11 étapes) est FIGÉ — aucun item ci-dessous ne modifie le wizard. On optimise AUTOUR.
 - 📋 Loi 25/LCAP : tout courriel de relance = fondé sur le consentement d'inscription + lien de désabonnement dans chaque envoi.
 - 🧪 Tout code neuf = gate-clean (typecheck 0), verrou agent, entrée journal.
@@ -24,6 +30,11 @@ ET alimente le rapport mensuel promis aux partenaires (FAQ investisseurs Q6). M�
 | **Abonnés** | Nb d'entitlements Studio actifs (source : entitlement serveur #7) · dont via parrainage (P4) |
 | **Bassin secondaire** | Comptes SANS dossier soumis (la cible des relances P2) · dont relancés/désabonnés (`email_log`, après P2) |
 | **Coûts (saisie manuelle)** | Dépense pub du mois (champ admin) → CPL calculé = dépense ÷ dossiers soumis · coût/client = dépense ÷ convertis |
+| **Attribution (CMO)** | Comptes et dossiers par `utm_source/medium/campaign` (capture en P1b) → CPL et CAC PAR CANAL |
+| **Abandon ABF (CMO)** | Répartition des profils par dernière section complétée → identifier L'ÉTAPE où ça décroche |
+| **Boucle agents (CMO)** | À la fermeture d'un dossier : produit/valeur approximative (converti) ou **motif de perte** (injoignable/pas prêt/déjà servi/mauvais fit) · **speed-to-lead** = délai attribution → 1er contact, par agent |
+| **Persona (CMO)** | Profil AGRÉGÉ des convertis vs perdus (tranches d'âge, région, tranche de revenu, besoin principal) — jamais de lignes individuelles (Loi 25) → réinjecté dans le ciblage pub |
+| **Portes d'entrée (CMO)** | Inscriptions par page d'origine (quelle calculatrice convertit) → priorise le chantier SEO P5 |
 
 - **Backend :** vues SQL agrégées `admin_kpi_*` (ou RPC `get_admin_kpi()`) **security definer + check `is_admin()`** —
   ne JAMAIS exposer de lignes individuelles, seulement des agrégats. Compter les comptes via `financial_profile`
@@ -41,6 +52,13 @@ ET alimente le rapport mensuel promis aux partenaires (FAQ investisseurs Q6). M�
 - Config (Cowork/Yuri, hors code) : audiences personnalisées Meta « started sans submitted », campagne « Terminez votre portrait — 5 minutes ».
 **Livrable :** 3 événements + 1 audience + 1 campagne.
 
+## P1b — Capture d'attribution UTM (S1, ~½ jour) — **À FAIRE AVANT DE DÉPENSER LA PUB**
+**Quoi :** sans UTM, les 16 500 $ de pub ne produisent aucun apprentissage (impossible de savoir quel canal performe).
+- Code : au premier chargement, lire `utm_source/medium/campaign` (+ referrer + page d'entrée), persister
+  (localStorage → colonne sur le compte à l'inscription), et **recopier sur le `lead_dossier` à la soumission**.
+- Toutes les URL de pub/posts utilisent des UTM normalisés (convention : `meta/cpc/<campagne>`, `google/cpc/<campagne>`, `agent/<code>`).
+**Livrable :** chaque compte et chaque dossier porte son canal d'origine → alimente le bloc Attribution du P0.
+
 ## P2 — Infrastructure courriel + séquences (S1-S2, ~2-3 jours)
 **Quoi :** le site n'envoie AUCUN courriel applicatif aujourd'hui (constat d'audit). Prérequis de tout le nurture.
 - Choisir le fournisseur : **Resend** (API simple, ~20 US$/mois, budgété) ou Mailchimp si Yuri veut l'éditeur visuel.
@@ -49,6 +67,8 @@ ET alimente le rapport mensuel promis aux partenaires (FAQ investisseurs Q6). M�
   1. **Accusé de soumission de dossier** (item déjà ouvert au journal du 2026-07-01) — courriel au client + notification à l'admin.
   2. **Séquence de relance ABF** : job planifié (Supabase Edge Function + cron / pg_cron) sur les comptes `financial_profile` incomplets sans `lead_dossier` : J+1 (« votre progression est sauvegardée »), J+3 (« aperçu de ce qui vous attend »), J+7 (dernière relance). Table `email_log` (idempotence + preuve de consentement/désabonnement).
   3. **Désabonnement 1 clic** (obligatoire LCAP) + champ `email_optout` respecté partout.
+  4. **Chaque courriel = gabarit brandé** (logo + wordmark, français — règles inviolables ci-dessus) + métriques
+     ouvertures/clics/désabonnements par séquence remontées au bloc « Bassin » du P0 (le taux de désabo = canari LCAP).
 **Livrable :** envoi transactionnel opérationnel + 3 relances automatiques + accusé de soumission.
 
 ## P3 — Lead magnet « Mon portrait NIF » (S2, ~2 jours)
@@ -87,5 +107,5 @@ Non retenu pour l'An 1. Ne pas développer.
 3. Push des commits en attente + protection de `main` (checklist PRE-DEPLOIEMENT).
 
 ## Ordre d'exécution (validé par Yuri 2026-07-01)
-S1 : **P0 (KPI admin)** + P1 → S2 : P2 + P3 → S3-S4 : P4 (barème ci-dessus) → T2 : P5. (P6 retiré.)
+S1 : **P0 (KPI admin) + P1b (UTM — avant toute dépense pub)** + P1 → S2 : P2 + P3 → S3-S4 : P4 (barème ci-dessus) → T2 : P5. (P6 retiré.)
 Chaque item = branche + preview + entrée `JOURNAL-AGENTS.md` (protocole habituel).
