@@ -19,6 +19,14 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-07-03 — Claude Code (📌 LIAISON : P4 PARRAINAGE livré — PR #9 + SQL POUR COWORK)
+- **[PR #9](https://github.com/yuridufresne/monplanfin/pull/9)** (branche `feat/p4-parrainage`) : lien `monplanfin.ca/?ref=<code>`, récompense = **Studio temporaire** (barème Yuri : 1 filleul validé = 1 mois · 3 = 1 an · plafond 24 mois ; « validé » = courriel vérifié + 1re section ABF ; récompense à l'inscription réussie, jamais à l'envoi — **LCAP : aucun courriel plateforme aux invités, pas de champ adresses**).
+  - **[supabase_parrainage.sql](supabase_parrainage.sql)** (SQL pur, pas d'Edge Function) : tables `parrainage`/`parrainage_filleul`, **colonne `expire_le` sur `studio_entitlement`** (null = permanent → codes existants inchangés), RPC `get_mon_parrainage()`, fonction cron `attribuer_recompenses_parrainage()` (anti auto-parrainage, idempotente, ne rétrograde jamais un permanent).
+  - **Front** : capture `?ref=` first-touch + sync filleul à l'auth ; **gate Studio respecte `expire_le`** ; carte Dashboard « Invitez un proche » (lien + copier + compteurs, masquée sans le SQL, jamais en mode conseiller).
+  - ✅ gate 0 · lint · 32/32 · build · preview (capture + first-touch vérifiés). ⚠️ Anti-abus v1 = courriel vérifié + ABF + anti self-ref ; IP/domaines jetables non couverts (à durcir si abus).
+- **→ POUR COWORK (après merge) :** exécuter `supabase_parrainage.sql` (étapes A-C dans le fichier : SQL → cron h+15 → test filleul bidon). La carte Dashboard apparaît dès que le RPC existe.
+- **→ Pour Yuri :** QA preview PR #9 puis « merge ». Les abonnés « dont via parrainage » remonteront au KPI (source=parrainage, déjà ventilé).
+
 ## 2026-07-02 — Claude Code (✅ bug JWT `accuse-dossier` CORRIGÉ + REDÉPLOYÉ en prod — l'endpoint n'est plus public)
 - **Contexte (entrée Cowork ci-dessous) :** clés JWT **asymétriques** → la vérif plateforme « legacy secret » rejette les jetons (`UNAUTHORIZED_ASYMMETRIC_JWT`) ; Cowork avait mis `accuse-dossier` en JWT OFF (fonctionnel mais **techniquement public**).
 - **Correctif (pattern recommandé, dans le repo `supabase/functions/accuse-dossier/index.ts`) :** **validation in-function du jeton** — GoTrue `/auth/v1/user` avec l'`Authorization` reçu (+ `apikey` anon, injectée d'office) → **401 si absent/invalide** ; `verify_jwt` OFF **assumé et documenté** en tête de fichier. Aucun changement front (supabase-js envoie déjà le jeton).
