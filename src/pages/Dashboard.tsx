@@ -672,6 +672,24 @@ export default function Dashboard() {
           </div>
         </motion.div>
 
+        {/* ─── [P3] Lead magnet : portrait NIF partiel (revenu+épargne saisis, ABF incomplet) ─── */}
+        {!modeConseiller && !abfComplet(profiles)
+          && ["revenu", "epargne"].every(s => profiles.some((p) => p?.section === s)) && (
+          <motion.div {...fadeUp(0.03)} className="mb-5">
+            <Link to="/portrait" style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, flexWrap: "wrap",
+              padding: "14px 20px", borderRadius: 14, textDecoration: "none",
+              background: "linear-gradient(135deg, rgba(91,196,160,0.12), rgba(91,196,160,0.03))",
+              border: "1px solid rgba(91,196,160,0.3)",
+            }}>
+              <div>
+                <p style={{ fontSize: 13.5, fontWeight: 700, color: "#5BC4A0" }}>📄 Votre portrait NIF partiel est prêt</p>
+                <p style={{ fontSize: 11.5, color: "rgba(255,255,255,0.55)", marginTop: 2 }}>Téléchargez-le en PDF — et complétez l'analyse pour la version complète.</p>
+              </div>
+              <span style={{ fontSize: 12, fontWeight: 700, color: "#5BC4A0" }}>Voir mon portrait →</span>
+            </Link>
+          </motion.div>
+        )}
 
         {/* ─── CTA Soumettre dossier ─── */}
         {!isEmpty && !modeConseiller && (

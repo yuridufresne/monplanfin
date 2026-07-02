@@ -18,4 +18,5 @@ const AdminKpi = lazy(() => import('@/pages/AdminKpi'));
 const AdminFeedback = lazy(() => import('@/pages/AdminFeedback'));
 const AgentDossiers = lazy(() => import('@/pages/AgentDossiers'));
 const EducationFinanciere = lazy(() => import('@/pages/EducationFinanciere'));
-export { Home, Calculators, Dashboard, Budget, AnalyseABF, FeuilleResume, AdvancedMode, ProtectionAssurance, Immobilier, Conditions, Confidentialite, Methodologie, Contact, AdminDossiers, AdminEquipe, AdminKpi, AdminFeedback, AgentDossiers, EducationFinanciere };
+const PortraitNif = lazy(() => import('@/pages/PortraitNif'));
+export { Home, Calculators, Dashboard, Budget, AnalyseABF, FeuilleResume, AdvancedMode, ProtectionAssurance, Immobilier, Conditions, Confidentialite, Methodologie, Contact, AdminDossiers, AdminEquipe, AdminKpi, AdminFeedback, AgentDossiers, EducationFinanciere, PortraitNif };
