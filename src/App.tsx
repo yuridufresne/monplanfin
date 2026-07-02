@@ -17,12 +17,20 @@ import Investments from '@/pages/Investments';
 import StudioDecaissement from '@/pages/StudioDecaissement';
 import { supabase } from '@/api/supabaseClient';
 import { captureAttribution, syncAttributionCompte } from '@/lib/attribution';
+import { trackOnce } from '@/lib/analytics';
 import DisclaimerAMF from '@/components/DisclaimerAMF';
 
 // Pages de RÉSULTATS : avertissement AMF « pas un conseil personnalisé » en bas.
 // (PAS sur /analyse ni les pages publiques.)
 function AvecDisclaimer({ children }: { children: React.ReactNode }) {
   return <>{children}<DisclaimerAMF /></>;
+}
+
+// [P1] Jalon retargeting « abf_started » au montage de la route /analyse —
+// wrapper au niveau ROUTE (le composant ABF lui-même reste intouché).
+function TrackAbfStart({ children }: { children: React.ReactNode }) {
+  useEffect(() => { trackOnce("abf_started"); }, []);
+  return <>{children}</>;
 }
 
 function SoftWall({ onUnlock }: { onUnlock: () => void }) {
@@ -119,8 +127,8 @@ function AuthenticatedApp() {
       <Route element={<RequireAuth />}>
         <Route element={<AppLayout />}>
           <Route path="/dashboard" element={<AvecDisclaimer><Dashboard /></AvecDisclaimer>} />
-          <Route path="/analyse" element={<AnalyseABF />} />
-          <Route path="/analyse-classique" element={<AnalyseABF />} />
+          <Route path="/analyse" element={<TrackAbfStart><AnalyseABF /></TrackAbfStart>} />
+          <Route path="/analyse-classique" element={<TrackAbfStart><AnalyseABF /></TrackAbfStart>} />
           <Route path="/budget" element={<Budget />} />
           <Route path="/resume" element={<AvecDisclaimer><FeuilleResume /></AvecDisclaimer>} />
           <Route path="/avance" element={<AvecDisclaimer><AdvancedMode /></AvecDisclaimer>} />
