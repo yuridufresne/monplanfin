@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { appClient } from "@/api/usersClient";
 import { getAttribution } from "@/lib/attribution";
+import { trackEvent } from "@/lib/analytics";
 import BrandIcon from "@/components/BrandIcon";
 import {
   X, Check, ArrowRight, Lock, ShieldCheck, ChevronRight, ArrowLeft,
@@ -168,6 +169,9 @@ export default function SoumettreDossierModal({ onClose, profiles, user }) {
         if (ppRow?.id) await appClient.entities.FinancialProfile.update(ppRow.id, { data: ppData });
         else await appClient.entities.FinancialProfile.create({ section: "profil_personnel", data: ppData, completed: false });
       } catch (e) { console.error("Sync profil_personnel (non bloquant):", e); }
+
+      // [P1] Jalon retargeting (nom du jalon seulement, aucune donnée — Loi 25).
+      trackEvent("dossier_submitted");
 
       setSent(true);
       try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch (e) { /* noop */ }

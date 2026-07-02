@@ -4,6 +4,7 @@ import { appClient } from "@/api/usersClient";
 import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/lib/AuthContext";
 import { clearConsent } from "@/lib/consent";
+import { trackOnce, abfComplet } from "@/lib/analytics";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { ArrowRight, Settings, Home, Send } from "lucide-react";
@@ -402,6 +403,12 @@ export default function Dashboard() {
   const debts = useMemo(() => filtreCible(debtsBruts), [debtsBruts, cible]);
   const goals = useMemo(() => filtreCible(goalsBruts), [goalsBruts, cible]);
   const profiles = useMemo(() => filtreCible(profilesBruts), [profilesBruts, cible]);
+
+  // [P1] Jalon retargeting « abf_completed » (11/11 sections) — jamais en mode
+  // conseiller (on ne track pas le profil d'un client consulté par un agent).
+  useEffect(() => {
+    if (!modeConseiller && abfComplet(profiles)) trackOnce("abf_completed");
+  }, [profiles, modeConseiller]);
 
   // ── Source de données ──────────────────────────────────────────────────────
   const { totalMensuel: totalRevenue, allocMensuel } = useMemo(() => calcRevenuDisponible(profiles), [profiles]);
