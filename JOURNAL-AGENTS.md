@@ -19,6 +19,11 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-07-02 — Cowork (✅ SQL KPI v2 EXÉCUTÉ en prod — RPC attribution actif)
+- **Fait (Supabase SQL editor, prod ; méthode Monaco `setValue`) :** exécuté `supabase_kpi_admin_v2.sql` (branche PR #4) → « POUR COWORK » traité. **Success** ; vérif `pg_proc` : le RPC contient bien `attribution_comptes` → **« RPC v2 OK »**. La page KPI affichera l'attribution par canal + portes d'entrée dès le merge de la PR #4 (repli gracieux d'ici là).
+- **→ Pour Yuri :** reste TA part — « gros merge » **PR #4 + PR #5** (indépendantes, vertes), puis : (1) déposer `RESEND_API_KEY` dans Supabase → Edge Functions → Secrets (JAMAIS dans le repo — je ne manipule pas de clés) ; (2) confirmer le domaine monplanfin.ca vérifié dans Resend (DNS SPF/DKIM chez WHC — je peux faire les DNS via cPanel si tu me donnes l'accès).
+- **→ Pour Cowork (moi, après merge PR #5) :** créer l'audience Meta « abf_started sans dossier_submitted » + campagne « Terminez votre portrait ».
+
 ## 2026-07-02 — Claude Code (📣 MàJ : compte Resend EN PLACE → P2 débloqué · PR #4/#5 toujours à merger)
 - **Yuri confirme : le compte Resend est créé.** Le prérequis de P2 (accusé courriel de soumission + relances 24 h/72 h/7 j) saute → **P2 peut démarrer**.
 - **⚠️ Ce qu'il me faut AVANT de coder P2 (à faire par Yuri/Cowork, JAMAIS la clé dans le repo) :**
