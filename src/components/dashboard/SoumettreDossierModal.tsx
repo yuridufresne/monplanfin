@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { appClient } from "@/api/usersClient";
+import { supabase } from "@/api/supabaseClient";
 import { getAttribution } from "@/lib/attribution";
 import { trackEvent } from "@/lib/analytics";
 import BrandIcon from "@/components/BrandIcon";
@@ -172,6 +173,21 @@ export default function SoumettreDossierModal({ onClose, profiles, user }) {
 
       // [P1] Jalon retargeting (nom du jalon seulement, aucune donnée — Loi 25).
       trackEvent("dossier_submitted");
+
+      // [P2] Accusé de réception (client) + notification admin, via l'Edge
+      // Function `accuse-dossier` (Resend, clé côté serveur). Best-effort :
+      // l'échec d'un courriel ne doit JAMAIS faire échouer la soumission —
+      // le dossier est déjà enregistré et visible dans /admin/dossiers.
+      supabase.functions.invoke("accuse-dossier", {
+        body: {
+          client_nom: clientNom,
+          client_courriel: contact.email.trim(),
+          besoins: form.besoins_principaux.map(id => BESOINS.find(b => b.id === id)?.label).filter(Boolean),
+          mode_label: MODES.find(m => m.id === form.mode_contact_prefere)?.court || "",
+          moment_label: MOMENTS.find(m => m.id === form.meilleur_moment_contact)?.court || "",
+        },
+      }).then(({ error: e2 }) => { if (e2) console.error("accuse-dossier (non bloquant):", e2); })
+        .catch((e2) => console.error("accuse-dossier (non bloquant):", e2));
 
       setSent(true);
       try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch (e) { /* noop */ }
