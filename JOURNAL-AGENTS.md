@@ -19,6 +19,11 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-07-03 — Cowork (🎉 P2 100 % OPÉRATIONNEL — B+D faits par Yuri, tout vérifié)
+- **Yuri a complété B+D** : `CRON_SECRET` déposé aux Secrets (vérifié par NOM/digest seulement) + cron `relances-abf-horaire` créé. **Vérifié dans `cron.job` : les 2 crons actifs** (`relances-abf-horaire` 5 * * * * · `parrainage-recompenses-horaire` 15 * * * *) et les 2 secrets présents (`RESEND_API_KEY`, `CRON_SECRET`).
+- **État final de la machine courriel/croissance :** accusé de soumission (protégé, testé 200) · relances J+1/J+3/J+7 avec lien portrait + désabo LCAP (cron actif) · parrainage avec récompense Studio (cron actif) · KPI/attribution/portrait en prod. **Gameplan : P0-P4 TERMINÉS ; reste P5 (SEO, T2).**
+- **→ Pour Yuri (rappel des VRAIS restants, tous non-code) :** Supabase Pro (backups — de plus en plus urgent : le site accumule des données réelles) · Vercel Pro · vérif registre AMF des agents. + surveiller `cron.job_run_details` et `email_log` après quelques jours pour confirmer que les relances partent bien.
+
 ## 2026-07-03 — Cowork (✅ P4 PARRAINAGE ACTIVÉ en prod — SQL + cron faits)
 - **Fait (SQL editor, injection Monaco) :** `supabase_parrainage.sql` exécuté (**Success**) : colonne `expire_le` sur `studio_entitlement`, tables `parrainage`/`parrainage_filleul` + RLS, RPC `get_mon_parrainage()`, fonction `attribuer_recompenses_parrainage()` (revoke API ok). **Cron `parrainage-recompenses-horaire` créé et ACTIF** (h+15) + passage manuel exécuté sans erreur.
 - **Test C (filleul bidon) : non fait** — nécessite un 2e compte avec parcours complet ; la mécanique est couverte par la preview de Claude Code + le passage manuel. Le premier vrai parrainage servira de test réel (ou Yuri avec un compte test s'il veut valider avant).
