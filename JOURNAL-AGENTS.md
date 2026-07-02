@@ -19,6 +19,15 @@ ce qui est en cours, et ce qui les attend — **sans se marcher dessus**.
 ```
 ---
 
+## 2026-07-02 — Cowork (⚙️ ACTIVATION P2 : A/C/E faits — accusé TESTÉ OK en prod · 🐛 bug JWT pour Claude Code · reste B+D à Yuri)
+- **Fait (étapes du mode d'emploi `supabase_p2_courriels.sql`) :**
+  - **(A) ✅** Tables `email_log` + `courriel_optout` + RLS créées. **Extensions pg_cron + pg_net activées.**
+  - **(C) ✅** 3 fonctions déployées via l'éditeur Dashboard (injection API Monaco — le collage clavier corrompt) : `accuse-dossier`, `relances-abf` (JWT OFF — le cron n'envoie pas de jeton, auto-protégée `x-cron-secret`), `desabonnement` (JWT OFF, prévu). **`relances-abf` REDÉPLOYÉE post-merge PR #8** (lien portrait au J+3, consigne de l'entrée P3) — vérifier que son JWT est resté OFF après redeploy.
+  - **(E, accusé) ✅ TESTÉ EN PROD : HTTP 200**, 2 courriels partis (accusé → yuridufresne@, notif → bonjour@) — Yuri : confirmer réception + rendu brandé. 2 lignes de test dans `email_log` (sans effet sur l'idempotence des relances ; nettoyer si désiré).
+- **🐛 POUR CLAUDE CODE (prioritaire) :** le projet utilise les **clés JWT ASYMÉTRIQUES** → « Verify JWT with legacy secret » ON rejette les jetons de session (`UNAUTHORIZED_ASYMMETRIC_JWT`, testé) : **le front aurait eu 401 en prod.** `accuse-dossier` mis en **JWT OFF (temporaire)** pour fonctionner → endpoint techniquement public. **Correctif attendu :** validation in-function du jeton (appel `/auth/v1/user` avec l'Authorization reçu, 401 sinon) — pattern recommandé — puis JWT OFF assumé. Risque intérim faible mais à corriger vite.
+- **→ POUR YURI (B+D, dernières étapes — le secret ne passe pas par Cowork) :** SQL editor : (1) `select encode(gen_random_bytes(32),'hex');` → copier ; (2) Edge Functions → Secrets → `CRON_SECRET` = cette valeur ; (3) exécuter le bloc cron du bas de `supabase_p2_courriels.sql` (remplacer `<PROJECT-REF>` = `ljezchpqqyxgehdwvnot` et `<CRON_SECRET>` = la même valeur). Vérif : `select * from cron.job;`.
+- ℹ️ Dashboard Supabase instable toute la session (bannière incident) → retries systématiques.
+
 ## 2026-07-02 — Claude Code (📌 LIAISON : P3 lead magnet « Mon portrait NIF » — ✅ PR #8 MERGÉE `2b7a218`)
 - **[PR #8](https://github.com/yuridufresne/monplanfin/pull/8)** (branche `feat/p3-portrait-nif`, base `main`) :
   - **`/portrait`** (page privée, thème clair « document », **imprimable → PDF navigateur**) : NIF visé / capital projeté / écart (moteurs SSOT `buildPayload`+`calcRevenuDisponible`, défensif sur profil partiel — **aucun calcul nouveau**), progression X/11, bloc « la version complète débloque » + CTA compléter, **disclaimer AMF sur le document**. Dispo dès que **revenu + épargne** existent ; état vide propre sinon.
